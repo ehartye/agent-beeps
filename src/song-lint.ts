@@ -5,12 +5,18 @@ import type { SongFeatures } from './measure/song.ts';
 import type { Song } from './schema/song.ts';
 import type { Project } from './schema/project.ts';
 import { compileSong } from '../runtime/engine/sequence.js';
+import { instrumentSpan } from '../runtime/engine/song.js';
+import type { Patch } from './schema/patch.ts';
 
 export const MUSIC_RULES_PATH = join(RULES_PATH, '..', 'music-rules.json');
 
 const fmt = (x: number, d = 1) => String(Math.round(x * 10 ** d) / 10 ** d);
 
-export function lintSong(song: Song, f: SongFeatures, project: Project): LintReport {
+/**
+ * `instruments` (per track) lets the register check use what actually sounds: a note played by a
+ * pad with a sub-octave layer reaches an octave lower than the note written.
+ */
+export function lintSong(song: Song, f: SongFeatures, project: Project, instruments: Record<string, Patch> = {}): LintReport & { judgementChecks: { rule: string; check: string }[] } {
   const rules = loadRules(MUSIC_RULES_PATH);
   const c = new Collector(rules);
   const range = (id: string) => c.rule(id).value as Record<string, number>;
@@ -44,15 +50,20 @@ export function lintSong(song: Song, f: SongFeatures, project: Project): LintRep
   else if (f.lowShare < low.min) c.add('song-low-end', `only ${fmt(100 * f.lowShare, 1)}% of energy below 120 Hz: thin`);
 
   const reg = range('song-register');
-  const outside = new Map<string, { lo: number; hi: number }>();
+  const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
+  const outside = new Map<string, { lo: number; hi: number; layer: boolean }>();
   for (const e of compileSong(song).events) {
-    if (e.midi === null || (e.midi >= reg.lowestMidi && e.midi <= reg.highestMidi)) continue;
-    const o = outside.get(e.pattern) ?? { lo: Infinity, hi: -Infinity };
-    outside.set(e.pattern, { lo: Math.min(o.lo, e.midi), hi: Math.max(o.hi, e.midi) });
+    if (e.midi === null) continue;
+    const span = spans[e.track];
+    const lo = e.midi + (span?.low ?? 0), hi = e.midi + (span?.high ?? 0);
+    if (lo >= reg.lowestMidi && hi <= reg.highestMidi) continue;
+    const o = outside.get(e.pattern) ?? { lo: Infinity, hi: -Infinity, layer: false };
+    outside.set(e.pattern, { lo: Math.min(o.lo, lo), hi: Math.max(o.hi, hi), layer: o.layer || (lo < reg.lowestMidi && lo !== e.midi) || (hi > reg.highestMidi && hi !== e.midi) });
   }
   for (const [pattern, o] of outside) {
     const hz = (m: number) => fmt(440 * 2 ** ((m - 69) / 12), 0);
-    c.add('song-register', o.lo < reg.lowestMidi ? `pattern "${pattern}" reaches ${hz(o.lo)} Hz (below E1): raise its octave` : `pattern "${pattern}" reaches ${hz(o.hi)} Hz (above C8): lower its octave`, `/patterns/${pattern}`);
+    const why = o.layer ? " (an instrument layer sounds below or above the written note: see 'beeps instruments' spans)" : '';
+    c.add('song-register', o.lo < reg.lowestMidi ? `pattern "${pattern}" reaches ${hz(o.lo)} Hz (below E1)${why}: raise its octave` : `pattern "${pattern}" reaches ${hz(o.hi)} Hz (above C8)${why}: lower its octave`, `/patterns/${pattern}`);
   }
 
   const played = new Set<string>(), usedTracks = new Set<string>();
@@ -63,5 +74,6 @@ export function lintSong(song: Song, f: SongFeatures, project: Project): LintRep
   }
   for (const t of Object.keys(song.tracks)) if (!usedTracks.has(t)) c.add('song-unused', `track "${t}" never plays`, `/tracks/${t}`);
   for (const p of Object.keys(song.patterns)) if (!played.has(p)) c.add('song-unused', `pattern "${p}" never plays`, `/patterns/${p}`);
-  return c.report('song', rules);
+  // Judgement rules come with their statements: a bare id is not a checklist.
+  return { ...c.report('song', rules), judgementChecks: rules.filter(r => r.check === 'judgement' && r.appliesTo === 'song').map(r => ({ rule: r.id, check: r.statement })) };
 }

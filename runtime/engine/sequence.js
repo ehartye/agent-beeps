@@ -16,7 +16,7 @@ import { mulberry32 } from './rng.js';
  * @property {number} pan    -1..1 offset added to the track pan
  * @property {string} pattern  the pattern that played it
  */
-/** @typedef {{ time: number, end: number, gainDb?: number, cutoff?: number, ramp: boolean }} MixPoint */
+/** @typedef {{ time: number, end: number, gainDb?: number, cutoff?: number, pan?: number, sends?: { reverb?: number, delay?: number }, ramp: boolean }} MixPoint */
 
 const STEP_VEL = /** @type {Record<string, number>} */ ({ X: 1, x: 0.7, o: 0.4 });
 const EPS = 1e-9;
@@ -196,8 +196,12 @@ export function compileSong(song) {
         pos += p.bars * song.meter;
       }
     }
+    // A partial ramp glides over the section's first or last bars; `true` glides across all of it.
+    const r = sec.ramp;
+    const span = typeof r === 'object' ? Math.min(len, r.bars * song.meter) * spb : end - start;
+    const from = typeof r === 'object' && r.at === 'end' ? end - span : start;
     for (const [track, m] of Object.entries(sec.mix ?? {})) {
-      (mix[track] ??= []).push({ time: start, end, ...m, ramp: sec.ramp });
+      (mix[track] ??= []).push({ time: from, end: r ? from + span : start, ...m, ramp: !!r });
     }
     beat += len;
   }

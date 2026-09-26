@@ -21,9 +21,10 @@ export interface RenderedSong {
   dir: string; wavPath: string; lookPath: string; cached: boolean;
 }
 
-export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir }: { project: Project; rendersDir: string }): Promise<RenderedSong> {
+/** `trimDb` fixes the trim instead of levelling to the target: stems play at their full mix's trim. */
+export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim }: { project: Project; rendersDir: string; trimDb?: number }): Promise<RenderedSong> {
   const target = project.musicLoudness;
-  const key = renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION });
+  const key = renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, ...(fixedTrim !== undefined ? { fixedTrim } : {}) });
   const dir = join(rendersDir, `song-${key.slice(0, 40)}`);
   const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png'), meta = join(dir, 'meta.json');
   if (existsSync(meta) && existsSync(wavPath) && existsSync(lookPath)) {
@@ -34,10 +35,10 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
   try {
     const authored = await host.pullSong(r.id, r.frames);
     const f = measureSong(authored, r.sampleRate, r.sections, { loop: song.loop });
-    if (!(f.integratedLufs > -70)) throw new Error(`song rendered near-silence (${f.integratedLufs} LUFS)`);
+    if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new Error(`song rendered near-silence (${f.integratedLufs} LUFS)`);
     const loud = target - f.integratedLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
-    const trimDb = Math.round(Math.max(-36, Math.min(24, Math.min(loud, ceiling))) * 100) / 100;
+    const trimDb = fixedTrim ?? Math.round(Math.max(-36, Math.min(24, Math.min(loud, ceiling))) * 100) / 100;
     const delivered = applyTrimAndClip(authored, trimDb);
     // Report the arc and sections at the level they play, like every other number the agent reads.
     f.arc = f.arc.map(v => Math.round((v + trimDb) * 10) / 10);
@@ -46,7 +47,7 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
       integratedLufs: Math.round(integrated(delivered, r.sampleRate).lufs * 100) / 100,
       truePeakDb: Math.round(truePeakDb(delivered, r.sampleRate) * 100) / 100,
       clippedSamples: clippedSamples(delivered),
-      ...(ceiling < loud ? { peakLimited: true } : {}),
+      ...(fixedTrim === undefined && ceiling < loud ? { peakLimited: true } : {}),
     };
     mkdirSync(dir, { recursive: true });
     writeFileSync(wavPath, writeWav(delivered, r.sampleRate));

@@ -40,6 +40,6 @@
     }
   ],
   "meta": {
-    "description": "High glassy sparkle: soft sine partials at 2 and 3 octaves. Sparse high notes."
+    "description": "High glassy sparkle: sine partials at the note, an octave and an octave-plus-fifth above; written pitch is where it sounds (use octave 6). Sparse high notes."
   }
 }

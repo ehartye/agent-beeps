@@ -3,78 +3,579 @@
   "name": "dust-sea",
   "title": "Dust Sea",
   "description": "A slow caravan across a desert planet under two suns: 7/4 in 2+2+3, a D phrygian-dominant cycle over a D pedal, hand-drum toms, a plucked arp and a breathy reed lead that sings one long line.",
-  "tags": ["exploration", "sci-fi", "desert"],
+  "tags": [
+    "exploration",
+    "sci-fi",
+    "desert"
+  ],
   "bpm": 80,
   "meter": 7,
   "loop": true,
   "seed": 11,
   "progressions": {
-    "caravan": [["D", 7], ["Eb", 7], ["Cm", 7], ["D7b9", 7]],
-    "oasis": [["Gmadd9", 7], ["Ebmaj7", 7], ["Cm7", 7], ["D7b9", 7]]
+    "caravan": [
+      [
+        "D",
+        7
+      ],
+      [
+        "Eb",
+        7
+      ],
+      [
+        "Cm",
+        7
+      ],
+      [
+        "D7b9",
+        7
+      ]
+    ],
+    "oasis": [
+      [
+        "Gmadd9",
+        7
+      ],
+      [
+        "Ebmaj7",
+        7
+      ],
+      [
+        "Cm7",
+        7
+      ],
+      [
+        "D7b9",
+        7
+      ]
+    ]
   },
   "tracks": {
-    "wind": { "instrument": "nebula", "gainDb": -16, "pan": 0, "sends": { "reverb": -10 } },
-    "drone": { "instrument": "drone", "gainDb": -22, "sends": { "reverb": -14 } },
-    "bass": { "instrument": "sub-bass", "gainDb": -16 },
-    "pad": { "instrument": "string-pad", "gainDb": -16, "cutoff": 2000, "spread": 0.6, "sends": { "reverb": -8 } },
-    "arp": { "instrument": "soft-pluck", "gainDb": -14, "pan": -0.25, "humanize": 0.4, "sends": { "reverb": -12, "delay": -10 } },
-    "drum": { "instrument": "tom", "gainDb": -14, "pan": 0.1, "humanize": 0.4, "sends": { "reverb": -12 } },
-    "rim": { "instrument": "rim", "gainDb": -24, "pan": 0.35, "humanize": 0.5, "sends": { "reverb": -12 } },
+    "wind": {
+      "instrument": "nebula",
+      "gainDb": -16,
+      "pan": 0,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "drone": {
+      "instrument": "drone",
+      "gainDb": -26,
+      "sends": {
+        "reverb": -14
+      }
+    },
+    "bass": {
+      "instrument": "sub-bass",
+      "gainDb": -19
+    },
+    "pad": {
+      "instrument": "string-pad",
+      "gainDb": -16,
+      "cutoff": 2000,
+      "spread": 0.8,
+      "sends": {
+        "reverb": -8
+      }
+    },
+    "arp": {
+      "instrument": "soft-pluck",
+      "gainDb": -14,
+      "pan": -0.4,
+      "humanize": 0.4,
+      "sends": {
+        "reverb": -12,
+        "delay": -10
+      }
+    },
+    "drum": {
+      "instrument": "tom",
+      "gainDb": -14,
+      "pan": 0.2,
+      "humanize": 0.4,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "rim": {
+      "instrument": "rim",
+      "gainDb": -24,
+      "pan": 0.5,
+      "humanize": 0.5,
+      "sends": {
+        "reverb": -12
+      }
+    },
     "ney": {
       "instrument": {
         "duration": 1,
         "layers": [
-          { "source": { "type": "osc", "wave": "triangle", "pitch": "B4" },
-            "pitchEnv": [{ "at": 0.09, "to": "C5", "curve": "linear" }],
-            "amp": { "attack": 0.14, "decay": 1, "sustain": 0.85, "release": 0.45 },
-            "lfo": { "target": "pitch", "rate": 5, "depth": 14 } },
-          { "source": { "type": "osc", "wave": "sine", "pitch": "B5" },
-            "pitchEnv": [{ "at": 0.09, "to": "C6", "curve": "linear" }],
-            "gainDb": -16, "amp": { "attack": 0.2, "decay": 1, "sustain": 0.7, "release": 0.4 } },
-          { "source": { "type": "noise", "color": "pink" }, "gainDb": -24,
-            "amp": { "attack": 0.1, "decay": 0.6, "sustain": 0.6, "release": 0.3 },
-            "filter": { "type": "bandpass", "cutoff": 1500, "q": 3 } }
+          {
+            "source": {
+              "type": "osc",
+              "wave": "triangle",
+              "pitch": "B4"
+            },
+            "pitchEnv": [
+              {
+                "at": 0.09,
+                "to": "C5",
+                "curve": "linear"
+              }
+            ],
+            "amp": {
+              "attack": 0.14,
+              "decay": 1,
+              "sustain": 0.85,
+              "release": 0.45
+            },
+            "lfo": {
+              "target": "pitch",
+              "rate": 5,
+              "depth": 14
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "B5"
+            },
+            "pitchEnv": [
+              {
+                "at": 0.09,
+                "to": "C6",
+                "curve": "linear"
+              }
+            ],
+            "gainDb": -16,
+            "amp": {
+              "attack": 0.2,
+              "decay": 1,
+              "sustain": 0.7,
+              "release": 0.4
+            }
+          },
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "gainDb": -24,
+            "amp": {
+              "attack": 0.1,
+              "decay": 0.6,
+              "sustain": 0.6,
+              "release": 0.3
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 1500,
+              "q": 3
+            }
+          }
         ]
       },
-      "root": "C5", "keytrack": 1,
-      "gainDb": -15, "pan": 0.15, "sends": { "reverb": -7, "delay": -14 }
+      "root": "C5",
+      "keytrack": 1,
+      "gainDb": -15,
+      "pan": 0.15,
+      "sends": {
+        "reverb": -7,
+        "delay": -14
+      }
     }
   },
   "patterns": {
-    "wind-hold": { "bars": 4, "notes": [[0, "D3", 28]] },
-    "drone-d": { "bars": 4, "notes": [[0, "D3", 28]] },
-    "bass-caravan": { "bars": 4, "bass": { "progression": "caravan", "octave": 2, "rhythm": "X.......x.......x...x.......", "tones": [0, 0, 2, 0] } },
-    "pad-caravan": { "bars": 4, "chords": { "progression": "caravan", "octave": 4 } },
-    "pad-oasis": { "bars": 4, "chords": { "progression": "oasis", "octave": 4 } },
-    "arp-caravan": { "bars": 4, "arp": { "progression": "caravan", "rate": 2, "shape": "updown", "octaves": 2, "octave": 4, "rhythm": "x.xxx.x.x.xx.x" } },
-    "arp-low": { "bars": 4, "arp": { "progression": "caravan", "rate": 2, "shape": "up", "octaves": 2, "octave": 3, "rhythm": "x.xxx.x.x.xx.x" } },
-    "arp-oasis": { "bars": 4, "vel": 0.8, "arp": { "progression": "oasis", "rate": 2, "shape": "converge", "octaves": 2, "octave": 4, "rhythm": "x..x..x.x..x.." } },
-    "drum-walk": { "bars": 1, "note": "D3", "steps": "X...o... x...o... X...o...o..." },
-    "rim-walk": { "bars": 1, "steps": "..o. ..x. ..o. ..x. ..o. ..o. ..x." },
-    "ney-line": { "bars": 8, "transpose": 12, "notes": [
-      [0, "A4", 3, 0.8], [3, "Bb4", 1, 0.6], [4, "A4", 3, 0.7],
-      [7, "G4", 2, 0.7], [9, "Bb4", 2, 0.7], [11, "Eb5", 3, 0.9],
-      [14, "D5", 2, 0.8], [16, "C5", 1, 0.6], [17, "Bb4", 1, 0.6], [18, "C5", 3, 0.8],
-      [21, "A4", 4, 0.8], [25, "F#4", 1, 0.6], [26, "G4", 1, 0.6],
-      [28, "F#4", 2, 0.7], [30, "G4", 1, 0.6], [31, "A4", 4, 0.8],
-      [35, "Bb4", 2, 0.8], [37, "G4", 1, 0.6], [38, "Eb5", 4, 0.9],
-      [42, "D5", 1.5, 0.8], [43.5, "Eb5", 0.5, 0.6], [44, "D5", 1, 0.7], [45, "C5", 4, 0.8],
-      [49, "C5", 1, 0.6], [50, "Bb4", 1, 0.6], [51, "A4", 5, 0.8] ] }
+    "wind-hold": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D3",
+          28
+        ]
+      ]
+    },
+    "drone-d": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D2",
+          28
+        ]
+      ]
+    },
+    "bass-caravan": {
+      "bars": 4,
+      "bass": {
+        "progression": "caravan",
+        "octave": 2,
+        "rhythm": "X_......x_......x_..x_......",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "pad-caravan": {
+      "bars": 4,
+      "chords": {
+        "progression": "caravan",
+        "octave": 4
+      }
+    },
+    "pad-oasis": {
+      "bars": 4,
+      "chords": {
+        "progression": "oasis",
+        "octave": 4
+      }
+    },
+    "arp-caravan": {
+      "bars": 4,
+      "arp": {
+        "progression": "caravan",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 2,
+        "octave": 4,
+        "rhythm": "x.xxx.x.x.xx.x"
+      }
+    },
+    "arp-low": {
+      "bars": 4,
+      "arp": {
+        "progression": "caravan",
+        "rate": 2,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 3,
+        "rhythm": "x.xxx.x.x.xx.x"
+      }
+    },
+    "arp-oasis": {
+      "bars": 4,
+      "vel": 0.8,
+      "arp": {
+        "progression": "oasis",
+        "rate": 2,
+        "shape": "converge",
+        "octaves": 2,
+        "octave": 4,
+        "rhythm": "x..x..x.x..x.."
+      }
+    },
+    "drum-walk": {
+      "bars": 1,
+      "note": "D3",
+      "steps": "X...o... x...o... X...o...o.o."
+    },
+    "rim-walk": {
+      "bars": 1,
+      "steps": "..o. ..x. ..o. ..x. ..o. ..o. ..x."
+    },
+    "ney-line": {
+      "bars": 8,
+      "transpose": 12,
+      "notes": [
+        [
+          0,
+          "A4",
+          3,
+          0.8
+        ],
+        [
+          3,
+          "Bb4",
+          1,
+          0.6
+        ],
+        [
+          4,
+          "A4",
+          3,
+          0.7
+        ],
+        [
+          7,
+          "G4",
+          2,
+          0.7
+        ],
+        [
+          9,
+          "Bb4",
+          2,
+          0.7
+        ],
+        [
+          11,
+          "Eb5",
+          3,
+          0.9
+        ],
+        [
+          14,
+          "D5",
+          2,
+          0.8
+        ],
+        [
+          16,
+          "C5",
+          1,
+          0.6
+        ],
+        [
+          17,
+          "Bb4",
+          1,
+          0.6
+        ],
+        [
+          18,
+          "C5",
+          3,
+          0.8
+        ],
+        [
+          21,
+          "A4",
+          4,
+          0.8
+        ],
+        [
+          25,
+          "F#4",
+          1,
+          0.6
+        ],
+        [
+          26,
+          "G4",
+          1,
+          0.6
+        ],
+        [
+          28,
+          "F#4",
+          2,
+          0.7
+        ],
+        [
+          30,
+          "G4",
+          1,
+          0.6
+        ],
+        [
+          31,
+          "A4",
+          4,
+          0.8
+        ],
+        [
+          35,
+          "Bb4",
+          2,
+          0.8
+        ],
+        [
+          37,
+          "G4",
+          1,
+          0.6
+        ],
+        [
+          38,
+          "Eb5",
+          4,
+          0.9
+        ],
+        [
+          42,
+          "D5",
+          1.5,
+          0.8
+        ],
+        [
+          43.5,
+          "Eb5",
+          0.5,
+          0.6
+        ],
+        [
+          44,
+          "D5",
+          1,
+          0.7
+        ],
+        [
+          45,
+          "C5",
+          4,
+          0.8
+        ],
+        [
+          49,
+          "C5",
+          1,
+          0.6
+        ],
+        [
+          50,
+          "Bb4",
+          1,
+          0.6
+        ],
+        [
+          51,
+          "A4",
+          5,
+          0.8
+        ]
+      ]
+    },
+    "arp-return": {
+      "bars": 4,
+      "arp": {
+        "progression": "caravan",
+        "rate": 2,
+        "shape": "down",
+        "octaves": 2,
+        "octave": 4,
+        "rhythm": "x.xxx.x.x.xx.x"
+      }
+    },
+    "drum-far": {
+      "bars": 1,
+      "note": "D3",
+      "steps": "x...o... x...o... x...o...x.o."
+    }
   },
   "sections": {
-    "intro": { "bars": 4, "play": { "wind": "wind-hold", "drone": "drone-d", "drum": "drum-walk" },
-      "mix": { "drum": { "gainDb": -20 } } },
-    "a": { "bars": 4, "play": { "wind": "wind-hold", "drone": "drone-d", "drum": "drum-walk", "bass": "bass-caravan", "arp": "arp-caravan", "rim": "rim-walk" },
-      "mix": { "drum": { "gainDb": -14 } }, "ramp": true },
-    "a2": { "bars": 4, "play": { "wind": "wind-hold", "drone": "drone-d", "drum": "drum-walk", "bass": "bass-caravan", "arp": "arp-caravan", "rim": "rim-walk", "pad": "pad-caravan" },
-      "mix": { "drum": { "gainDb": -14 } } },
-    "caravan": { "bars": 8, "play": { "wind": "wind-hold", "drum": "drum-walk", "bass": "bass-caravan", "arp": "arp-low", "rim": "rim-walk", "pad": "pad-caravan", "ney": "ney-line" } },
-    "oasis": { "bars": 4, "play": { "wind": "wind-hold", "pad": "pad-oasis", "arp": "arp-oasis" } },
-    "return": { "bars": 4, "play": { "wind": "wind-hold", "drone": "drone-d", "drum": "drum-walk", "bass": "bass-caravan", "arp": "arp-caravan", "rim": "rim-walk" },
-      "mix": { "drum": { "gainDb": -14 } } },
-    "outro": { "bars": 4, "play": { "wind": "wind-hold", "drone": "drone-d", "drum": "drum-walk" },
-      "mix": { "drum": { "gainDb": -20 } }, "ramp": true }
+    "intro": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "drone": "drone-d",
+        "drum": "drum-far"
+      },
+      "mix": {
+        "drum": {
+          "gainDb": -20
+        }
+      }
+    },
+    "a": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "drone": "drone-d",
+        "drum": "drum-walk",
+        "bass": "bass-caravan",
+        "arp": "arp-caravan",
+        "rim": "rim-walk"
+      },
+      "mix": {
+        "drum": {
+          "gainDb": -14
+        }
+      },
+      "ramp": true
+    },
+    "a2": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "drone": "drone-d",
+        "drum": "drum-walk",
+        "bass": "bass-caravan",
+        "arp": "arp-caravan",
+        "rim": "rim-walk",
+        "pad": "pad-caravan"
+      },
+      "mix": {
+        "drum": {
+          "gainDb": -14
+        }
+      }
+    },
+    "caravan": {
+      "bars": 8,
+      "play": {
+        "wind": "wind-hold",
+        "drum": "drum-walk",
+        "bass": "bass-caravan",
+        "arp": "arp-low",
+        "rim": "rim-walk",
+        "pad": "pad-caravan",
+        "ney": "ney-line"
+      }
+    },
+    "oasis": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "pad": "pad-oasis",
+        "arp": "arp-oasis"
+      }
+    },
+    "return": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "drone": "drone-d",
+        "drum": "drum-walk",
+        "bass": "bass-caravan",
+        "arp": "arp-return",
+        "rim": "rim-walk"
+      },
+      "mix": {
+        "drum": {
+          "gainDb": -14
+        }
+      }
+    },
+    "outro": {
+      "bars": 4,
+      "play": {
+        "wind": "wind-hold",
+        "drone": "drone-d",
+        "drum": "drum-far"
+      },
+      "mix": {
+        "drum": {
+          "gainDb": -20
+        }
+      },
+      "ramp": true
+    }
   },
-  "form": ["intro", "a", "a2", "caravan", "oasis", "return", "outro"],
-  "master": { "reverb": { "preset": "hall", "returnDb": -3 }, "delay": { "beats": 1.5, "feedback": 0.4, "returnDb": -6, "cutoff": 2800 } }
+  "form": [
+    "intro",
+    "a",
+    "a2",
+    "caravan",
+    "oasis",
+    "return",
+    "outro"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -3
+    },
+    "delay": {
+      "beats": 1.5,
+      "feedback": 0.4,
+      "returnDb": -6,
+      "cutoff": 2800
+    }
+  }
 }

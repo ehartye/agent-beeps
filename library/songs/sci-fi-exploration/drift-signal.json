@@ -11,13 +11,13 @@
     "lift": [["Gm9", 8], ["Bbmaj7", 8], ["Dm9", 8], ["Asus4", 4], ["A7sus4", 4]]
   },
   "tracks": {
-    "air": { "instrument": "nebula", "gainDb": -14, "pan": 0, "sends": { "reverb": -12 } },
+    "air": { "instrument": "nebula", "gainDb": -8, "pan": 0, "sends": { "reverb": -12 } },
     "pad": { "instrument": "glass-pad", "gainDb": -6, "sends": { "reverb": -8 }, "spread": 0.5 },
     "sub": { "instrument": "sub-bass", "gainDb": -15 },
-    "arp": { "instrument": "soft-pluck", "gainDb": -14, "pan": -0.2, "sends": { "reverb": -10, "delay": -8 }, "humanize": 0.4 },
-    "ping": { "instrument": "sonar", "gainDb": -16, "pan": 0.35, "sends": { "delay": -4, "reverb": -6 } },
+    "arp": { "instrument": "soft-pluck", "gainDb": -4, "pan": -0.2, "sends": { "reverb": -10, "delay": -8 }, "humanize": 0.4 },
+    "ping": { "instrument": "sonar", "gainDb": -9, "pan": 0.35, "sends": { "delay": -4, "reverb": -6 } },
     "lead": { "instrument": "theremin", "gainDb": -13, "sends": { "reverb": -7, "delay": -14 } },
-    "tick": { "instrument": "rim", "gainDb": -24, "pan": 0.25, "sends": { "reverb": -12 }, "humanize": 0.5 }
+    "tick": { "instrument": "rim", "gainDb": -4, "pan": 0.25, "sends": { "reverb": -12 }, "humanize": 0.5 }
   },
   "patterns": {
     "air-hold": { "bars": 8, "notes": [[0, "D3", 32]] },

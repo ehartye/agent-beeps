@@ -53,4 +53,12 @@ describe('song engine', () => {
     const s = song({ master: { reverb: { preset: 'space' } } });
     expect(songTail(s, instruments())).toBeGreaterThan(7);
   });
+
+  it('automates reverb sends and pan from section mixes', () => {
+    const f = new FakeContext();
+    buildSong(asCtx(f), song({ master: { reverb: { preset: 'hall' } }, tracks: { pad: { instrument: 'pad', sends: { reverb: -20 } }, hat: { instrument: 'hat' } }, sections: { a: { bars: 2, play: { pad: 'pad-a' } }, b: { bars: 2, play: { pad: 'pad-a' }, mix: { pad: { pan: 0.5, sends: { reverb: -2 } } }, ramp: true } }, form: ['a', 'b'] }), instruments());
+    expect(f.rampTargets('linear')).toContainEqual(expect.closeTo(10 ** (-2 / 20), 5));
+    expect(f.rampTargets('linear')).toContainEqual(0.5);
+  });
 });
+

@@ -130,16 +130,16 @@
     },
     {
       "id": "song-low-end",
-      "statement": "Energy below 120 Hz is at most 55% of the song's spectrum, and at least 2%.",
+      "statement": "Energy below 120 Hz is at most 40% of the song's spectrum, and at least 2%.",
       "value": {
-        "max": 0.55,
+        "max": 0.4,
         "min": 0.02
       },
       "unit": "share",
       "check": "auto",
       "severity": "warn",
       "appliesTo": "song",
-      "rationale": "Both bounds are this plugin's. Low end masks everything above it and eats headroom, so an over-heavy bass caps the whole mix's level; a song with none sounds thin on good speakers.",
+      "rationale": "Both bounds are this plugin's. Composer testing found songs at 47% low share whose spectrograms showed a solid 50-110 Hz band and a 175 Hz centroid: muddy. Low end masks everything above it and eats headroom; a song with none sounds thin on good speakers.",
       "sources": [
         {
           "title": "Robjohns (Sound on Sound): Can static EQ tackle masking effectively?",

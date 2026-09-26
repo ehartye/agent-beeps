@@ -33,6 +33,24 @@
   for most roots.
 - `transpose` (semitones) shifts a pattern; `vel` (0-1) scales its velocity.
 
+## Instruments
+
+A track's `instrument` is resolved in this order: the song's own `instruments` block, project
+patches (`beeps new`), then the library (`beeps instruments`). Any of these forms works in either
+place:
+
+```json
+"instruments": {
+  "soft-pad": { "duration": 1, "layers": [ ... ] },
+  "high-warm": { "base": "warm-pad", "set": { "/layers/1/source/pitch": "C5", "/layers/0/filter/cutoff": 900 } }
+},
+"tracks": { "pad": { "instrument": "soft-pad" }, "keys": { "instrument": { "base": "glass-pad", "set": { "/layers/0/amp/attack": 0.3 } } } }
+```
+
+An inline patch may leave out `schema`, `name` and `family`. `set` keys are JSON pointers into the
+base patch. `beeps instruments` shows each instrument's root and where its layers sound: `osc -12`
+means a layer an octave below the written note, which counts toward that part's register.
+
 ## Tracks
 
 | field | meaning |
@@ -51,22 +69,25 @@
 | kind | fields | notes |
 |---|---|---|
 | `notes` | `[[beat, note, beats, vel?], ...]` | melodies, drones, one-off hits |
-| `chords` | `progression`, `octave` (4), `voicing` lead\|spread\|close, `rhythm` steps, `strum` s | voice-led chords; `rhythm` restrikes, else each chord holds |
-| `arp` | `progression`, `rate` notes/beat (2), `shape` up\|down\|updown\|random\|converge, `octaves`, `octave`, `rhythm` | restarts on each chord |
+| `chords` | `progression`, `octave` (4), `voicing` lead\|spread\|close, `rhythm` steps, `strum` s | voice-led chords; `rhythm` restrikes, else each chord holds. A slash chord (`G/F`) adds its bass note below the voicing |
+| `arp` | `progression`, `rate` notes/beat (2), `shape` up\|down\|updown\|random\|converge, `octaves`, `octave`, `rhythm` | the note order restarts on each chord; each `rhythm` character is one arp step (at `rate`) and the mask keeps counting across chords |
 | `bass` | `progression`, `octave` (2), `rhythm` steps, `tones` [0 root, 1 third, 2 fifth...] | slash chords put their bass note first |
 | `steps` | `"x..x ..x."`, `stepsPerBeat` (4), `note` | `X` 1.0, `x` 0.7, `o` 0.4, `.` rest, `_` hold; spaces and `\|` ignored |
 
 `gate`: held notes last length × gate (defaults: notes/chords 1, arp 0.9, bass 0.95); steps default
 to `"patch"`, the instrument's own duration (drums ring naturally).
 
-Chord qualities: (none) maj m min 5 dim aug sus2 sus4 6 m6 6/9 7 maj7 m7 mmaj7 m7b5 dim7 7sus4
-7sus2 7b9 add9 madd9 add11 maj7#11 9 maj9 m9 9sus4 11 m11 maj11 13 m13 maj13, plus `/bass`.
+Chord qualities: (none) maj m min 5 dim aug sus sus2 sus4 6 m6 6/9 69 m6/9 7 maj7 M7 m7 mmaj7 m7b5
+dim7 7sus4 7sus2 7b9 add9 madd9 add11 maj7#11 9 maj9 m9 9sus4 11 m11 maj11 13 m13 maj13, plus `/bass`.
+Songs never snap to the project scale: the notes you write are the notes that play.
 
 ## Sections and form
 
 - `play`: track → pattern name, a list played in sequence, or `null`. Unlisted tracks are silent.
-- `mix`: track → `{gainDb, cutoff}` from this section on. With `"ramp": true` the change glides
-  across the whole section (fade-ins, filter sweeps); otherwise it lands at the section start.
+- `mix`: track → `{gainDb, cutoff, pan, sends: {reverb, delay}}` from this section on. With
+  `"ramp": true` the change glides across the whole section; `"ramp": {"bars": 4, "at": "end"}`
+  glides over the last 4 bars (an outro fade), `"at": "start"` over the first 4 (a fade-in).
+  Without `ramp` the change lands at the section start with a 50 ms glide.
 - `form`: section names in order. Held notes are cut at section ends (their release still rings).
 - `loop: true` folds the reverb and release tail onto the start: the WAV loops seamlessly. End the
   form at the density and level it starts with.
@@ -75,3 +96,15 @@ Chord qualities: (none) maj m min 5 dim aug sus2 sus4 6 m6 6/9 7 maj7 m7 mmaj7 m
 
 `reverb.preset` small|room|hall|cave|space (7 s), `returnDb`; `delay.beats` (0.75 = dotted eighth),
 `feedback` (≤ 0.9), `cutoff` (each repeat is darkened), `returnDb`. The delay feeds the reverb.
+
+## Working files and output
+
+- Draft anywhere: `beeps song check draft.json` and `beeps song render draft.json` work on a path.
+  `beeps song new draft.json` saves it to `.agent-beeps/songs/`.
+- `trimDb` in render output is the gain the renderer applied to reach `project.musicLoudness`. It
+  says how loud the raw mix was, and nothing needs to change because of it.
+- `beeps song render <name> --only pad,bass --sections intro` renders some tracks and sections
+  alone (not looped). Use it to find which part makes a band or a bump.
+- `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's
+  level against the mix (`vsMixLu`), brightness, low-end share and per-section level. It flags parts
+  more than 18 LU under the mix (inaudible) and writes stem WAVs (`--out dir`) for layered playback.

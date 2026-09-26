@@ -56,7 +56,7 @@ export function registerCapabilities(program: Command, io: Io) {
           chordQualities: Object.keys(QUALITIES).filter(Boolean),
           patternKinds: ['notes', 'chords', 'arp', 'bass', 'steps'],
           arpShapes: ['up', 'down', 'updown', 'random', 'converge'],
-          notes: ['Songs play patches as instruments (beeps instruments lists the bundled ones).', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.'],
+          notes: ['Songs play patches as instruments (beeps instruments lists the bundled ones, their roots and layer offsets).', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
         },
         ...(opts.schema ? { patchSchema: patchJsonSchema(), songSchema: songJsonSchema() } : {}),
       });

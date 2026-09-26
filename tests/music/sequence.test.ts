@@ -79,4 +79,16 @@ describe('compileSong', () => {
     const t = of(compileSong(s), 'pad').map(e => e.time);
     expect(t.some(x => x !== 0 && x !== 2)).toBe(true);
   });
+
+  it('ramps over part of a section, at its start or its end', () => {
+    const c = compileSong(song({ sections: { a: { bars: 4, play: {}, mix: { pad: { gainDb: -20 } }, ramp: { bars: 1, at: 'end' } }, b: { bars: 4, play: {}, mix: { pad: { gainDb: 0 } }, ramp: { bars: 2, at: 'start' } } }, form: ['a', 'b'] }));
+    expect(c.mix.pad[0]).toMatchObject({ time: 6, end: 8, ramp: true });
+    expect(c.mix.pad[1]).toMatchObject({ time: 8, end: 12, ramp: true });
+  });
+
+  it('carries pan and send moves in section mixes', () => {
+    const c = compileSong(song({ sections: { a: { bars: 2, play: {}, mix: { pad: { pan: -0.5, sends: { reverb: -3 } } } } } }));
+    expect(c.mix.pad[0]).toMatchObject({ pan: -0.5, sends: { reverb: -3 } });
+  });
 });
+

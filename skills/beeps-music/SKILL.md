@@ -25,17 +25,22 @@ loop end at the density it began with.
 
 ## 2. Pick instruments
 
-`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums).
-A track's `instrument` is a library name, a project patch name, or an inline patch. To make a new
-timbre, compose it as a patch (beeps-compose skill), save it with `beeps new`, and name it.
-Give each part its own register band: sub/bass (octave 1-2), pads (3-4), arps and bells (4-5),
-lead (4-6), sparkle (6). Parts that share a band need rhythmic gaps between them.
+`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums)
+with each one's root, where its layers sound relative to a written note (`osc -12` is an octave
+below), and whether it holds for the note length or rings as a one-shot. A track's `instrument` is
+a library name, a project patch name, or an inline patch. To make a new timbre, compose it as a
+patch (beeps-compose skill), save it with `beeps new`, and name it.
+Give each part its own register band. The `octave` argument sets where a chord or bass root lands:
+bass at octave 2, pad chords at 4 (at 3 only for thin, filtered pads; `spread` drops the root one
+octave further), arps and bells at 4-5, lead at 4-5, sparkle at 6. Parts that share a band need
+rhythmic gaps between them.
 
 ## 3. Write, check, fix
 
 - `beeps song new song.json` validates, saves, and prints the outline; `--force` replaces.
   Edit the saved file and run `beeps song check <name>` for the outline without rendering: every
-  section's start time and each track's note count and range (catch an octave slip here).
+  section's start time, and each track's note count, written `range` and `sounds` range with the
+  instrument's layers included. Catch an octave slip or two parts in one band here.
 - Errors are `E_SCHEMA` with a JSON `pointer` and a `hint`: fix exactly that field.
 - Chords are symbols (`Dm9`, `Bbmaj7`, `C6/9`, `F#m7b5`, `Gsus4`, `C/E`) and are voice-led for
   you. Arps and bass lines read the same progression, so harmony stays consistent across parts.
@@ -51,15 +56,18 @@ and brightness, and the lint. **Open every look.png.** Check that:
 - The spectrogram bottom is not a solid bright band (a boomy bass); nothing piles up at one height.
 - Loop songs: the end looks like the start (seam under 3 dB).
 
-Fix every lint error; justify or fix every warning; apply the judgement rules
-(`song-register-bands`, `song-fatigue`). Levels are automatic (songs are trimmed to
+Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down. Every part you
+wrote should be within about 15 LU of the mix. Fix every lint error, justify or fix every warning,
+and work through each `judgementChecks` item. Levels are automatic (songs are trimmed to
 `project.musicLoudness`, -20 LUFS by default): balance tracks with `gainDb`, never chase loudness.
 
 ## 5. Iterate by arrangement first
 
-Too busy: drop a part from a section or lower its `gainDb`. Muddy: move a part's octave, thin
-the pad voicing (`voicing: "spread"`), or lower the bass. Boring: vary which parts play per
-section, add a `ramp` mix move (filter opening, a fade-in), change the arp shape or rhythm.
+Find the culprit first: `beeps song render <name> --only <track> --sections <name>` shows one part
+alone. Too busy: drop a part from a section or lower its `gainDb`. Muddy: move a part's octave,
+drop a slash-chord bass from the pad, or lower the bass. Boring: vary which parts play per
+section, add a `ramp` mix move (filter opening, a wetter reverb send, a 4-bar fade), change the
+arp shape or rhythm. Reuse a tweaked instrument across tracks with the song's `instruments` block.
 Harsh: lower the track `cutoff`. Repetitive melody: fewer notes, longer rests.
 
 ## 6. Hand to the owner

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { lintSong } from '../../src/song-lint.ts';
 import { defaultProject } from '../../src/schema/project.ts';
 import type { SongFeatures } from '../../src/measure/song.ts';
-import { song } from '../helpers/songs.ts';
+import { HAT, PAD, song } from '../helpers/songs.ts';
+import { patch } from '../helpers/patches.ts';
 
 const good = (over: Partial<SongFeatures> = {}): SongFeatures => ({
   durationSec: 90, integratedLufs: -24, shortTermMaxLufs: -18, loudnessRangeLu: 8, samplePeakDb: -6, truePeakDb: -5.8, crestDb: 14,
@@ -37,6 +38,17 @@ describe('song lint', () => {
   it('points at patterns that fall below E1', () => {
     const s = song({ patterns: { 'pad-a': { bars: 2, bass: { progression: 'a', octave: 0 } }, 'hat-a': { bars: 1, steps: 'x' } } });
     expect(lintSong(s, good(), project).warnings).toContainEqual(expect.objectContaining({ rule: 'song-register', pointer: '/patterns/pad-a' }));
+  });
+
+  it('counts an instrument layer an octave below its root as sounding there', () => {
+    const lowPad = patch({ ...PAD, layers: [PAD.layers[0], { ...PAD.layers[0], source: { type: 'osc', wave: 'sine', pitch: 'C3' } }] });
+    const s = song({ patterns: { 'pad-a': { bars: 2, bass: { progression: 'a', octave: 1 } }, 'hat-a': { bars: 1, steps: 'x' } } });
+    // octave 1 roots (C1 = MIDI 24) are already low; the C3 layer under a C4 root sounds an octave lower still
+    const plain = lintSong(s, good(), project, { pad: patch(PAD), hat: patch(HAT) });
+    const layered = lintSong(s, good(), project, { pad: lowPad, hat: patch(HAT) });
+    expect(plain.warnings.find(f => f.rule === 'song-register')?.message).toMatch(/33 Hz/);
+    expect(layered.warnings.find(f => f.rule === 'song-register')?.message).toMatch(/16 Hz/);
+    expect(layered.warnings.find(f => f.rule === 'song-register')?.message).toMatch(/layer/);
   });
 
   it('points at unused tracks and patterns', () => {

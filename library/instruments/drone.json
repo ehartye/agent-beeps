@@ -40,7 +40,7 @@
       "source": {
         "type": "osc",
         "wave": "sine",
-        "pitch": "C1"
+        "pitch": "C2"
       },
       "gainDb": -4,
       "amp": {
@@ -52,6 +52,6 @@
     }
   ],
   "meta": {
-    "description": "Dark evolving drone: low saw cluster under a slowly sweeping filter. Hold one note for a section."
+    "description": "Dark evolving drone: low saw cluster with a sine body under a slowly sweeping filter. Hold one note (octave 2) for a section."
   }
 }

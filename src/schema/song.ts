@@ -7,12 +7,12 @@ const Name = z.string().regex(NAME, 'lowercase letters, digits and dashes');
 const Note = z.string().regex(/^[A-G](#|b)?-?\d$/, 'notes in songs are names like A4, F#3 or Bb2');
 /** Step strings: X accent, x hit, o ghost, . rest, _ hold the previous hit; spaces and | are ignored. */
 const Steps = z.string().regex(/^[Xxo._|\s]+$/, 'steps use X (accent) x (hit) o (ghost) . (rest) _ (hold); spaces and | are ignored').refine(s => /[Xxo]/.test(s), 'a step string needs at least one hit');
-const Octave = z.number().int().min(0).max(8);
+const Octave = z.number().int().min(0).max(8).describe('octave the chord/bass root lands in (C4 = middle C; bass usually 2). spread voicing puts the root one octave lower');
 const Gate = z.union([z.number().min(0.05).max(4), z.literal('patch')]);
 
 const Track = z.strictObject({
-  /** A project patch name, a library instrument name, or an inline patch (schema/name/family may be omitted). */
-  instrument: z.union([Name, z.record(z.string(), z.unknown())]),
+  /** A name (song instruments, project patches, then the library), an inline patch (schema/name/family may be omitted), or {base, set} overrides of a named instrument. */
+  instrument: z.union([Name, z.record(z.string(), z.unknown())]).describe('instrument name, inline patch, or {"base": name, "set": {"/json/pointer": value}}'),
   gainDb: z.number().min(-60).max(12).default(0),
   pan: z.number().min(-1).max(1).default(0),
   /** Track lowpass in Hz; sections can move it. */
@@ -41,7 +41,7 @@ const Chords = z.strictObject({
 const Arp = z.strictObject({
   progression: ProgRef,
   /** Notes per beat. */
-  rate: z.number().min(0.25).max(8).default(2),
+  rate: z.number().min(0.25).max(8).default(2).describe('arp notes per beat (2 = eighths, 4 = sixteenths)'),
   shape: z.enum(['up', 'down', 'updown', 'random', 'converge']).default('up'),
   octaves: z.number().int().min(1).max(4).default(1),
   octave: Octave.default(4),
@@ -54,12 +54,12 @@ const Bass = z.strictObject({
   /** Step rhythm per chord (4 steps per beat); default holds the root for the chord. */
   rhythm: Steps.optional(),
   /** Chord-tone indices cycled per hit: 0 root, 1 third, 2 fifth... (the slash bass replaces 0). */
-  tones: z.array(z.number().int().min(0).max(6)).min(1).default([0]),
+  tones: z.array(z.number().int().min(0).max(6)).min(1).default([0]).describe('chord-tone index per hit, cycled: 0 root (slash bass if any), 1 third, 2 fifth, 3 seventh'),
 });
-const NoteEvent = z.tuple([z.number().min(0), Note, z.number().positive().max(64)]).rest(z.number().min(0).max(1));
+const NoteEvent = z.tuple([z.number().min(0), Note, z.number().positive().max(64)]).rest(z.number().min(0).max(1)).describe('[start beat from the pattern start, note name, length in beats, velocity 0-1 (default 1)]');
 
 const Pattern = z.strictObject({
-  bars: z.number().min(0.25).max(64),
+  bars: z.number().min(0.25).max(64).describe('pattern length in bars; it repeats to fill each section that plays it'),
   /** Held notes last length × gate; "patch" lets the instrument's own duration decide (drums). */
   gate: Gate.optional(),
   transpose: z.number().int().min(-36).max(36).default(0),
@@ -75,13 +75,20 @@ const Pattern = z.strictObject({
   note: Note.optional(),
 });
 
-const MixPoint = z.strictObject({ gainDb: z.number().min(-60).max(12).optional(), cutoff: z.number().min(20).max(20000).optional() });
+const MixPoint = z.strictObject({
+  gainDb: z.number().min(-60).max(12).optional(),
+  cutoff: z.number().min(20).max(20000).optional(),
+  pan: z.number().min(-1).max(1).optional(),
+  sends: z.strictObject({ reverb: z.number().min(-60).max(0).optional(), delay: z.number().min(-60).max(0).optional() }).optional(),
+});
+/** true: glide across the whole section; {bars, at}: glide over its first or last bars (fade-ins, outros). */
+const Ramp = z.union([z.boolean(), z.strictObject({ bars: z.number().positive().max(256), at: z.enum(['start', 'end']).default('end') })]);
 const Section = z.strictObject({
   bars: z.number().min(0.25).max(256),
-  play: z.record(z.string(), z.union([z.string(), z.array(z.string()).min(1), z.null()])),
+  play: z.record(z.string(), z.union([z.string(), z.array(z.string()).min(1), z.null()])).describe('track name -> pattern name, a list of patterns played in turn, or null; unlisted tracks are silent'),
   /** Track levels/cutoffs from this section on; with ramp they glide across the section. */
   mix: z.record(z.string(), MixPoint).optional(),
-  ramp: z.boolean().default(false),
+  ramp: Ramp.default(false),
 });
 
 export const SongSchema = z.strictObject({
@@ -90,18 +97,20 @@ export const SongSchema = z.strictObject({
   title: z.string().optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
-  bpm: z.number().min(30).max(240),
-  meter: z.number().int().min(2).max(12).default(4),
+  bpm: z.number().min(30).max(240).describe('quarter-note beats per minute'),
+  meter: z.number().int().min(2).max(12).default(4).describe('beats per bar'),
   /** Delays every off-beat sixteenth by this fraction of a sixteenth. */
   swing: z.number().min(0).max(0.75).default(0),
   /** Fold the tail onto the start so the render loops seamlessly. */
   loop: z.boolean().default(false),
   seed: z.number().int().min(0).default(1),
-  progressions: z.record(Name, z.array(z.tuple([z.string(), z.number().positive().max(64)])).min(1)).default({}),
+  /** Instruments this song defines once and its tracks name: inline patches or {base, set} overrides. */
+  instruments: z.record(Name, z.record(z.string(), z.unknown())).default({}).describe('instrument name -> inline patch or {"base": name, "set": {"/json/pointer": value}}; tracks name them like library instruments'),
+  progressions: z.record(Name, z.array(z.tuple([z.string(), z.number().positive().max(64)]).describe('[chord symbol such as Dm9 or C/E, length in beats]')).min(1)).default({}).describe('named chord sequences that chords, arp and bass patterns read; they cycle to fill the pattern'),
   tracks: z.record(Name, Track),
   patterns: z.record(Name, Pattern),
   sections: z.record(Name, Section),
-  form: z.array(z.string()).min(1).max(64),
+  form: z.array(z.string()).min(1).max(64).describe('section names in play order'),
   master: z.strictObject({
     reverb: z.strictObject({ preset: z.enum(REVERB_PRESET_NAMES), returnDb: z.number().min(-40).max(6).default(0) }).optional(),
     delay: z.strictObject({ beats: z.number().min(0.0625).max(4), feedback: z.number().min(0).max(0.9).default(0.35), returnDb: z.number().min(-40).max(6).default(0), cutoff: z.number().min(200).max(20000).default(4000) }).optional(),
@@ -119,6 +128,10 @@ const PATTERN_KINDS = ['notes', 'chords', 'arp', 'bass', 'steps'] as const;
 export function inlinePatchInput(track: string, raw: Record<string, unknown>): Record<string, unknown> {
   return { schema: 'beeps/patch@1', name: track, family: 'music', duration: 1, ...raw };
 }
+
+/** {base, set}: a named instrument with JSON-pointer overrides, rather than a whole inline patch. */
+export const isOverride = (x: unknown): x is { base: string; set?: Record<string, unknown> } =>
+  !!x && typeof x === 'object' && typeof (x as { base?: unknown }).base === 'string' && !('layers' in (x as object));
 
 /** References and musical content zod cannot see: progressions, patterns, sections, chords. */
 function crossCheck(s: Song): Issue[] {
@@ -147,10 +160,15 @@ function crossCheck(s: Song): Issue[] {
     for (const track of Object.keys(sec.mix ?? {})) if (!(track in s.tracks)) out.push({ pointer: at('sections', name, 'mix', track), message: `no track "${track}"` });
   }
   s.form.forEach((f, i) => { if (!(f in s.sections)) out.push({ pointer: at('form', i), message: `no section "${f}"`, hint: `sections: ${Object.keys(s.sections).join(', ')}` }); });
-  for (const [name, t] of Object.entries(s.tracks)) {
-    if (typeof t.instrument === 'string') continue;
-    const r = parsePatch(inlinePatchInput(name, t.instrument));
-    if (!r.ok) out.push(...r.issues.map(i => ({ ...i, pointer: at('tracks', name, 'instrument') + i.pointer })));
+  // Inline patches validate here; names and {base, set} overrides resolve against the project at render time.
+  const inline = [
+    ...Object.entries(s.instruments).map(([name, x]) => ({ name, x, where: at('instruments', name) })),
+    ...Object.entries(s.tracks).flatMap(([name, t]) => (typeof t.instrument === 'string' ? [] : [{ name, x: t.instrument, where: at('tracks', name, 'instrument') }])),
+  ];
+  for (const { name, x, where } of inline) {
+    if (isOverride(x)) continue;
+    const r = parsePatch(inlinePatchInput(name, x));
+    if (!r.ok) out.push(...r.issues.map(i => ({ ...i, pointer: where + i.pointer })));
   }
   return out;
 }
@@ -162,14 +180,6 @@ export function parseSong(input: unknown): SongResult {
   }
   const issues = crossCheck(r.data);
   return issues.length ? { ok: false, issues } : { ok: true, song: r.data };
-}
-
-/** Inline instrument patches of a parsed song, parsed. Named instruments are resolved by the caller. */
-export function inlineInstrument(song: Song, track: string): Patch | undefined {
-  const t = song.tracks[track].instrument;
-  if (typeof t === 'string') return undefined;
-  const r = parsePatch(inlinePatchInput(track, t));
-  return r.ok ? r.patch : undefined;
 }
 
 export function songJsonSchema(): Record<string, unknown> {

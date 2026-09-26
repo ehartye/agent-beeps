@@ -12,7 +12,7 @@
     "wonder": [["Abmaj9", 8], ["Emaj9", 8], ["Cadd9", 8], ["Gsus4", 4], ["G", 4]]
   },
   "tracks": {
-    "drone": { "instrument": "drone", "gainDb": -14, "cutoff": 1200 },
+    "drone": { "instrument": "drone", "gainDb": -17, "cutoff": 1200 },
     "air": { "instrument": "nebula", "gainDb": -16, "sends": { "reverb": -10 } },
     "pad": { "instrument": "glass-pad", "gainDb": -8, "sends": { "reverb": -8 }, "spread": 0.5 },
     "strings": { "instrument": "string-pad", "gainDb": -9, "sends": { "reverb": -6 }, "spread": 0.7 },
@@ -48,16 +48,16 @@
   },
   "sections": {
     "void": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "pad": "pad-call", "call": "call-once" },
-      "mix": { "drone": { "gainDb": -14, "cutoff": 1200 }, "pad": { "gainDb": -24, "cutoff": 700 } } },
+      "mix": { "drone": { "gainDb": -17, "cutoff": 1200 }, "pad": { "gainDb": -24, "cutoff": 700 } } },
     "signal": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "call": "call-once", "answer": "answer", "pad": "pad-call", "ping": "ping" },
       "mix": { "pad": { "gainDb": -9, "cutoff": 3500 } }, "ramp": true },
     "answer": { "bars": 8, "play": { "drone": "drone-c", "pad": "pad-call", "sub": "sub-call", "call": "call-twice", "answer": "answer", "ping": "ping", "pulse": "pulse" },
-      "mix": { "pad": { "gainDb": -8, "cutoff": 5000 }, "drone": { "gainDb": -16, "cutoff": 700 } } },
+      "mix": { "pad": { "gainDb": -8, "cutoff": 5000 }, "drone": { "gainDb": -20, "cutoff": 700 } } },
     "open": { "bars": 8, "play": { "pad": "pad-wonder", "strings": "strings-wonder", "sub": "sub-wonder", "lead": "lead-a", "arp": "arp-wonder", "spark": "spark" },
       "mix": { "pad": { "gainDb": -9, "cutoff": 8000 } } },
     "open2": { "bars": 8, "play": { "pad": "pad-wonder", "strings": "strings-wonder", "sub": "sub-wonder", "lead": "lead-b", "arp": "arp-wonder", "answer": "answer-open", "spark": "spark", "tick": "tick" } },
     "recede": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "pad": "pad-call", "call": "call-once", "ping": "ping" },
-      "mix": { "pad": { "gainDb": -24, "cutoff": 700 }, "drone": { "gainDb": -14, "cutoff": 1200 } }, "ramp": true }
+      "mix": { "pad": { "gainDb": -24, "cutoff": 700 }, "drone": { "gainDb": -17, "cutoff": 1200 } }, "ramp": true }
   },
   "form": ["void", "signal", "answer", "open", "open2", "recede"],
   "master": { "reverb": { "preset": "space", "returnDb": -2 }, "delay": { "beats": 1.5, "feedback": 0.4, "returnDb": -4, "cutoff": 2500 } }

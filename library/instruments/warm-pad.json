@@ -35,7 +35,7 @@
       "source": {
         "type": "osc",
         "wave": "sine",
-        "pitch": "C3"
+        "pitch": "C4"
       },
       "gainDb": -9,
       "amp": {
@@ -47,6 +47,6 @@
     }
   ],
   "meta": {
-    "description": "Soft triangle-and-sine pad, no edge, slow attack: sits under everything."
+    "description": "Soft triangle-and-sine pad, no edge, slow attack: sits under everything. Sounds at the written octave."
   }
 }

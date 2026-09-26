@@ -23,6 +23,25 @@ export function instrumentRoot(p) {
 }
 
 /**
+ * Where an instrument's pitched layers sit relative to its root, in semitones: a pad with a sine an
+ * octave under its main layer spans { low: -12, high: 0 }. Unpitched instruments return null.
+ * @param {Patch} p
+ * @returns {{ root: number, low: number, high: number } | null}
+ */
+export function instrumentSpan(p) {
+  const root = instrumentRoot(p);
+  if (root === null) return null;
+  let low = 0, high = 0;
+  for (const l of p.layers) {
+    const src = /** @type {any} */ (l.source);
+    if (!('pitch' in src)) continue;
+    const off = hzToMidi(noteToHz(src.pitch)) - root;
+    low = Math.min(low, off); high = Math.max(high, off);
+  }
+  return { root, low: Math.round(low * 100) / 100, high: Math.round(high * 100) / 100 };
+}
+
+/**
  * A copy of the patch shifted by `semitones`: sources and pitch envelopes move exactly; filter
  * cutoffs move by `keytrack` of the shift. `duration` (seconds) replaces the note-off time.
  * @param {Patch} p
@@ -146,9 +165,21 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       }
       node = node.connect(lp);
     }
-    if (t.pan) {
+    /** Schedule one automated value per mix point, gliding (ramp) or stepping with a short glide. */
+    const automate = (/** @type {AudioParam} */ param, /** @type {number} */ initial, /** @type {(m: any) => number | undefined} */ pick) => {
+      let v = initial;
+      param.setValueAtTime(v, when);
+      for (const m of points) {
+        const next = pick(m);
+        if (next === undefined) continue;
+        param.setValueAtTime(v, when + m.time);
+        param.linearRampToValueAtTime(next, when + (m.ramp ? m.end : m.time + GLIDE));
+        v = next;
+      }
+    };
+    if (t.pan || points.some(m => m.pan !== undefined)) {
       const pan = ctx.createStereoPanner();
-      pan.pan.value = t.pan;
+      automate(pan.pan, t.pan, m => m.pan);
       node = node.connect(pan);
     }
     const level = ctx.createGain();
@@ -161,8 +192,13 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       g = m.gainDb;
     }
     node.connect(level).connect(master);
-    if (reverbIn && t.sends.reverb !== undefined) { const s = ctx.createGain(); s.gain.value = db(t.sends.reverb); level.connect(s).connect(reverbIn); }
-    if (delayIn && t.sends.delay !== undefined) { const s = ctx.createGain(); s.gain.value = db(t.sends.delay); level.connect(s).connect(delayIn); }
+    for (const [kind, input] of /** @type {const} */ ([['reverb', reverbIn], ['delay', delayIn]])) {
+      const base = t.sends[kind];
+      if (!input || (base === undefined && !points.some(m => m.sends?.[kind] !== undefined))) continue;
+      const send = ctx.createGain();
+      automate(send.gain, base === undefined ? 0 : db(base), m => (m.sends?.[kind] === undefined ? undefined : db(m.sends[kind])));
+      level.connect(send).connect(input);
+    }
     buses[name] = { input, root: t.root ? hzToMidi(noteToHz(t.root)) : instrumentRoot(p) };
   }
 

@@ -38,7 +38,8 @@
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
 
 `pitch` is a note name (`E6`, `F#5`, `Bb3`) or Hz. Pitched sources snap to the project scale
-(`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key.
+(`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key. Songs
+(beeps-music) never snap: a patch played as an instrument sounds the notes the song writes.
 
 ## Per layer
 

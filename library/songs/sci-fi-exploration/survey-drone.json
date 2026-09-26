@@ -43,6 +43,28 @@
         "A9",
         4
       ]
+    ],
+    "vista-up": [
+      [
+        "Gmaj7",
+        8
+      ],
+      [
+        "D6/9",
+        8
+      ],
+      [
+        "Em9",
+        8
+      ],
+      [
+        "A7sus4",
+        4
+      ],
+      [
+        "A9",
+        4
+      ]
     ]
   },
   "tracks": {
@@ -129,7 +151,7 @@
     "pad-vista": {
       "bars": 8,
       "chords": {
-        "progression": "vista",
+        "progression": "vista-up",
         "octave": 3,
         "voicing": "close"
       }
@@ -147,7 +169,7 @@
     "arp-vista": {
       "bars": 8,
       "arp": {
-        "progression": "vista",
+        "progression": "vista-up",
         "rate": 4,
         "shape": "up",
         "octaves": 2,

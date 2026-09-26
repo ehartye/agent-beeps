@@ -83,14 +83,30 @@ export async function openRenderHost(): Promise<RenderHost> {
     throw new BeepsError('E_BROWSER_MISSING', 'Chromium for Playwright is not installed', { hint: 'Run the beeps-setup skill' });
   }
   const { server, url } = await serveStatic(RUNTIME_DIR);
-  const browser = await playwright.chromium.launch();
-  const page = await browser.newPage();
+  const closeServer = () => new Promise<void>(r => server.close(() => r()));
+  // A busy machine (several renders at once) can take a while to bring Chromium up: allow 60 s,
+  // retry once, and never leave a browser or server behind when giving up.
+  let browser: import('playwright').Browser | undefined;
+  let page!: import('playwright').Page;
   const errors: string[] = [];
-  page.on('pageerror', e => errors.push(e.message));
-  await page.goto(`${url}/render.html`);
-  await page.waitForFunction(() => (window as any).beepsReady === true, null, { timeout: 15000 }).catch(() => {
-    throw new BeepsError('E_RENDER', `render page failed to load: ${errors.join('; ') || 'timeout'}`);
-  });
+  for (let attempt = 1; ; attempt++) {
+    try {
+      browser = await playwright.chromium.launch({ timeout: 60000 });
+      page = await browser.newPage();
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`${url}/render.html`, { timeout: 60000 });
+      await page.waitForFunction(() => (window as any).beepsReady === true, null, { timeout: 60000 });
+      break;
+    } catch (e) {
+      await browser?.close().catch(() => {});
+      browser = undefined;
+      if (attempt >= 2 || errors.length) {
+        await closeServer();
+        throw new BeepsError('E_RENDER', `render page failed to load: ${errors.join('; ') || (e as Error).message.split('\n')[0]}`, { hint: 'the machine may be overloaded (other renders running); retry, or lower --jobs' });
+      }
+    }
+  }
+  const b = browser!;
   return {
     page,
     url,
@@ -133,8 +149,8 @@ export async function openRenderHost(): Promise<RenderHost> {
     },
     async freeSong(id) { await page.evaluate(i => (window as any).beepsFreeSong(i), id); },
     async close() {
-      await browser.close();
-      await new Promise<void>(r => server.close(() => r()));
+      await b.close();
+      await closeServer();
     },
   };
 }

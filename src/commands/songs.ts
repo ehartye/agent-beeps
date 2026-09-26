@@ -1,14 +1,17 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { openProject, readJsonFile, type OpenProject } from '../project.ts';
-import { libraryInstruments, listSongs, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
+import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
+import { instrumentSpan } from '../../runtime/engine/song.js';
+import { parseChord, voiceLead } from '../../runtime/engine/chords.js';
 import { int, withHost } from './shared.ts';
 import type { Song } from '../schema/song.ts';
+import type { Patch } from '../schema/patch.ts';
 import { foldAlbum, listAlbums, readAlbum, writeAlbum } from '../album.ts';
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
@@ -16,7 +19,7 @@ import { ensureServer } from './audition.ts';
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
 /** What the agent reads first about a rendered song; the full features are in meta.json. */
-export function songSummary(r: RenderedSong, p: OpenProject) {
+export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record<string, Patch> = {}) {
   const f = r.features;
   return {
     name: r.song.name, title: r.song.title ?? null, cached: r.cached, wav: r.wavPath, look: r.lookPath, meta: r.dir + '/meta.json',
@@ -26,26 +29,37 @@ export function songSummary(r: RenderedSong, p: OpenProject) {
       centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, ...(f.seamDb !== undefined ? { seamDb: f.seamDb } : {}),
     },
     sections: f.sections.map(s => ({ name: s.name, at: mmss(s.start), lufs: s.lufs, centroidHz: s.centroidHz })),
-    lint: lintSong(r.song, f, p.project),
+    lint: lintSong(r.song, f, p.project, instruments),
   };
 }
 
-/** Event counts per track and the section timeline, without rendering. */
-function songOutline(song: Song) {
+/** Event counts and sounding ranges per track, and the section timeline, without rendering. */
+function songOutline(song: Song, instruments: Record<string, Patch>) {
   const c = compileSong(song);
-  const perTrack: Record<string, { notes: number; lowest: number | null; highest: number | null }> = {};
-  for (const t of Object.keys(song.tracks)) perTrack[t] = { notes: 0, lowest: null, highest: null };
+  const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
+  const perTrack: Record<string, { notes: number; lo: number | null; hi: number | null }> = {};
+  for (const t of Object.keys(song.tracks)) perTrack[t] = { notes: 0, lo: null, hi: null };
   for (const e of c.events) {
     const t = perTrack[e.track];
     t.notes++;
-    if (e.midi !== null) { t.lowest = Math.min(t.lowest ?? 999, e.midi); t.highest = Math.max(t.highest ?? -1, e.midi); }
+    if (e.midi !== null) { t.lo = Math.min(t.lo ?? 999, e.midi); t.hi = Math.max(t.hi ?? -1, e.midi); }
   }
-  const names = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-  const nn = (m: number | null) => (m === null ? null : `${names[m % 12]}${Math.floor(m / 12) - 1}`);
   return {
     name: song.name, bpm: song.bpm, length: mmss(c.length), lengthSec: Math.round(c.length * 100) / 100, loop: song.loop,
     sections: c.sections.map(s => ({ name: s.name, at: mmss(s.start), bars: s.bars })),
-    tracks: Object.fromEntries(Object.entries(perTrack).map(([k, v]) => [k, { notes: v.notes, range: v.lowest === null ? null : `${nn(v.lowest)}-${nn(v.highest)}` }])),
+    // Each chords pattern's voicings as written: catch a pad sinking into the bass band here.
+    voicings: Object.fromEntries(Object.entries(song.patterns).filter(([, pt]) => pt.chords).map(([name, pt]) => {
+      const spec = pt.chords!;
+      const chords = song.progressions[spec.progression].map(([sym]) => parseChord(sym));
+      const v = voiceLead(chords, { octave: spec.octave, voicing: spec.voicing });
+      return [name, chords.map((ch, i) => `${ch.symbol}: ${v[i].map(m => midiName(m + pt.transpose)).join(' ')}`)];
+    })),
+    tracks: Object.fromEntries(Object.entries(perTrack).map(([k, v]) => {
+      const span = spans[k];
+      const notes = v.lo === null || v.hi === null ? null : `${midiName(v.lo)}-${midiName(v.hi)}`;
+      const sounds = v.lo === null || v.hi === null || !span ? null : `${midiName(v.lo + span.low)}-${midiName(v.hi + span.high)}`;
+      return [k, { notes: v.notes, range: notes, ...(sounds && sounds !== notes ? { sounds } : {}), ...(v.notes === 0 ? { silent: true } : {}) }];
+    })),
   };
 }
 
@@ -77,8 +91,7 @@ export function registerSongCommands(program: Command, io: Io) {
     .action((file: string, opts: { force?: boolean }) => {
       const p = openProject(io.projectDir());
       const s = songOrThrow(readJsonFile(file), file);
-      resolveInstruments(p, s);
-      io.emit({ saved: saveSong(p, s, { force: !!opts.force }), ...songOutline(s) });
+      io.emit({ saved: saveSong(p, s, { force: !!opts.force }), ...songOutline(s, resolveInstruments(p, s)) });
     });
 
   song.command('list')
@@ -89,16 +102,62 @@ export function registerSongCommands(program: Command, io: Io) {
     .description('validate songs and print their outline (sections, notes and range per track) without rendering')
     .action((refs: string[]) => {
       const p = openProject(io.projectDir());
-      io.emit({ songs: refs.map(r => { const s = loadSong(p, r); resolveInstruments(p, s); return songOutline(s); }) });
+      io.emit({ songs: refs.map(r => { const s = loadSong(p, r); return songOutline(s, resolveInstruments(p, s)); }) });
     });
 
   song.command('render <refs...>')
     .description('render, loudness-trim, measure and lint songs; writes a WAV and a look image per song')
     .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', int, 3)
-    .action(async (refs: string[], opts: { jobs: number }) => {
+    .option('--only <tracks>', 'comma-separated tracks to keep (solo); the rest are muted')
+    .option('--sections <names>', 'comma-separated sections to keep from the form')
+    .action(async (refs: string[], opts: { jobs: number; only?: string; sections?: string }) => {
       const p = openProject(io.projectDir());
-      const out = await renderMany(p, refs.map(r => loadSong(p, r)), opts.jobs);
-      io.emit({ songs: out.map(r => songSummary(r, p)) });
+      const list = (x?: string) => x?.split(',').map(v => v.trim()).filter(Boolean);
+      const solo = opts.only || opts.sections;
+      const songs = refs.map(r => loadSong(p, r)).map(s => (solo ? soloSong(s, { only: list(opts.only), sections: list(opts.sections) }) : s));
+      const out = await renderMany(p, songs, opts.jobs);
+      io.emit({ songs: out.map(r => songSummary(r, p, resolveInstruments(p, r.song))) });
+    });
+
+  song.command('stems <ref>')
+    .description("render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, plus stem WAVs")
+    .option('--jobs <n>', 'stems rendered in parallel', int, 3)
+    .option('--out <dir>', 'also copy the stem WAVs here')
+    .action(async (ref: string, opts: { jobs: number; out?: string }) => {
+      const p = openProject(io.projectDir());
+      const s = loadSong(p, ref);
+      const instruments = resolveInstruments(p, s);
+      const [mix] = await renderMany(p, [s], 1);
+      const tracks = Object.keys(s.tracks).filter(t => Object.values(s.sections).some(sec => sec.play[t] != null));
+      const stems: RenderedSong[] = new Array(tracks.length);
+      let next = 0;
+      const worker = () => withHost(async host => {
+        while (next < tracks.length) {
+          const i = next++;
+          // Stems keep the full form and loop folding, so they line up sample for sample with the mix.
+          const solo = { ...soloSong(s, { only: [tracks[i]] }), loop: s.loop };
+          stems[i] = await renderSong(host, solo, instruments, { project: p.project, rendersDir: p.paths.renders, trimDb: mix.trimDb });
+        }
+      });
+      await Promise.all(Array.from({ length: Math.max(1, Math.min(opts.jobs, tracks.length)) }, worker));
+      if (opts.out) mkdirSync(resolve(opts.out), { recursive: true });
+      const mixLufs = mix.features.delivered?.integratedLufs ?? 0;
+      const report = {
+        name: s.name, mix: { loudnessLufs: mixLufs, centroidHz: mix.features.centroidHz, lowShare: mix.features.lowShare },
+        stems: tracks.map((t, i) => {
+          const f = stems[i].features;
+          const dest = opts.out ? join(resolve(opts.out), `${s.name}-${t}.wav`) : undefined;
+          if (dest) copyFileSync(stems[i].wavPath, dest);
+          return {
+            track: t, loudnessLufs: f.delivered?.integratedLufs, vsMixLu: Math.round(((f.delivered?.integratedLufs ?? -99) - mixLufs) * 10) / 10,
+            centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth,
+            sections: f.sections.map(x => ({ name: x.name, lufs: x.lufs })), wav: dest ?? stems[i].wavPath, look: stems[i].lookPath,
+          };
+        }).sort((a, b) => (b.loudnessLufs ?? -99) - (a.loudnessLufs ?? -99)),
+      };
+      // A part far under the mix is felt, not heard; one within a few LU of it is carrying the song.
+      const buried = report.stems.filter(x => x.vsMixLu < -18).map(x => `${x.track} sits ${-x.vsMixLu} LU under the mix: likely inaudible; raise its gainDb or drop it`);
+      io.emit({ ...report, ...(buried.length ? { warnings: buried } : {}) });
     });
 
   song.command('lint <ref>')
@@ -107,7 +166,7 @@ export function registerSongCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
       const r = await withHost(host => renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders }));
-      const report = lintSong(s, r.features, p.project);
+      const report = lintSong(s, r.features, p.project, resolveInstruments(p, s));
       io.emit({ name: s.name, ...report });
       if (report.errors.length) process.exitCode = 1;
     });
