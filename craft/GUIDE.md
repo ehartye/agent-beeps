@@ -122,3 +122,34 @@ You cannot hear. `beeps look` gives you a waveform, a log spectrogram and a feat
   be unpitched.
 - **Contact sheet:** members of one family should look like siblings. If one looks nothing like the
   others, it will not sound like them either.
+
+## 10. Music (`craft/music-rules.json`)
+
+Songs follow the same pattern as sounds. The auto rules are checked by `beeps song lint` and by
+every `beeps song render`. The judgement rules are yours to apply.
+
+- **Level on integrated loudness** (`song-loudness-target`). A song is a programme, so it is
+  levelled with BS.1770 integrated loudness rather than max momentary. No games loudness standard
+  exists. Reported platform practice is −24 to −23 LUFS for console, and measured shipped games
+  average about −18.5 LUFS. The −20 LUFS default keeps music under the −18 LUFS one-shots so sound
+  effects read over it. A song that lands more than 2 LU under target is **peak-limited**: a drum
+  accent or a bright transient caps the level. Soften the accent. Do not add gain.
+- **Dynamics between sections** (`song-loudness-range`). PlayStation staff report a maximum
+  loudness range of 20 LU for a game mix. The 3 LU floor is this plugin's own. A long piece with no
+  contour is the first thing a listener tires of. Contour comes from the arrangement: parts enter
+  and leave, and a section thins or opens its filter with `ramp`.
+- **Loops** (`song-loop-seam`, `song-loop-length`). The render folds the tail onto the start, so
+  the seam is continuous in time. What can still be heard is a jump in level or density, so end the
+  form the way it begins. Collins finds loop length set by how long the player stays in a place.
+  Exploration and level music gets the longest loops and boss music the shortest.
+- **Register and masking** (`song-register`, `song-register-bands`). Robjohns' order of fixes is
+  arrangement first, level hierarchy second, EQ last and gently. Give each part its own register
+  band, or leave it rhythmic gaps. Notes below E1 are almost always an octave slip.
+- **Long-play fatigue** (`song-fatigue`). Composers of reused cues reduce dramatic melody so the
+  cue survives repetition. Silence and slow fades in are the leading remedies. Keep exploration
+  melodies understated, vary sections, and leave space.
+- **Reading a song's look.** The orange line is loudness per second at playback level. It should
+  rise and fall where the plan says. Section bands sit above the waveform, and the spectrogram
+  bottom shows bass: a solid bright floor across the whole song means the bass is too loud or too
+  low. The number rows give per-section level and brightness, so you can check that a "thin"
+  section really is quieter or darker.

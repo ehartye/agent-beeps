@@ -1,0 +1,382 @@
+{
+  "schema": "beeps/song@1",
+  "name": "relay-beacon",
+  "title": "Relay Beacon",
+  "description": "A lonely signal repeating across a star system: an A aeolian sonar beacon and a bell ostinato whose dotted-eighth echoes are the groove, swung rim ticks, a sub pulse, and a filtered pad that opens over minutes and closes again.",
+  "tags": [
+    "exploration",
+    "sci-fi",
+    "ambient"
+  ],
+  "bpm": 92,
+  "swing": 0.25,
+  "loop": true,
+  "seed": 3,
+  "progressions": {
+    "hold": [
+      [
+        "Am9",
+        8
+      ],
+      [
+        "Fmaj7#11",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Esus4",
+        4
+      ],
+      [
+        "Em7",
+        4
+      ]
+    ],
+    "open": [
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "C/E",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Esus4",
+        8
+      ]
+    ],
+    "open-up": [
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "Cadd9",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Esus4",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "air": {
+      "instrument": "nebula",
+      "gainDb": -18,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "pad": {
+      "instrument": "glass-pad",
+      "gainDb": -8,
+      "cutoff": 400,
+      "sends": {
+        "reverb": -8
+      },
+      "spread": 0.6
+    },
+    "sub": {
+      "instrument": "sub-bass",
+      "gainDb": -17
+    },
+    "beacon": {
+      "instrument": "sonar",
+      "gainDb": -14,
+      "pan": -0.3,
+      "sends": {
+        "delay": -2,
+        "reverb": -8
+      }
+    },
+    "bell": {
+      "instrument": "glass-bell",
+      "gainDb": -17,
+      "pan": 0.3,
+      "sends": {
+        "delay": -3,
+        "reverb": -9
+      },
+      "humanize": 0.2
+    },
+    "rim": {
+      "instrument": "rim",
+      "gainDb": -20,
+      "pan": 0.15,
+      "sends": {
+        "reverb": -14
+      },
+      "humanize": 0.4
+    },
+    "spark": {
+      "instrument": "shimmer",
+      "gainDb": -22,
+      "pan": -0.4,
+      "sends": {
+        "reverb": -4,
+        "delay": -8
+      }
+    }
+  },
+  "patterns": {
+    "air": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "A3",
+          32
+        ]
+      ]
+    },
+    "pad-hold": {
+      "bars": 8,
+      "chords": {
+        "progression": "hold",
+        "octave": 3,
+        "voicing": "close"
+      }
+    },
+    "pad-open": {
+      "bars": 8,
+      "chords": {
+        "progression": "open-up",
+        "octave": 3,
+        "voicing": "close"
+      }
+    },
+    "sub-hold": {
+      "bars": 8,
+      "bass": {
+        "progression": "hold",
+        "octave": 2,
+        "rhythm": "x_______x_____x_"
+      }
+    },
+    "sub-open": {
+      "bars": 8,
+      "bass": {
+        "progression": "open",
+        "octave": 2,
+        "rhythm": "x_______x_____x_"
+      }
+    },
+    "beacon": {
+      "bars": 2,
+      "notes": [
+        [
+          0,
+          "A5",
+          0.5
+        ],
+        [
+          3,
+          "E5",
+          0.5,
+          0.6
+        ]
+      ]
+    },
+    "bell-hold": {
+      "bars": 8,
+      "arp": {
+        "progression": "hold",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 5,
+        "rhythm": "x..x..x...x..x.."
+      }
+    },
+    "bell-open": {
+      "bars": 8,
+      "arp": {
+        "progression": "open-up",
+        "rate": 2,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 4,
+        "rhythm": "x..x..x...x..x.."
+      }
+    },
+    "rim": {
+      "bars": 1,
+      "steps": "..x...x.x...x.o."
+    },
+    "rim-sparse": {
+      "bars": 1,
+      "steps": "......x.......o."
+    },
+    "spark": {
+      "bars": 4,
+      "notes": [
+        [
+          2,
+          "E6",
+          2,
+          0.8
+        ],
+        [
+          9,
+          "B6",
+          2,
+          0.6
+        ],
+        [
+          12,
+          "A6",
+          3,
+          0.7
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "bars": 8,
+      "play": {
+        "air": "air",
+        "pad": "pad-hold",
+        "beacon": "beacon",
+        "rim": "rim-sparse"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -14,
+          "cutoff": 350
+        }
+      }
+    },
+    "signal": {
+      "bars": 8,
+      "play": {
+        "air": "air",
+        "pad": "pad-hold",
+        "beacon": "beacon",
+        "sub": "sub-hold",
+        "rim": "rim-sparse"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -9,
+          "cutoff": 900
+        }
+      },
+      "ramp": true
+    },
+    "relay": {
+      "bars": 16,
+      "play": {
+        "pad": "pad-hold",
+        "beacon": "beacon",
+        "sub": "sub-hold",
+        "rim": "rim",
+        "bell": "bell-hold"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -8,
+          "cutoff": 3000
+        }
+      },
+      "ramp": true
+    },
+    "open": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-open",
+        "sub": "sub-open",
+        "rim": "rim",
+        "bell": "bell-open",
+        "spark": "spark"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -7,
+          "cutoff": 7000
+        }
+      },
+      "ramp": true
+    },
+    "still": {
+      "bars": 8,
+      "play": {
+        "air": "air",
+        "pad": "pad-hold",
+        "beacon": "beacon"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -13,
+          "cutoff": 1000
+        }
+      }
+    },
+    "relay-2": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-hold",
+        "beacon": "beacon",
+        "sub": "sub-hold",
+        "rim": "rim",
+        "bell": "bell-hold"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -8,
+          "cutoff": 3000
+        }
+      }
+    },
+    "fade": {
+      "bars": 8,
+      "play": {
+        "air": "air",
+        "pad": "pad-hold",
+        "beacon": "beacon",
+        "rim": "rim-sparse"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -18,
+          "cutoff": 350
+        }
+      },
+      "ramp": true
+    }
+  },
+  "form": [
+    "intro",
+    "signal",
+    "relay",
+    "open",
+    "still",
+    "relay-2",
+    "fade"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "space",
+      "returnDb": -3
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.55,
+      "returnDb": -2,
+      "cutoff": 3500
+    }
+  }
+}

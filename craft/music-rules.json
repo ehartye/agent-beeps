@@ -1,5 +1,5 @@
 {
-  "$comment": "agent-beeps music craft rules (appliesTo: song). Same shape and meaning as rules.json; beeps song lint checks the auto rules and lists every judgement rule. GUIDE.md section 7 is the reasoning.",
+  "$comment": "agent-beeps music craft rules (appliesTo: song). Same shape and meaning as rules.json; beeps song lint checks the auto rules and lists every judgement rule. GUIDE.md section 10 is the reasoning.",
   "schema": "beeps/rules@1",
   "rules": [
     {

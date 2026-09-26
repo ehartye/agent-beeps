@@ -1,0 +1,58 @@
+{
+  "schema": "beeps/song@1",
+  "name": "derelict",
+  "title": "Derelict",
+  "description": "Drifting through an abandoned ship: an F minor pulse-bass ostinato, muted rim and metal ticks, a restrained m9 / m7b5 / 7b9 pad and a distant sonar; the ship thins to near-silence and creeps back.",
+  "tags": ["exploration", "sci-fi", "dark", "ambient"],
+  "bpm": 88,
+  "loop": true,
+  "seed": 13,
+  "progressions": {
+    "hull": [["Fm9", 8], ["Dbmaj7", 8], ["Gm7b5", 8], ["C7b9", 8]],
+    "deep": [["Bbm9", 8], ["Gbmaj7#11", 8], ["Fm9", 8], ["Csus4", 4], ["C7b9", 4]]
+  },
+  "tracks": {
+    "air": { "instrument": "nebula", "gainDb": -15, "sends": { "reverb": -10 } },
+    "pad": { "instrument": "warm-pad", "gainDb": -9, "cutoff": 1400, "sends": { "reverb": -6 }, "spread": 0.6 },
+    "bass": { "instrument": "pulse-bass", "gainDb": -13, "keytrack": 0.5, "cutoff": 900, "sends": { "reverb": -18 } },
+    "rim": { "instrument": "rim", "gainDb": -21, "pan": 0.3, "sends": { "reverb": -10 }, "humanize": 0.5 },
+    "metal": { "instrument": "hat", "gainDb": -26, "pan": -0.35, "cutoff": 5000, "sends": { "reverb": -8, "delay": -10 }, "humanize": 0.5 },
+    "sonar": { "instrument": "sonar", "gainDb": -17, "pan": -0.4, "sends": { "reverb": -3, "delay": -4 } },
+    "bell": { "instrument": "glass-bell", "gainDb": -19, "pan": 0.4, "sends": { "reverb": -4, "delay": -8 } },
+    "lead": { "instrument": "soft-lead", "gainDb": -16, "cutoff": 2500, "sends": { "reverb": -6, "delay": -12 } },
+    "thud": { "instrument": "tom", "gainDb": -19, "sends": { "reverb": -5 } }
+  },
+  "patterns": {
+    "air-hold": { "bars": 8, "notes": [[0, "F3", 32]] },
+    "pad-hull": { "bars": 8, "chords": { "progression": "hull", "octave": 4, "voicing": "spread" } },
+    "pad-deep": { "bars": 8, "chords": { "progression": "deep", "octave": 3 } },
+    "pad-ghost": { "bars": 8, "notes": [[0, "Ab3", 16, 0.7], [16, "Gb3", 16, 0.6]] },
+    "bass-hull": { "bars": 8, "bass": { "progression": "hull", "octave": 2, "rhythm": "x..x..x. x.x..x..", "tones": [0, 0, 2, 0, 1, 0] } },
+    "bass-deep": { "bars": 8, "bass": { "progression": "deep", "octave": 2, "rhythm": "x..x..x. x.x..x..", "tones": [0, 0, 2, 0, 1, 0] } },
+    "rim": { "bars": 1, "steps": "....x.......x..o" },
+    "rim-sparse": { "bars": 2, "steps": "............x... ..............o." },
+    "metal": { "bars": 2, "steps": "..o...o...o..x.. ..o...o.o.....o." },
+    "sonar": { "bars": 4, "notes": [[0, "F5", 1], [9, "C6", 1, 0.5]] },
+    "sonar-far": { "bars": 8, "notes": [[0, "F5", 1, 0.7], [20, "C6", 1, 0.4]] },
+    "bell-hull": { "bars": 8, "notes": [[2, "Ab5", 1.5, 0.6], [3.5, "G5", 3, 0.5], [18, "Db6", 1.5, 0.5], [19.5, "C6", 4, 0.45], [26, "E5", 3, 0.4]] },
+    "lead-deep": { "bars": 8, "notes": [[0, "F4", 6], [6, "Ab4", 2, 0.75], [8, "Bb4", 6, 0.9], [14, "C5", 2, 0.7], [16, "Ab4", 8, 0.85], [24, "G4", 4, 0.75], [28, "E4", 4, 0.65]] },
+    "thud": { "bars": 4, "steps": "X............... ................ ........o....... ................" }
+  },
+  "sections": {
+    "drift": { "bars": 8, "play": { "air": "air-hold", "sonar": "sonar", "pad": "pad-hull" },
+      "mix": { "pad": { "gainDb": -15, "cutoff": 700 }, "bass": { "cutoff": 400 } } },
+    "pulse": { "bars": 8, "play": { "air": "air-hold", "sonar": "sonar", "pad": "pad-hull", "bass": "bass-hull", "rim": "rim-sparse" },
+      "mix": { "pad": { "gainDb": -11, "cutoff": 1200 }, "bass": { "cutoff": 900 } }, "ramp": true },
+    "corridor": { "bars": 8, "play": { "pad": "pad-hull", "bass": "bass-hull", "rim": "rim", "metal": "metal", "bell": "bell-hull", "sonar": "sonar" },
+      "mix": { "pad": { "gainDb": -9, "cutoff": 1400 } } },
+    "hollow": { "bars": 8, "play": { "air": "air-hold", "sonar": "sonar-far", "pad": "pad-ghost" },
+      "mix": { "pad": { "gainDb": -18, "cutoff": 600 }, "bass": { "cutoff": 300 } } },
+    "creep": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-deep", "bass": "bass-deep", "rim": "rim-sparse", "thud": "thud" },
+      "mix": { "pad": { "gainDb": -10, "cutoff": 1400 }, "bass": { "cutoff": 900 } }, "ramp": true },
+    "deep": { "bars": 8, "play": { "pad": "pad-deep", "bass": "bass-deep", "rim": "rim", "metal": "metal", "lead": "lead-deep", "thud": "thud", "sonar": "sonar" } },
+    "fade": { "bars": 8, "play": { "air": "air-hold", "sonar": "sonar", "pad": "pad-hull", "bass": "bass-hull" },
+      "mix": { "pad": { "gainDb": -15, "cutoff": 700 }, "bass": { "gainDb": -30, "cutoff": 400 } }, "ramp": true }
+  },
+  "form": ["drift", "pulse", "corridor", "hollow", "creep", "deep", "fade"],
+  "master": { "reverb": { "preset": "cave", "returnDb": -3 }, "delay": { "beats": 0.75, "feedback": 0.35, "returnDb": -6, "cutoff": 2000 } }
+}

@@ -3,50 +3,421 @@
   "name": "aurora-station",
   "title": "Aurora Station",
   "description": "A calm orbital station at dawn: F lydian warm pad, glass bells and a soft harp pluck in interlocking arps, a light shaker and rim pulse through the middle, and a quiet lead that surfaces once.",
-  "tags": ["exploration", "ambient", "sci-fi", "calm"],
+  "tags": [
+    "exploration",
+    "ambient",
+    "sci-fi",
+    "calm"
+  ],
   "bpm": 84,
   "loop": true,
   "progressions": {
-    "dawn": [["Fmaj9", 8], ["G/F", 8], ["Em7", 8], ["Am7", 8]],
-    "orbit": [["Dm9", 8], ["Em7", 8], ["Fmaj7#11", 8], ["Gsus4", 4], ["G", 4]]
+    "dawn": [
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "G/F",
+        8
+      ],
+      [
+        "Em7",
+        8
+      ],
+      [
+        "Am7",
+        8
+      ]
+    ],
+    "orbit": [
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Em7",
+        8
+      ],
+      [
+        "Fmaj7#11",
+        8
+      ],
+      [
+        "Gsus4",
+        4
+      ],
+      [
+        "G",
+        4
+      ]
+    ]
   },
   "tracks": {
-    "air": { "instrument": "nebula", "gainDb": -22, "sends": { "reverb": -10 } },
-    "pad": { "instrument": { "duration": 2, "layers": [ { "source": { "type": "osc", "wave": "triangle", "pitch": "C4", "unison": { "voices": 4, "detuneCents": 12 } }, "amp": { "attack": 0.9, "decay": 2, "sustain": 0.8, "release": 2 }, "filter": { "type": "lowpass", "cutoff": 1400, "resonanceDb": 0 } }, { "source": { "type": "osc", "wave": "sine", "pitch": "C4" }, "gainDb": -10, "amp": { "attack": 1.2, "decay": 2, "sustain": 0.8, "release": 2 } } ] }, "gainDb": -8, "sends": { "reverb": -8 }, "spread": 0.5 },
-    "bass": { "instrument": "sub-bass", "gainDb": -15 },
-    "bell": { "instrument": "glass-bell", "gainDb": -17, "pan": 0.3, "sends": { "reverb": -6, "delay": -10 }, "humanize": 0.2 },
-    "pluck": { "instrument": "soft-pluck", "gainDb": -15, "pan": -0.3, "sends": { "reverb": -10, "delay": -12 }, "humanize": 0.4 },
-    "lead": { "instrument": "soft-lead", "gainDb": -17, "cutoff": 3500, "sends": { "reverb": -6, "delay": -12 } },
-    "shaker": { "instrument": "shaker", "gainDb": -26, "pan": 0.2, "sends": { "reverb": -14 }, "humanize": 0.5 },
-    "rim": { "instrument": "rim", "gainDb": -25, "pan": -0.2, "sends": { "reverb": -10 }, "humanize": 0.3 }
+    "air": {
+      "instrument": "nebula",
+      "gainDb": -22,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "pad": {
+      "instrument": {
+        "duration": 2,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "triangle",
+              "pitch": "C4",
+              "unison": {
+                "voices": 4,
+                "detuneCents": 12
+              }
+            },
+            "amp": {
+              "attack": 0.9,
+              "decay": 2,
+              "sustain": 0.8,
+              "release": 2
+            },
+            "filter": {
+              "type": "lowpass",
+              "cutoff": 1400,
+              "resonanceDb": 0
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "C4"
+            },
+            "gainDb": -10,
+            "amp": {
+              "attack": 1.2,
+              "decay": 2,
+              "sustain": 0.8,
+              "release": 2
+            }
+          }
+        ]
+      },
+      "gainDb": -8,
+      "sends": {
+        "reverb": -8
+      },
+      "spread": 0.5
+    },
+    "bass": {
+      "instrument": "sub-bass",
+      "gainDb": -15
+    },
+    "bell": {
+      "instrument": "glass-bell",
+      "gainDb": -17,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -6,
+        "delay": -10
+      },
+      "humanize": 0.2
+    },
+    "pluck": {
+      "instrument": "soft-pluck",
+      "gainDb": -15,
+      "pan": -0.3,
+      "sends": {
+        "reverb": -10,
+        "delay": -12
+      },
+      "humanize": 0.4
+    },
+    "lead": {
+      "instrument": "soft-lead",
+      "gainDb": -17,
+      "cutoff": 3500,
+      "sends": {
+        "reverb": -6,
+        "delay": -12
+      }
+    },
+    "shaker": {
+      "instrument": "shaker",
+      "gainDb": -26,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -14
+      },
+      "humanize": 0.5
+    },
+    "rim": {
+      "instrument": "rim",
+      "gainDb": -25,
+      "pan": -0.2,
+      "sends": {
+        "reverb": -10
+      },
+      "humanize": 0.3
+    }
   },
   "patterns": {
-    "air-hold": { "bars": 8, "notes": [[0, "F3", 32]] },
-    "pad-dawn": { "bars": 8, "chords": { "progression": "dawn", "octave": 3 } },
-    "pad-orbit": { "bars": 8, "chords": { "progression": "orbit", "octave": 3 } },
-    "bass-dawn": { "bars": 8, "bass": { "progression": "dawn", "octave": 2 } },
-    "bass-orbit": { "bars": 8, "bass": { "progression": "orbit", "octave": 2, "rhythm": "x_______ ____x_______ ____x.______", "tones": [0, 2, 0] } },
-    "bell-sparse": { "bars": 8, "arp": { "progression": "dawn", "rate": 1, "shape": "up", "octave": 5, "rhythm": "x.......x..x...." } },
-    "bell-dawn": { "bars": 8, "arp": { "progression": "dawn", "rate": 1, "shape": "up", "octave": 5, "rhythm": "x.x..x.." } },
-    "bell-orbit": { "bars": 8, "arp": { "progression": "orbit", "rate": 1, "shape": "down", "octave": 5, "rhythm": "x.x..x.." } },
-    "pluck-dawn": { "bars": 8, "arp": { "progression": "dawn", "rate": 2, "shape": "updown", "octave": 4, "rhythm": "..xx..x..x.x..x." } },
-    "pluck-orbit": { "bars": 8, "arp": { "progression": "orbit", "rate": 2, "shape": "converge", "octave": 4, "rhythm": "..xx..x..x.x..x." } },
-    "lead-dawn": { "bars": 8, "notes": [[0, "A4", 6], [6, "B4", 2, 0.7], [8, "D5", 8], [16, "B4", 6, 0.8], [22, "G4", 2, 0.6], [24, "C5", 4, 0.8], [28, "E5", 4, 0.6]] },
-    "shaker": { "bars": 1, "steps": "..x. ..x. ..x. ..xo" },
-    "rim": { "bars": 2, "steps": ".... .... .... x... .... .... .... x..o" }
+    "air-hold": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "F3",
+          32
+        ]
+      ]
+    },
+    "pad-dawn": {
+      "bars": 8,
+      "chords": {
+        "progression": "dawn",
+        "octave": 3
+      }
+    },
+    "pad-orbit": {
+      "bars": 8,
+      "chords": {
+        "progression": "orbit",
+        "octave": 3
+      }
+    },
+    "bass-dawn": {
+      "bars": 8,
+      "bass": {
+        "progression": "dawn",
+        "octave": 2
+      }
+    },
+    "bass-orbit": {
+      "bars": 8,
+      "bass": {
+        "progression": "orbit",
+        "octave": 2,
+        "rhythm": "x_______ ____x_______ ____x.______",
+        "tones": [
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "bell-sparse": {
+      "bars": 8,
+      "arp": {
+        "progression": "dawn",
+        "rate": 1,
+        "shape": "up",
+        "octave": 5,
+        "rhythm": "x.......x..x...."
+      }
+    },
+    "bell-dawn": {
+      "bars": 8,
+      "arp": {
+        "progression": "dawn",
+        "rate": 1,
+        "shape": "up",
+        "octave": 5,
+        "rhythm": "x.x..x.."
+      }
+    },
+    "bell-orbit": {
+      "bars": 8,
+      "arp": {
+        "progression": "orbit",
+        "rate": 1,
+        "shape": "down",
+        "octave": 5,
+        "rhythm": "x.x..x.."
+      }
+    },
+    "pluck-dawn": {
+      "bars": 8,
+      "arp": {
+        "progression": "dawn",
+        "rate": 2,
+        "shape": "updown",
+        "octave": 4,
+        "rhythm": "..xx..x..x.x..x."
+      }
+    },
+    "pluck-orbit": {
+      "bars": 8,
+      "arp": {
+        "progression": "orbit",
+        "rate": 2,
+        "shape": "converge",
+        "octave": 4,
+        "rhythm": "..xx..x..x.x..x."
+      }
+    },
+    "lead-dawn": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "A4",
+          6
+        ],
+        [
+          6,
+          "B4",
+          2,
+          0.7
+        ],
+        [
+          8,
+          "D5",
+          8
+        ],
+        [
+          16,
+          "B4",
+          6,
+          0.8
+        ],
+        [
+          22,
+          "G4",
+          2,
+          0.6
+        ],
+        [
+          24,
+          "C5",
+          4,
+          0.8
+        ],
+        [
+          28,
+          "E5",
+          4,
+          0.6
+        ]
+      ]
+    },
+    "shaker": {
+      "bars": 1,
+      "steps": "..x. ..x. ..x. ..xo"
+    },
+    "rim": {
+      "bars": 2,
+      "steps": ".... .... .... x... .... .... .... x..o"
+    }
   },
   "sections": {
-    "intro": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-dawn", "bell": "bell-sparse" },
-               "mix": { "pad": { "gainDb": -14, "cutoff": 1200 } } },
-    "wake": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-dawn", "bass": "bass-dawn", "bell": "bell-dawn", "pluck": "pluck-dawn" },
-              "mix": { "pad": { "gainDb": -8, "cutoff": 8000 } }, "ramp": true },
-    "orbit": { "bars": 8, "play": { "pad": "pad-orbit", "bass": "bass-orbit", "bell": "bell-orbit", "pluck": "pluck-orbit", "shaker": "shaker", "rim": "rim" } },
-    "sunrise": { "bars": 8, "play": { "pad": "pad-dawn", "bass": "bass-dawn", "bell": "bell-dawn", "pluck": "pluck-dawn", "lead": "lead-dawn", "shaker": "shaker", "rim": "rim" } },
-    "float": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-orbit", "pluck": "pluck-orbit" } },
-    "return": { "bars": 8, "play": { "pad": "pad-dawn", "bass": "bass-dawn", "bell": "bell-dawn", "pluck": "pluck-dawn", "shaker": "shaker" } },
-    "settle": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-orbit", "bell": "bell-orbit" },
-                "mix": { "pad": { "gainDb": -14, "cutoff": 1200 } }, "ramp": true }
+    "intro": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-dawn",
+        "bell": "bell-sparse"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -14,
+          "cutoff": 1200
+        }
+      }
+    },
+    "wake": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-dawn",
+        "bass": "bass-dawn",
+        "bell": "bell-dawn",
+        "pluck": "pluck-dawn"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -8,
+          "cutoff": 8000
+        }
+      },
+      "ramp": true
+    },
+    "orbit": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-orbit",
+        "bass": "bass-orbit",
+        "bell": "bell-orbit",
+        "pluck": "pluck-orbit",
+        "shaker": "shaker",
+        "rim": "rim"
+      }
+    },
+    "sunrise": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-dawn",
+        "bass": "bass-dawn",
+        "bell": "bell-dawn",
+        "pluck": "pluck-dawn",
+        "lead": "lead-dawn",
+        "shaker": "shaker",
+        "rim": "rim"
+      }
+    },
+    "float": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-orbit",
+        "pluck": "pluck-orbit"
+      }
+    },
+    "return": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-dawn",
+        "bass": "bass-dawn",
+        "bell": "bell-dawn",
+        "pluck": "pluck-dawn",
+        "shaker": "shaker"
+      }
+    },
+    "settle": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-dawn",
+        "bell": "bell-sparse"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -16,
+          "cutoff": 1000
+        }
+      },
+      "ramp": true
+    }
   },
-  "form": ["intro", "wake", "orbit", "sunrise", "float", "return", "settle"],
-  "master": { "reverb": { "preset": "hall", "returnDb": -3 }, "delay": { "beats": 0.75, "feedback": 0.35, "returnDb": -6, "cutoff": 3500 } }
+  "form": [
+    "intro",
+    "wake",
+    "orbit",
+    "sunrise",
+    "float",
+    "return",
+    "settle"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -3
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.35,
+      "returnDb": -6,
+      "cutoff": 3500
+    }
+  }
 }

@@ -3,43 +3,366 @@
   "name": "cold-sleep",
   "title": "Cold Sleep",
   "description": "Cryo-pod dreams: a slow A minor warm pad that never quite resolves, sonar pings drifting through a long delay, a faint choir, and a theremin motif that surfaces only in the dream.",
-  "tags": ["exploration", "ambient", "sci-fi", "sleep"],
+  "tags": [
+    "exploration",
+    "ambient",
+    "sci-fi",
+    "sleep"
+  ],
   "bpm": 56,
   "loop": true,
   "progressions": {
-    "sleep": [["Amadd9", 8], ["Fmaj7", 8], ["Cmaj9", 8], ["Gsus2", 4], ["Esus4", 4]],
-    "dream": [["Fmaj9", 8], ["Em7", 8], ["Dm9", 8], ["Esus4", 4], ["E7sus4", 4]]
+    "sleep": [
+      [
+        "Amadd9",
+        8
+      ],
+      [
+        "Fmaj7",
+        8
+      ],
+      [
+        "Cmaj9",
+        8
+      ],
+      [
+        "Gsus2",
+        4
+      ],
+      [
+        "Esus4",
+        4
+      ]
+    ],
+    "dream": [
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "Em7",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Esus4",
+        4
+      ],
+      [
+        "E7sus4",
+        4
+      ]
+    ]
   },
   "tracks": {
-    "air": { "instrument": "nebula", "gainDb": -20, "sends": { "reverb": -10 } },
-    "pad": { "instrument": { "duration": 2, "layers": [ { "source": { "type": "osc", "wave": "triangle", "pitch": "C4", "unison": { "voices": 4, "detuneCents": 12 } }, "amp": { "attack": 0.9, "decay": 2, "sustain": 0.8, "release": 2 }, "filter": { "type": "lowpass", "cutoff": 1400, "resonanceDb": 0 } }, { "source": { "type": "osc", "wave": "sine", "pitch": "C4" }, "gainDb": -10, "amp": { "attack": 1.2, "decay": 2, "sustain": 0.8, "release": 2 } } ] }, "gainDb": -7, "sends": { "reverb": -6 }, "spread": 0.4 },
-    "choir": { "instrument": "choir-pad", "gainDb": -18, "cutoff": 2500, "sends": { "reverb": -4 }, "spread": 0.7 },
-    "sub": { "instrument": "sub-bass", "gainDb": -18 },
-    "ping": { "instrument": "sonar", "gainDb": -17, "pan": 0.3, "sends": { "delay": -3, "reverb": -6 } },
-    "lead": { "instrument": "theremin", "gainDb": -16, "pan": -0.1, "sends": { "reverb": -5, "delay": -14 } }
+    "air": {
+      "instrument": "nebula",
+      "gainDb": -20,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "pad": {
+      "instrument": {
+        "duration": 2,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "triangle",
+              "pitch": "C4",
+              "unison": {
+                "voices": 4,
+                "detuneCents": 12
+              }
+            },
+            "amp": {
+              "attack": 0.9,
+              "decay": 2,
+              "sustain": 0.8,
+              "release": 2
+            },
+            "filter": {
+              "type": "lowpass",
+              "cutoff": 1400,
+              "resonanceDb": 0
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "C4"
+            },
+            "gainDb": -10,
+            "amp": {
+              "attack": 1.2,
+              "decay": 2,
+              "sustain": 0.8,
+              "release": 2
+            }
+          }
+        ]
+      },
+      "gainDb": -7,
+      "sends": {
+        "reverb": -6
+      },
+      "spread": 0.4
+    },
+    "choir": {
+      "instrument": "choir-pad",
+      "gainDb": -18,
+      "cutoff": 2500,
+      "sends": {
+        "reverb": -4
+      },
+      "spread": 0.7
+    },
+    "sub": {
+      "instrument": "sub-bass",
+      "gainDb": -18
+    },
+    "ping": {
+      "instrument": "sonar",
+      "gainDb": -17,
+      "pan": 0.3,
+      "sends": {
+        "delay": -3,
+        "reverb": -6
+      }
+    },
+    "lead": {
+      "instrument": "theremin",
+      "gainDb": -16,
+      "pan": -0.1,
+      "sends": {
+        "reverb": -5,
+        "delay": -14
+      }
+    }
   },
   "patterns": {
-    "air-hold": { "bars": 8, "notes": [[0, "A3", 32]] },
-    "pad-sleep": { "bars": 8, "chords": { "progression": "sleep", "octave": 3 } },
-    "pad-dream": { "bars": 8, "chords": { "progression": "dream", "octave": 3 } },
-    "choir-sleep": { "bars": 8, "chords": { "progression": "sleep", "octave": 4 } },
-    "choir-dream": { "bars": 8, "chords": { "progression": "dream", "octave": 4 } },
-    "sub-sleep": { "bars": 8, "bass": { "progression": "sleep", "octave": 2 } },
-    "sub-dream": { "bars": 8, "bass": { "progression": "dream", "octave": 2 } },
-    "ping-far": { "bars": 8, "notes": [[0, "E5", 1], [13, "A5", 1, 0.6], [22, "E5", 1, 0.5]] },
-    "ping-near": { "bars": 4, "notes": [[0, "E5", 1], [6, "B5", 1, 0.55], [10, "A5", 1, 0.7]] },
-    "lead-dream": { "bars": 8, "notes": [[0, "E5", 6], [6, "C5", 2, 0.7], [8, "B4", 8], [16, "A4", 4], [20, "C5", 4, 0.7], [24, "B4", 8, 0.8]] }
+    "air-hold": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "A3",
+          32
+        ]
+      ]
+    },
+    "pad-sleep": {
+      "bars": 8,
+      "chords": {
+        "progression": "sleep",
+        "octave": 3
+      }
+    },
+    "pad-dream": {
+      "bars": 8,
+      "chords": {
+        "progression": "dream",
+        "octave": 3
+      }
+    },
+    "choir-sleep": {
+      "bars": 8,
+      "chords": {
+        "progression": "sleep",
+        "octave": 4
+      }
+    },
+    "choir-dream": {
+      "bars": 8,
+      "chords": {
+        "progression": "dream",
+        "octave": 4
+      }
+    },
+    "sub-sleep": {
+      "bars": 8,
+      "bass": {
+        "progression": "sleep",
+        "octave": 2
+      }
+    },
+    "sub-dream": {
+      "bars": 8,
+      "bass": {
+        "progression": "dream",
+        "octave": 2
+      }
+    },
+    "ping-far": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E5",
+          1
+        ],
+        [
+          13,
+          "A5",
+          1,
+          0.6
+        ],
+        [
+          22,
+          "E5",
+          1,
+          0.5
+        ]
+      ]
+    },
+    "ping-near": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "E5",
+          1
+        ],
+        [
+          6,
+          "B5",
+          1,
+          0.55
+        ],
+        [
+          10,
+          "A5",
+          1,
+          0.7
+        ]
+      ]
+    },
+    "lead-dream": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E5",
+          6
+        ],
+        [
+          6,
+          "C5",
+          2,
+          0.7
+        ],
+        [
+          8,
+          "B4",
+          8
+        ],
+        [
+          16,
+          "A4",
+          4
+        ],
+        [
+          20,
+          "C5",
+          4,
+          0.7
+        ],
+        [
+          24,
+          "B4",
+          8,
+          0.8
+        ]
+      ]
+    }
   },
   "sections": {
-    "intro": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-sleep", "ping": "ping-far" },
-               "mix": { "pad": { "gainDb": -13, "cutoff": 900 } } },
-    "drift": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-sleep", "sub": "sub-sleep", "ping": "ping-near" },
-               "mix": { "pad": { "gainDb": -7, "cutoff": 5000 } }, "ramp": true },
-    "dream": { "bars": 8, "play": { "pad": "pad-dream", "choir": "choir-dream", "sub": "sub-dream", "lead": "lead-dream" } },
-    "deep": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-sleep", "choir": "choir-sleep", "ping": "ping-near" } },
-    "thaw": { "bars": 8, "play": { "air": "air-hold", "pad": "pad-sleep", "ping": "ping-far" },
-              "mix": { "pad": { "gainDb": -13, "cutoff": 900 } }, "ramp": true }
+    "intro": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-sleep",
+        "ping": "ping-far"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -13,
+          "cutoff": 900
+        }
+      }
+    },
+    "drift": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-sleep",
+        "sub": "sub-sleep",
+        "ping": "ping-near"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -7,
+          "cutoff": 5000
+        }
+      },
+      "ramp": true
+    },
+    "dream": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-dream",
+        "choir": "choir-dream",
+        "sub": "sub-dream",
+        "lead": "lead-dream"
+      }
+    },
+    "deep": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-sleep",
+        "choir": "choir-sleep",
+        "ping": "ping-near"
+      }
+    },
+    "thaw": {
+      "bars": 8,
+      "play": {
+        "air": "air-hold",
+        "pad": "pad-sleep",
+        "ping": "ping-far"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -16,
+          "cutoff": 700
+        }
+      },
+      "ramp": true
+    }
   },
-  "form": ["intro", "drift", "dream", "deep", "thaw"],
-  "master": { "reverb": { "preset": "space", "returnDb": -2 }, "delay": { "beats": 1.5, "feedback": 0.5, "returnDb": -4, "cutoff": 2200 } }
+  "form": [
+    "intro",
+    "drift",
+    "dream",
+    "deep",
+    "thaw"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "space",
+      "returnDb": -2
+    },
+    "delay": {
+      "beats": 1.5,
+      "feedback": 0.5,
+      "returnDb": -4,
+      "cutoff": 2200
+    }
+  }
 }

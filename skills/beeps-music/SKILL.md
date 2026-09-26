@@ -1,7 +1,7 @@
 ---
 name: beeps-music
-description: Compose game music with agent-beeps - write a beeps/song@1 JSON (chord progressions, arps, bass lines, step drums, melodies, sections, mix moves) that plays library or project patches as instruments, then check, render, look at, lint and export loopable, loudness-matched WAVs and put them on a LAN listening page.
-when_to_use: Use when asked for music, a theme, a soundtrack, a loop, background or level music, an ambient bed, a jingle longer than a few seconds, or "a track" for a game or app, when editing a beeps song, or when a song command fails with E_SCHEMA and a pointer.
+description: Compose game music with agent-beeps - beeps/song@1 songs (chord progressions, arps, bass lines, step drums, melodies, sections, mix moves) played by patch instruments, rendered to loopable, loudness-matched WAVs, linted against music craft rules, and put on a LAN album page for the owner.
+when_to_use: Use when asked for music, a theme, a soundtrack, a music loop, background or level music, an ambient bed, a jingle longer than a few seconds, or "a track" for a game or app, when editing a beeps song or album, or when a beeps song or album command fails (E_SCHEMA with a pointer under /tracks, /patterns, /sections or /form).
 ---
 
 # Compose music
