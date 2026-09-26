@@ -1,0 +1,29 @@
+{
+  "name": "agent-beeps",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Procedural sound composer for coding agents: Web Audio patches rendered in Chromium, measured, linted, auditioned by the owner, and ranked by a learned taste model",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "beeps": "scripts/beeps.mjs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "setup": "node scripts/setup.js"
+  },
+  "dependencies": {
+    "commander": "15.0.0",
+    "playwright": "1.63.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  },
+  "license": "MIT"
+}

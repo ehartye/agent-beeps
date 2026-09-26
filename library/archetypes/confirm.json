@@ -1,0 +1,50 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "confirm",
+  "family": "confirm",
+  "description": "Two ascending in-scale FM bell notes",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "confirm",
+    "family": "confirm",
+    "archetype": "confirm",
+    "tags": ["ui"],
+    "duration": 0.4,
+    "layers": [
+      {
+        "source": {
+          "type": "fm",
+          "pitch": 660,
+          "operators": [
+            { "ratio": 1, "index": 0 },
+            { "ratio": 2, "index": 0.8 }
+          ],
+          "algorithm": [[1, 0]]
+        },
+        "amp": { "attack": 0.005, "decay": 0.12, "sustain": 0, "release": 0.03 }
+      },
+      {
+        "source": {
+          "type": "fm",
+          "pitch": 990,
+          "operators": [
+            { "ratio": 1, "index": 0 },
+            { "ratio": 2, "index": 0.8 }
+          ],
+          "algorithm": [[1, 0]]
+        },
+        "start": 0.09,
+        "amp": { "attack": 0.005, "decay": 0.25, "sustain": 0, "release": 0.05 }
+      }
+    ],
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 500, "max": 1000, "scale": "log" },
+    "/layers/1/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [1.25, 1.3333, 1.5] },
+    "/layers/1/start": { "min": 0.07, "max": 0.12, "scale": "lin" },
+    "/layers/0/source/operators/1/index": { "min": 0.2, "max": 1.5, "scale": "lin" },
+    "/layers/1/source/operators/1/index": { "ratioOf": "/layers/0/source/operators/1/index", "choices": [1] },
+    "/layers/1/amp/decay": { "min": 0.15, "max": 0.35, "scale": "log" }
+  }
+}

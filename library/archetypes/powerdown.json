@@ -1,0 +1,34 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "powerdown",
+  "family": "powerdown",
+  "description": "Falling, slightly wobbling glide: the sound of losing a power",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "powerdown",
+    "family": "powerdown",
+    "archetype": "powerdown",
+    "tags": [],
+    "duration": 0.5,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "triangle", "pitch": 700 },
+        "pitchEnv": [
+          { "at": 0.45, "to": 210, "curve": "exp" }
+        ],
+        "amp": { "attack": 0.005, "decay": 0.5, "sustain": 0.3, "release": 0.08 },
+        "filter": { "type": "lowpass", "cutoff": 2500, "resonanceDb": 0 },
+        "lfo": { "target": "pitch", "rate": 12, "depth": 40 }
+      }
+    ],
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 400, "max": 1000, "scale": "log" },
+    "/layers/0/pitchEnv/0/to": { "ratioOf": "/layers/0/source/pitch", "min": 0.2, "max": 0.5, "scale": "log" },
+    "/layers/0/source/wave": { "choices": ["triangle", "square", "sawtooth"] },
+    "/layers/0/lfo/rate": { "min": 6, "max": 16, "scale": "lin" },
+    "/layers/0/lfo/depth": { "min": 0, "max": 60, "scale": "lin" },
+    "/layers/0/filter/cutoff": { "min": 1500, "max": 4000, "scale": "log" }
+  }
+}

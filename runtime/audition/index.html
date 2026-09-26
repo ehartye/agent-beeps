@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audition · agent-beeps</title>
+  <link rel="stylesheet" href="/runtime/audition/style.css">
+</head>
+<body>
+  <main class="deck">
+    <header class="plate">
+      <div>
+        <div class="brand">agent-beeps · listening booth</div>
+        <h1 class="prompt" id="prompt">Loading…</h1>
+      </div>
+      <div class="meta" id="meta"></div>
+    </header>
+
+    <ol class="stages" id="stages" aria-label="Audition stages">
+      <li data-stage="lineup">Lineup</li>
+      <li data-stage="duel">Duel</li>
+      <li data-stage="refine">Refine</li>
+      <li data-stage="shipped">Ship</li>
+    </ol>
+
+    <section class="context" aria-label="Listening context">
+      <div class="group" role="group" aria-label="Playback">
+        <span>Play</span>
+        <button class="toggle" data-repeat="1" aria-pressed="true">Once</button>
+        <button class="toggle" data-repeat="5" aria-pressed="false">×5</button>
+        <button class="toggle" data-repeat="75" aria-pressed="false">×75</button>
+        <button class="toggle" id="stop">Stop</button>
+      </div>
+      <div class="group" role="group" aria-label="Context">
+        <span>With</span>
+        <button class="toggle" id="withKit" aria-pressed="false" title="Play your kit's sounds around it">Kit</button>
+        <button class="toggle" id="withBed" aria-pressed="false" title="Loop a soft pad underneath">Bed</button>
+      </div>
+      <div class="group" role="group" aria-label="Speaker">
+        <span>Speaker</span>
+        <button class="toggle" data-speaker="full" aria-pressed="true">Full</button>
+        <button class="toggle" data-speaker="laptop" aria-pressed="false">Laptop</button>
+        <button class="toggle" data-speaker="phone" aria-pressed="false">Phone</button>
+      </div>
+      <div class="group"><span class="led" id="led" aria-hidden="true"></span><span id="ledText">Level-matched</span></div>
+    </section>
+
+    <section id="stage" aria-live="polite"></section>
+
+    <p class="keys" id="keys"></p>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <script type="module" src="/runtime/audition/app.js"></script>
+</body>
+</html>

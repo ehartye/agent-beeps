@@ -1,0 +1,34 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "ui-click",
+  "family": "ui-click",
+  "description": "Tiny modal tick for buttons and toggles",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "ui-click",
+    "family": "ui-click",
+    "archetype": "ui-click",
+    "tags": ["repeating", "ui"],
+    "duration": 0.03,
+    "layers": [
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 2000,
+          "exciter": "impulse",
+          "modes": [[1, 20, 0], [2.7, 14, -6]]
+        },
+        "amp": { "attack": 0.001, "decay": 0.02, "sustain": 0, "release": 0.005 }
+      }
+    ],
+    "variation": { "pitchCents": 40, "gainDb": 1, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 2, "intent": "click" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 1200, "max": 3000, "scale": "log" },
+    "/layers/0/source/modes/0/1": { "min": 10, "max": 40, "scale": "log" },
+    "/layers/0/source/modes/1/0": { "min": 2, "max": 3.5, "scale": "lin" },
+    "/layers/0/amp/decay": { "min": 0.01, "max": 0.03, "scale": "log" },
+    "/layers/0/amp/attack": { "min": 0.0005, "max": 0.002, "scale": "log" }
+  }
+}

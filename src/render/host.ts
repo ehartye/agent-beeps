@@ -1,0 +1,113 @@
+// Render host: one headless Chromium page serving runtime/, rendering batches offline.
+import { createServer, type Server } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { extname, join, normalize, sep } from 'node:path';
+import type { AddressInfo } from 'node:net';
+import { BeepsError } from '../errors.ts';
+import type { Patch } from '../schema/patch.ts';
+import type { Scale } from '../schema/project.ts';
+
+export const RUNTIME_DIR = join(import.meta.dirname, '..', '..', 'runtime');
+
+const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+
+export interface RenderOpts { seed?: number; variant?: number; trimDb?: number; scale?: Scale }
+export interface RenderItem { patch: Patch; opts: RenderOpts }
+export interface Pcm { sampleRate: number; delivered: Float32Array[]; authored: Float32Array[] }
+export type RenderResult = ({ ok: true } & Pcm) | { ok: false; error: string };
+
+/** Serve a directory read-only on 127.0.0.1 (or a given host). Paths never escape the root. */
+export function serveStatic(root: string, { host = '127.0.0.1', port = 0, extra }: { host?: string; port?: number; extra?: (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<boolean> | boolean } = {}): Promise<{ server: Server; url: string; port: number }> {
+  const server = createServer(async (req, res) => {
+    try {
+      if (extra && await extra(req, res)) return;
+      if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
+      const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+      const file = normalize(join(root, path === '/' ? 'index.html' : path));
+      if (!file.startsWith(normalize(root) + sep) || !existsSync(file)) { res.writeHead(404).end('not found'); return; }
+      const body = await readFile(file);
+      res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : body);
+    } catch (e) {
+      if (!res.headersSent) res.writeHead(500);
+      res.end(String(e));
+    }
+  });
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, host, () => {
+      const p = (server.address() as AddressInfo).port;
+      resolve({ server, port: p, url: `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${p}` });
+    });
+  });
+}
+
+const decode = (b64: string): Float32Array => {
+  const bytes = Buffer.from(b64, 'base64');
+  return new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+};
+
+export interface LookItem { mono: Float32Array; sampleRate: number; features: object; label: string }
+
+const encode = (f: Float32Array): string => Buffer.from(f.buffer, f.byteOffset, f.byteLength).toString('base64');
+
+export interface RenderHost {
+  render(items: RenderItem[]): Promise<RenderResult[]>;
+  /** PNG buffers: one per item, or a single contact sheet. */
+  looks(items: LookItem[], sheet?: boolean): Promise<Buffer[]>;
+  page: import('playwright').Page;
+  url: string;
+  close(): Promise<void>;
+}
+
+export async function chromiumAvailable(): Promise<boolean> {
+  try {
+    const { chromium } = await import('playwright');
+    return existsSync(chromium.executablePath());
+  } catch { return false; }
+}
+
+export async function openRenderHost(): Promise<RenderHost> {
+  let playwright: typeof import('playwright');
+  try { playwright = await import('playwright'); } catch {
+    throw new BeepsError('E_RUNTIME_MISSING', 'playwright is not installed', { hint: 'Run the beeps-setup skill' });
+  }
+  if (!existsSync(playwright.chromium.executablePath())) {
+    throw new BeepsError('E_BROWSER_MISSING', 'Chromium for Playwright is not installed', { hint: 'Run the beeps-setup skill' });
+  }
+  const { server, url } = await serveStatic(RUNTIME_DIR);
+  const browser = await playwright.chromium.launch();
+  const page = await browser.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto(`${url}/render.html`);
+  await page.waitForFunction(() => (window as any).beepsReady === true, null, { timeout: 15000 }).catch(() => {
+    throw new BeepsError('E_RENDER', `render page failed to load: ${errors.join('; ') || 'timeout'}`);
+  });
+  return {
+    page,
+    url,
+    async render(items) {
+      const out: RenderResult[] = [];
+      for (let i = 0; i < items.length; i += 12) { // bounded batches keep page memory flat
+        const batch = items.slice(i, i + 12);
+        const raw = await page.evaluate(b => (window as any).beepsRender(b), batch) as any[];
+        for (const r of raw) {
+          if (r.error) out.push({ ok: false, error: r.error });
+          else out.push({ ok: true, sampleRate: r.sampleRate, delivered: r.delivered.map(decode), authored: r.authored.map(decode) });
+        }
+      }
+      return out;
+    },
+    async looks(items, sheet = false) {
+      const payload = items.map(i => ({ pcm: encode(i.mono), sr: i.sampleRate, features: i.features, label: i.label }));
+      const urls = await page.evaluate(([p, s]) => (window as any).beepsLooks(p, s), [payload, sheet] as const) as string[];
+      return urls.map(u => Buffer.from(u.slice(u.indexOf(',') + 1), 'base64'));
+    },
+    async close() {
+      await browser.close();
+      await new Promise<void>(r => server.close(() => r()));
+    },
+  };
+}

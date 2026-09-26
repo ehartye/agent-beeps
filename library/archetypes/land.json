@@ -1,0 +1,40 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "land",
+  "family": "land",
+  "description": "Low lowpassed thud: a sine pitch drop with a brown-noise tick",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "land",
+    "family": "land",
+    "archetype": "land",
+    "tags": ["repeating"],
+    "duration": 0.2,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "sine", "pitch": 110 },
+        "pitchEnv": [
+          { "at": 0.1, "to": 60, "curve": "exp" }
+        ],
+        "amp": { "attack": 0.005, "decay": 0.15, "sustain": 0, "release": 0.04 },
+        "filter": { "type": "lowpass", "cutoff": 800, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "noise", "color": "brown" },
+        "gainDb": -4,
+        "amp": { "attack": 0.005, "decay": 0.05, "sustain": 0, "release": 0.02 },
+        "filter": { "type": "lowpass", "cutoff": 1500, "resonanceDb": 0 }
+      }
+    ],
+    "variation": { "pitchCents": 30, "gainDb": 1.5, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 2, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 70, "max": 160, "scale": "log" },
+    "/layers/0/pitchEnv/0/to": { "ratioOf": "/layers/0/source/pitch", "min": 0.4, "max": 0.7, "scale": "lin" },
+    "/layers/0/amp/decay": { "min": 0.08, "max": 0.2, "scale": "log" },
+    "/layers/1/filter/cutoff": { "min": 600, "max": 2500, "scale": "log" },
+    "/layers/1/gainDb": { "min": -12, "max": -2, "scale": "lin" },
+    "/layers/1/source/color": { "choices": ["brown", "pink"] }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "agent-beeps",
+  "version": "0.1.0",
+  "description": "Procedural sound composer for coding agents: game SFX and UI sounds as Web Audio patches, rendered in Chromium, measured (loudness, sharpness, roughness, pitch), linted against cited craft rules, auditioned by the owner on a LAN page (lineup, duel, refine), and ranked by a taste model learned from every choice.",
+  "author": { "name": "ehartye" },
+  "repository": "https://github.com/ehartye/agent-beeps",
+  "license": "MIT",
+  "keywords": ["audio", "sound", "sfx", "web-audio", "procedural", "synthesis", "game-audio", "preference-learning"]
+}

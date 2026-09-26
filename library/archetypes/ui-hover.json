@@ -1,0 +1,34 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "ui-hover",
+  "family": "ui-hover",
+  "description": "Very short, quiet sine or triangle touch for hover feedback",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "ui-hover",
+    "family": "ui-hover",
+    "archetype": "ui-hover",
+    "tags": ["repeating", "ui"],
+    "duration": 0.05,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "sine", "pitch": 1200 },
+        "pitchEnv": [
+          { "at": 0.04, "to": 1250, "curve": "exp" }
+        ],
+        "gainDb": -6,
+        "amp": { "attack": 0.006, "decay": 0.04, "sustain": 0, "release": 0.02 },
+        "filter": { "type": "lowpass", "cutoff": 3000, "resonanceDb": 0 }
+      }
+    ],
+    "variation": { "pitchCents": 15, "gainDb": 1, "variants": 3, "noRepeat": true },
+    "meta": { "priority": 1, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 700, "max": 1500, "scale": "log" },
+    "/layers/0/pitchEnv/0/to": { "ratioOf": "/layers/0/source/pitch", "min": 1, "max": 1.06, "scale": "lin" },
+    "/layers/0/source/wave": { "choices": ["sine", "triangle"] },
+    "/layers/0/amp/decay": { "min": 0.025, "max": 0.05, "scale": "lin" },
+    "/layers/0/amp/attack": { "min": 0.004, "max": 0.01, "scale": "lin" }
+  }
+}

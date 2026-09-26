@@ -1,0 +1,44 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "pickup",
+  "family": "pickup",
+  "description": "Bell-ish additive chime answered by a second chime a fourth, fifth or octave above",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "pickup",
+    "family": "pickup",
+    "archetype": "pickup",
+    "tags": ["repeating", "bright"],
+    "duration": 0.45,
+    "layers": [
+      {
+        "source": {
+          "type": "additive",
+          "pitch": 880,
+          "partials": [[1, 0, 0.4], [2, -6, 0.25], [2.76, -10, 0.18], [5.4, -18, 0.1], [8.93, -24, 0.06]]
+        },
+        "amp": { "attack": 0.004, "decay": 0.5, "sustain": 0, "release": 0.05 }
+      },
+      {
+        "source": {
+          "type": "additive",
+          "pitch": 1320,
+          "partials": [[1, 0, 0.35], [2, -8, 0.2], [3, -14, 0.12]]
+        },
+        "start": 0.06,
+        "gainDb": -3,
+        "amp": { "attack": 0.004, "decay": 0.4, "sustain": 0, "release": 0.05 }
+      }
+    ],
+    "variation": { "pitchCents": 20, "gainDb": 1, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 600, "max": 1300, "scale": "log" },
+    "/layers/1/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [1.3333, 1.5, 2] },
+    "/layers/1/start": { "min": 0.04, "max": 0.09, "scale": "lin" },
+    "/layers/0/source/partials/0/2": { "min": 0.2, "max": 0.6, "scale": "log" },
+    "/layers/0/source/partials/2/0": { "min": 2.6, "max": 3.2, "scale": "lin" },
+    "/layers/1/gainDb": { "min": -8, "max": -1, "scale": "lin" }
+  }
+}

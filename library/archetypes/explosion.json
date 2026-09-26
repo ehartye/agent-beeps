@@ -1,0 +1,59 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "explosion",
+  "family": "explosion",
+  "description": "Bright noise blast closing into a brown-noise rumble, thinning debris grains and a low sine thump",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "explosion",
+    "family": "explosion",
+    "archetype": "explosion",
+    "tags": ["impact"],
+    "duration": 1,
+    "layers": [
+      {
+        "source": { "type": "noise", "color": "white" },
+        "amp": { "attack": 0.006, "decay": 0.8, "sustain": 0, "release": 0.2 },
+        "filter": {
+          "type": "lowpass",
+          "cutoff": 7000,
+          "resonanceDb": 0,
+          "env": { "to": 400, "time": 0.7 }
+        }
+      },
+      {
+        "source": { "type": "noise", "color": "brown" },
+        "amp": { "attack": 0.01, "decay": 1.1, "sustain": 0, "release": 0.2 },
+        "filter": { "type": "lowpass", "cutoff": 900, "resonanceDb": 0 },
+        "gainDb": -10
+      },
+      {
+        "source": { "type": "grains", "rate": 200, "grainDecay": 0.004, "center": 2500, "q": 0.5, "rateEnd": 0.05 },
+        "gainDb": -2,
+        "amp": { "attack": 0.004, "decay": 0.8, "sustain": 0, "release": 0.2 }
+      },
+      {
+        "source": { "type": "osc", "wave": "sine", "pitch": 70 },
+        "pitchEnv": [
+          { "at": 0.4, "to": 30, "curve": "exp" }
+        ],
+        "gainDb": -8,
+        "amp": { "attack": 0.005, "decay": 0.4, "sustain": 0, "release": 0.1 }
+      }
+    ],
+    "fx": {
+      "reverb": { "preset": "room", "sendDb": -14 }
+    },
+    "meta": { "priority": 4, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/3/source/pitch": { "min": 45, "max": 90, "scale": "log" },
+    "/layers/3/pitchEnv/0/to": { "ratioOf": "/layers/3/source/pitch", "min": 0.3, "max": 0.6, "scale": "lin" },
+    "/layers/0/filter/cutoff": { "min": 6500, "max": 11000, "scale": "log" },
+    "/layers/0/filter/env/to": { "min": 450, "max": 1200, "scale": "log" },
+    "/layers/0/amp/decay": { "min": 0.7, "max": 1.2, "scale": "log" },
+    "/layers/2/source/rate": { "min": 80, "max": 400, "scale": "log" },
+    "/layers/2/source/center": { "min": 1600, "max": 4000, "scale": "log" },
+    "/fx/reverb/preset": { "choices": ["small", "room", "hall"] }
+  }
+}

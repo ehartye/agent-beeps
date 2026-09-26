@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "hit",
+  "family": "hit",
+  "description": "Short noise burst over a low modal body with a faint metallic edge",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "hit",
+    "family": "hit",
+    "archetype": "hit",
+    "tags": ["repeating", "impact"],
+    "duration": 0.2,
+    "layers": [
+      {
+        "source": { "type": "noise", "color": "white" },
+        "amp": { "attack": 0.005, "decay": 0.04, "sustain": 0, "release": 0.02 },
+        "filter": {
+          "type": "lowpass",
+          "cutoff": 4000,
+          "resonanceDb": 0,
+          "env": { "to": 800, "time": 0.05 }
+        }
+      },
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 180,
+          "exciter": "noiseBurst",
+          "modes": [[1, 20, 0], [2.3, 15, -6], [3.9, 12, -10]]
+        },
+        "amp": { "attack": 0.005, "decay": 0.15, "sustain": 0, "release": 0.03 }
+      },
+      {
+        "source": { "type": "metal", "base": 60, "bands": [2500, 6000] },
+        "gainDb": -16,
+        "amp": { "attack": 0.005, "decay": 0.03, "sustain": 0, "release": 0.02 }
+      }
+    ],
+    "variation": { "pitchCents": 30, "gainDb": 1.5, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/1/source/pitch": { "min": 100, "max": 300, "scale": "log" },
+    "/layers/1/source/modes/1/0": { "min": 1.8, "max": 2.8, "scale": "lin" },
+    "/layers/1/amp/decay": { "min": 0.08, "max": 0.25, "scale": "log" },
+    "/layers/0/amp/decay": { "min": 0.02, "max": 0.07, "scale": "log" },
+    "/layers/0/filter/cutoff": { "min": 2000, "max": 8000, "scale": "log" },
+    "/layers/0/gainDb": { "min": -3, "max": 4, "scale": "lin" },
+    "/layers/2/gainDb": { "min": -26, "max": -12, "scale": "lin" }
+  }
+}

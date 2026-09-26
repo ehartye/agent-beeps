@@ -1,0 +1,38 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "alarm",
+  "family": "alarm",
+  "description": "Two-tone square alternation, deliberately identical every time",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "alarm",
+    "family": "alarm",
+    "archetype": "alarm",
+    "tags": ["alert"],
+    "duration": 0.6,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 880 },
+        "pitchEnv": [
+          { "at": 0.15, "to": 660, "curve": "step" },
+          { "at": 0.3, "to": 880, "curve": "step" },
+          { "at": 0.45, "to": 660, "curve": "step" }
+        ],
+        "amp": { "attack": 0.005, "decay": 0, "sustain": 1, "release": 0.03 },
+        "filter": { "type": "lowpass", "cutoff": 3500, "resonanceDb": 0 }
+      }
+    ],
+    "meta": { "priority": 5, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 600, "max": 1200, "scale": "log" },
+    "/layers/0/pitchEnv/0/to": { "ratioOf": "/layers/0/source/pitch", "choices": [0.75, 0.8, 0.6667] },
+    "/layers/0/pitchEnv/1/to": { "ratioOf": "/layers/0/source/pitch", "choices": [1] },
+    "/layers/0/pitchEnv/2/to": { "ratioOf": "/layers/0/pitchEnv/0/to", "choices": [1] },
+    "/layers/0/pitchEnv/0/at": { "min": 0.1, "max": 0.15, "scale": "lin" },
+    "/layers/0/pitchEnv/1/at": { "ratioOf": "/layers/0/pitchEnv/0/at", "choices": [2] },
+    "/layers/0/pitchEnv/2/at": { "ratioOf": "/layers/0/pitchEnv/0/at", "choices": [3] },
+    "/duration": { "ratioOf": "/layers/0/pitchEnv/0/at", "choices": [4] },
+    "/layers/0/filter/cutoff": { "min": 2000, "max": 5000, "scale": "log" }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "powerup",
+  "family": "powerup",
+  "description": "Rising four-note in-scale arpeggio: root, third, fifth, octave",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "powerup",
+    "family": "powerup",
+    "archetype": "powerup",
+    "tags": ["bright"],
+    "duration": 0.5,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 440 },
+        "start": 0,
+        "amp": { "attack": 0.004, "decay": 0.12, "sustain": 0, "release": 0.03 },
+        "filter": { "type": "lowpass", "cutoff": 4000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 550 },
+        "start": 0.07,
+        "amp": { "attack": 0.004, "decay": 0.12, "sustain": 0, "release": 0.03 },
+        "filter": { "type": "lowpass", "cutoff": 4000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 660 },
+        "start": 0.14,
+        "amp": { "attack": 0.004, "decay": 0.12, "sustain": 0, "release": 0.03 },
+        "filter": { "type": "lowpass", "cutoff": 4000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 880 },
+        "start": 0.21,
+        "amp": { "attack": 0.004, "decay": 0.25, "sustain": 0, "release": 0.05 },
+        "filter": { "type": "lowpass", "cutoff": 4000, "resonanceDb": 0 }
+      }
+    ],
+    "meta": { "priority": 4, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 300, "max": 800, "scale": "log" },
+    "/layers/1/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [1.2, 1.25] },
+    "/layers/2/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [1.5] },
+    "/layers/3/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [2] },
+    "/layers/1/start": { "min": 0.05, "max": 0.09, "scale": "lin" },
+    "/layers/2/start": { "ratioOf": "/layers/1/start", "choices": [2] },
+    "/layers/3/start": { "ratioOf": "/layers/1/start", "choices": [3] },
+    "/layers/3/amp/decay": { "min": 0.15, "max": 0.35, "scale": "log" }
+  }
+}

@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>agent-beeps render host</title>
+<script type="module">
+  import { renderOffline } from './engine/offline.js';
+  import { renderLooks } from './look.js';
+  window.beepsLooks = (items, sheet) => renderLooks(items, sheet);
+  // Each item renders alone, so one bad patch never fails the batch.
+  window.beepsRender = items => Promise.all(items.map(i =>
+    renderOffline(i.patch, i.opts).catch(e => ({ error: String(e && e.message || e) }))));
+  window.beepsReady = true;
+</script>

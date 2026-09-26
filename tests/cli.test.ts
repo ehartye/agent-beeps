@@ -1,0 +1,98 @@
+import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { chromiumAvailable } from '../src/render/host.ts';
+import { coin } from './helpers/patches.ts';
+
+const bin = join(import.meta.dirname, '..', 'scripts', 'beeps.mjs');
+const hasChromium = await chromiumAvailable();
+
+function beeps(cwd: string, ...args: string[]) {
+  const r = spawnSync(process.execPath, [bin, ...args], { cwd, encoding: 'utf8', windowsHide: true });
+  const parse = (s: string) => { try { return JSON.parse(s); } catch { return undefined; } };
+  return { status: r.status, out: parse(r.stdout), err: parse(r.stderr)?.error, stdout: r.stdout, stderr: r.stderr };
+}
+
+const project = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'beeps-cli-'));
+  expect(beeps(dir, 'init').status).toBe(0);
+  return dir;
+};
+
+describe('beeps CLI', () => {
+  it('inits a project layout', () => {
+    const dir = project();
+    for (const p of ['project.json', 'kit.json', 'patches', 'sets', 'sessions', 'taste', 'renders', '.gitignore']) {
+      expect(existsSync(join(dir, '.agent-beeps', p)), p).toBe(true);
+    }
+    expect(JSON.parse(readFileSync(join(dir, '.agent-beeps', 'project.json'), 'utf8')).targetLoudness).toBe(-18);
+  });
+
+  it('prints capabilities with schema, source types and error codes', () => {
+    const r = beeps(tmpdir(), 'capabilities');
+    expect(r.status).toBe(0);
+    expect(r.out.sourceTypes).toContain('modal');
+    expect(r.out.errorCodes).toContain('E_SCHEMA');
+    expect(r.out.patchSchema).toHaveProperty('$schema');
+    expect(r.out.commands.map((c: { name: string }) => c.name)).toContain('render');
+  });
+
+  it('rejects q on a lowpass with a pointer and hint on stderr and exit 1', () => {
+    const dir = project();
+    const bad: any = coin();
+    bad.layers[0].filter = { type: 'lowpass', cutoff: 2000, q: 4 };
+    writeFileSync(join(dir, 'bad.json'), JSON.stringify(bad));
+    const r = beeps(dir, 'new', 'bad.json');
+    expect(r.status).toBe(1);
+    expect(r.err).toMatchObject({ code: 'E_SCHEMA', pointer: '/layers/0/filter', hint: expect.stringMatching(/resonanceDb/) });
+  });
+
+  it('saves patches and refuses to overwrite without --force', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'coin.json'), JSON.stringify(coin()));
+    expect(beeps(dir, 'new', 'coin.json').status).toBe(0);
+    expect(beeps(dir, 'new', 'coin.json').err.code).toBe('E_CONFLICT');
+    expect(beeps(dir, 'new', 'coin.json', '--force').status).toBe(0);
+    expect(beeps(dir, 'list').out.patches[0].name).toBe('coin');
+  });
+
+  it('dry-runs a batch and reports the failing operationIndex without writing', () => {
+    const dir = project();
+    const ops = [
+      { op: 'create', patch: coin() },
+      { op: 'set', name: 'coin', pointer: '/layers/0/amp/attack', value: -1 },
+    ];
+    writeFileSync(join(dir, 'ops.json'), JSON.stringify(ops));
+    const r = beeps(dir, 'batch', 'ops.json', '--dry-run');
+    expect(r.status).toBe(1);
+    expect(r.err).toMatchObject({ code: 'E_SCHEMA', operationIndex: 1, pointer: '/layers/0/amp/attack' });
+    expect(beeps(dir, 'list').out.patches).toHaveLength(0);
+    writeFileSync(join(dir, 'ops.json'), JSON.stringify([ops[0], { ...ops[1], value: 0.01 }]));
+    expect(beeps(dir, 'batch', 'ops.json').out).toMatchObject({ applied: 2, changed: ['coin'] });
+  });
+
+  it('fails with E_PROJECT outside a project and E_USAGE for unknown commands', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'beeps-none-'));
+    expect(beeps(empty, 'list').err.code).toBe('E_PROJECT');
+    const r = beeps(empty, 'frobnicate');
+    expect(r.status).toBe(2);
+    expect(r.err.code).toBe('E_USAGE');
+  });
+
+  it.skipIf(!hasChromium)('renders, looks and exports a patch', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'coin.json'), JSON.stringify({ ...coin(), variation: { pitchCents: 30, variants: 3 } }));
+    beeps(dir, 'new', 'coin.json');
+    const r = beeps(dir, 'render', 'coin', '--variants');
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.out.renders).toHaveLength(3);
+    expect(r.out.renders[0].features.loudnessLufs).toBeCloseTo(-19, 0);
+    const look = beeps(dir, 'look', 'coin');
+    expect(existsSync(look.out.look)).toBe(true);
+    const ex = beeps(dir, 'export', 'coin', '--wav', 'out/coin.wav');
+    expect(ex.status, ex.stderr).toBe(0);
+    expect(readFileSync(join(dir, 'out', 'coin.wav')).subarray(0, 4).toString()).toBe('RIFF');
+  });
+});

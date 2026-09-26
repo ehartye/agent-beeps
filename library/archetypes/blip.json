@@ -1,0 +1,30 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "blip",
+  "family": "blip",
+  "description": "About 30 ms square or triangle text blip at speaking-voice pitch",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "blip",
+    "family": "blip",
+    "archetype": "blip",
+    "tags": ["repeating"],
+    "duration": 0.03,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "square", "pitch": 330 },
+        "amp": { "attack": 0.004, "decay": 0.03, "sustain": 0.4, "release": 0.01 },
+        "filter": { "type": "lowpass", "cutoff": 3000, "resonanceDb": 0 }
+      }
+    ],
+    "variation": { "pitchCents": 60, "gainDb": 1.5, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 1, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 180, "max": 700, "scale": "log" },
+    "/layers/0/source/wave": { "choices": ["square", "triangle"] },
+    "/duration": { "min": 0.02, "max": 0.04, "scale": "lin" },
+    "/layers/0/filter/cutoff": { "min": 1500, "max": 5000, "scale": "log" },
+    "/layers/0/amp/sustain": { "min": 0.2, "max": 0.6, "scale": "lin" }
+  }
+}

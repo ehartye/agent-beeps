@@ -1,0 +1,220 @@
+{
+  "$comment": "agent-beeps craft rules. check: auto (beeps lint measures or reads the declaration) | judgement (the agent applies it; lint lists it every time, never silently skips it). severity: error fails lint, warn is reported. appliesTo: patch (one sound: its declaration and its measured features) | kit (the project's set of shipped sounds). value/unit give the threshold; params holds secondary thresholds. rationale says where a number is this plugin's own choice rather than a figure a source states. GUIDE.md is the reasoning behind these rules.",
+  "schema": "beeps/rules@1",
+  "rules": [
+    {
+      "id": "true-peak-ceiling",
+      "statement": "The delivered sound's true peak (4x oversampled) is at or below -1 dBTP.",
+      "value": -1, "unit": "dBTP", "params": { "toleranceDb": 0.1 },
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "The -1 dBTP ceiling is EBU R 128's production maximum; the renderer's always-on limiter enforces it. The 0.1 dB tolerance absorbs rounding in the measured value.",
+      "sources": [
+        { "title": "EBU R 128: Loudness normalisation and permitted maximum level of audio signals", "url": "https://tech.ebu.ch/docs/r/r128.pdf" },
+        { "title": "Recommendation ITU-R BS.1770-5: Algorithms to measure audio programme loudness and true-peak audio level", "url": "https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf" }
+      ]
+    },
+    {
+      "id": "no-clipping",
+      "statement": "The delivered sound has no clipped samples.",
+      "value": 0, "unit": "samples",
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "sources": [
+        { "title": "Recommendation ITU-R BS.1770-5: Algorithms to measure audio programme loudness and true-peak audio level", "url": "https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf" },
+        { "title": "AES TD1008: Recommendations for Loudness of Internet Audio Streaming and On-Demand Distribution", "url": "https://aes2.org/wp-content/uploads/2024/01/20210924_TD1008_v3.13.pdf" }
+      ]
+    },
+    {
+      "id": "no-dc",
+      "statement": "The authored sound has no DC offset: the absolute mean sample value is below 0.001.",
+      "value": 0.001, "unit": "full scale",
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "DC carries no sound but uses up headroom before the limiter and thumps when a voice starts or stops. The 0.001 bound is this plugin's own.",
+      "sources": [
+        { "title": "Julius O. Smith III, Introduction to Digital Filters: DC blocker", "url": "https://ccrma.stanford.edu/~jos/filters/DC_Blocker.html" },
+        { "title": "EBU Tech 3343: Guidelines for production of programmes in accordance with EBU R 128", "url": "https://tech.ebu.ch/docs/tech/tech3343-v2.pdf" }
+      ]
+    },
+    {
+      "id": "attack-floor",
+      "statement": "Every layer's declared attack is at least 4 ms, and the measured attack (10 to 90 % of the envelope peak) is at least 2 ms, unless meta.intent is 'click'. Quiet transient layers at gainDb -9 or below may be faster.",
+      "value": 0.004, "unit": "s", "params": { "measuredMinSec": 0.002, "quietLayerGainDb": -9 },
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "A step onset is a rectangular window, and its spectrum splatters across the band as an audible click. 4 ms keeps the onset a transient without the splatter. The quiet-layer allowance lets a soft noise tick add bite under a smooth body. All three numbers are this plugin's own.",
+      "sources": [
+        { "title": "Julius O. Smith III, Spectral Audio Signal Processing: the rectangular window", "url": "https://ccrma.stanford.edu/~jos/sasp/Rectangular_Window.html" },
+        { "title": "W3C Web Audio API 1.1: AudioParam automation (linearRampToValueAtTime, setTargetAtTime)", "url": "https://www.w3.org/TR/webaudio-1.1/" }
+      ]
+    },
+    {
+      "id": "nyquist",
+      "statement": "No declared frequency (source pitch and pitchEnv targets times partial, mode, operator or metal ratios) is at or above 0.45 x sample rate (21.6 kHz at 48 kHz). Filter cutoffs are exempt.",
+      "value": 0.45, "unit": "x sample rate",
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "Energy above Nyquist folds back as an alias. The engine silently drops partials above 0.45 x fs, so a declared one is a sound that is not what it says. The 0.45 margin leaves room for Chromium's band-limited tables.",
+      "sources": [
+        { "title": "Julius O. Smith III, Mathematics of the Discrete Fourier Transform: sampling theorem", "url": "https://ccrma.stanford.edu/~jos/mdft/Sampling_Theorem.html" },
+        { "title": "W3C Web Audio API 1.1: OscillatorNode (band-limited periodic waves)", "url": "https://www.w3.org/TR/webaudio-1.1/" }
+      ]
+    },
+    {
+      "id": "tick-length",
+      "statement": "Ticks (families ui-click and blip) have an energy length (to -40 dB below peak) of 60 ms or less.",
+      "value": 0.06, "unit": "s", "params": { "families": ["ui-click", "blip"] },
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "Ticks arrive several times a second, so each must end before the next begins or they smear into a drone. Most of a short sound's loudness is integrated within roughly the first 100 to 200 ms, so a longer tick also reads as louder than its trim implies. The 60 ms ceiling is this plugin's own.",
+      "sources": [
+        { "title": "Florentine, Buus & Poulsen (1996), Temporal integration of loudness as a function of level", "url": "https://orbit.dtu.dk/en/publications/temporal-integration-of-loudness-as-a-function-of-level/" },
+        { "title": "Moore, Jervis, Harries & Schlittenlacher (2018), Testing and refining a loudness model for time-varying sounds incorporating binaural inhibition (JASA 143(3))", "url": "https://pure.manchester.ac.uk/ws/files/226887572/_pdf_archive_JASMAN_vol_143_iss_3_1504_1.pdf" }
+      ]
+    },
+    {
+      "id": "tail-ceiling",
+      "statement": "The tail (to -60 dB below peak) stays within the family ceiling: ui-* 0.25 s, blip 0.15 s, coin/pickup/confirm/no 0.8 s, jump/land/hit/laser 0.8 s, powerup/powerdown 1.2 s, whoosh 1.5 s, alarm 1.5 s, explosion 3.5 s, anything else 2.0 s.",
+      "value": { "ui-*": 0.25, "blip": 0.15, "coin": 0.8, "pickup": 0.8, "confirm": 0.8, "no": 0.8, "jump": 0.8, "land": 0.8, "hit": 0.8, "laser": 0.8, "powerup": 1.2, "powerdown": 1.2, "whoosh": 1.5, "alarm": 1.5, "explosion": 3.5, "default": 2.0 },
+      "unit": "s",
+      "check": "auto", "severity": "warn", "appliesTo": "patch",
+      "rationale": "Long tails from frequent sounds pile up into mud and use voices after the event is over. The table is this plugin's own, from how often each family fires. A tail measured against a fixed floor also depends on loudness, so this is a warning.",
+      "sources": [
+        { "title": "FMOD Core API: Managing resources (virtual voice system)", "url": "https://fmod.com/docs/2.03/api/managing-resources-in-the-core-api.html#virtual-voice-system" },
+        { "title": "Karen Collins (2008), Game Sound: An Introduction to the History, Theory, and Practice of Video Game Music and Sound Design (MIT Press)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    },
+    {
+      "id": "sharpness-warn",
+      "statement": "Sharpness above 2.2 acum is reported unless the patch is tagged 'bright'.",
+      "value": 2.2, "unit": "acum", "params": { "exemptTag": "bright" },
+      "check": "auto", "severity": "warn", "appliesTo": "patch",
+      "rationale": "Sharpness (the DIN 45692 axis of high-frequency weight) is where 'tinny' and 'scratchy' live. It is an indicator, not a verdict, so this is a warning. The 2.2 acum threshold is this plugin's own, applied to its approximation of the metric.",
+      "sources": [
+        { "title": "MoSQITo: modular sound quality integrated toolbox (sharpness per DIN 45692)", "url": "https://mosqito.readthedocs.io/en/latest/" },
+        { "title": "Zwicker & Fastl, Psychoacoustics: Facts and Models (Springer)", "url": "https://link.springer.com/book/10.1007/978-3-540-68888-4" }
+      ]
+    },
+    {
+      "id": "roughness-warn",
+      "statement": "Roughness above 0.6 asper is reported unless the patch is tagged 'gritty'.",
+      "value": 0.6, "unit": "asper", "params": { "exemptTag": "gritty" },
+      "check": "auto", "severity": "warn", "appliesTo": "patch",
+      "rationale": "Roughness (fast amplitude modulation peaking near 70 Hz, or partials beating inside one critical band) is the 'grating' quality. The 0.6 asper threshold is this plugin's own, applied to its approximation of the metric.",
+      "sources": [
+        { "title": "Plomp & Levelt (1965), Tonal consonance and critical bandwidth (JASA 38)", "url": "https://doi.org/10.1121/1.1909741" },
+        { "title": "Wanty, Glesser & Casagrande Hirono (2024), ECMA-418-2 roughness, a challenging implementation (INTER-NOISE 2024)", "url": "https://hal.science/hal-04695234v1" },
+        { "title": "Zwicker & Fastl, Psychoacoustics: Facts and Models (Springer)", "url": "https://link.springer.com/book/10.1007/978-3-540-68888-4" }
+      ]
+    },
+    {
+      "id": "variation-on-repeating",
+      "statement": "A patch tagged 'repeating' declares variation: at least 3 variants, or a pitch spread of at least 20 cents.",
+      "value": 3, "unit": "variants", "params": { "minPitchCents": 20 },
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "Players quickly pick up any distinctive sound that repeats identically. Halo answered with multiple permutations and per-permutation weighting. The minimums are this plugin's own.",
+      "sources": [
+        { "title": "Karen Collins (2008), Game Sound, ch. 5 (ambience and permutation weighting)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    },
+    {
+      "id": "loudness-target",
+      "statement": "The delivered sound's max momentary loudness is within 1.5 LU of its target: the project's targetLoudness plus the family offset.",
+      "value": 1.5, "unit": "LU",
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "Game audio levels transient one-shots on Momentary Max rather than on integrated loudness. Integrated loudness is undefined below one 400 ms gating block. The family offsets are this plugin's own mix choice: quiet UI, fuller impacts.",
+      "sources": [
+        { "title": "EBU Tech 3341: Loudness metering, 'EBU Mode' metering to supplement EBU R 128", "url": "https://tech.ebu.ch/docs/tech/tech3341.pdf" },
+        { "title": "Audiokinetic, Wwise HDR: Overview and best practices for game mixing", "url": "https://www.audiokinetic.com/en/community/blog/wwise-hdr-overview-and-best-practices-for-game-mixing/" },
+        { "title": "Audiokinetic, Loudness processing best practice, chapter 3: Scalable loudness processing for games", "url": "https://www.audiokinetic.com/en/community/blog/loudness-processing-best-practice-chapter-3-scalable-loudness-processing-for-games/" },
+        { "title": "Recommendation ITU-R BS.1770-5: Algorithms to measure audio programme loudness and true-peak audio level", "url": "https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf" }
+      ]
+    },
+    {
+      "id": "reverb-preset-only",
+      "statement": "Reverb comes only from the preset generated-impulse-response convolvers (small, room, hall, cave), never from a DelayNode feedback network. The patch schema enforces this.",
+      "check": "auto", "severity": "error", "appliesTo": "patch",
+      "rationale": "Small delay networks ring metallically unless their feedback matrix is optimised. A DelayNode inside a feedback cycle cannot go below one render quantum. A convolver's impulse response is expensive to assign, so each one is built once per preset.",
+      "sources": [
+        { "title": "MDN Web Docs: ConvolverNode", "url": "https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode" },
+        { "title": "WebAudio/web-audio-api issue 2449: Allow setting the Convolution buffer asynchronously", "url": "https://github.com/WebAudio/web-audio-api/issues/2449" },
+        { "title": "Dal Santo, Prawda, Schlecht & Valimaki (2024), Optimizing tiny colorless feedback delay networks", "url": "https://arxiv.org/abs/2402.11216" },
+        { "title": "reverbGen: generating artificial reverb impulse responses", "url": "https://github.com/adelespinasse/reverbGen" }
+      ]
+    },
+    {
+      "id": "silent-not-quiet",
+      "statement": "A gated bed (meta.intent 'bed') stops when its cause stops; it does not duck to a quiet hum. A tool that hums while doing nothing teaches the player to ignore it.",
+      "check": "judgement", "severity": "warn", "appliesTo": "patch",
+      "sources": [
+        { "title": "Karen Collins (2008), Game Sound, ch. 8 (listener fatigue and strategic silence)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    },
+    {
+      "id": "synthesis-choice",
+      "statement": "The synthesis method fits the material: modal for struck objects (wood, metal, glass, bells struck), grains for shakers, rain, debris and crackle, additive for bells and sustained realism, 808 metal for cymbals and robots, oscillators and FM for abstract UI and retro tones.",
+      "check": "judgement", "severity": "warn", "appliesTo": "patch",
+      "sources": [
+        { "title": "Perry R. Cook (1996), Physically Informed Sonic Modeling (PhISM): Percussive Synthesis (ICMC)", "url": "https://quod.lib.umich.edu/cgi/p/pod/dod-idx/physically-informed-sonic-modeling-phism-percussive.pdf?c=icmc;idno=bbp2372.1996.071;format=pdf" },
+        { "title": "Moffat & Reiss (2018), Perceptual evaluation of synthesized sound effects (ACM TAP)", "url": "https://dl.acm.org/doi/10.1145/3165287" },
+        { "title": "Baratatronix, Roland TR-808 cymbal and hi-hat synthesis", "url": "https://www.baratatronix.com/blog/cascadia-808-cymbal-hi-hat-synthesis" }
+      ]
+    },
+    {
+      "id": "one-no",
+      "statement": "A kit has exactly one sound in family 'no', and every refusal in the game uses it, so the player learns it once. More than one is an error; none is a warning.",
+      "check": "auto", "severity": "error", "appliesTo": "kit",
+      "rationale": "Recurring cues work as class labels that shorten the learning curve. A second refusal sound splits the class. That this means exactly one 'no' is this plugin's own judgement.",
+      "sources": [
+        { "title": "Karen Collins (2008), Game Sound, ch. 7 (sound symbols and leitmotif)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    },
+    {
+      "id": "priority-levels",
+      "statement": "A kit uses at most 5 distinct priority levels.",
+      "value": 5, "unit": "levels",
+      "check": "auto", "severity": "error", "appliesTo": "kit",
+      "rationale": "Priority decides voice stealing absolutely, and audibility only breaks ties within a level. FMOD Studio exposes five levels because priority should not be fine-grained.",
+      "sources": [
+        { "title": "FMOD Core API: Managing resources (virtual voice system)", "url": "https://fmod.com/docs/2.03/api/managing-resources-in-the-core-api.html#virtual-voice-system" }
+      ]
+    },
+    {
+      "id": "family-consistency",
+      "statement": "Within one family, spectral centroids span at most one octave, so the family reads as one class of sound.",
+      "value": 1, "unit": "octaves",
+      "check": "auto", "severity": "warn", "appliesTo": "kit",
+      "rationale": "A family is a class label, and similar centroids are what make its members sound related. The one-octave bound is this plugin's own.",
+      "sources": [
+        { "title": "Karen Collins (2008), Game Sound, ch. 7 (sound symbols and leitmotif)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" },
+        { "title": "Bernier-Robert & Duinker (2023), Blend (Timbre and Orchestration Resource)", "url": "https://timbreandorchestration.org/writings/timbre-lingo/blend" }
+      ]
+    },
+    {
+      "id": "key-consistency",
+      "statement": "Every pitched kit member (pitch strength at least 0.7) has a measured pitch within 50 cents of a pitch in the project scale.",
+      "value": 50, "unit": "cents",
+      "check": "auto", "severity": "warn", "appliesTo": "kit",
+      "rationale": "Consonant intervals fuse and dissonant ones beat. Sounds that overlap in one key avoid adjacent-partial roughness.",
+      "sources": [
+        { "title": "Plomp & Levelt (1965), Tonal consonance and critical bandwidth (JASA 38)", "url": "https://doi.org/10.1121/1.1909741" },
+        { "title": "Bernier-Robert & Duinker (2023), Blend (Timbre and Orchestration Resource)", "url": "https://timbreandorchestration.org/writings/timbre-lingo/blend" }
+      ]
+    },
+    {
+      "id": "masking-risk",
+      "statement": "Two kit members whose dominant octave band is the same and whose centroids are within a third of an octave (ratio below 2^(1/3)) are reported as a masking risk.",
+      "value": 1.2599, "unit": "centroid ratio",
+      "check": "auto", "severity": "warn", "appliesTo": "kit",
+      "rationale": "Components inside one critical band either beat or mask. Collisions are best fixed in the arrangement (register) before EQ. The one-third-octave proximity bound is this plugin's own, roughly one critical band above 500 Hz.",
+      "sources": [
+        { "title": "Hugh Robjohns, Q. Can static EQ tackle masking effectively? (Sound On Sound)", "url": "https://www.soundonsound.com/sound-advice/q-can-static-eq-tackle-masking-effectively" },
+        { "title": "Plomp & Levelt (1965), Tonal consonance and critical bandwidth (JASA 38)", "url": "https://doi.org/10.1121/1.1909741" },
+        { "title": "McAdams, Goodchild, Gianferrara et al. (2025), Factors contributing to instrumental blends in orchestral excerpts (Music & Science 8)", "url": "https://doi.org/10.1177/20592043251326391" }
+      ]
+    },
+    {
+      "id": "one-meaning-per-sound",
+      "statement": "If the player hears it, something happened: every kit sound is caused by one world event and means one thing. No sound plays as texture, and no two events share a sound unless they share a meaning.",
+      "check": "judgement", "severity": "warn", "appliesTo": "kit",
+      "sources": [
+        { "title": "Karen Collins (2008), Game Sound, ch. 7 (sound symbols that identify goals and focus perception)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "agent-beeps",
+  "description": "Local marketplace for the agent-beeps plugin",
+  "owner": {
+    "name": "ehartye"
+  },
+  "plugins": [
+    {
+      "name": "agent-beeps",
+      "description": "Procedural sound composer for coding agents: Web Audio SFX patches rendered in Chromium, measured, linted, auditioned by the owner, and ranked by a learned taste model",
+      "version": "0.1.0",
+      "source": "./",
+      "license": "MIT"
+    }
+  ]
+}

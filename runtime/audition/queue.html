@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auditions · agent-beeps</title>
+  <link rel="stylesheet" href="/runtime/audition/style.css">
+</head>
+<body>
+  <main class="deck">
+    <header class="plate">
+      <div>
+        <div class="brand">agent-beeps · listening booth</div>
+        <h1 class="prompt">Auditions waiting for your ears</h1>
+      </div>
+    </header>
+    <ul class="tapes" id="tapes"></ul>
+  </main>
+  <script type="module">
+    const token = new URLSearchParams(location.search).get('t') ?? '';
+    const list = document.getElementById('tapes');
+    const r = await fetch(`/api/sessions?t=${encodeURIComponent(token)}`);
+    if (!r.ok) {
+      list.innerHTML = '<li class="error">This page needs the link with its ?t= token. Ask the agent for the audition link.</li>';
+    } else {
+      const { sessions } = await r.json();
+      if (!sessions.length) list.innerHTML = '<li class="card">Nothing to judge yet. When an agent opens an audition, it appears here.</li>';
+      for (const s of sessions) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.className = 'tape';
+        a.href = `/s/${s.id}?t=${encodeURIComponent(token)}`;
+        const open = !['shipped', 'abandoned'].includes(s.stage);
+        a.innerHTML = `<b></b><span class="stage-tag ${open ? 'live' : ''}"></span><small></small>`;
+        a.querySelector('b').textContent = s.prompt || s.family;
+        a.querySelector('.stage-tag').textContent = s.stage;
+        a.querySelector('small').textContent = `${s.family} · round ${s.round} · ${new Date(s.createdAt).toLocaleString()} · ${s.project}`;
+        li.append(a);
+        list.append(li);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "no",
+  "family": "no",
+  "description": "The one soft no: a gentle falling third on triangle, never a buzzer",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "no",
+    "family": "no",
+    "archetype": "no",
+    "tags": ["ui"],
+    "duration": 0.45,
+    "layers": [
+      {
+        "source": { "type": "osc", "wave": "triangle", "pitch": 440 },
+        "amp": { "attack": 0.012, "decay": 0.15, "sustain": 0, "release": 0.04 },
+        "filter": { "type": "lowpass", "cutoff": 2000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "osc", "wave": "triangle", "pitch": 370 },
+        "start": 0.14,
+        "amp": { "attack": 0.012, "decay": 0.25, "sustain": 0, "release": 0.06 },
+        "filter": { "type": "lowpass", "cutoff": 2000, "resonanceDb": 0 }
+      }
+    ],
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 300, "max": 600, "scale": "log" },
+    "/layers/1/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [0.8409, 0.7937] },
+    "/layers/1/start": { "min": 0.12, "max": 0.18, "scale": "lin" },
+    "/layers/0/amp/attack": { "min": 0.01, "max": 0.02, "scale": "lin" },
+    "/layers/1/amp/decay": { "min": 0.18, "max": 0.35, "scale": "log" },
+    "/layers/0/filter/cutoff": { "min": 1200, "max": 3000, "scale": "log" }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "coin-bell",
+  "family": "coin",
+  "description": "Two struck FM bell tones a small in-scale interval apart: a softer, rounder coin",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "coin-bell",
+    "family": "coin",
+    "archetype": "coin-bell",
+    "tags": ["repeating"],
+    "duration": 0.35,
+    "layers": [
+      {
+        "source": { "type": "fm", "pitch": 1047, "operators": [{ "ratio": 1, "index": 1, "wave": "sine" }, { "ratio": 3.5, "index": 1.2, "wave": "sine" }], "algorithm": [[1, 0]] },
+        "amp": { "attack": 0.004, "decay": 0.25, "sustain": 0, "release": 0.08 },
+        "filter": { "type": "lowpass", "cutoff": 5000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "fm", "pitch": 1568, "operators": [{ "ratio": 1, "index": 1, "wave": "sine" }, { "ratio": 3.5, "index": 1.2, "wave": "sine" }], "algorithm": [[1, 0]] },
+        "start": 0.07,
+        "gainDb": -2,
+        "amp": { "attack": 0.004, "decay": 0.35, "sustain": 0, "release": 0.1 },
+        "filter": { "type": "lowpass", "cutoff": 5000, "resonanceDb": 0 }
+      }
+    ],
+    "fx": { "reverb": { "preset": "small", "sendDb": -22 } },
+    "variation": { "pitchCents": 20, "gainDb": 1, "variants": 4, "noRepeat": true },
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": { "min": 600, "max": 1400, "scale": "log" },
+    "/layers/1/source/pitch": { "ratioOf": "/layers/0/source/pitch", "choices": [1.2, 1.25, 1.3333, 1.5] },
+    "/layers/1/start": { "min": 0.05, "max": 0.1, "scale": "lin" },
+    "/layers/0/source/operators/1/ratio": { "choices": [2, 3.5, 4] },
+    "/layers/0/source/operators/1/index": { "min": 0.4, "max": 1.5, "scale": "lin" },
+    "/layers/1/amp/decay": { "min": 0.2, "max": 0.5, "scale": "log" },
+    "/fx/reverb/sendDb": { "min": -30, "max": -16, "scale": "lin" }
+  }
+}
