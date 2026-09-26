@@ -75,10 +75,12 @@ function distance(/** @type {number[]} */ a, /** @type {number[]} */ b) {
  * `octave` 4 puts the first chord's root at C4-B4 (MIDI 60-71). `spread` puts the root an octave
  * below and voice-leads the rest above it; `close` restarts root position every chord.
  * @param {Chord[]} chords
- * @param {{ octave?: number, voicing?: 'lead' | 'spread' | 'close' }} [opts]
+ * `drop2` lowers the second-highest voice of each voice-led chord an octave; `open` raises every
+ * other voice (from the second lowest) an octave, for wide, airy chords.
+ * @param {{ octave?: number, voicing?: 'lead' | 'spread' | 'close' | 'drop2' | 'open', slash?: boolean }} [opts]
  * @returns {number[][]}
  */
-export function voiceLead(chords, { octave = 4, voicing = 'lead' } = {}) {
+export function voiceLead(chords, { octave = 4, voicing = 'lead', slash = true } = {}) {
   const c0 = 12 * (octave + 1);
   /** @type {number[] | null} */
   let prev = null;
@@ -102,9 +104,12 @@ export function voiceLead(chords, { octave = 4, voicing = 'lead' } = {}) {
     }
     pick = /** @type {number[]} */ (pick);
     prev = pick;
-    const notes = [...pick];
+    let notes = [...pick];
+    if (voicing === 'drop2' && notes.length >= 3) notes[notes.length - 2] -= 12;
+    if (voicing === 'open' && notes.length >= 3) notes = notes.map((n, i) => (i % 2 === 1 ? n + 12 : n));
+    notes.sort((a, b) => a - b);
     if (voicing === 'spread' && tones.length > 2) notes.unshift(12 * octave + ch.root);
-    if (ch.bass !== undefined) {
+    if (ch.bass !== undefined && slash) {
       let b = 12 * octave + ch.bass;
       while (b >= notes[0]) b -= 12;
       notes.unshift(b);

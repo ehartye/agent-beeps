@@ -51,6 +51,13 @@ describe('song lint', () => {
     expect(layered.warnings.find(f => f.rule === 'song-register')?.message).toMatch(/layer/);
   });
 
+  it('backs the register judgement with the overlapping parts of each section', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4 } }, 'hat-a': { bars: 1, notes: [[0, 'E4', 4]] } } });
+    const r = lintSong(s, good(), project, { pad: patch(PAD), hat: patch(PAD) });
+    const check = r.judgementChecks.find(j => j.rule === 'song-register-bands')!;
+    expect(check.data).toEqual([{ section: 'a', overlaps: ['pad C4-A4 and hat E4 share a band'] }]);
+  });
+
   it('points at unused tracks and patterns', () => {
     const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a' } }, 'hat-a': { bars: 1, steps: 'x' }, spare: { bars: 1, steps: 'x' } }, sections: { a: { bars: 2, play: { pad: 'pad-a' } } } });
     const r = lintSong(s, good(), project);

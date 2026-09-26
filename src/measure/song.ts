@@ -16,8 +16,13 @@ export interface SongFeatures {
   /** Loudness (LUFS) of each whole second: the shape of the piece. */
   arc: number[];
   sections: { name: string; start: number; end: number; lufs: number; centroidHz: number }[];
-  /** Loop songs: |level step| in dB across the loop point (last 400 ms vs first 400 ms). */
+  /**
+   * Loop songs: |level step| across the loop point. Each side is the median of 100 ms block levels
+   * over 1.5 s, so a single accent on the downbeat does not read as a seam.
+   */
   seamDb?: number;
+  seamStartLufs?: number;
+  seamEndLufs?: number;
   delivered?: { integratedLufs: number; truePeakDb: number; clippedSamples: number; peakLimited?: boolean };
 }
 
@@ -105,8 +110,17 @@ export function measureSong(channels: Float32Array[], sr: number, sections: Song
     }),
   };
   if (loop) {
-    const w4 = Math.round(0.4 * sr);
-    out.seamDb = r(Math.abs(toLufs(meanOf(power, n - w4, n)) - toLufs(meanOf(power, 0, w4))), 1);
+    const block = Math.round(0.1 * sr), span = Math.min(Math.floor(n / 2), Math.round(1.5 * sr));
+    const edge = (from: number) => {
+      const levels: number[] = [];
+      for (let b = from; b + block <= from + span; b += block) levels.push(toLufs(meanOf(power, b, b + block)));
+      levels.sort((a, b) => a - b);
+      return Math.max(-70, levels[levels.length >> 1] ?? -70);
+    };
+    const start = edge(0), end = edge(n - span);
+    out.seamStartLufs = r(start, 1);
+    out.seamEndLufs = r(end, 1);
+    out.seamDb = r(Math.abs(end - start), 1);
   }
   return out;
 }

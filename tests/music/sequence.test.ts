@@ -90,5 +90,43 @@ describe('compileSong', () => {
     const c = compileSong(song({ sections: { a: { bars: 2, play: {}, mix: { pad: { pan: -0.5, sends: { reverb: -3 } } } } } }));
     expect(c.mix.pad[0]).toMatchObject({ pan: -0.5, sends: { reverb: -3 } });
   });
+
+  it('leaves a slash bass out of chords and arps when slash is false (and out of arps by default)', () => {
+    const base = { progressions: { a: [['C/E', 8]] }, sections: { a: { bars: 2, play: { pad: 'pad-a' } } } };
+    const withSlash = of(compileSong(song({ ...base, patterns: { 'pad-a': { bars: 2, chords: { progression: 'a' } }, 'hat-a': { bars: 1, steps: 'x' } } })), 'pad');
+    expect(withSlash.map(e => e.midi)).toContain(52);
+    const noSlash = of(compileSong(song({ ...base, patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', slash: false } }, 'hat-a': { bars: 1, steps: 'x' } } })), 'pad');
+    expect(noSlash.map(e => e.midi)).toEqual([60, 64, 67]);
+    const arp = of(compileSong(song({ ...base, patterns: { 'pad-a': { bars: 2, arp: { progression: 'a', rate: 1 } }, 'hat-a': { bars: 1, steps: 'x' } } })), 'pad');
+    expect(Math.min(...arp.map(e => e.midi!))).toBe(60);
+  });
+
+  it('lets rhythm hits last hitBeats instead of one step', () => {
+    const c = compileSong(song({ patterns: { 'pad-a': { bars: 1, steps: 'x...x_..', note: 'C3', gate: 1, hitBeats: 0.5 }, 'hat-a': { bars: 1, steps: 'x' } }, sections: { a: { bars: 1, play: { pad: 'pad-a' } } } }));
+    // first hit 0.5 beat = 0.25 s; the held one is one step longer
+    expect(of(c, 'pad').map(e => e.dur)).toEqual([0.25, expect.closeTo(0.375, 6), 0.25, expect.closeTo(0.375, 6)]);
+  });
+
+  it('plays ? steps about half the time, deterministically', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 16, steps: '????????????????' }, 'hat-a': { bars: 1, steps: 'x' } }, sections: { a: { bars: 16, play: { pad: 'pad-a' } } } });
+    const n = of(compileSong(s), 'pad').length;
+    expect(n).toBeGreaterThan(256 * 0.4);
+    expect(n).toBeLessThan(256 * 0.6);
+    expect(of(compileSong(s), 'pad').length).toBe(n);
+  });
+
+  it('swings one track without swinging the others', () => {
+    const c = compileSong(song({ tracks: { pad: { instrument: 'x' }, hat: { instrument: 'y', swing: 0.5 } }, patterns: { 'pad-a': { bars: 1, steps: 'xxxx' }, 'hat-a': { bars: 1, steps: 'xxxx' } }, sections: { a: { bars: 1, play: { pad: 'pad-a', hat: 'hat-a' } } } }));
+    expect(of(c, 'hat')[1].time).toBeCloseTo(0.1875);
+    expect(of(c, 'pad')[1].time).toBeCloseTo(0.125);
+  });
+
+  it('restores a section-scoped mix when the section ends', () => {
+    const c = compileSong(song({ tracks: { pad: { instrument: 'x', gainDb: -3 }, hat: { instrument: 'y' } }, sections: { a: { bars: 2, play: {}, mix: { pad: { gainDb: -20 } }, mixScope: 'section' }, b: { bars: 2, play: {} } }, form: ['a', 'b'] }));
+    expect(c.mix.pad).toEqual([
+      { time: 0, end: 0, gainDb: -20, ramp: false },
+      { time: 4, end: 4, gainDb: -3, ramp: false },
+    ]);
+  });
 });
 

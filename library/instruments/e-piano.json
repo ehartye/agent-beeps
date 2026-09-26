@@ -1,0 +1,96 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "e-piano",
+  "family": "music",
+  "tags": [
+    "keys",
+    "pluck",
+    "soft"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C4",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 0
+          },
+          {
+            "ratio": 14,
+            "index": 0.35
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.08,
+        "sustain": 0,
+        "release": 0.4
+      },
+      "gainDb": -10
+    },
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C4",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 0
+          },
+          {
+            "ratio": 1,
+            "index": 1.2
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "amp": {
+        "attack": 0.004,
+        "decay": 1.8,
+        "sustain": 0.25,
+        "release": 0.5
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3200,
+        "resonanceDb": 0,
+        "env": {
+          "to": 1200,
+          "time": 1.2
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C4"
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.004,
+        "decay": 2.2,
+        "sustain": 0.35,
+        "release": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "description": "Tine electric piano (FM): warm bell-edged attack that mellows as it decays. Chords and gentle melodies, octave 3-4."
+  }
+}

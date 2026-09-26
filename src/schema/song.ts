@@ -6,7 +6,7 @@ const NAME = /^[a-z0-9][a-z0-9-]*$/;
 const Name = z.string().regex(NAME, 'lowercase letters, digits and dashes');
 const Note = z.string().regex(/^[A-G](#|b)?-?\d$/, 'notes in songs are names like A4, F#3 or Bb2');
 /** Step strings: X accent, x hit, o ghost, . rest, _ hold the previous hit; spaces and | are ignored. */
-const Steps = z.string().regex(/^[Xxo._|\s]+$/, 'steps use X (accent) x (hit) o (ghost) . (rest) _ (hold); spaces and | are ignored').refine(s => /[Xxo]/.test(s), 'a step string needs at least one hit');
+const Steps = z.string().regex(/^[Xxo?._|\s]+$/, 'steps use X (accent) x (hit) o (ghost) ? (hit half the time) . (rest) _ (hold); spaces and | are ignored').refine(s => /[Xxo?]/.test(s), 'a step string needs at least one hit');
 const Octave = z.number().int().min(0).max(8).describe('octave the chord/bass root lands in (C4 = middle C; bass usually 2). spread voicing puts the root one octave lower');
 const Gate = z.union([z.number().min(0.05).max(4), z.literal('patch')]);
 
@@ -26,13 +26,19 @@ const Track = z.strictObject({
   humanize: z.number().min(0).max(1).default(0),
   /** Stereo spread for chords: voices fan out across ±spread. */
   spread: z.number().min(0).max(1).default(0),
+  /** Swing for this track only (overrides the song's). */
+  swing: z.number().min(0).max(0.75).optional(),
+  /** Track highpass in Hz: trims an instrument's low layers without editing the patch. */
+  highpass: z.number().min(20).max(20000).optional(),
 });
 
 const ProgRef = z.string();
 const Chords = z.strictObject({
   progression: ProgRef,
   octave: Octave.default(4),
-  voicing: z.enum(['lead', 'spread', 'close']).default('lead'),
+  voicing: z.enum(['lead', 'spread', 'close', 'drop2', 'open']).default('lead'),
+  /** false: leave a slash chord's bass note to the bass part. */
+  slash: z.boolean().default(true),
   /** Restrike rhythm over each chord; default holds the chord for its full length. */
   rhythm: Steps.optional(),
   /** Seconds between successive chord tones, low to high. */
@@ -43,6 +49,8 @@ const Arp = z.strictObject({
   /** Notes per beat. */
   rate: z.number().min(0.25).max(8).default(2).describe('arp notes per beat (2 = eighths, 4 = sixteenths)'),
   shape: z.enum(['up', 'down', 'updown', 'random', 'converge']).default('up'),
+  /** true: include a slash chord's bass note in the arp (off by default: it drops into the bass band). */
+  slash: z.boolean().default(false),
   octaves: z.number().int().min(1).max(4).default(1),
   octave: Octave.default(4),
   /** Optional rhythm mask per arp step (same stepsPerBeat as rate). */
@@ -71,15 +79,22 @@ const Pattern = z.strictObject({
   bass: Bass.optional(),
   steps: Steps.optional(),
   stepsPerBeat: z.number().int().min(1).max(8).default(4),
+  /** How long each rhythm hit lasts, in beats (default one step); _ holds add steps to it. */
+  hitBeats: z.number().positive().max(16).optional(),
   /** The note step hits play (default: the instrument's root, untransposed). */
   note: Note.optional(),
 });
 
-const MixPoint = z.strictObject({
+const MixValues = {
   gainDb: z.number().min(-60).max(12).optional(),
   cutoff: z.number().min(20).max(20000).optional(),
   pan: z.number().min(-1).max(1).optional(),
   sends: z.strictObject({ reverb: z.number().min(-60).max(0).optional(), delay: z.number().min(-60).max(0).optional() }).optional(),
+};
+const MixPoint = z.strictObject({
+  ...MixValues,
+  /** Where the move starts, when it should not start from the current value (a fade-in from near silence). */
+  from: z.strictObject(MixValues).optional(),
 });
 /** true: glide across the whole section; {bars, at}: glide over its first or last bars (fade-ins, outros). */
 const Ramp = z.union([z.boolean(), z.strictObject({ bars: z.number().positive().max(256), at: z.enum(['start', 'end']).default('end') })]);
@@ -89,6 +104,8 @@ const Section = z.strictObject({
   /** Track levels/cutoffs from this section on; with ramp they glide across the section. */
   mix: z.record(z.string(), MixPoint).optional(),
   ramp: Ramp.default(false),
+  /** "section": mix values return to what they were when the section ends; "song" (default): they persist. */
+  mixScope: z.enum(['song', 'section']).default('song'),
 });
 
 export const SongSchema = z.strictObject({

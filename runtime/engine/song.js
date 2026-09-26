@@ -151,46 +151,44 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       node = sum;
     }
     const points = c.mix[name] ?? [];
-    if (t.cutoff !== undefined || points.some(m => m.cutoff !== undefined)) {
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.Q.value = 0;
-      let cut = t.cutoff ?? 20000;
-      lp.frequency.setValueAtTime(cut, when);
-      for (const m of points) {
-        if (m.cutoff === undefined) continue;
-        lp.frequency.setValueAtTime(cut, when + m.time);
-        lp.frequency.exponentialRampToValueAtTime(m.cutoff, when + (m.ramp ? m.end : m.time + GLIDE));
-        cut = m.cutoff;
-      }
-      node = node.connect(lp);
-    }
-    /** Schedule one automated value per mix point, gliding (ramp) or stepping with a short glide. */
-    const automate = (/** @type {AudioParam} */ param, /** @type {number} */ initial, /** @type {(m: any) => number | undefined} */ pick) => {
+    /**
+     * One automated value per mix point: from the current value (or the point's `from`) to the new
+     * one, gliding across the ramp or over a short glide. Frequencies glide exponentially.
+     */
+    const automate = (/** @type {AudioParam} */ param, /** @type {number} */ initial, /** @type {(m: any) => number | undefined} */ pick, exp = false) => {
       let v = initial;
       param.setValueAtTime(v, when);
       for (const m of points) {
         const next = pick(m);
         if (next === undefined) continue;
-        param.setValueAtTime(v, when + m.time);
-        param.linearRampToValueAtTime(next, when + (m.ramp ? m.end : m.time + GLIDE));
+        const from = m.from ? pick(m.from) : undefined;
+        param.setValueAtTime(from ?? v, when + m.time);
+        const at = when + (m.ramp ? m.end : m.time + GLIDE);
+        if (exp) param.exponentialRampToValueAtTime(next, at); else param.linearRampToValueAtTime(next, at);
         v = next;
       }
     };
+    if (t.highpass !== undefined) {
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = t.highpass;
+      hp.Q.value = 0;
+      node = node.connect(hp);
+    }
+    if (t.cutoff !== undefined || points.some(m => m.cutoff !== undefined)) {
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.Q.value = 0;
+      automate(lp.frequency, t.cutoff ?? 20000, m => m.cutoff, true);
+      node = node.connect(lp);
+    }
     if (t.pan || points.some(m => m.pan !== undefined)) {
       const pan = ctx.createStereoPanner();
       automate(pan.pan, t.pan, m => m.pan);
       node = node.connect(pan);
     }
     const level = ctx.createGain();
-    let g = t.gainDb;
-    level.gain.setValueAtTime(db(g), when);
-    for (const m of points) {
-      if (m.gainDb === undefined) continue;
-      level.gain.setValueAtTime(db(g), when + m.time);
-      level.gain.linearRampToValueAtTime(db(m.gainDb), when + (m.ramp ? m.end : m.time + GLIDE));
-      g = m.gainDb;
-    }
+    automate(level.gain, db(t.gainDb), m => (m.gainDb === undefined ? undefined : db(m.gainDb)));
     node.connect(level).connect(master);
     for (const [kind, input] of /** @type {const} */ ([['reverb', reverbIn], ['delay', delayIn]])) {
       const base = t.sends[kind];

@@ -225,18 +225,30 @@ export function renderSongLook(channels, f, label) {
     }
     cols.push(out);
   }
+  // Fixed scale in dBFS at playback level (the trim applied), not normalised per image: a part
+  // made 5 dB quieter looks 5 dB quieter from one render to the next.
+  const ref = 20 * Math.log10(fftN / 4) - (f.trimDb ?? 0); // a full-scale sine peaks at 0 dBFS
+  const FLOOR = -100, TOP = -20;
   for (let col = 0; col < SW; col++) for (let row = 0; row < SSPEC_H; row++) {
-    const [rr, gg, b] = heat((cols[col][row] - (maxDb - 75)) / 75);
+    const [rr, gg, b] = heat((cols[col][row] - ref - FLOOR) / (TOP - FLOOR));
     const p = (row * SW + col) * 4;
     img.data[p] = rr; img.data[p + 1] = gg; img.data[p + 2] = b; img.data[p + 3] = 255;
   }
   const specY = BAND_H + SWAVE_H;
   g.putImageData(img, 0, specY);
-  g.fillStyle = '#ffffff99'; g.font = '10px monospace';
+  g.font = '10px monospace';
   for (const hz of [50, 100, 250, 1000, 4000, 10000]) {
     const y = specY + (SSPEC_H - 1) * (1 - (Math.log(hz) - fMin) / (fMax - fMin));
-    g.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, 3, y);
+    const label = hz >= 1000 ? `${hz / 1000}k` : `${hz}`;
+    g.fillStyle = '#000000b0'; g.fillRect(1, y - 9, label.length * 6 + 4, 11);
+    g.fillStyle = '#ffffffd0'; g.fillText(label, 3, y);
   }
+  // Legend: the colour scale in dBFS
+  const lx = SW - 190, ly = specY + 6;
+  g.fillStyle = '#000000b0'; g.fillRect(lx - 4, ly - 2, 188, 22);
+  for (let i = 0; i < 120; i++) { const [lr, lg, lb] = heat(i / 119); g.fillStyle = `rgb(${lr},${lg},${lb})`; g.fillRect(lx + 30 + i, ly + 2, 1, 8); }
+  g.fillStyle = '#ffffffd0';
+  g.fillText(`${FLOOR}`, lx, ly + 10); g.fillText(`${TOP} dBFS`, lx + 152, ly + 10);
   // Section boundaries through both panes
   g.strokeStyle = '#ffffff40';
   for (const s of f.sections ?? []) { g.beginPath(); g.moveTo(tx(s.start) + 0.5, BAND_H); g.lineTo(tx(s.start) + 0.5, specY + SSPEC_H); g.stroke(); }

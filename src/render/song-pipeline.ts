@@ -14,7 +14,7 @@ import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
 
 /** Bump when song rendering or measurement changes, so cached renders are redone. */
-export const SONG_PIPELINE_VERSION = 2;
+export const SONG_PIPELINE_VERSION = 4;
 
 export interface RenderedSong {
   key: string; song: Song; trimDb: number; features: SongFeatures;
@@ -43,6 +43,8 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
     // Report the arc and sections at the level they play, like every other number the agent reads.
     f.arc = f.arc.map(v => Math.round((v + trimDb) * 10) / 10);
     f.sections = f.sections.map(s => ({ ...s, lufs: Math.round((s.lufs + trimDb) * 10) / 10 }));
+    if (f.seamStartLufs !== undefined) f.seamStartLufs = Math.round((f.seamStartLufs + trimDb) * 10) / 10;
+    if (f.seamEndLufs !== undefined) f.seamEndLufs = Math.round((f.seamEndLufs + trimDb) * 10) / 10;
     f.delivered = {
       integratedLufs: Math.round(integrated(delivered, r.sampleRate).lufs * 100) / 100,
       truePeakDb: Math.round(truePeakDb(delivered, r.sampleRate) * 100) / 100,
@@ -52,7 +54,7 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
     mkdirSync(dir, { recursive: true });
     writeFileSync(wavPath, writeWav(delivered, r.sampleRate));
     writeFileSync(join(dir, 'song.json'), JSON.stringify(song, null, 2));
-    writeFileSync(lookPath, await host.songLook(r.id, f, song.title ?? song.name));
+    writeFileSync(lookPath, await host.songLook(r.id, { ...f, trimDb }, song.title ?? song.name));
     writeFileSync(meta, JSON.stringify({ songName: song.name, trimDb, features: f }, null, 2));
     return { key, song, trimDb, features: f, dir, wavPath, lookPath, cached: false };
   } finally {

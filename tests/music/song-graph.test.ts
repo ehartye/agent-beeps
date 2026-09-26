@@ -60,5 +60,18 @@ describe('song engine', () => {
     expect(f.rampTargets('linear')).toContainEqual(expect.closeTo(10 ** (-2 / 20), 5));
     expect(f.rampTargets('linear')).toContainEqual(0.5);
   });
+
+  it('starts a ramp from an explicit value when the mix gives one', () => {
+    const f = new FakeContext();
+    buildSong(asCtx(f), song({ sections: { a: { bars: 2, play: { pad: 'pad-a' }, mix: { pad: { gainDb: -6, from: { gainDb: -30 } } }, ramp: true } }, form: ['a'] }), instruments());
+    const sets = f.nodes('gain').flatMap(n => n.gain.events).filter((e: any) => e.kind === 'set').map((e: any) => e.value);
+    expect(sets).toContainEqual(expect.closeTo(10 ** (-30 / 20), 6));
+  });
+
+  it('puts a track highpass on the bus', () => {
+    const f = new FakeContext();
+    buildSong(asCtx(f), song({ tracks: { pad: { instrument: 'pad', highpass: 150 }, hat: { instrument: 'hat' } } }), instruments());
+    expect(f.nodes('biquad').some(b => b.type === 'highpass' && b.frequency.value === 150)).toBe(true);
+  });
 });
 

@@ -64,4 +64,12 @@ describe('voice leading', () => {
   it('chordTones lists pitch classes for arps and bass', () => {
     expect(chordTones(parseChord('Am7'))).toEqual([9, 0, 4, 7]);
   });
+
+  it('drop2 lowers the second-highest voice an octave; open raises every other voice', () => {
+    const [d] = voiceLead([parseChord('Cmaj7')], { octave: 4, voicing: 'drop2' });
+    expect(d).toEqual([55, 60, 64, 71]);
+    const [o] = voiceLead([parseChord('Cmaj7')], { octave: 4, voicing: 'open' });
+    expect(o).toEqual([60, 67, 76, 83]);
+  });
 });
+

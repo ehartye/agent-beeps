@@ -29,6 +29,6 @@
     }
   ],
   "meta": {
-    "description": "Deep tom: sine with a slow pitch fall, for fills and pulses."
+    "description": "Deep tom: a fixed-pitch sine (about 110 Hz falling to 70 Hz) for fills and hand-drum pulses. Use in steps patterns without a note; a note transposes it."
   }
 }

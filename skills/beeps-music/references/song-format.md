@@ -30,7 +30,9 @@
 - Beats are quarter notes; a bar is `meter` beats. Pattern times are beats from the pattern start.
 - Notes are names (`A4`, `F#3`, `Bb2`); C4 is middle C. Octave arguments put the root of the
   chord/bass in that octave: `octave: 2` bass starts at C2-B2 (65-123 Hz); `octave: 1` is sub-sonic
-  for most roots.
+  for most roots. Exceptions: `voicing: "spread"` places the root one octave *below* `octave`, and
+  a slash chord adds its bass note below the voicing. `beeps song check` prints every chords
+  pattern's voicings, so check the lowest note there.
 - `transpose` (semitones) shifts a pattern; `vel` (0-1) scales its velocity.
 
 ## Instruments
@@ -49,7 +51,10 @@ place:
 
 An inline patch may leave out `schema`, `name` and `family`. `set` keys are JSON pointers into the
 base patch. `beeps instruments` shows each instrument's root and where its layers sound: `osc -12`
-means a layer an octave below the written note, which counts toward that part's register.
+means a layer an octave below the written note, which counts toward that part's register. In
+`beeps song check`, a track's `range` is the notes written and `sounds` is the span every layer
+reaches (a pluck with an octave-up layer shows `sounds` an octave higher at the top): it is not a
+transposition.
 
 ## Tracks
 
@@ -63,19 +68,25 @@ means a layer an octave below the written note, which counts toward that part's 
 | `root` | the note the instrument patch sounds at as written (default: its first pitched layer) |
 | `humanize` | 0-1: seeded timing (to 12 ms) and velocity (to ±20%) looseness |
 | `spread` | 0-1: chord voices fan across the stereo field |
+| `swing` | this track's swing (overrides the song's) |
+| `highpass` | track highpass (Hz): trims an instrument's low layers without editing it |
 
 ## Patterns (exactly one kind each; they loop to fill a section)
 
 | kind | fields | notes |
 |---|---|---|
 | `notes` | `[[beat, note, beats, vel?], ...]` | melodies, drones, one-off hits |
-| `chords` | `progression`, `octave` (4), `voicing` lead\|spread\|close, `rhythm` steps, `strum` s | voice-led chords; `rhythm` restrikes, else each chord holds. A slash chord (`G/F`) adds its bass note below the voicing |
-| `arp` | `progression`, `rate` notes/beat (2), `shape` up\|down\|updown\|random\|converge, `octaves`, `octave`, `rhythm` | the note order restarts on each chord; each `rhythm` character is one arp step (at `rate`) and the mask keeps counting across chords |
+| `chords` | `progression`, `octave` (4), `voicing` lead\|spread\|close\|drop2\|open, `slash` (true), `rhythm` steps, `strum` s | voice-led chords; `rhythm` restrikes, else each chord holds. A slash chord (`G/F`) adds its bass note below the voicing unless `slash: false`, so one progression can feed the bass and the pads. `drop2` and `open` widen the voicing |
+| `arp` | `progression`, `rate` notes/beat (2), `shape` up\|down\|updown\|random\|converge, `octaves`, `octave`, `rhythm`, `slash` (false) | the note order restarts on each chord; each `rhythm` character is one arp step (at `rate`) and the mask keeps counting across chords |
 | `bass` | `progression`, `octave` (2), `rhythm` steps, `tones` [0 root, 1 third, 2 fifth...] | slash chords put their bass note first |
-| `steps` | `"x..x ..x."`, `stepsPerBeat` (4), `note` | `X` 1.0, `x` 0.7, `o` 0.4, `.` rest, `_` hold; spaces and `\|` ignored |
+| `steps` | `"x..x ..x."`, `stepsPerBeat` (4), `note` | `X` 1.0, `x` 0.7, `o` 0.4, `?` plays half the time (seeded), `.` rest, `_` hold; spaces and `\|` ignored |
 
 `gate`: held notes last length × gate (defaults: notes/chords 1, arp 0.9, bass 0.95); steps default
 to `"patch"`, the instrument's own duration (drums ring naturally).
+
+A rhythm hit (in `steps`, `bass` and chord `rhythm`) lasts **one step** unless `_` holds extend it,
+so `"x......."` on a bass is a click-length note. Set the pattern's `hitBeats` (e.g. `0.5`) for
+longer hits; each `_` still adds a step.
 
 Chord qualities: (none) maj m min 5 dim aug sus sus2 sus4 6 m6 6/9 69 m6/9 7 maj7 M7 m7 mmaj7 m7b5
 dim7 7sus4 7sus2 7b9 add9 madd9 add11 maj7#11 9 maj9 m9 9sus4 11 m11 maj11 13 m13 maj13, plus `/bass`.
@@ -87,7 +98,10 @@ Songs never snap to the project scale: the notes you write are the notes that pl
 - `mix`: track → `{gainDb, cutoff, pan, sends: {reverb, delay}}` from this section on. With
   `"ramp": true` the change glides across the whole section; `"ramp": {"bars": 4, "at": "end"}`
   glides over the last 4 bars (an outro fade), `"at": "start"` over the first 4 (a fade-in).
-  Without `ramp` the change lands at the section start with a 50 ms glide.
+  Without `ramp` the change lands at the section start with a 50 ms glide. A move normally starts
+  from the value the track already has; `"from": {"gainDb": -30}` starts it elsewhere (a fade-in out
+  of near-silence without a ghost track). Mix values persist into later sections; with
+  `"mixScope": "section"` the section's moves are undone when it ends (a dip that comes back).
 - `form`: section names in order. Held notes are cut at section ends (their release still rings).
 - `loop: true` folds the reverb and release tail onto the start: the WAV loops seamlessly. End the
   form at the density and level it starts with.
@@ -105,6 +119,8 @@ Songs never snap to the project scale: the notes you write are the notes that pl
   says how loud the raw mix was, and nothing needs to change because of it.
 - `beeps song render <name> --only pad,bass --sections intro` renders some tracks and sections
   alone (not looped). Use it to find which part makes a band or a bump.
+- `node <plugin-root>/scripts/format-song.mjs <song.json>` reformats a song to one line per
+  progression, track, pattern and section (readable diffs; content unchanged).
 - `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's
   level against the mix (`vsMixLu`), brightness, low-end share and per-section level. It flags parts
   more than 18 LU under the mix (inaudible) and writes stem WAVs (`--out dir`) for layered playback.

@@ -10,6 +10,7 @@ import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
 import { parseChord, voiceLead } from '../../runtime/engine/chords.js';
 import { int, withHost } from './shared.ts';
+import { canonicalJson, sha256 } from '../hash.ts';
 import type { Song } from '../schema/song.ts';
 import type { Patch } from '../schema/patch.ts';
 import { foldAlbum, listAlbums, readAlbum, writeAlbum } from '../album.ts';
@@ -26,10 +27,12 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
     length: mmss(f.durationSec), durationSec: f.durationSec, loop: r.song.loop, trimDb: r.trimDb,
     features: {
       loudnessLufs: f.delivered?.integratedLufs, truePeakDb: f.delivered?.truePeakDb, loudnessRangeLu: f.loudnessRangeLu,
-      centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, ...(f.seamDb !== undefined ? { seamDb: f.seamDb } : {}),
+      centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, ...(f.seamDb !== undefined ? { seamDb: f.seamDb, seamEndLufs: f.seamEndLufs, seamStartLufs: f.seamStartLufs } : {}),
     },
     sections: f.sections.map(s => ({ name: s.name, at: mmss(s.start), lufs: s.lufs, centroidHz: s.centroidHz })),
     lint: lintSong(r.song, f, p.project, instruments),
+    // name@hash per track: when a render changes without a song edit, this says which instrument moved.
+    instruments: Object.fromEntries(Object.entries(instruments).map(([t, x]) => [t, `${x.name}@${sha256(canonicalJson(x)).slice(0, 8)}`])),
   };
 }
 
@@ -84,6 +87,9 @@ export function registerSongCommands(program: Command, io: Io) {
     .action(() => io.emit({ instruments: libraryInstruments() }));
 
   const song = program.command('song').description('compose, render and export music (beeps/song@1)');
+  // A bare group command lists its subcommands instead of exiting silently.
+  const listing = (cmd: Command) => () => io.emit({ usage: `beeps ${cmd.name()} <command>`, commands: cmd.commands.map(c => ({ name: c.name(), description: c.description() })) });
+  song.action(listing(song));
 
   song.command('new <file>')
     .description('validate a song JSON file and save it to .agent-beeps/songs/<name>.json')
@@ -185,6 +191,7 @@ export function registerSongCommands(program: Command, io: Io) {
     });
 
   const album = program.command('album').description('put rendered songs in front of the owner on the LAN listening page');
+  album.action(listing(album));
 
   album.command('open <refs...>')
     .description('render what is stale, create an album and print its hostname and IP links')

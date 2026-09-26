@@ -16,9 +16,10 @@ import { mulberry32 } from './rng.js';
  * @property {number} pan    -1..1 offset added to the track pan
  * @property {string} pattern  the pattern that played it
  */
-/** @typedef {{ time: number, end: number, gainDb?: number, cutoff?: number, pan?: number, sends?: { reverb?: number, delay?: number }, ramp: boolean }} MixPoint */
+/** @typedef {{ gainDb?: number, cutoff?: number, pan?: number, sends?: { reverb?: number, delay?: number } }} MixValues */
+/** @typedef {MixValues & { time: number, end: number, from?: MixValues, ramp: boolean }} MixPoint */
 
-const STEP_VEL = /** @type {Record<string, number>} */ ({ X: 1, x: 0.7, o: 0.4 });
+const STEP_VEL = /** @type {Record<string, number>} */ ({ X: 1, x: 0.7, o: 0.4, '?': 0.7 });
 const EPS = 1e-9;
 export const GATE_DEFAULTS = { notes: 1, chords: 1, arp: 0.9, bass: 0.95, steps: 'patch' };
 
@@ -28,15 +29,16 @@ export const noteToMidi = note => Math.round(hzToMidi(noteToHz(note)));
 /**
  * Hits of a step string: start step, length in steps (with _ holds), velocity.
  * @param {string} steps
- * @returns {{ steps: number, hits: { at: number, len: number, vel: number }[] }}
+ * `?` is a hit that plays about half the time (`chance` 0.5); the caller rolls for it.
+ * @returns {{ steps: number, hits: { at: number, len: number, vel: number, chance?: number }[] }}
  */
 export function parseSteps(steps) {
   const s = steps.replace(/[\s|]/g, '');
-  /** @type {{ at: number, len: number, vel: number }[]} */
+  /** @type {{ at: number, len: number, vel: number, chance?: number }[]} */
   const hits = [];
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
-    if (ch in STEP_VEL) hits.push({ at: i, len: 1, vel: STEP_VEL[ch] });
+    if (ch in STEP_VEL) hits.push({ at: i, len: 1, vel: STEP_VEL[ch], ...(ch === '?' ? { chance: 0.5 } : {}) });
     else if (ch === '_' && hits.length && hits[hits.length - 1].at + hits[hits.length - 1].len === i) hits[hits.length - 1].len++;
   }
   return { steps: s.length, hits };
@@ -92,6 +94,9 @@ export function patternEvents(song, p, rand) {
     if (beat < beats - EPS) out.push({ beat, len, dur: hold(len), midi: midi === null ? null : midi + tr, vel: vel * p.vel, ...extra });
   };
 
+  // A hit lasts one step (or hitBeats), and each _ hold adds a step.
+  const hitLen = (/** @type {number} */ holds, /** @type {number} */ step) => (holds - 1) * step + (p.hitBeats ?? step);
+  const plays = (/** @type {{ chance?: number }} */ h) => h.chance === undefined || rand() < h.chance;
   if (kind === 'notes') {
     for (const [beat, note, len, vel] of /** @type {any[]} */ (p.notes)) push(beat, len, noteToMidi(note), vel ?? 1);
   } else if (kind === 'steps') {
@@ -99,13 +104,13 @@ export function patternEvents(song, p, rand) {
     const step = 1 / p.stepsPerBeat;
     const midi = p.note ? noteToMidi(p.note) : null;
     for (let base = 0; base < beats - EPS; base += steps * step) {
-      for (const h of hits) push(base + h.at * step, h.len * step, midi, h.vel);
+      for (const h of hits) if (plays(h)) push(base + h.at * step, hitLen(h.len, step), midi, h.vel);
     }
   } else {
     const spec = /** @type {any} */ (p)[kind];
     const spans = chordSpans(song.progressions[spec.progression], beats);
     if (kind === 'chords') {
-      const voicings = voiceLead(spans.map(s => s.chord), { octave: spec.octave, voicing: spec.voicing });
+      const voicings = voiceLead(spans.map(s => s.chord), { octave: spec.octave, voicing: spec.voicing, slash: spec.slash });
       spans.forEach((s, i) => {
         const v = voicings[i];
         const strike = (/** @type {number} */ at, /** @type {number} */ len, /** @type {number} */ vel) =>
@@ -114,11 +119,11 @@ export function patternEvents(song, p, rand) {
         const { steps, hits } = parseSteps(spec.rhythm);
         const step = 1 / p.stepsPerBeat;
         for (let base = 0; base < s.len - EPS; base += steps * step) {
-          for (const h of hits) if (base + h.at * step < s.len - EPS) strike(base + h.at * step, Math.min(h.len * step, s.len - base - h.at * step), h.vel);
+          for (const h of hits) if (base + h.at * step < s.len - EPS && plays(h)) strike(base + h.at * step, Math.min(hitLen(h.len, step), s.len - base - h.at * step), h.vel);
         }
       });
     } else if (kind === 'arp') {
-      const voicings = voiceLead(spans.map(s => s.chord), { octave: spec.octave, voicing: 'lead' });
+      const voicings = voiceLead(spans.map(s => s.chord), { octave: spec.octave, voicing: 'lead', slash: spec.slash });
       const step = 1 / spec.rate;
       const mask = spec.rhythm ? parseSteps(spec.rhythm) : null;
       let n = 0;
@@ -128,8 +133,8 @@ export function patternEvents(song, p, rand) {
         for (let o = 0; o < spec.octaves; o++) for (const m of base) notes.push(m + 12 * o);
         const order = arpOrder(notes, spec.shape, rand);
         for (let k = 0; k * step < s.len - EPS; k++, n++) {
-          const hit = mask ? mask.hits.find(h => h.at === n % mask.steps) : { vel: 1 };
-          if (hit) push(s.start + k * step, step, order[k % order.length], hit.vel);
+          const hit = mask ? mask.hits.find(h => h.at === n % mask.steps) : { vel: 1, chance: undefined };
+          if (hit && plays(hit)) push(s.start + k * step, step, order[k % order.length], hit.vel);
         }
       });
     } else {
@@ -148,7 +153,7 @@ export function patternEvents(song, p, rand) {
         for (let base = 0; base < s.len - EPS; base += steps * step) {
           for (const h of hits) {
             const at = base + h.at * step;
-            if (at < s.len - EPS) push(s.start + at, Math.min(h.len * step, s.len - at), toneMidi(spec.tones[n++ % spec.tones.length]), h.vel);
+            if (at < s.len - EPS && plays(h)) push(s.start + at, Math.min(hitLen(h.len, step), s.len - at), toneMidi(spec.tones[n++ % spec.tones.length]), h.vel);
           }
         }
       });
@@ -170,6 +175,13 @@ export function compileSong(song) {
   const mix = {};
   const sections = [];
   const rand = mulberry32(song.seed * 2654435761);
+  // Each track's mix values as they stand, so a section-scoped mix can put them back.
+  /** @type {Record<string, any>} */
+  const state = {};
+  const current = (/** @type {string} */ track) => {
+    const t = song.tracks[track], st = state[track] ?? {};
+    return { gainDb: st.gainDb ?? t.gainDb, cutoff: st.cutoff ?? t.cutoff ?? 20000, pan: st.pan ?? t.pan, sends: { ...t.sends, ...(st.sends ?? {}) } };
+  };
   let beat = 0;
   for (const name of song.form) {
     const sec = song.sections[name];
@@ -188,7 +200,8 @@ export function compileSong(song) {
           if (at >= len - EPS) continue;
           const room = len - at;
           let time = (beat + at) * spb;
-          if (song.swing && Math.abs(at * 4 - Math.round(at * 4)) < 1e-6 && Math.round(at * 4) % 2 === 1) time += song.swing * sixteenth;
+          const swing = t.swing ?? song.swing;
+          if (swing && Math.abs(at * 4 - Math.round(at * 4)) < 1e-6 && Math.round(at * 4) % 2 === 1) time += swing * sixteenth;
           time += e.strum ?? 0;
           const pan = e.voices && e.voices > 1 ? t.spread * ((2 * /** @type {number} */ (e.voice)) / (e.voices - 1) - 1) : 0;
           events.push({ track, time, dur: e.dur === null ? null : Math.min(e.dur, room) * spb, midi: e.midi, vel: e.vel, pan, pattern: pname });
@@ -201,7 +214,16 @@ export function compileSong(song) {
     const span = typeof r === 'object' ? Math.min(len, r.bars * song.meter) * spb : end - start;
     const from = typeof r === 'object' && r.at === 'end' ? end - span : start;
     for (const [track, m] of Object.entries(sec.mix ?? {})) {
+      const before = current(track);
       (mix[track] ??= []).push({ time: from, end: r ? from + span : start, ...m, ramp: !!r });
+      if (sec.mixScope === 'section') {
+        // Put back exactly the fields this section moved, as they stood before it.
+        /** @type {Record<string, any>} */
+        const back = {};
+        for (const k of /** @type {const} */ (['gainDb', 'cutoff', 'pan'])) if (m[k] !== undefined) back[k] = before[k];
+        if (m.sends) back.sends = Object.fromEntries(Object.keys(m.sends).map(k => [k, before.sends[k] ?? -60]));
+        mix[track].push({ time: end, end, ...back, ramp: false });
+      } else Object.assign(state[track] ??= {}, m, { sends: { ...(state[track]?.sends ?? {}), ...(m.sends ?? {}) } });
     }
     beat += len;
   }

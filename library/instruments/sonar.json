@@ -23,6 +23,6 @@
     }
   ],
   "meta": {
-    "description": "Sonar ping: pure sine, slow decay. Space it far apart; pair with a delay send."
+    "description": "Sonar ping: pure sine rooted at C5, slow decay. Space it far apart; pair with a delay send."
   }
 }

@@ -87,7 +87,7 @@
     },
     {
       "id": "song-loop-seam",
-      "statement": "A loop song's level steps no more than 3 dB across the loop point (last 400 ms against first 400 ms).",
+      "statement": "A loop song's level steps no more than 3 dB across the loop point (median 100 ms block level over the last 1.5 s against the first 1.5 s).",
       "value": 3,
       "unit": "dB",
       "check": "auto",
