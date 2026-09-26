@@ -21,7 +21,7 @@
 - `name`, `family`: lowercase-dash. Family sets the loudness offset and groups kit checks (coin,
   pickup, ui-click, ui-hover, blip, confirm, no, hit, explosion, ...).
 - `duration`: note-off time in seconds; each layer releases after it.
-- `layers`: 1-8. `fx`: optional `delay {time, feedback<=0.9, sendDb}` and `reverb {preset: small|room|hall|cave, sendDb}`.
+- `layers`: 1-8. `fx`: optional `delay {time, feedback<=0.9, sendDb}` and `reverb {preset: small|room|hall|cave|space, sendDb}`.
 - `variation`: `pitchCents`, `gainDb`, `variants` (1-16), `noRepeat`, `weights` (relative play odds per variant).
 - `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed.
 

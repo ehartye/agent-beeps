@@ -1,0 +1,52 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "snare",
+  "family": "music",
+  "tags": [
+    "drum",
+    "snare"
+  ],
+  "duration": 0.2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 190
+      },
+      "pitchEnv": [
+        {
+          "at": 0.05,
+          "to": 150
+        }
+      ],
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.1,
+        "sustain": 0,
+        "release": 0.05
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.18,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2800,
+        "q": 0.8
+      }
+    }
+  ],
+  "meta": {
+    "description": "Soft electronic snare: tone body plus bandpassed noise."
+  }
+}

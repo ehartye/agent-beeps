@@ -17,6 +17,25 @@ const nyquistSafe = (/** @type {BaseAudioContext} */ ctx, /** @type {number} */ 
 /** 808 metal: six detuned squares in deliberately inharmonic ratios. */
 export const METAL_RATIOS = [2, 3, 4.16, 5.43, 6.79, 8.21];
 
+/** @type {WeakMap<BaseAudioContext, Map<string, AudioBuffer>>} */
+const noiseCache = new WeakMap();
+
+/**
+ * Seeded 2-second looping noise, built once per context, colour and seed: a song fires hundreds of
+ * noise notes and would otherwise allocate a fresh buffer for each.
+ * @param {BaseAudioContext} ctx
+ * @param {'white' | 'pink' | 'brown'} color
+ * @param {number} seed
+ */
+function noiseBuffer(ctx, color, seed) {
+  let perCtx = noiseCache.get(ctx);
+  if (!perCtx) { perCtx = new Map(); noiseCache.set(ctx, perCtx); }
+  const key = `${color}:${seed}`;
+  let buf = perCtx.get(key);
+  if (!buf) { buf = bufferOf(ctx, noiseSamples(color, Math.ceil(ctx.sampleRate * 2), seed)); perCtx.set(key, buf); }
+  return buf;
+}
+
 /**
  * @param {BaseAudioContext} ctx
  * @param {Float32Array} samples
@@ -61,7 +80,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     }
   } else if (src.type === 'noise') {
     const s = ctx.createBufferSource();
-    s.buffer = bufferOf(ctx, noiseSamples(src.color, Math.ceil(ctx.sampleRate * 2), seed));
+    s.buffer = noiseBuffer(ctx, src.color, seed);
     s.loop = true;
     s.connect(mix);
     nodes.push(s);

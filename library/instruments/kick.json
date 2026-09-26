@@ -1,0 +1,53 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "kick",
+  "family": "music",
+  "tags": [
+    "drum",
+    "kick"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 150
+      },
+      "pitchEnv": [
+        {
+          "at": 0.08,
+          "to": 48,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.3,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -24,
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.01,
+        "sustain": 0,
+        "release": 0.005
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 2000,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Soft round kick: sine with a fast pitch drop and a tiny click."
+  }
+}

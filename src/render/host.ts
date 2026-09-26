@@ -6,6 +6,7 @@ import { extname, join, normalize, sep } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { BeepsError } from '../errors.ts';
 import type { Patch } from '../schema/patch.ts';
+import type { Song } from '../schema/song.ts';
 import type { Scale } from '../schema/project.ts';
 
 export const RUNTIME_DIR = join(import.meta.dirname, '..', '..', 'runtime');
@@ -56,6 +57,11 @@ export interface RenderHost {
   render(items: RenderItem[]): Promise<RenderResult[]>;
   /** PNG buffers: one per item, or a single contact sheet. */
   looks(items: LookItem[], sheet?: boolean): Promise<Buffer[]>;
+  /** Render a song in the page; its PCM stays there until pulled and freed. */
+  renderSong(song: Song, instruments: Record<string, Patch>): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
+  pullSong(id: number, frames: number): Promise<Float32Array[]>;
+  songLook(id: number, features: object, label: string): Promise<Buffer>;
+  freeSong(id: number): Promise<void>;
   page: import('playwright').Page;
   url: string;
   close(): Promise<void>;
@@ -105,6 +111,27 @@ export async function openRenderHost(): Promise<RenderHost> {
       const urls = await page.evaluate(([p, s]) => (window as any).beepsLooks(p, s), [payload, sheet] as const) as string[];
       return urls.map(u => Buffer.from(u.slice(u.indexOf(',') + 1), 'base64'));
     },
+    async renderSong(song, instruments) {
+      try {
+        return await page.evaluate(([s, i]) => (window as any).beepsRenderSong(s, i), [song, instruments] as const);
+      } catch (e) {
+        throw new BeepsError('E_RENDER', `song render failed: ${(e as Error).message.slice(0, 400)}`);
+      }
+    },
+    async pullSong(id, frames) {
+      const CHUNK = 1 << 21; // 2 M samples (8 MB) per call keeps each transfer small
+      const out = [new Float32Array(frames), new Float32Array(frames)];
+      for (let ch = 0; ch < 2; ch++) for (let start = 0; start < frames; start += CHUNK) {
+        const b64 = await page.evaluate(([i, c, s, n]) => (window as any).beepsSongChunk(i, c, s, n), [id, ch, start, CHUNK] as const) as string;
+        out[ch].set(decode(b64), start);
+      }
+      return out;
+    },
+    async songLook(id, features, label) {
+      const url = await page.evaluate(([i, f, l]) => (window as any).beepsSongLook(i, f, l), [id, features, label] as const) as string;
+      return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+    },
+    async freeSong(id) { await page.evaluate(i => (window as any).beepsFreeSong(i), id); },
     async close() {
       await browser.close();
       await new Promise<void>(r => server.close(() => r()));

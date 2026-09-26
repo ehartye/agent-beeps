@@ -1,0 +1,38 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "nebula",
+  "family": "music",
+  "tags": [
+    "texture",
+    "noise",
+    "sustain"
+  ],
+  "duration": 4,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "amp": {
+        "attack": 3,
+        "decay": 4,
+        "sustain": 0.9,
+        "release": 4
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 900,
+        "q": 1.6
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 0.07,
+        "depth": 500
+      }
+    }
+  ],
+  "meta": {
+    "description": "Filtered pink-noise wind with a slowly drifting band: space air under a section."
+  }
+}

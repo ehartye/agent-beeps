@@ -1,0 +1,41 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "pluck",
+  "family": "music",
+  "tags": [
+    "pluck",
+    "arp"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 2,
+          "detuneCents": 7
+        }
+      },
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.35,
+        "sustain": 0,
+        "release": 0.25
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 4200,
+        "resonanceDb": 4,
+        "env": {
+          "to": 500,
+          "time": 0.3
+        }
+      }
+    }
+  ],
+  "meta": {
+    "description": "Bright saw pluck whose filter snaps shut: arps and ostinatos."
+  }
+}

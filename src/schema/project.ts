@@ -11,6 +11,8 @@ export const ProjectSchema = z.object({
   }).prefault({}),
   /** Max momentary loudness (LUFS) that one-shots are trimmed to. */
   targetLoudness: z.number().min(-40).max(-6).default(-18),
+  /** Integrated loudness (LUFS) songs are trimmed to: under the one-shots, so SFX read over music. */
+  musicLoudness: z.number().min(-40).max(-6).default(-20),
   sampleRate: z.literal(48000).default(48000),
 });
 

@@ -1,0 +1,65 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "glass-pad",
+  "family": "music",
+  "tags": [
+    "pad",
+    "sustain"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 5,
+          "detuneCents": 16
+        }
+      },
+      "amp": {
+        "attack": 1.2,
+        "decay": 2.5,
+        "sustain": 0.75,
+        "release": 2.5
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1600,
+        "resonanceDb": 2
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 0.13,
+        "depth": 500
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C5",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 10
+        }
+      },
+      "gainDb": -10,
+      "amp": {
+        "attack": 1.8,
+        "decay": 2,
+        "sustain": 0.7,
+        "release": 3
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3500,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Wide detuned saw pad with a slowly breathing lowpass and an airy octave; slow swell. Chords."
+  }
+}

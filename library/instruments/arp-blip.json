@@ -1,0 +1,34 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "arp-blip",
+  "family": "music",
+  "tags": [
+    "arp",
+    "pluck",
+    "retro"
+  ],
+  "duration": 0.1,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "square",
+        "pitch": "C5"
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.1,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3600,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Short square blip, chiptune-clean: fast arps and sequences."
+  }
+}

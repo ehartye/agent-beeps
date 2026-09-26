@@ -24,7 +24,7 @@ function assertRate(sr: number) {
 }
 
 /** Squared K-weighted signal summed across channels (all channel weights 1). */
-function weightedPower(channels: Channels, minLength: number): Float64Array {
+export function weightedPower(channels: Channels, minLength: number): Float64Array {
   const n = Math.max(minLength, channels[0]?.length ?? 0);
   const sum = new Float64Array(n);
   for (const ch of channels) {
@@ -34,7 +34,7 @@ function weightedPower(channels: Channels, minLength: number): Float64Array {
   return sum;
 }
 
-const toLufs = (meanSquare: number) => (meanSquare > 0 ? -0.691 + 10 * Math.log10(meanSquare) : -Infinity);
+export const toLufs = (meanSquare: number) => (meanSquare > 0 ? -0.691 + 10 * Math.log10(meanSquare) : -Infinity);
 
 function slidingMax(power: Float64Array, win: number, hop: number): number {
   let best = 0;

@@ -1,0 +1,45 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "shimmer",
+  "family": "music",
+  "tags": [
+    "texture",
+    "bright"
+  ],
+  "duration": 0.2,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C6",
+        "partials": [
+          [
+            1,
+            0,
+            1.6
+          ],
+          [
+            2,
+            -6,
+            1.1
+          ],
+          [
+            3,
+            -12,
+            0.7
+          ]
+        ]
+      },
+      "amp": {
+        "attack": 0.02,
+        "decay": 1.6,
+        "sustain": 0,
+        "release": 1.2
+      },
+      "pan": 0.3
+    }
+  ],
+  "meta": {
+    "description": "High glassy sparkle: soft sine partials at 2 and 3 octaves. Sparse high notes."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "drone",
+  "family": "music",
+  "tags": [
+    "drone",
+    "sustain",
+    "dark"
+  ],
+  "duration": 4,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C2",
+        "unison": {
+          "voices": 6,
+          "detuneCents": 18
+        }
+      },
+      "amp": {
+        "attack": 3,
+        "decay": 4,
+        "sustain": 0.9,
+        "release": 4
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 420,
+        "resonanceDb": 6
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 0.05,
+        "depth": 260
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C1"
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 3,
+        "decay": 4,
+        "sustain": 0.9,
+        "release": 4
+      }
+    }
+  ],
+  "meta": {
+    "description": "Dark evolving drone: low saw cluster under a slowly sweeping filter. Hold one note for a section."
+  }
+}
