@@ -33,11 +33,19 @@
         <button class="toggle" data-repeat="album" aria-pressed="true">Album</button>
         <button class="toggle" data-repeat="track" aria-pressed="false">Track</button>
         <button class="toggle" id="seam" title="Jump to 8 s before the loop point and repeat the track">Hear the seam</button>
+        <button class="toggle" id="note-here" disabled>Note here</button>
       </div>
       <div class="scrub">
         <div class="strip big" id="np-strip" role="slider" aria-label="Seek" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
         <div class="clock"><span id="pos">0:00</span><span id="sec"></span><span id="dur">0:00</span></div>
       </div>
+    </section>
+
+    <section class="moment-editor" id="moment-editor" aria-label="Note at a moment" hidden>
+      <div id="moment-at" class="facts"></div>
+      <label for="moment-text">Moment note</label>
+      <textarea id="moment-text" rows="2" maxlength="4000" placeholder="What stood out at this moment?"></textarea>
+      <div class="row"><button class="toggle" id="save-moment">Save moment</button><button class="toggle" id="cancel-moment">Cancel</button><span class="saved" id="moment-saved" aria-live="polite"></span></div>
     </section>
 
     <ol class="tracks" id="tracks"></ol>

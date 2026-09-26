@@ -27,6 +27,7 @@ const strips = new Map(); // track index -> [strip elements]
 async function send(event) {
   const r = await api(`/api/album/${id}/event`, { method: 'POST', body: JSON.stringify(event), headers: { 'content-type': 'application/json' } });
   if (!r.ok) throw new Error((await r.json()).error?.message ?? r.statusText);
+  return r.json();
 }
 
 /** Section bands + loudness arc (−45..−5 LUFS mapped bottom to top) + playhead. */
@@ -86,6 +87,7 @@ let npEl = null;
 function nowPlaying(t) {
   $('#np-title').textContent = t.title;
   $('#np-desc').textContent = t.description ?? '';
+  $('#note-here').disabled = !!captured;
   // The big strip mirrors whatever is playing: rebuild it and register it under this track.
   if (npEl) for (const [k, els] of strips) strips.set(k, els.filter(e => e !== npEl));
   const el = strip(t, true);
@@ -98,8 +100,8 @@ function nowPlaying(t) {
 
 let played = new Set();
 function play(index, at = 0) {
-  const t = album.tracks.find(x => x.index === index);
-  if (!t) return;
+  const t = album?.tracks.find(x => x.index === index);
+  if (!t || t.status !== 'ready') return;
   if (current !== index || !audio.src) {
     current = index;
     audio.src = `${t.wav}?t=${encodeURIComponent(token)}`;
@@ -112,8 +114,10 @@ function play(index, at = 0) {
 }
 
 function step(d) {
-  const i = album.tracks.findIndex(x => x.index === current);
-  const next = album.tracks[(i + d + album.tracks.length) % album.tracks.length];
+  const ready = album?.tracks.filter(t => t.status === 'ready') ?? [];
+  if (!ready.length) return;
+  const i = ready.findIndex(x => x.index === current);
+  const next = ready[(i + d + ready.length) % ready.length];
   play(next.index);
 }
 
@@ -127,6 +131,10 @@ function saver(el, event, status) {
 }
 
 function trackCard(t, state) {
+  if (t.status !== 'ready') return h('li', { class: 'track', 'data-index': t.index, 'data-status': t.status },
+    h('div', { class: 'no' }, String(t.index).padStart(2, '0')),
+    h('div', { class: 'body' }, h('h2', {}, h('button', { disabled: true }, t.title)),
+      h('p', { class: 'desc' }, t.status === 'pending' ? 'Preparing audio. It will appear here when ready.' : `Could not prepare this song: ${t.error ?? 'render failed'}`)));
   const s = state.tracks.find(x => x.index === t.index);
   const f = t.features;
   const facts = [mmss(t.durationSec), t.loop ? 'loops' : 'plays once', `${f.loudnessLufs ?? '–'} LUFS`, `range ${f.loudnessRangeLu ?? '–'} LU`].join(' · ');
@@ -154,7 +162,7 @@ function trackCard(t, state) {
   note.value = s.note;
   const status = h('div', { class: 'saved', 'aria-live': 'polite' });
   saver(note, () => ({ type: 'note', index: t.index, text: note.value }), status);
-  return h('li', { class: 'track', 'data-index': t.index },
+  return h('li', { class: 'track', 'data-index': t.index, 'data-status': t.status },
     h('div', { class: 'no' }, String(t.index).padStart(2, '0')),
     h('div', { class: 'body' },
       h('div', { class: 'row' },
@@ -165,26 +173,84 @@ function trackCard(t, state) {
       h('div', { class: 'row' }, verdict),
       chips,
       note, status,
+      h('ul', { class: 'moments', 'aria-label': `Moments in ${t.title}` }, (s.moments ?? []).map(m => momentItem(t, m))),
       h('details', { class: 'look' }, h('summary', {}, 'What the agent saw'), h('img', { loading: 'lazy', alt: `Waveform, loudness arc and spectrogram of ${t.title}`, src: `${t.look}?t=${encodeURIComponent(token)}` }))));
 }
 
+function momentItem(t, m) {
+  return h('li', {}, h('button', { class: 'toggle', onclick: () => play(t.index, m.pos) }, `${mmss(m.pos)}${m.section ? ` · ${m.section}` : ''}`), h('span', {}, m.text));
+}
+
+let captured = null;
+$('#note-here').addEventListener('click', () => {
+  const t = album?.tracks.find(t => t.index === current);
+  if (!t || t.status !== 'ready' || captured) return;
+  captured = { type: 'moment', index: t.index, pos: audio.currentTime || 0, renderKey: t.renderKey };
+  $('#moment-at').textContent = `${t.title} · ${mmss(captured.pos)}`;
+  $('#moment-editor').hidden = false;
+  $('#note-here').disabled = true;
+  $('#moment-text').focus();
+});
+function closeMoment() {
+  captured = null;
+  $('#moment-editor').hidden = true;
+  $('#moment-text').value = '';
+  $('#moment-saved').textContent = '';
+  $('#note-here').disabled = !current;
+}
+$('#cancel-moment').addEventListener('click', closeMoment);
+$('#save-moment').addEventListener('click', async () => {
+  if (!captured) return;
+  const text = $('#moment-text').value.trim();
+  if (!text) { $('#moment-saved').textContent = 'Write a note before saving.'; return; }
+  $('#save-moment').disabled = true;
+  $('#cancel-moment').disabled = true;
+  try {
+    const { event } = await send({ ...captured, text });
+    const t = album.tracks.find(t => t.index === event.index);
+    $(`.track[data-index="${t.index}"] .moments`).append(momentItem(t, event));
+    closeMoment();
+  } catch (e) { $('#moment-saved').textContent = `Not saved: ${e.message}`; }
+  finally { $('#save-moment').disabled = false; $('#cancel-moment').disabled = false; }
+});
+
 async function load() {
-  const r = await api(`/api/album/${id}`);
-  if (!r.ok) {
-    $('#title').textContent = 'Album unavailable';
-    $('#tracks').replaceChildren(h('li', { class: 'error' }, r.status === 401 ? 'This page needs the full link with its ?t= token. Ask the agent for the album link.' : 'This album is not on this server. Ask the agent to open it again.'));
-    return;
-  }
-  album = await r.json();
-  document.title = `${album.title} · agent-beeps`;
-  $('#title').textContent = album.title;
-  const total = album.tracks.reduce((a, t) => a + t.durationSec, 0);
-  $('#meta').textContent = `${album.tracks.length} tracks · ${mmss(total)} · ${new Date(album.createdAt).toLocaleDateString()}`;
-  $('#tracks').replaceChildren(...album.tracks.map(t => trackCard(t, album.state)));
-  $('#album-note').value = album.state.note;
-  saver($('#album-note'), () => ({ type: 'note', text: $('#album-note').value }), $('#album-saved'));
-  current = album.tracks[0].index;
-  nowPlaying(album.tracks[0]);
+  let retry = false;
+  try {
+    const r = await api(`/api/album/${id}`);
+    if (!r.ok) {
+      if (album) throw new Error('Could not check for finished songs.');
+      $('#title').textContent = 'Album unavailable';
+      $('#tracks').replaceChildren(h('li', { class: 'error' }, r.status === 401 ? 'This page needs the full link with its ?t= token. Ask the agent for the album link.' : 'This album is not on this server. Ask the agent to open it again.'));
+      return;
+    }
+    const first = !album;
+    album = await r.json();
+    document.title = `${album.title} · agent-beeps`;
+    $('#title').textContent = album.title;
+    const ready = album.tracks.filter(t => t.status === 'ready');
+    const pending = album.tracks.filter(t => t.status === 'pending').length;
+    const failed = album.tracks.filter(t => t.status === 'failed').length;
+    const total = ready.reduce((a, t) => a + t.durationSec, 0);
+    $('#meta').textContent = `${ready.length}/${album.tracks.length} ready · ${mmss(total)}${pending ? ` · ${pending} preparing` : ''}${failed ? ` · ${failed} failed` : ''}`;
+    for (const t of album.tracks) {
+      const card = $(`.track[data-index="${t.index}"]`);
+      // Ready tracks and their editable fields are immutable: polling never replaces them.
+      if (!card) $('#tracks').append(trackCard(t, album.state));
+      else if (card.dataset.status !== t.status) card.replaceWith(trackCard(t, album.state));
+    }
+    if (first) {
+      $('#album-note').value = album.state.note;
+      saver($('#album-note'), () => ({ type: 'note', text: $('#album-note').value }), $('#album-saved'));
+    }
+    if (!current && ready.length) { current = ready[0].index; nowPlaying(ready[0]); }
+    for (const sel of ['#play', '#prev', '#next', '#seam']) $(sel).disabled = !ready.length;
+    if (!ready.length) $('#np-title').textContent = pending ? 'Preparing your songs' : 'No audio available';
+    retry = pending > 0;
+  } catch (e) {
+    $('#meta').textContent = `${e.message} Retrying…`;
+    retry = true;
+  } finally { if (retry) setTimeout(load, 1500); }
 }
 
 $('#play').addEventListener('click', () => {
@@ -200,6 +266,7 @@ document.querySelectorAll('[data-repeat]').forEach(b => b.addEventListener('clic
 }));
 $('#seam').addEventListener('click', () => {
   const t = album.tracks.find(x => x.index === current);
+  if (!t || t.status !== 'ready') return;
   document.querySelector('[data-repeat="track"]').click();
   play(current, Math.max(0, t.durationSec - 8));
 });

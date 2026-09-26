@@ -60,6 +60,14 @@
 .album-note { margin-top: 20px; display: grid; gap: 6px; }
 .album-note label { font: 600 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
 .error { background: var(--panel); border-radius: var(--radius); padding: 16px; }
+.track[data-status="pending"], .track[data-status="failed"] { opacity: .7; }
+.track h2 button:disabled { cursor: default; }
+.moment-editor { margin-bottom: 18px; padding: 14px 16px; background: var(--panel); border-left: 3px solid var(--arc); border-radius: var(--radius); }
+.moment-editor label { display: block; margin: 6px 0; font-weight: 600; }
+.moment-editor textarea { width: 100%; resize: vertical; padding: 8px 10px; margin-bottom: 8px; border: 1px solid var(--groove); border-radius: 8px; background: var(--pad); color: var(--ink); font: 14px/1.4 var(--text); }
+.moments { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.moments li { display: flex; align-items: baseline; gap: 10px; font-size: 14px; overflow-wrap: anywhere; }
+.moments button { flex-shrink: 0; font-family: var(--mono); }
 
 @media (max-width: 720px) {
   .transport { grid-template-columns: 1fr auto; }

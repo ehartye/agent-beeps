@@ -11,6 +11,7 @@
   window.beepsRenderSong = (song, instruments) => renderSongOffline(song, instruments);
   window.beepsSongChunk = (id, ch, start, count) => songChunk(id, ch, start, count);
   window.beepsSongLook = (id, features, label) => renderSongLook(songChannels(id), features, label);
+  window.beepsPreviewLook = (features, label) => renderSongLook([window.beepsPreview], features, label);
   window.beepsFreeSong = id => freeSong(id);
   window.beepsReady = true;
 </script>

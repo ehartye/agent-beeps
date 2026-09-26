@@ -53,7 +53,7 @@ holds a 13-track example library; `library/instruments/` holds 25 instrument pat
 | `taste show/fit/stats` | the learned taste profile and prediction hit rates |
 | `instruments` | bundled instrument patches songs can name |
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
-| `album open/feedback/list` | the owner's LAN listening page for songs: love/keep/dud, tags, notes |
+| `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
@@ -72,6 +72,11 @@ Songs use `runtime/engine/song.js`: `buildSong(ctx, song, instruments, { lazy: t
 of the playhead. Offline renders do this with `OfflineAudioContext.suspend()`, and it keeps a
 multi-minute song's graph small. Songs are trimmed to `project.musicLoudness` (integrated, −20 LUFS
 by default).
+
+`beeps song render aurora-station --sections return` extracts that passage from the full delivered
+WAV, preserving inherited mix settings, effects and level. The first request renders the whole
+song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
+passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
 ## Install / Claude Code plugin
 

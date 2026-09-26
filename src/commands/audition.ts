@@ -32,12 +32,15 @@ export async function ensureServer(opts: { host?: string; port?: number } = {}):
   const existing = readServerInfo();
   if (await probe(existing)) {
     if (existing!.api === SERVER_API) return existing!;
-    // An older plugin's server is still up and lacks newer routes (albums): replace it.
+    // Keep the token and project registry for the replacement. Clearing the old pid first also
+    // prevents the old process's signal handler from deleting this hand-off file as it exits.
+    writeServerInfo({ ...existing!, pid: 0 });
     try { process.kill(existing!.pid); } catch { /* already gone */ }
-    rmSync(serverInfoFile(), { force: true });
-    await waitFor(async () => (await probe(existing)) ? undefined : true, 5000);
+    const stopped = await waitFor(async () => (await probe(existing)) ? undefined : true, 5000);
+    if (!stopped) throw new BeepsError('E_SERVER', 'the older audition server did not stop');
   }
-  const args = [BIN, 'serve', '--foreground', ...(opts.host ? ['--host', opts.host] : []), ...(opts.port ? ['--port', String(opts.port)] : [])];
+  const host = opts.host ?? existing?.host, port = opts.port ?? existing?.port;
+  const args = [BIN, 'serve', '--foreground', ...(host ? ['--host', host] : []), ...(port ? ['--port', String(port)] : [])];
   const child = spawn(process.execPath, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
   const up = await waitFor(async () => { const i = readServerInfo(); return i && i.pid === child.pid && (await probe(i)) ? i : undefined; }, 15000);

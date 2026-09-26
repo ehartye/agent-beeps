@@ -19,6 +19,7 @@ export const SONG_PIPELINE_VERSION = 4;
 export interface RenderedSong {
   key: string; song: Song; trimDb: number; features: SongFeatures;
   dir: string; wavPath: string; lookPath: string; cached: boolean;
+  excerpt?: { sourceKey: string; sourceRanges: { name: string; start: number; end: number }[] };
 }
 
 /** `trimDb` fixes the trim instead of levelling to the target: stems play at their full mix's trim. */

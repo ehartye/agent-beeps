@@ -54,6 +54,9 @@ and brightness, and the lint. **Open every look.png.** Check that:
 - The orange arc rises and falls where the plan says. Flat for minutes means sections do not differ.
 - Sections that should thin out are visibly quieter or darker (per-section LUFS and Hz).
 - The spectrogram bottom is not a solid bright band (a boomy bass); nothing piles up at one height.
+- Register-band evidence compares held pitched notes that coincide, including instrument layer
+  offsets and repeated sections. It omits unknown-duration one-shots and release/effect tails;
+  use listening and stems to judge actual masking.
 - Loop songs: the end looks like the start (seam under 3 dB).
 
 Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down. Every part you
@@ -63,8 +66,13 @@ and work through each `judgementChecks` item. Levels are automatic (songs are tr
 
 ## 5. Iterate by arrangement first
 
-Find the culprit first: `beeps song render <name> --only <track> --sections <name>` shows one part
-alone. Too busy: drop a part from a section or lower its `gainDb`. Muddy: move a part's octave,
+Find the culprit first: `beeps song render <name> --sections <name>` extracts the exact delivered
+samples for every occurrence of those sections, preserving earlier automation, effects and mix
+level. The first preview needs a full render; later previews reuse it. Output includes the source
+render key and original time ranges. Preview loudness is intentionally not normalized again, and
+whole-song lint is omitted. With `--only <track>`, it excerpts that part's full-length solo render
+at the solo's level; use `song stems` when comparing parts at the full mix's trim.
+Too busy: drop a part from a section or lower its `gainDb`. Muddy: move a part's octave,
 drop a slash-chord bass from the pad, or lower the bass. Boring: vary which parts play per
 section, add a `ramp` mix move (filter opening, a wetter reverb send, a 4-bar fade), change the
 arp shape or rhythm. Reuse a tweaked instrument across tracks with the song's `instruments` block.
@@ -72,10 +80,15 @@ Harsh: lower the track `cutoff`. Repetitive melody: fewer notes, longer rests.
 
 ## 6. Hand to the owner
 
-`beeps album open <songs...> --title "..."` renders anything stale and prints links the owner opens
-from any device on the local network (a hostname link and an IP link; never localhost). The page
-streams each track, loops loop songs, and records love / keep / dud, tags and notes per track.
-`beeps album feedback <id>` returns them. Revise from the notes, re-render, and reopen the album.
+`beeps album open <songs...> --title "..."` prints the listening links before rendering, then stays
+running while songs become playable individually. Share the link immediately; keep the command
+running until it finishes. Stdout is one JSON result (`status: "rendering"`); stderr carries JSON
+progress and final ready/failed counts. A failed song leaves the others playable and exits nonzero.
+The owner can open the hostname or IP link from any device on the local network (never localhost).
+The page streams each ready track, skips unavailable tracks, and records love / keep / dud, tags and
+whole-track notes. **Note here** captures the current position before the owner types; saved moment
+notes include the section and exact render identity. `beeps album feedback <id>` returns all notes.
+Revise from the notes and open a new album; earlier albums retain their audio and feedback.
 
 ## Never
 

@@ -117,8 +117,12 @@ Songs never snap to the project scale: the notes you write are the notes that pl
   `beeps song new draft.json` saves it to `.agent-beeps/songs/`.
 - `trimDb` in render output is the gain the renderer applied to reach `project.musicLoudness`. It
   says how loud the raw mix was, and nothing needs to change because of it.
-- `beeps song render <name> --only pad,bass --sections intro` renders some tracks and sections
-  alone (not looped). Use it to find which part makes a band or a bump.
+- `beeps song render <name> --sections intro` copies all matching passages from the full delivered
+  render, with their original automation, effects and level. It needs the full render once, then
+  reuses the cache. Output `excerpt` records the source key and original ranges; whole-song lint
+  does not apply to an excerpt. Selected passages are joined in form order, without crossfades.
+- Add `--only pad,bass` to excerpt the full-length solo render instead. Its title and `solo` output
+  identify the selected tracks; it uses the solo's normalized level, not the full mix's trim.
 - `node <plugin-root>/scripts/format-song.mjs <song.json>` reformats a song to one line per
   progression, track, pattern and section (readable diffs; content unchanged).
 - `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's

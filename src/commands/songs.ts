@@ -2,9 +2,11 @@ import { copyFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
+import { BeepsError } from '../errors.ts';
 import { openProject, readJsonFile, type OpenProject } from '../project.ts';
 import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
+import { renderSongExcerpt } from '../render/song-excerpt.ts';
 import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
@@ -13,7 +15,7 @@ import { int, withHost } from './shared.ts';
 import { canonicalJson, sha256 } from '../hash.ts';
 import type { Song } from '../schema/song.ts';
 import type { Patch } from '../schema/patch.ts';
-import { foldAlbum, listAlbums, readAlbum, writeAlbum } from '../album.ts';
+import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '../album.ts';
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
 
@@ -30,7 +32,8 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
       centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, ...(f.seamDb !== undefined ? { seamDb: f.seamDb, seamEndLufs: f.seamEndLufs, seamStartLufs: f.seamStartLufs } : {}),
     },
     sections: f.sections.map(s => ({ name: s.name, at: mmss(s.start), lufs: s.lufs, centroidHz: s.centroidHz })),
-    lint: lintSong(r.song, f, p.project, instruments),
+    // A preview keeps the original mix level; whole-song loudness/form rules do not apply to it.
+    ...(r.excerpt ? { excerpt: r.excerpt } : { lint: lintSong(r.song, f, p.project, instruments) }),
     // name@hash per track: when a render changes without a song edit, this says which instrument moved.
     instruments: Object.fromEntries(Object.entries(instruments).map(([t, x]) => [t, `${x.name}@${sha256(canonicalJson(x)).slice(0, 8)}`])),
   };
@@ -115,14 +118,30 @@ export function registerSongCommands(program: Command, io: Io) {
     .description('render, loudness-trim, measure and lint songs; writes a WAV and a look image per song')
     .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', int, 3)
     .option('--only <tracks>', 'comma-separated tracks to keep (solo); the rest are muted')
-    .option('--sections <names>', 'comma-separated sections to keep from the form')
+    .option('--sections <names>', 'excerpt these sections from the full render, preserving mix context and level')
     .action(async (refs: string[], opts: { jobs: number; only?: string; sections?: string }) => {
       const p = openProject(io.projectDir());
       const list = (x?: string) => x?.split(',').map(v => v.trim()).filter(Boolean);
-      const solo = opts.only || opts.sections;
-      const songs = refs.map(r => loadSong(p, r)).map(s => (solo ? soloSong(s, { only: list(opts.only), sections: list(opts.sections) }) : s));
+      const selected = list(opts.sections);
+      const only = list(opts.only);
+      const songs = refs.map(r => loadSong(p, r)).map(s => {
+        if (!only?.length) return s;
+        const solo = soloSong(s, { only });
+        solo.title = `${s.title ?? s.name} — ${only.join(', ')} solo`;
+        return solo;
+      });
+      if (selected) for (const s of songs) for (const name of selected) {
+        if (!s.form.includes(name)) throw new BeepsError('E_USAGE', `no played section "${name}"`);
+      }
       const out = await renderMany(p, songs, opts.jobs);
-      io.emit({ songs: out.map(r => songSummary(r, p, resolveInstruments(p, r.song))) });
+      const previews = selected ? await withHost(async host => {
+        const results: RenderedSong[] = [];
+        for (const r of out) results.push(await renderSongExcerpt(host, r, selected));
+        return results;
+      }) : out;
+      io.emit({ songs: previews.map(r => ({ ...songSummary(r, p, resolveInstruments(p, r.song)),
+        ...(only?.length ? { solo: { tracks: only, level: 'solo-normalized' } } : {}),
+      })) });
     });
 
   song.command('stems <ref>')
@@ -194,24 +213,53 @@ export function registerSongCommands(program: Command, io: Io) {
   album.action(listing(album));
 
   album.command('open <refs...>')
-    .description('render what is stale, create an album and print its hostname and IP links')
+    .description('print album links immediately, then add each song as its render finishes')
     .option('--title <text>', 'album title', 'New music')
     .option('--jobs <n>', 'songs rendered in parallel', int, 3)
     .action(async (refs: string[], opts: { title: string; jobs: number }) => {
       const p = openProject(io.projectDir());
-      const rendered = await renderMany(p, refs.map(r => loadSong(p, r)), opts.jobs);
+      const songs = refs.map(r => loadSong(p, r));
       const a = writeAlbum(p, {
         title: opts.title,
-        tracks: rendered.map(r => ({
-          name: r.song.name, title: r.song.title ?? r.song.name, ...(r.song.description ? { description: r.song.description } : {}),
-          loop: r.song.loop, durationSec: r.features.durationSec, wav: r.wavPath, look: r.lookPath,
-          sections: r.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end })),
-          features: { loudnessLufs: r.features.delivered?.integratedLufs, loudnessRangeLu: r.features.loudnessRangeLu, arc: r.features.arc },
-        })),
+        tracks: songs.map(s => ({ name: s.name, title: s.title ?? s.name, description: s.description, loop: s.loop, status: 'pending' })),
       });
       const info = await ensureServer();
       registerProject(p.paths.root);
-      io.emit({ album: a.id, url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, length: mmss(t.durationSec) })) });
+      io.emit({ album: a.id, status: 'rendering', url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, status: t.status })) });
+      // Stdout remains one JSON document. Progress is JSON lines on stderr; the page polls the album.
+      const progress = (value: object) => process.stderr.write(JSON.stringify({ album: a.id, ...value }) + '\n');
+      let next = 0;
+      const worker = () => withHost(async host => {
+        while (next < songs.length) {
+          const i = next++, index = i + 1;
+          try {
+            const s = songs[i];
+            const r = await renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders });
+            updateAlbumTrack(p, a.id, index, {
+              status: 'ready', renderKey: r.key, durationSec: r.features.durationSec, wav: r.wavPath, look: r.lookPath,
+              sections: r.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end })),
+              features: { loudnessLufs: r.features.delivered?.integratedLufs, loudnessRangeLu: r.features.loudnessRangeLu, arc: r.features.arc },
+            });
+            progress({ index, status: 'ready' });
+          } catch (e) {
+            const error = (e as Error).message;
+            updateAlbumTrack(p, a.id, index, { status: 'failed', error });
+            progress({ index, status: 'failed', error });
+          }
+        }
+      });
+      const workers = await Promise.allSettled(Array.from({ length: Math.max(1, Math.min(opts.jobs, songs.length)) }, worker));
+      // A browser may fail before claiming a track. Never leave its unrendered slots pending forever.
+      const rejected = workers.find(w => w.status === 'rejected');
+      for (const t of readAlbum(p, a.id).tracks.filter(t => t.status === 'pending')) {
+        const error = rejected?.status === 'rejected' ? String(rejected.reason?.message ?? rejected.reason) : 'render did not complete';
+        updateAlbumTrack(p, a.id, t.index, { status: 'failed', error });
+        progress({ index: t.index, status: 'failed', error });
+      }
+      const done = readAlbum(p, a.id);
+      const failed = done.tracks.filter(t => t.status === 'failed').length;
+      progress({ status: 'complete', ready: done.tracks.length - failed, failed });
+      if (failed) process.exitCode = 1;
     });
 
   album.command('feedback <id>')

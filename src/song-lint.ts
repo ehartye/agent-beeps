@@ -88,35 +88,57 @@ const NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
 const nn = (m: number) => `${NAMES[((Math.round(m) % 12) + 12) % 12]}${Math.floor(Math.round(m) / 12) - 1}`;
 
 /**
- * Per section, pairs of pitched parts whose sounding ranges overlap by a fifth or more: the
- * evidence behind song-register-bands. Whether they also leave each other rhythmic gaps is judgement.
+ * Per section, register bands shared by concurrently held pitched notes. Sweep note and section
+ * boundaries rather than combining pitches that play at different times. One-shot durations
+ * (dur: null) and release/effect tails are unknown here; this is advisory, not spectral masking.
  */
 export function registerOverlaps(song: Song, spans: Record<string, { low: number; high: number } | null>) {
   const c = compileSong(song);
-  const out: { section: string; overlaps: string[] }[] = [];
-  const seen = new Set<string>();
-  for (const sec of c.sections) {
-    if (seen.has(sec.name)) continue;
-    seen.add(sec.name);
-    const ranges = new Map<string, { lo: number; hi: number }>();
-    for (const e of c.events) {
-      if (e.midi === null || e.time < sec.start || e.time >= sec.end) continue;
-      const sp = spans[e.track];
-      const lo = e.midi + (sp?.low ?? 0), hi = e.midi + (sp?.high ?? 0);
-      const r = ranges.get(e.track) ?? { lo: Infinity, hi: -Infinity };
-      ranges.set(e.track, { lo: Math.min(r.lo, lo), hi: Math.max(r.hi, hi) });
+  type Range = { lo: number; hi: number };
+  const events = c.events.filter(e => e.midi !== null && e.dur !== null && e.dur > 0 && e.vel > 0);
+  const edges = events.flatMap((e, id) => [{ time: e.time, id, start: true }, { time: e.time + e.dur!, id, start: false }]);
+  // Section boundaries split sustained notes even when no new note starts there.
+  for (const sec of c.sections) edges.push({ time: sec.start, id: -1, start: false }, { time: sec.end, id: -1, start: false });
+  edges.sort((a, b) => a.time - b.time);
+  const active = new Set<number>();
+  const found = new Map<string, Map<string, { tracks: string[]; ranges: Range[] }>>();
+  const tracks = Object.keys(song.tracks);
+  const merge = (a: Range, b: Range) => ({ lo: Math.min(a.lo, b.lo), hi: Math.max(a.hi, b.hi) });
+  let section = 0;
+  for (let i = 0; i < edges.length;) {
+    const time = edges[i].time;
+    // Apply all changes before examining [time, next time): touching notes never coincide.
+    while (i < edges.length && edges[i].time === time) {
+      const edge = edges[i++];
+      if (edge.id >= 0) { if (edge.start) active.add(edge.id); else active.delete(edge.id); }
     }
-    const tracks = [...ranges.keys()];
-    const overlaps: string[] = [];
-    const fmtRange = (r: { lo: number; hi: number }) => (r.lo === r.hi ? nn(r.lo) : `${nn(r.lo)}-${nn(r.hi)}`);
-    for (let i = 0; i < tracks.length; i++) for (let j = i + 1; j < tracks.length; j++) {
-      const a = ranges.get(tracks[i])!, b = ranges.get(tracks[j])!;
+    while (section < c.sections.length && time >= c.sections[section].end) section++;
+    if (section === c.sections.length) break;
+    const sec = c.sections[section];
+    // Equivalent beat boundaries can differ after seconds conversion and duration addition.
+    // Ignore sub-nanosecond gaps, far below audio resolution, without hiding humanized overlaps.
+    if (time < sec.start || i === edges.length || edges[i].time - time <= 1e-9) continue;
+    const ranges = new Map<string, { lo: number; hi: number }>();
+    for (const id of active) {
+      const e = events[id];
+      const sp = spans[e.track];
+      const r = { lo: e.midi! + (sp?.low ?? 0), hi: e.midi! + (sp?.high ?? 0) };
+      ranges.set(e.track, merge(ranges.get(e.track) ?? r, r));
+    }
+    const playing = tracks.filter(t => ranges.has(t));
+    for (let aIndex = 0; aIndex < playing.length; aIndex++) for (let bIndex = aIndex + 1; bIndex < playing.length; bIndex++) {
+      const names = [playing[aIndex], playing[bIndex]];
+      const a = ranges.get(names[0])!, b = ranges.get(names[1])!;
       const shared = Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo);
       const narrow = Math.min(a.hi - a.lo, b.hi - b.lo);
-      if (shared >= Math.min(7, narrow)) overlaps.push(`${tracks[i]} ${fmtRange(a)} and ${tracks[j]} ${fmtRange(b)} share a band`);
+      if (shared < Math.min(7, narrow)) continue;
+      const pairs = found.get(sec.name) ?? new Map();
+      const key = names.join('/'), previous = pairs.get(key);
+      pairs.set(key, { tracks: names, ranges: previous ? [merge(previous.ranges[0], a), merge(previous.ranges[1], b)] : [a, b] });
+      found.set(sec.name, pairs);
     }
-    if (overlaps.length) out.push({ section: sec.name, overlaps });
   }
-  return out;
+  const fmtRange = (r: Range) => (r.lo === r.hi ? nn(r.lo) : `${nn(r.lo)}-${nn(r.hi)}`);
+  return [...found].map(([section, pairs]) => ({ section, overlaps: [...pairs.values()].map(p =>
+    `${p.tracks[0]} ${fmtRange(p.ranges[0])} and ${p.tracks[1]} ${fmtRange(p.ranges[1])} share a band`) }));
 }
-

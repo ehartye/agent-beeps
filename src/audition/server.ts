@@ -19,7 +19,7 @@ import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readRev
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 2;
+export const SERVER_API = 3;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -270,7 +270,7 @@ export class AuditionServer {
     if (!action && req.method === 'GET') {
       return json(res, 200, {
         id: album.id, title: album.title, createdAt: album.createdAt, tags: ALBUM_TAGS, state: foldAlbum(album, p),
-        tracks: album.tracks.map(t => ({ ...t, wav: `/api/album/${id}/wav/${t.index}`, look: `/api/album/${id}/look/${t.index}` })),
+        tracks: album.tracks.map(t => ({ ...t, wav: t.status === 'ready' ? `/api/album/${id}/wav/${t.index}` : null, look: t.status === 'ready' ? `/api/album/${id}/look/${t.index}` : null })),
       });
     }
     if (action === 'event' && req.method === 'POST') {
@@ -278,7 +278,7 @@ export class AuditionServer {
       return json(res, 200, { event: appendAlbumEvent(p, id, body) });
     }
     const t = album.tracks.find(x => x.index === Number(arg));
-    if (!t || req.method !== 'GET') return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'no such track' } });
+    if (!t || t.status !== 'ready' || req.method !== 'GET') return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'track not available' } });
     // Only files inside this project's render cache, whatever path an album file claims.
     const file = resolve(action === 'wav' ? t.wav : t.look);
     const want = action === 'wav' ? 'delivered.wav' : 'look.png';

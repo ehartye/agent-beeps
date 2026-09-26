@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lintSong } from '../../src/song-lint.ts';
+import { lintSong, registerOverlaps } from '../../src/song-lint.ts';
 import { defaultProject } from '../../src/schema/project.ts';
 import type { SongFeatures } from '../../src/measure/song.ts';
 import { HAT, PAD, song } from '../helpers/songs.ts';
@@ -62,5 +62,69 @@ describe('song lint', () => {
     const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a' } }, 'hat-a': { bars: 1, steps: 'x' }, spare: { bars: 1, steps: 'x' } }, sections: { a: { bars: 2, play: { pad: 'pad-a' } } } });
     const r = lintSong(s, good(), project);
     expect(r.warnings.filter(f => f.rule === 'song-unused').map(f => f.pointer).sort()).toEqual(['/patterns/hat-a', '/patterns/spare', '/tracks/hat']);
+  });
+});
+
+describe('concurrent register evidence', () => {
+  it('leaves call-and-response parts unflagged, including touching note boundaries', () => {
+    const s = song({ patterns: {
+      'pad-a': { bars: 2, notes: [[0, 'C4', 2], [4, 'G4', 2]] },
+      'hat-a': { bars: 2, notes: [[2, 'C4', 2], [6, 'G4', 2]] },
+    } });
+    expect(registerOverlaps(s, {})).toEqual([]);
+  });
+
+  it('does not combine sequential pitches into a simultaneous chord band', () => {
+    const s = song({ patterns: {
+      'pad-a': { bars: 2, notes: [[0, 'C4', 4], [4, 'C5', 4]] },
+      'hat-a': { bars: 2, notes: [[0, 'G4', 8]] },
+    } });
+    expect(registerOverlaps(s, {})).toEqual([]);
+  });
+
+  it('treats touching beat boundaries as nonoverlapping at fractional-second tempos', () => {
+    const s = song({ bpm: 41, patterns: {
+      'pad-a': { bars: 2, notes: [[0.25, 'C4', 3]] },
+      'hat-a': { bars: 2, notes: [[3.25, 'C4', 0.25]] },
+    } });
+    expect(registerOverlaps(s, {})).toEqual([]);
+  });
+
+  it('retains layer offsets when matching concurrent notes', () => {
+    const s = song({ patterns: {
+      'pad-a': { bars: 2, notes: [[0, 'C5', 8]] },
+      'hat-a': { bars: 2, notes: [[0, 'C4', 8]] },
+    } });
+    expect(registerOverlaps(s, { pad: { low: -12, high: 0 } })).toEqual([
+      { section: 'a', overlaps: ['pad C4-C5 and hat C4 share a band'] },
+    ]);
+  });
+
+  it('checks later occurrences of a section when a seeded hit was absent the first time', () => {
+    const s = song({ seed: 1, patterns: {
+      'pad-a': { bars: 1, notes: [[0, 'C4', 4]] },
+      'hat-a': { bars: 1, steps: '?...............', note: 'C4', gate: 1 },
+    }, sections: { a: { bars: 1, play: { pad: 'pad-a', hat: 'hat-a' } } }, form: ['a', 'a'] });
+    expect(registerOverlaps(s, {})).toEqual([
+      { section: 'a', overlaps: ['pad C4 and hat C4 share a band'] },
+    ]);
+  });
+
+  it('includes a held note that humanization carries into the next section', () => {
+    const s = song({ seed: 2, tracks: { pad: { instrument: PAD, humanize: 1 }, hat: { instrument: PAD } },
+      patterns: { p: { bars: 1, notes: [[0, 'C4', 4]] }, h: { bars: 1, notes: [[0, 'C4', 1]] } },
+      sections: { a: { bars: 1, play: { pad: 'p' } }, b: { bars: 1, play: { hat: 'h' } } }, form: ['a', 'b'],
+    });
+    expect(registerOverlaps(s, {})).toEqual([
+      { section: 'b', overlaps: ['pad C4 and hat C4 share a band'] },
+    ]);
+  });
+
+  it('does not invent durations for pitched one-shots', () => {
+    const s = song({ patterns: {
+      'pad-a': { bars: 2, notes: [[0, 'C4', 8]] },
+      'hat-a': { bars: 2, steps: 'x', note: 'C4' },
+    } });
+    expect(registerOverlaps(s, {})).toEqual([]);
   });
 });
