@@ -2,7 +2,7 @@
 // through the same engine the CLI measured; the JSON API is token-guarded and never serves a
 // prediction before the owner ships.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { hostname, networkInterfaces } from 'node:os';
 import { basename, extname, join, normalize, resolve, sep } from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -14,13 +14,16 @@ import { setCandidatePatch } from '../sets.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { beepsHome } from '../taste/verdicts.ts';
 import { nextDuel } from '../taste/select.ts';
+import { ALBUM_TAGS, appendAlbumEvent, foldAlbum, listAlbums, readAlbum } from '../album.ts';
 import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readReveal, readSession, tasteVectors, type SessionState } from './session.ts';
 
 export const DEFAULT_PORT = 47301;
+/** Bump when routes change: a running server of another API level is replaced, not reused. */
+export const SERVER_API = 2;
 const MAX_BODY = 64 * 1024;
-const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
-export interface ServerInfo { pid: number; port: number; host: string; token: string; projects: string[]; startedAt: string; url: string }
+export interface ServerInfo { pid: number; port: number; host: string; token: string; projects: string[]; startedAt: string; url: string; api?: number }
 
 export const serverInfoFile = () => join(beepsHome(), 'server.json');
 
@@ -47,12 +50,30 @@ export function registerProject(root: string) {
 
 export const publicHost = () => hostname().toLowerCase();
 
-/** First non-internal IPv4 address, for devices (phones) that cannot resolve the machine name. */
-export function lanAddress(): string | null {
-  for (const addrs of Object.values(networkInterfaces())) for (const a of addrs ?? []) {
-    if (a.family === 'IPv4' && !a.internal && !a.address.startsWith('169.254.')) return a.address;
+const VIRTUAL = /vethernet|wsl|hyper-v|docker|vbox|virtualbox|vmware|vmnet|loopback|utun|bridge/i;
+const PHYSICAL = /wi-?fi|wlan|ethernet|^en\d|^eth\d|^wl/i;
+const isPrivate = (a: string) => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(a);
+const isTailscale = (a: string) => /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(a);
+
+/**
+ * IPv4 addresses other devices can reach, best first: the physical LAN (Wi-Fi/Ethernet), other
+ * private networks, then Tailscale. Virtual adapters (WSL, Hyper-V, Docker) are unreachable from
+ * other machines and are left out.
+ */
+export function rankAddresses(ifaces: ReturnType<typeof networkInterfaces> = networkInterfaces()): { address: string; label: string }[] {
+  const out: { address: string; label: string; score: number }[] = [];
+  for (const [name, addrs] of Object.entries(ifaces)) for (const a of addrs ?? []) {
+    if (a.family !== 'IPv4' || a.internal || a.address.startsWith('169.254.') || VIRTUAL.test(name)) continue;
+    if (isTailscale(a.address)) out.push({ address: a.address, label: 'tailscale', score: 2 });
+    else if (isPrivate(a.address)) out.push({ address: a.address, label: 'lan', score: PHYSICAL.test(name) ? 0 : 1 });
+    else out.push({ address: a.address, label: 'other', score: 3 });
   }
-  return null;
+  return out.sort((a, b) => a.score - b.score).map(({ address, label }) => ({ address, label }));
+}
+
+/** Best address for devices (phones) that cannot resolve the machine name. */
+export function lanAddress(): string | null {
+  return rankAddresses()[0]?.address ?? null;
 }
 
 const sameToken = (a: string, b: string) => {
@@ -168,13 +189,14 @@ export class AuditionServer {
 
     if (path === '/' || path === '/index.html') return this.file(res, join(RUNTIME_DIR, 'audition', 'queue.html'));
     if (/^\/s\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'index.html'));
+    if (/^\/a\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'album.html'));
     if (path.startsWith('/runtime/')) {
       const file = normalize(join(RUNTIME_DIR, path.slice('/runtime/'.length)));
       if (!file.startsWith(normalize(RUNTIME_DIR) + sep)) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not found' } });
       return this.file(res, file);
     }
     if (!path.startsWith('/api/')) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not found' } });
-    if (path === '/api/health') return json(res, 200, { ok: true, authed, pid: process.pid });
+    if (path === '/api/health') return json(res, 200, { ok: true, authed, pid: process.pid, api: SERVER_API });
     if (!authed) return json(res, 401, { error: { code: 'E_SERVER', message: 'missing or wrong token (the link carries ?t=...)' } });
 
     if (path === '/api/sessions' && req.method === 'GET') {
@@ -194,6 +216,17 @@ export class AuditionServer {
       out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       return json(res, 200, { sessions: out });
     }
+    if (path === '/api/albums' && req.method === 'GET') {
+      const out = [];
+      for (const root of this.knownProjects()) {
+        if (!existsSync(join(root, '.agent-beeps', 'albums'))) continue;
+        for (const a of listAlbums(openProject(root))) out.push({ id: a.id, title: a.title, tracks: a.tracks.length, project: basename(root), createdAt: a.createdAt });
+      }
+      out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return json(res, 200, { albums: out });
+    }
+    const am = /^\/api\/album\/([a-z0-9-]+)(?:\/(event|wav|look)(?:\/(\d+))?)?$/.exec(path);
+    if (am) return this.albumRoute(req, res, am[1], am[2], am[3]);
     const m = /^\/api\/session\/([a-z0-9-]+)(?:\/(event|reveal|look)(?:\/(\d+))?)?$/.exec(path);
     if (!m) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'unknown endpoint' } });
     const [, id, action, arg] = m;
@@ -223,6 +256,55 @@ export class AuditionServer {
     return json(res, 405, { error: { code: 'E_SERVER', message: 'method not allowed' } });
   }
 
+  findAlbum(id: string): OpenProject {
+    if (!/^[a-z0-9-]+$/.test(id)) throw new BeepsError('E_NOT_FOUND', 'invalid album id');
+    for (const root of this.knownProjects()) {
+      if (existsSync(join(root, '.agent-beeps', 'albums', id, 'album.json'))) return openProject(root);
+    }
+    throw new BeepsError('E_NOT_FOUND', `no album ${id} in registered projects`);
+  }
+
+  private async albumRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, arg?: string) {
+    const p = this.findAlbum(id);
+    const album = readAlbum(p, id);
+    if (!action && req.method === 'GET') {
+      return json(res, 200, {
+        id: album.id, title: album.title, createdAt: album.createdAt, tags: ALBUM_TAGS, state: foldAlbum(album, p),
+        tracks: album.tracks.map(t => ({ ...t, wav: `/api/album/${id}/wav/${t.index}`, look: `/api/album/${id}/look/${t.index}` })),
+      });
+    }
+    if (action === 'event' && req.method === 'POST') {
+      const body = await readBody(req);
+      return json(res, 200, { event: appendAlbumEvent(p, id, body) });
+    }
+    const t = album.tracks.find(x => x.index === Number(arg));
+    if (!t || req.method !== 'GET') return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'no such track' } });
+    // Only files inside this project's render cache, whatever path an album file claims.
+    const file = resolve(action === 'wav' ? t.wav : t.look);
+    const want = action === 'wav' ? 'delivered.wav' : 'look.png';
+    if (!file.startsWith(resolve(p.paths.renders) + sep) || basename(file) !== want || !existsSync(file)) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'render missing' } });
+    if (action === 'look') return this.file(res, file);
+    return this.ranged(req, res, file);
+  }
+
+  /** Byte-range file responses, so the page can seek inside a multi-minute WAV. */
+  private ranged(req: IncomingMessage, res: ServerResponse, file: string) {
+    const size = statSync(file).size;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ''));
+    const head = { 'content-type': 'audio/wav', 'accept-ranges': 'bytes', 'cache-control': 'no-store' };
+    if (!range || (!range[1] && !range[2])) {
+      res.writeHead(200, { ...head, 'content-length': size });
+      createReadStream(file).pipe(res);
+      return;
+    }
+    let start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+    let end = range[1] && range[2] ? Number(range[2]) : size - 1;
+    end = Math.min(end, size - 1);
+    if (start > end || start >= size) { res.writeHead(416, { 'content-range': `bytes */${size}` }).end(); return; }
+    res.writeHead(206, { ...head, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': end - start + 1 });
+    createReadStream(file, { start, end }).pipe(res);
+  }
+
   private file(res: ServerResponse, file: string) {
     if (!existsSync(file) || !statSync(file).isFile()) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not found' } });
     res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
@@ -250,7 +332,7 @@ export class AuditionServer {
       }
     }
     const actual = (this.server.address() as AddressInfo).port;
-    this.info = { pid: process.pid, port: actual, host, token, projects: this.knownProjects(), startedAt: new Date().toISOString(), url: `http://${host === '127.0.0.1' ? '127.0.0.1' : publicHost()}:${actual}` };
+    this.info = { api: SERVER_API, pid: process.pid, port: actual, host, token, projects: this.knownProjects(), startedAt: new Date().toISOString(), url: `http://${host === '127.0.0.1' ? '127.0.0.1' : publicHost()}:${actual}` };
     return this.info;
   }
 
@@ -260,11 +342,18 @@ export class AuditionServer {
 }
 
 export const sessionUrl = (info: Pick<ServerInfo, 'url' | 'token'>, id: string) => `${info.url}/s/${id}?t=${info.token}`;
+export const albumUrl = (info: Pick<ServerInfo, 'url' | 'token'>, id: string) => `${info.url}/a/${id}?t=${info.token}`;
 
 /** The same link by IP address, when the machine has a LAN address. */
 export function sessionIpUrl(info: Pick<ServerInfo, 'port' | 'token' | 'host'>, id: string): string | null {
   const ip = info.host === '127.0.0.1' ? null : lanAddress();
   return ip ? `http://${ip}:${info.port}/s/${id}?t=${info.token}` : null;
+}
+
+/** The album link by every reachable address, LAN first (then Tailscale, for off-network devices). */
+export function albumIpUrls(info: Pick<ServerInfo, 'port' | 'token' | 'host'>, id: string): { url: string; via: string }[] {
+  if (info.host === '127.0.0.1') return [];
+  return rankAddresses().map(a => ({ url: `http://${a.address}:${info.port}/a/${id}?t=${info.token}`, via: a.label }));
 }
 
 export async function probe(info: ServerInfo | null): Promise<boolean> {

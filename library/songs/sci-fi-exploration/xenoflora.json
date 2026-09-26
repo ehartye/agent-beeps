@@ -1,0 +1,670 @@
+{
+  "schema": "beeps/song@1",
+  "name": "xenoflora",
+  "title": "Xenoflora",
+  "description": "An alien jungle of bioluminescent plants: F lydian marimba in threes against bells in fours, a soft-pluck counter-line, a warm pad, and a chirping bird that is heard more than seen.",
+  "tags": [
+    "exploration",
+    "sci-fi",
+    "playful"
+  ],
+  "bpm": 96,
+  "loop": true,
+  "seed": 3,
+  "progressions": {
+    "bloom": [
+      [
+        "Fmaj7#11",
+        8
+      ],
+      [
+        "G/F",
+        8
+      ],
+      [
+        "Em7",
+        8
+      ],
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "G6",
+        4
+      ]
+    ],
+    "glow": [
+      [
+        "Am9",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Bbmaj7#11",
+        8
+      ],
+      [
+        "C7sus4",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -10,
+      "sends": {
+        "reverb": -10
+      },
+      "spread": 0.5
+    },
+    "bass": {
+      "instrument": "sub-bass",
+      "gainDb": -14
+    },
+    "marimba": {
+      "instrument": "mallet",
+      "gainDb": -10,
+      "pan": -0.3,
+      "humanize": 0.3,
+      "sends": {
+        "reverb": -14
+      }
+    },
+    "bells": {
+      "instrument": "glass-bell",
+      "gainDb": -18,
+      "pan": 0.35,
+      "sends": {
+        "reverb": -10,
+        "delay": -10
+      }
+    },
+    "pluck": {
+      "instrument": "soft-pluck",
+      "gainDb": -14,
+      "pan": 0.15,
+      "humanize": 0.3,
+      "sends": {
+        "reverb": -10,
+        "delay": -14
+      }
+    },
+    "shaker": {
+      "instrument": "shaker",
+      "gainDb": -22,
+      "pan": 0.4,
+      "humanize": 0.5
+    },
+    "bird": {
+      "instrument": {
+        "duration": 0.25,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "C6"
+            },
+            "pitchEnv": [
+              {
+                "at": 0.05,
+                "to": "G6",
+                "curve": "exp"
+              },
+              {
+                "at": 0.14,
+                "to": "E6",
+                "curve": "exp"
+              }
+            ],
+            "amp": {
+              "attack": 0.004,
+              "decay": 0.18,
+              "sustain": 0.25,
+              "release": 0.12
+            },
+            "lfo": {
+              "target": "pitch",
+              "rate": 22,
+              "depth": 70
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "triangle",
+              "pitch": "C7"
+            },
+            "gainDb": -18,
+            "amp": {
+              "attack": 0.004,
+              "decay": 0.08,
+              "sustain": 0,
+              "release": 0.05
+            }
+          }
+        ]
+      },
+      "gainDb": -20,
+      "pan": -0.5,
+      "sends": {
+        "reverb": -8,
+        "delay": -6
+      }
+    }
+  },
+  "patterns": {
+    "pad-bloom": {
+      "bars": 8,
+      "chords": {
+        "progression": "bloom",
+        "octave": 4,
+        "voicing": "lead"
+      }
+    },
+    "pad-glow": {
+      "bars": 8,
+      "chords": {
+        "progression": "glow",
+        "octave": 4,
+        "voicing": "spread"
+      }
+    },
+    "bass-bloom": {
+      "bars": 8,
+      "bass": {
+        "progression": "bloom",
+        "octave": 2,
+        "rhythm": "x.......x..x....",
+        "tones": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "bass-glow": {
+      "bars": 8,
+      "bass": {
+        "progression": "glow",
+        "octave": 2,
+        "rhythm": "x.......x..x....",
+        "tones": [
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "mar-bloom": {
+      "bars": 8,
+      "arp": {
+        "progression": "bloom",
+        "rate": 4,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 4,
+        "rhythm": "x..x..x.x.x."
+      }
+    },
+    "bell-bloom": {
+      "bars": 8,
+      "vel": 0.8,
+      "arp": {
+        "progression": "bloom",
+        "rate": 2,
+        "shape": "converge",
+        "octaves": 1,
+        "octave": 5,
+        "rhythm": "x..x.x.."
+      }
+    },
+    "bell-glow": {
+      "bars": 8,
+      "vel": 0.8,
+      "arp": {
+        "progression": "glow",
+        "rate": 2,
+        "shape": "converge",
+        "octaves": 1,
+        "octave": 5,
+        "rhythm": "x..x.x.."
+      }
+    },
+    "pluck-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E5",
+          1.5,
+          0.8
+        ],
+        [
+          1.5,
+          "G5",
+          0.5,
+          0.6
+        ],
+        [
+          2,
+          "B5",
+          2,
+          0.9
+        ],
+        [
+          5,
+          "A5",
+          1,
+          0.7
+        ],
+        [
+          6,
+          "G5",
+          2,
+          0.8
+        ],
+        [
+          8,
+          "A5",
+          1.5,
+          0.8
+        ],
+        [
+          9.5,
+          "B5",
+          0.5,
+          0.6
+        ],
+        [
+          10,
+          "D6",
+          3,
+          0.9
+        ],
+        [
+          14,
+          "C6",
+          1,
+          0.7
+        ],
+        [
+          15,
+          "B5",
+          1,
+          0.7
+        ],
+        [
+          16,
+          "G5",
+          3,
+          0.8
+        ],
+        [
+          19,
+          "E5",
+          1,
+          0.7
+        ],
+        [
+          20,
+          "D5",
+          2,
+          0.8
+        ],
+        [
+          22,
+          "E5",
+          2,
+          0.7
+        ],
+        [
+          24,
+          "F5",
+          1.5,
+          0.8
+        ],
+        [
+          25.5,
+          "E5",
+          0.5,
+          0.6
+        ],
+        [
+          26,
+          "D5",
+          2,
+          0.8
+        ],
+        [
+          28,
+          "B4",
+          2,
+          0.8
+        ],
+        [
+          30,
+          "D5",
+          1,
+          0.6
+        ]
+      ]
+    },
+    "pluck-glow": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E5",
+          2,
+          0.8
+        ],
+        [
+          2,
+          "B5",
+          1,
+          0.7
+        ],
+        [
+          3,
+          "C6",
+          3,
+          0.9
+        ],
+        [
+          7,
+          "B5",
+          1,
+          0.6
+        ],
+        [
+          8,
+          "A5",
+          3,
+          0.8
+        ],
+        [
+          11,
+          "F5",
+          1,
+          0.7
+        ],
+        [
+          12,
+          "E5",
+          4,
+          0.8
+        ],
+        [
+          16,
+          "D5",
+          1.5,
+          0.8
+        ],
+        [
+          17.5,
+          "E5",
+          0.5,
+          0.7
+        ],
+        [
+          18,
+          "F5",
+          2,
+          0.8
+        ],
+        [
+          20,
+          "A5",
+          4,
+          0.9
+        ],
+        [
+          24,
+          "G5",
+          3,
+          0.8
+        ],
+        [
+          27,
+          "F5",
+          1,
+          0.7
+        ],
+        [
+          28,
+          "C5",
+          4,
+          0.7
+        ]
+      ]
+    },
+    "shaker-a": {
+      "bars": 1,
+      "steps": "o.x. o.xo o.x. o.xx"
+    },
+    "shaker-3": {
+      "bars": 0.75,
+      "steps": "x.o.o.x.o.o."
+    },
+    "bird-a": {
+      "bars": 8,
+      "notes": [
+        [
+          6,
+          "E6",
+          0.5,
+          0.7
+        ],
+        [
+          6.5,
+          "B6",
+          0.25,
+          0.5
+        ],
+        [
+          22,
+          "G6",
+          0.5,
+          0.6
+        ],
+        [
+          22.75,
+          "C7",
+          0.25,
+          0.4
+        ]
+      ]
+    },
+    "bird-b": {
+      "bars": 4,
+      "notes": [
+        [
+          2,
+          "E6",
+          0.5,
+          0.7
+        ],
+        [
+          2.5,
+          "B6",
+          0.25,
+          0.5
+        ],
+        [
+          3,
+          "A6",
+          0.25,
+          0.4
+        ],
+        [
+          9,
+          "C7",
+          0.5,
+          0.5
+        ],
+        [
+          9.75,
+          "G6",
+          0.25,
+          0.4
+        ],
+        [
+          13,
+          "B6",
+          0.5,
+          0.6
+        ]
+      ]
+    },
+    "mar-glow": {
+      "bars": 8,
+      "vel": 0.75,
+      "arp": {
+        "progression": "glow",
+        "rate": 4,
+        "shape": "down",
+        "octaves": 1,
+        "octave": 5,
+        "rhythm": "x.x..x.x..x."
+      }
+    }
+  },
+  "sections": {
+    "intro": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-bloom",
+        "marimba": "mar-bloom",
+        "bird": "bird-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -16,
+          "cutoff": 1200
+        },
+        "marimba": {
+          "gainDb": -15
+        }
+      }
+    },
+    "grow": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-bloom",
+        "marimba": "mar-bloom",
+        "bass": "bass-bloom",
+        "bells": "bell-bloom",
+        "shaker": "shaker-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -10,
+          "cutoff": 3000
+        },
+        "marimba": {
+          "gainDb": -10
+        }
+      },
+      "ramp": true
+    },
+    "a": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-bloom",
+        "marimba": "mar-bloom",
+        "bass": "bass-bloom",
+        "bells": "bell-bloom",
+        "shaker": "shaker-a",
+        "pluck": "pluck-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -10,
+          "cutoff": 3000
+        },
+        "marimba": {
+          "gainDb": -10
+        }
+      }
+    },
+    "glow": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-glow",
+        "bass": "bass-glow",
+        "bells": "bell-glow",
+        "pluck": "pluck-glow",
+        "shaker": "shaker-3",
+        "bird": "bird-a",
+        "marimba": "mar-glow"
+      },
+      "mix": {
+        "marimba": {
+          "gainDb": -13
+        }
+      }
+    },
+    "canopy": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-bloom",
+        "marimba": "mar-bloom",
+        "bird": "bird-b"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -14,
+          "cutoff": 1800
+        },
+        "marimba": {
+          "gainDb": -10
+        }
+      }
+    },
+    "outro": {
+      "bars": 8,
+      "play": {
+        "pad": "pad-bloom",
+        "marimba": "mar-bloom",
+        "bird": "bird-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -16,
+          "cutoff": 1200
+        },
+        "marimba": {
+          "gainDb": -15
+        }
+      },
+      "ramp": true
+    }
+  },
+  "form": [
+    "intro",
+    "grow",
+    "a",
+    "glow",
+    "canopy",
+    "a",
+    "outro"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -4
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.35,
+      "returnDb": -6,
+      "cutoff": 3500
+    }
+  }
+}

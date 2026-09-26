@@ -1,0 +1,48 @@
+{
+  "schema": "beeps/song@1",
+  "name": "event-horizon",
+  "title": "Event Horizon",
+  "description": "Vast and dark at the edge of a black hole: a C drone under a slow C minor choir with phrygian Db colour, then a low brass call over the horizon progression and a distant tom heartbeat.",
+  "tags": ["exploration", "ambient", "sci-fi", "dark"],
+  "bpm": 60,
+  "loop": true,
+  "progressions": {
+    "void": [["Cm9", 8], ["Dbmaj7", 8], ["Abmaj7", 8], ["Fm9", 4], ["Gsus4", 4]],
+    "edge": [["Dbmaj7#11", 8], ["Bbm9", 8], ["Abmaj9", 8], ["Gsus4", 4], ["G7b9", 4]]
+  },
+  "tracks": {
+    "drone": { "instrument": "drone", "gainDb": -10, "sends": { "reverb": -14 } },
+    "air": { "instrument": "nebula", "gainDb": -18, "sends": { "reverb": -10 } },
+    "choir": { "instrument": "choir-pad", "gainDb": -8, "sends": { "reverb": -6 }, "spread": 0.6 },
+    "halo": { "instrument": "glass-pad", "gainDb": -18, "cutoff": 3200, "sends": { "reverb": -4 }, "spread": 0.8 },
+    "sub": { "instrument": "sub-bass", "gainDb": -14 },
+    "brass": { "instrument": "synth-brass", "gainDb": -16, "cutoff": 1800, "pan": -0.1, "sends": { "reverb": -5 } },
+    "star": { "instrument": "shimmer", "gainDb": -20, "pan": 0.4, "sends": { "reverb": -3, "delay": -8 } },
+    "pulse": { "instrument": "tom", "gainDb": -20, "sends": { "reverb": -6 } }
+  },
+  "patterns": {
+    "drone-c": { "bars": 8, "notes": [[0, "C3", 32]] },
+    "air-hold": { "bars": 8, "notes": [[0, "C3", 32]] },
+    "choir-void": { "bars": 8, "chords": { "progression": "void", "octave": 4 } },
+    "choir-edge": { "bars": 8, "chords": { "progression": "edge", "octave": 4 } },
+    "halo-edge": { "bars": 8, "chords": { "progression": "edge", "octave": 5, "voicing": "spread" } },
+    "sub-edge": { "bars": 8, "bass": { "progression": "edge", "octave": 2 } },
+    "brass-a": { "bars": 8, "notes": [[0, "G3", 6], [6, "Ab3", 2, 0.7], [8, "F3", 8], [16, "Eb3", 6], [22, "D3", 2, 0.7], [24, "D3", 8, 0.8]] },
+    "brass-b": { "bars": 8, "notes": [[0, "Ab3", 8], [8, "Db4", 6, 0.8], [14, "C4", 2, 0.7], [16, "C4", 8], [24, "B3", 8, 0.7]] },
+    "star-void": { "bars": 8, "notes": [[3, "G6", 1, 0.7], [14, "Eb6", 1, 0.5], [21, "D6", 1, 0.6]] },
+    "star-edge": { "bars": 8, "notes": [[2, "F6", 1, 0.6], [13, "Db6", 1, 0.5], [22, "Eb6", 1, 0.6], [29, "B5", 1, 0.4]] },
+    "pulse": { "bars": 2, "notes": [[0, "C2", 2, 0.7], [1.5, "C2", 2, 0.35]] }
+  },
+  "sections": {
+    "intro": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "choir": "choir-void" },
+               "mix": { "choir": { "gainDb": -15, "cutoff": 900 }, "drone": { "gainDb": -12, "cutoff": 20000 } } },
+    "approach": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "choir": "choir-void", "star": "star-void" },
+                  "mix": { "choir": { "gainDb": -8, "cutoff": 5000 } }, "ramp": true },
+    "horizon": { "bars": 8, "play": { "air": "air-hold", "choir": "choir-edge", "sub": "sub-edge", "brass": "brass-a", "star": "star-edge" } },
+    "beyond": { "bars": 8, "play": { "choir": "choir-edge", "halo": "halo-edge", "sub": "sub-edge", "brass": "brass-b", "star": "star-edge", "pulse": "pulse" } },
+    "fall": { "bars": 8, "play": { "drone": "drone-c", "air": "air-hold", "choir": "choir-void", "star": "star-void" },
+              "mix": { "choir": { "gainDb": -15, "cutoff": 900 } }, "ramp": true }
+  },
+  "form": ["intro", "approach", "horizon", "beyond", "fall"],
+  "master": { "reverb": { "preset": "space", "returnDb": -1 }, "delay": { "beats": 1.5, "feedback": 0.4, "returnDb": -6, "cutoff": 2500 } }
+}

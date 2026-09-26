@@ -9,6 +9,9 @@ import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { int, withHost } from './shared.ts';
 import type { Song } from '../schema/song.ts';
+import { foldAlbum, listAlbums, readAlbum, writeAlbum } from '../album.ts';
+import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
+import { ensureServer } from './audition.ts';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -46,6 +49,21 @@ function songOutline(song: Song) {
   };
 }
 
+/** Render songs across up to `jobs` headless browsers (each OfflineAudioContext runs on its own thread). */
+export async function renderMany(p: OpenProject, songs: Song[], jobs = 3): Promise<RenderedSong[]> {
+  const instruments = songs.map(s => resolveInstruments(p, s));
+  const out: RenderedSong[] = new Array(songs.length);
+  let next = 0;
+  const worker = () => withHost(async host => {
+    while (next < songs.length) {
+      const i = next++;
+      out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders });
+    }
+  });
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, songs.length)) }, worker));
+  return out;
+}
+
 export function registerSongCommands(program: Command, io: Io) {
   program.command('instruments')
     .description('list the bundled instrument patches songs can play by name')
@@ -79,17 +97,7 @@ export function registerSongCommands(program: Command, io: Io) {
     .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', int, 3)
     .action(async (refs: string[], opts: { jobs: number }) => {
       const p = openProject(io.projectDir());
-      const songs = refs.map(r => loadSong(p, r));
-      const instruments = songs.map(s => resolveInstruments(p, s));
-      const out: RenderedSong[] = new Array(songs.length);
-      let next = 0;
-      const worker = () => withHost(async host => {
-        while (next < songs.length) {
-          const i = next++;
-          out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders });
-        }
-      });
-      await Promise.all(Array.from({ length: Math.max(1, Math.min(opts.jobs, songs.length)) }, worker));
+      const out = await renderMany(p, refs.map(r => loadSong(p, r)), opts.jobs);
       io.emit({ songs: out.map(r => songSummary(r, p)) });
     });
 
@@ -116,4 +124,40 @@ export function registerSongCommands(program: Command, io: Io) {
       copyFileSync(r.wavPath, dest);
       io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec });
     });
+
+  const album = program.command('album').description('put rendered songs in front of the owner on the LAN listening page');
+
+  album.command('open <refs...>')
+    .description('render what is stale, create an album and print its hostname and IP links')
+    .option('--title <text>', 'album title', 'New music')
+    .option('--jobs <n>', 'songs rendered in parallel', int, 3)
+    .action(async (refs: string[], opts: { title: string; jobs: number }) => {
+      const p = openProject(io.projectDir());
+      const rendered = await renderMany(p, refs.map(r => loadSong(p, r)), opts.jobs);
+      const a = writeAlbum(p, {
+        title: opts.title,
+        tracks: rendered.map(r => ({
+          name: r.song.name, title: r.song.title ?? r.song.name, ...(r.song.description ? { description: r.song.description } : {}),
+          loop: r.song.loop, durationSec: r.features.durationSec, wav: r.wavPath, look: r.lookPath,
+          sections: r.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end })),
+          features: { loudnessLufs: r.features.delivered?.integratedLufs, loudnessRangeLu: r.features.loudnessRangeLu, arc: r.features.arc },
+        })),
+      });
+      const info = await ensureServer();
+      registerProject(p.paths.root);
+      io.emit({ album: a.id, url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, length: mmss(t.durationSec) })) });
+    });
+
+  album.command('feedback <id>')
+    .description("the owner's marks, tags and notes per track")
+    .action((id: string) => {
+      const p = openProject(io.projectDir());
+      const a = readAlbum(p, id);
+      const s = foldAlbum(a, p);
+      io.emit({ album: a.id, title: a.title, note: s.note || null, tracks: s.tracks, heard: s.tracks.filter(t => t.plays > 0).length });
+    });
+
+  album.command('list')
+    .description('albums in this project')
+    .action(() => io.emit({ albums: listAlbums(openProject(io.projectDir())).map(a => ({ id: a.id, title: a.title, tracks: a.tracks.length, createdAt: a.createdAt })) }));
 }

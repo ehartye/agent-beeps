@@ -10,7 +10,7 @@ import {
   appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
-import { AuditionServer, DEFAULT_PORT, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
+import { AuditionServer, DEFAULT_PORT, SERVER_API, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
 import { readKit } from '../kit.ts';
 import { int } from './shared.ts';
 
@@ -30,7 +30,13 @@ async function waitFor<T>(fn: () => Promise<T | undefined>, ms: number): Promise
 /** Reuse a healthy server, else start one detached so it outlives this command. */
 export async function ensureServer(opts: { host?: string; port?: number } = {}): Promise<ServerInfo> {
   const existing = readServerInfo();
-  if (await probe(existing)) return existing!;
+  if (await probe(existing)) {
+    if (existing!.api === SERVER_API) return existing!;
+    // An older plugin's server is still up and lacks newer routes (albums): replace it.
+    try { process.kill(existing!.pid); } catch { /* already gone */ }
+    rmSync(serverInfoFile(), { force: true });
+    await waitFor(async () => (await probe(existing)) ? undefined : true, 5000);
+  }
   const args = [BIN, 'serve', '--foreground', ...(opts.host ? ['--host', opts.host] : []), ...(opts.port ? ['--port', String(opts.port)] : [])];
   const child = spawn(process.execPath, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
