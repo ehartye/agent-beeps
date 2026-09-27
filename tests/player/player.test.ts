@@ -35,6 +35,10 @@ function setup(over: Record<string, unknown> = {}, { failing = [] as string[], g
   });
   return { ctx, player, fetched, errors, gates, contexts: () => contexts };
 }
+/**
+ * Flush: waits one macrotask. The fake fetcher, the lifecycle queue and bed starts are all promise
+ * (microtask) chains, and every queued microtask runs before a timer fires, so one call settles them.
+ */
 const settle = () => new Promise(r => setTimeout(r, 0));
 /** Longer than the player's post-fade suspend delay (RAMP + 10 ms) after setEnabled(false). */
 const afterSuspendDelay = () => new Promise(r => setTimeout(r, 60));
@@ -84,7 +88,7 @@ describe('player graph', () => {
 
   it('clamps levels and ignores non-numbers', () => {
     const { player } = setup();
-    player.setLevel('music', 5); player.setLevel('sfx', -1); player.setLevel('ambience', NaN); player.setLevel('nope', 0.5);
+    player.setLevel('music', 5); player.setLevel('sfx', -1); player.setLevel('ambience', NaN); player.setLevel('nope' as 'music', 0.5); // an untyped caller: the runtime guard ignores it
     expect(player.inspect().levels).toEqual({ music: 1, ambience: 1, sfx: 0, master: 1 });
   });
 });
@@ -272,7 +276,7 @@ describe('promises never reject', () => {
   });
 });
 
-describe('spec review fixes', () => {
+describe('click-free fades, hidden tabs, graph cleanup and catalog recovery', () => {
   const layerGain = (ctx: FakeContext, i: number) => (sources(ctx)[i].outputs[0] as FakeNode).gain as FakeParam;
   const allTimesFinite = (ctx: FakeContext) => ctx.created.every(n =>
     Object.values(n).every(v => !(v instanceof FakeParam) || v.events.every(e => Number.isFinite(e.time)))
@@ -330,7 +334,7 @@ describe('spec review fixes', () => {
     expect(await player.music('storm')).toBe(false);
     expect(sources(ctx)).toHaveLength(0);
     player.setHidden(false);
-    for (let i = 0; i < 5; i++) await settle();
+    await settle();
     expect(ctx.state).toBe('running');
     expect(sources(ctx)).toHaveLength(1);
     expect(player.inspect().music).toMatchObject({ id: 'storm' });
@@ -377,7 +381,7 @@ describe('spec review fixes', () => {
   });
 });
 
-describe('spec re-review fixes', () => {
+describe('bar-line holds and catalog retry throttling', () => {
   it('fallback bar change holds the scheduled target, not the level now', async () => {
     const { ctx, player } = setup();
     await player.unlock();
@@ -405,7 +409,7 @@ describe('spec re-review fixes', () => {
     });
     await player.unlock();
     for (let i = 0; i < 10; i++) { expect(player.play('coin')).toBeNull(); await settle(); }
-    expect(catalogFetches).toBeLessThanOrEqual(2);
+    expect(catalogFetches).toBe(2); // unlock's attempt, then one immediate retry; the rest are throttled
     expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(1);
     up = true;
     ctx.currentTime = 1; // still inside the retry window
@@ -416,7 +420,7 @@ describe('spec re-review fixes', () => {
     expect(player.play('coin')).toBeNull();
     await settle();
     expect(player.play('coin')).not.toBeNull();
-    expect(catalogFetches).toBeLessThanOrEqual(3);
+    expect(catalogFetches).toBe(3);
   });
 });
 
@@ -508,5 +512,88 @@ describe('bed and state races', () => {
     expect(await player.unlock()).toBe(false);
     expect(errors.map(e => e.code)).toContain('E_CONTEXT');
     expect(closed).toBe(1);
+  });
+});
+
+describe('voice bookkeeping and API contracts', () => {
+  it('handle.stop() releases the voice and fades the source out', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    const h = player.play('coin')!;
+    await h.ready;
+    expect(player.inspect().voices).toBe(1);
+    h.stop();
+    expect(player.inspect().voices).toBe(0);
+    expect(sources(ctx)[0].stoppedAt).toBeCloseTo(0.02, 9);
+  });
+
+  it('frees the voice when a sound ends on its own', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.play('coin')!.ready;
+    sources(ctx)[0].onended?.();
+    expect(player.inspect().voices).toBe(0);
+    expect(sources(ctx)[0].disconnected).toBe(true);
+  });
+
+  it('stopAll() frees every voice', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await Promise.all([player.play('coin')!.ready, player.play('hit')!.ready]);
+    expect(player.inspect().voices).toBe(2);
+    player.stopAll();
+    expect(player.inspect().voices).toBe(0);
+    expect(sources(ctx).every(s => s.stoppedAt !== undefined)).toBe(true);
+  });
+
+  it('replaces the oldest instance of a sound at its cap', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.play('coin', { cap: 1 })!.ready;
+    ctx.currentTime = 0.1;
+    const second = player.play('coin', { cap: 1 })!;
+    expect(await second.ready).toBe(true);
+    expect(sources(ctx)[0].stoppedAt).toBeDefined();
+    expect(sources(ctx)[1].stoppedAt).toBeUndefined();
+    expect(player.inspect().voices).toBe(1);
+  });
+
+  it('drops sound effects while hidden', async () => {
+    const { player } = setup();
+    await player.unlock();
+    player.setHidden(true);
+    await settle();
+    expect(player.play('coin')).toBeNull();
+    expect(player.inspect().voices).toBe(0);
+  });
+
+  it('applies a state set before any music when that music starts', async () => {
+    const { player } = setup();
+    await player.unlock();
+    expect(player.setState('calm')).toBe(false);
+    await player.music('theme');
+    expect(player.inspect().music).toMatchObject({ state: 'calm', layers: { bed: 1, pulse: 0, threat: 0 } });
+  });
+
+  it('keeps playing when the game\'s onError handler throws', async () => {
+    const { ctx, player } = setup({ onError: () => { throw new Error('game bug'); } });
+    await player.unlock();
+    expect(player.play('nope')).toBeNull();
+    expect(await player.play('coin')!.ready).toBe(true);
+    expect(sources(ctx)).toHaveLength(1);
+  });
+
+  it('setLevel after unlock ramps the real bus gain', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    const [master, music, ambience, sfx] = ctx.nodes('gain');
+    expect(master.outputs).toContain(ctx.nodes('shaper')[0]);
+    expect([music, ambience, sfx].every(b => b.outputs.includes(master))).toBe(true);
+    ctx.currentTime = 3;
+    player.setLevel('sfx', 0.5);
+    player.setLevel('master', 0.25);
+    expect((sfx.gain as FakeParam).events.at(-1)).toMatchObject({ kind: 'linear', value: 0.5, time: 3.02 });
+    expect((master.gain as FakeParam).events.at(-1)).toMatchObject({ kind: 'linear', value: 0.25, time: 3.02 });
+    expect((music.gain as FakeParam).events).toHaveLength(0);
   });
 });
