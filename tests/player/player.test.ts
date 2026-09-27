@@ -374,3 +374,46 @@ describe('spec review fixes', () => {
     expect(catalogFetches).toBe(2);
   });
 });
+
+describe('spec re-review fixes', () => {
+  it('fallback bar change holds the scheduled target, not the level now', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number; // bar = 2 s at 120 bpm in 4
+    const threat = (sources(ctx)[2].outputs[0] as FakeNode).gain as FakeParam;
+    ctx.currentTime = start + 0.5;
+    player.setState('danger', { fadeSec: 1 }); // threat reaches 1 at start + 1.5, before the bar
+    threat.value = 0.3; // mid-fade, now
+    ctx.currentTime = start + 1;
+    player.setState('calm', { at: 'bar', fadeSec: 1 });
+    const atBar = threat.events.filter(e => e.kind === 'set' && Math.abs(e.time - (start + 2)) < 1e-9);
+    expect(atBar.map(e => e.value)).toEqual([1]);
+  });
+
+  it('throttles catalog retries from play() and reports the failure once', async () => {
+    let up = false;
+    let catalogFetches = 0;
+    const { ctx, player, errors } = setup({
+      fetcher: async (url: string) => {
+        if (url.endsWith('index.json')) catalogFetches++;
+        const ok = !url.endsWith('index.json') || up;
+        return { ok, json: async () => catalog, arrayBuffer: async () => new ArrayBuffer(8) };
+      },
+    });
+    await player.unlock();
+    for (let i = 0; i < 10; i++) { expect(player.play('coin')).toBeNull(); await settle(); }
+    expect(catalogFetches).toBeLessThanOrEqual(2);
+    expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(1);
+    up = true;
+    ctx.currentTime = 1; // still inside the retry window
+    expect(player.play('coin')).toBeNull();
+    await settle();
+    expect(player.play('coin')).toBeNull();
+    ctx.currentTime = 6; // past it
+    expect(player.play('coin')).toBeNull();
+    await settle();
+    expect(player.play('coin')).not.toBeNull();
+    expect(catalogFetches).toBeLessThanOrEqual(3);
+  });
+});

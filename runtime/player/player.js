@@ -10,6 +10,7 @@ import { createLifecycle } from './lifecycle.js';
 
 export const PLAYER_VERSION = '1';
 const RAMP = 0.02; // seconds: no level change is instant, so nothing clicks
+const CATALOG_RETRY_SEC = 5; // play() retries a failed catalog at most this often (context time)
 /** @type {readonly ['music', 'ambience']} */
 const BEDS = ['music', 'ambience'];
 /** A usable fade length: a non-finite or non-positive one would schedule NaN times, which throw. @param {unknown} x */
@@ -83,6 +84,7 @@ export function createPlayer(opts) {
   let assets = null;
   /** @type {Promise<Record<string, Asset> | null> | null} */
   let catalogLoad = null;
+  let catalogRetryAt = 0; // context time before which play() will not retry a failed catalog
 
   /** @param {string} code @param {string} message @param {string} [id] */
   const report = (code, message, id) => {
@@ -95,12 +97,16 @@ export function createPlayer(opts) {
   };
   /**
    * Freeze `param` at whatever it is doing at `at`, even mid-ramp, so the next ramp starts there and
-   * nothing snaps. Browsers have cancelAndHoldAtTime; the fallback holds the current value.
-   * @param {AudioParam} param @param {number} at
+   * nothing snaps. Browsers have cancelAndHoldAtTime. The fallback holds the current value for an
+   * immediate change; for a future `at` (a bar line) it holds `scheduled`, the last target, since
+   * the level now may be mid-fade toward it and would snap back at the bar.
+   * @param {AudioParam} param @param {number} at @param {number} [scheduled]
    */
-  const hold = (param, at) => {
-    if (typeof param.cancelAndHoldAtTime === 'function') param.cancelAndHoldAtTime(at);
-    else { param.cancelScheduledValues(at); param.setValueAtTime(param.value, at); }
+  const hold = (param, at, scheduled) => {
+    if (typeof param.cancelAndHoldAtTime === 'function') { param.cancelAndHoldAtTime(at); return; }
+    const future = at > /** @type {AudioContext} */ (ctx).currentTime + 1e-9;
+    param.cancelScheduledValues(at);
+    param.setValueAtTime(future && scheduled !== undefined ? scheduled : param.value, at);
   };
   /** @param {unknown} e */
   const text = e => String((/** @type {any} */ (e))?.message ?? e);
@@ -119,7 +125,7 @@ export function createPlayer(opts) {
     catalogLoad ??= fetcher(catalog)
       .then(r => { if (!r.ok) throw new Error(`catalog ${catalog} unavailable`); return r.json(); })
       .then(j => { assets = j.assets ?? {}; return assets; })
-      .catch(e => { catalogLoad = null; report('E_CATALOG', text(e)); return null; });
+      .catch(e => { catalogLoad = null; warnOnce('E_CATALOG', text(e), String(catalog)); return null; });
     return catalogLoad;
   }
 
@@ -198,7 +204,12 @@ export function createPlayer(opts) {
    */
   function play(id, { pan = 0, gainDb = 0, cooldownSec, cap } = {}) {
     if (!ctx || !running() || !buses) return null;
-    if (!assets) { void loadCatalog(); return null; } // a failed catalog retries, as beds do
+    if (!assets) {
+      // A failed catalog retries, as beds do, but at most once per CATALOG_RETRY_SEC: a game calling
+      // play() every frame must not refetch every frame.
+      if (!catalogLoad && ctx.currentTime >= catalogRetryAt) { catalogRetryAt = ctx.currentTime + CATALOG_RETRY_SEC; void loadCatalog(); }
+      return null;
+    }
     const asset = assets[id];
     if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return null; }
     if (asset.loop) { warnOnce('E_NOT_SFX', `"${id}" loops: play it with music() or ambience()`, id); return null; }
@@ -358,7 +369,7 @@ export function createPlayer(opts) {
     for (const [name, n] of cur.layers) {
       const target = on.includes(name) ? 1 : 0;
       const param = n.gain.gain;
-      hold(param, when); // the actual level at `when`, not the previous goal: a fade in progress never snaps
+      hold(param, when, n.target); // the actual level at `when`, not the previous goal: a fade in progress never snaps
       param.linearRampToValueAtTime(target, when + Math.max(RAMP, fadeSec));
       n.target = target;
     }
