@@ -30,4 +30,32 @@ describe('adaptive songs', () => {
     expect(issues({ loop: true, adaptive: { ...adaptive, initial: 'boss' } }))
       .toContainEqual(expect.objectContaining({ pointer: '/adaptive/initial', message: 'no state "boss"' }));
   });
+
+  it('flags a track listed twice within the same layer', () => {
+    const twiceInLayer = issues({ loop: true, adaptive: { ...adaptive, layers: { bed: ['pad', 'pad'], pulse: ['hat'] } } });
+    expect(twiceInLayer).toContainEqual(expect.objectContaining({ pointer: '/adaptive/layers/bed/1', message: 'track "pad" is listed twice in layer "bed"' }));
+  });
+
+  it('flags a layer listed twice within the same state', () => {
+    const twiceInState = issues({ loop: true, adaptive: { ...adaptive, states: { calm: ['bed', 'bed'] } } });
+    expect(twiceInState).toContainEqual(expect.objectContaining({ pointer: '/adaptive/states/calm/1', message: 'layer "bed" is listed twice in state "calm"' }));
+  });
+
+  it('rejects prototype-chain names like "constructor" as a state', () => {
+    expect(issues({ loop: true, adaptive: { ...adaptive, initial: 'constructor' } }))
+      .toContainEqual(expect.objectContaining({ pointer: '/adaptive/initial', message: 'no state "constructor"' }));
+  });
+
+  it('falls back to "(none defined)" for empty layer/state hint lists', () => {
+    const noLayers = issues({ loop: true, adaptive: { layers: {}, states: { calm: ['bed'] }, initial: 'calm' } });
+    expect(noLayers).toContainEqual(expect.objectContaining({ pointer: '/adaptive/states/calm/0', message: 'no layer "bed"', hint: 'layers: (none defined)' }));
+    const noStates = issues({ loop: true, adaptive: { layers: { bed: ['pad'], pulse: ['hat'] }, states: {}, initial: 'calm' } });
+    expect(noStates).toContainEqual(expect.objectContaining({ pointer: '/adaptive/initial', message: 'no state "calm"', hint: 'states: (none defined)' }));
+  });
+
+  it('requires initial to be a valid identifier name', () => {
+    const r = parseSong(songInput({ loop: true, adaptive: { ...adaptive, initial: 'Boss Fight' } }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues).toContainEqual(expect.objectContaining({ pointer: '/adaptive/initial', message: expect.stringMatching(/lowercase letters, digits and dashes/) }));
+  });
 });

@@ -124,7 +124,7 @@ const Section = z.strictObject({
 const Adaptive = z.strictObject({
   layers: z.record(Name, z.array(z.string()).min(1)).describe('layer name -> the tracks it contains; every track is in exactly one layer'),
   states: z.record(Name, z.array(z.string()).min(1)).describe('state name -> the layers that play in it'),
-  initial: z.string().describe('the state the song starts in'),
+  initial: Name.describe('the state the song starts in'),
 }).describe('adaptive vertical layers for the game player; needs loop: true');
 
 export const SongSchema = z.strictObject({
@@ -201,16 +201,26 @@ function crossCheck(s: Song): Issue[] {
     const a = s.adaptive;
     if (!s.loop) out.push({ pointer: at('adaptive'), message: 'adaptive layers need "loop": true', hint: 'layers loop under gameplay; set "loop": true' });
     const owner = new Map<string, string>();
-    for (const [layer, tracks] of Object.entries(a.layers)) tracks.forEach((t, i) => {
-      if (!(t in s.tracks)) out.push({ pointer: at('adaptive', 'layers', layer, i), message: `no track "${t}"`, hint: `tracks: ${Object.keys(s.tracks).join(', ')}` });
-      else if (owner.has(t)) out.push({ pointer: at('adaptive', 'layers', layer, i), message: `track "${t}" is already in layer "${owner.get(t)}"`, hint: 'every track belongs to exactly one layer' });
-      else owner.set(t, layer);
-    });
+    for (const [layer, tracks] of Object.entries(a.layers)) {
+      const seen = new Set<string>();
+      tracks.forEach((t, i) => {
+        if (!Object.hasOwn(s.tracks, t)) { out.push({ pointer: at('adaptive', 'layers', layer, i), message: `no track "${t}"`, hint: `tracks: ${Object.keys(s.tracks).join(', ')}` }); return; }
+        if (seen.has(t)) { out.push({ pointer: at('adaptive', 'layers', layer, i), message: `track "${t}" is listed twice in layer "${layer}"`, hint: 'every track belongs to exactly one layer' }); return; }
+        seen.add(t);
+        if (owner.has(t)) { out.push({ pointer: at('adaptive', 'layers', layer, i), message: `track "${t}" is already in layer "${owner.get(t)}"`, hint: 'every track belongs to exactly one layer' }); return; }
+        owner.set(t, layer);
+      });
+    }
     for (const t of Object.keys(s.tracks)) if (!owner.has(t)) out.push({ pointer: at('adaptive', 'layers'), message: `track "${t}" is in no layer`, hint: 'every track belongs to exactly one layer' });
-    for (const [state, layers] of Object.entries(a.states)) layers.forEach((l, i) => {
-      if (!(l in a.layers)) out.push({ pointer: at('adaptive', 'states', state, i), message: `no layer "${l}"`, hint: `layers: ${Object.keys(a.layers).join(', ')}` });
-    });
-    if (!(a.initial in a.states)) out.push({ pointer: at('adaptive', 'initial'), message: `no state "${a.initial}"`, hint: `states: ${Object.keys(a.states).join(', ')}` });
+    for (const [state, layers] of Object.entries(a.states)) {
+      const seen = new Set<string>();
+      layers.forEach((l, i) => {
+        if (!Object.hasOwn(a.layers, l)) { out.push({ pointer: at('adaptive', 'states', state, i), message: `no layer "${l}"`, hint: `layers: ${Object.keys(a.layers).join(', ') || '(none defined)'}` }); return; }
+        if (seen.has(l)) { out.push({ pointer: at('adaptive', 'states', state, i), message: `layer "${l}" is listed twice in state "${state}"`, hint: 'each layer plays once in a state' }); return; }
+        seen.add(l);
+      });
+    }
+    if (!Object.hasOwn(a.states, a.initial)) out.push({ pointer: at('adaptive', 'initial'), message: `no state "${a.initial}"`, hint: `states: ${Object.keys(a.states).join(', ') || '(none defined)'}` });
   }
   // Inline patches validate here; names and {base, set} overrides resolve against the project at render time.
   const inline = [
