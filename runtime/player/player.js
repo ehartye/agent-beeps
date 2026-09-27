@@ -160,6 +160,14 @@ export function createPlayer(opts) {
     try { n.src.stop(t + Math.max(RAMP, fadeSec)); } catch { /* already stopped */ }
   }
 
+  /** Best-effort teardown of nodes from a start that failed partway: never throws. @param {Node[]} nodes */
+  function discard(nodes) {
+    for (const n of nodes) {
+      try { n.src.stop(); } catch { /* never started */ }
+      try { n.src.disconnect(); n.gain.disconnect(); } catch { /* already disconnected */ }
+    }
+  }
+
   /** @param {Bed} bed @param {number} [fadeSec] */
   function stopBed(bed, fadeSec = RAMP) {
     const t = /** @type {AudioContext} */ (ctx).currentTime;
@@ -207,14 +215,26 @@ export function createPlayer(opts) {
     };
     handle.ready = load(file).then(buffer => {
       if (!buffer || handle.stopped || !running() || !vm.has(grant.key)) { vm.release(grant.key); return false; }
-      const v = source(buffer, sfx, { gainDb, pan });
-      live.set(grant.key, v);
-      v.src.onended = () => {
-        if (live.get(grant.key) === v) { live.delete(grant.key); vm.release(grant.key); }
-        try { v.src.disconnect(); v.gain.disconnect(); } catch { /* already disconnected */ }
-      };
-      v.src.start(/** @type {AudioContext} */ (ctx).currentTime);
-      return true;
+      /** @type {Node | null} */
+      let v = null;
+      try {
+        const node = source(buffer, sfx, { gainDb, pan });
+        v = node;
+        live.set(grant.key, node);
+        node.src.onended = () => {
+          if (live.get(grant.key) === node) { live.delete(grant.key); vm.release(grant.key); }
+          try { node.src.disconnect(); node.gain.disconnect(); } catch { /* already disconnected */ }
+        };
+        node.src.start(/** @type {AudioContext} */ (ctx).currentTime);
+        return true;
+      } catch (e) {
+        // A Web Audio call threw: report it, free the voice, and resolve rather than reject.
+        if (live.get(grant.key) === v) live.delete(grant.key);
+        vm.release(grant.key);
+        if (v) discard([v]);
+        report('E_PLAYBACK', text(e), id);
+        return false;
+      }
     });
     return handle;
   }
@@ -241,33 +261,57 @@ export function createPlayer(opts) {
       const parts = asset.layers?.length ? asset.layers : [{ name: '', file: asset.file }];
       return Promise.all(parts.map(p => load(p.file))).then(bufs => {
         if (token !== tokens[bus] || !running() || bufs.every(b => !b)) return false;
-        const c = /** @type {AudioContext} */ (ctx);
-        const t = c.currentTime + 0.05; // one shared start: layers stay sample-aligned
-        const group = c.createGain();
-        group.gain.value = 0;
-        group.connect(out);
-        group.gain.setValueAtTime(0, t);
-        group.gain.linearRampToValueAtTime(1, t + Math.max(RAMP, fadeSec));
-        const adaptive = !!asset.layers?.length;
-        const wanted = pendingState && asset.states?.[pendingState] ? pendingState : null;
-        const state = adaptive ? (bus === 'music' && wanted ? wanted : asset.initialState ?? null) : null;
-        const on = state ? new Set(asset.states?.[state] ?? []) : null;
         /** @type {Map<string, Node>} */
         const layers = new Map();
-        parts.forEach((p, i) => {
-          const b = bufs[i];
-          if (!b) return;
-          const n = source(b, group, { loop: asset.loop !== false, level: !on || on.has(p.name) ? 1 : 0 });
-          n.src.start(t);
-          layers.set(p.name, n);
-        });
-        const previous = beds[bus];
-        beds[bus] = { id, asset, group, layers, startTime: t, state };
-        if (bus === 'music') pendingState = null;
-        if (previous) stopBed(previous, fadeSec);
-        return true;
+        /** @type {GainNode | null} */
+        let group = null;
+        try {
+          return startBed(bus, id, asset, parts, bufs, out, fadeSec, layers, g => { group = g; });
+        } catch (e) {
+          // A Web Audio call threw partway: stop what started, leave the previous bed, resolve false.
+          discard([...layers.values()]);
+          if (beds[bus]?.layers === layers) beds[bus] = null; // it failed after the swap
+          try { /** @type {GainNode | null} */ (group)?.disconnect(); } catch { /* already disconnected */ }
+          report('E_PLAYBACK', text(e), id);
+          return false;
+        }
       });
+    }).catch(e => { report('E_PLAYBACK', text(e), id); return false; });
+  }
+
+  /**
+   * Start a loaded bed's layers together and swap it in. May throw on a Web Audio failure; the
+   * caller cleans up `layers` and the group it was handed.
+   * @param {'music' | 'ambience'} bus @param {string} id @param {Asset} asset
+   * @param {{ name: string, file: string }[]} parts @param {(AudioBuffer | null)[]} bufs
+   * @param {AudioNode} out @param {number} fadeSec @param {Map<string, Node>} layers
+   * @param {(g: GainNode) => void} onGroup
+   */
+  function startBed(bus, id, asset, parts, bufs, out, fadeSec, layers, onGroup) {
+    const c = /** @type {AudioContext} */ (ctx);
+    const t = c.currentTime + 0.05; // one shared start: layers stay sample-aligned
+    const group = c.createGain();
+    onGroup(group);
+    group.gain.value = 0;
+    group.connect(out);
+    group.gain.setValueAtTime(0, t);
+    group.gain.linearRampToValueAtTime(1, t + Math.max(RAMP, fadeSec));
+    const adaptive = !!asset.layers?.length;
+    const wanted = pendingState && asset.states?.[pendingState] ? pendingState : null;
+    const state = adaptive ? (bus === 'music' && wanted ? wanted : asset.initialState ?? null) : null;
+    const on = state ? new Set(asset.states?.[state] ?? []) : null;
+    parts.forEach((p, i) => {
+      const b = bufs[i];
+      if (!b) return;
+      const n = source(b, group, { loop: asset.loop !== false, level: !on || on.has(p.name) ? 1 : 0 });
+      layers.set(p.name, n); // before start(): a throwing start must still be torn down
+      n.src.start(t);
     });
+    const previous = beds[bus];
+    beds[bus] = { id, asset, group, layers, startTime: t, state };
+    if (bus === 'music') pendingState = null;
+    if (previous) stopBed(previous, fadeSec);
+    return true;
   }
 
   /**

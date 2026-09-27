@@ -212,3 +212,60 @@ describe('adaptive layers', () => {
     expect(errors.map(e => e.code)).toEqual(expect.arrayContaining(['E_NOT_ADAPTIVE', 'E_UNKNOWN_STATE']));
   });
 });
+
+describe('promises never reject', () => {
+  const throwingSources = (ctx: FakeContext) => { ctx.createBufferSource = () => { throw new Error('no source'); }; };
+  const throwingStarts = (ctx: FakeContext, after = 0) => {
+    const make = FakeContext.prototype.createBufferSource.bind(ctx);
+    let n = 0;
+    ctx.createBufferSource = () => { const s = make(); if (n++ >= after) s.start = () => { throw new Error('start failed'); }; return s; };
+  };
+
+  it('a thrown createBufferSource resolves ready false, reports E_PLAYBACK and frees the voice', async () => {
+    const { ctx, player, errors } = setup();
+    await player.unlock();
+    throwingSources(ctx);
+    const h = player.play('coin')!;
+    await expect(h.ready).resolves.toBe(false);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'coin' }));
+    expect(player.inspect().voices).toBe(0);
+  });
+
+  it('a thrown start resolves ready false, reports E_PLAYBACK and frees the voice', async () => {
+    const { ctx, player, errors } = setup();
+    await player.unlock();
+    throwingStarts(ctx);
+    const h = player.play('coin')!;
+    await expect(h.ready).resolves.toBe(false);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'coin' }));
+    expect(player.inspect().voices).toBe(0);
+  });
+
+  it('a thrown createBufferSource resolves music false and leaves no bed', async () => {
+    const { ctx, player, errors } = setup();
+    await player.unlock();
+    throwingSources(ctx);
+    await expect(player.music('calm')).resolves.toBe(false);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'calm' }));
+    expect(player.inspect().music).toBeNull();
+  });
+
+  it('a layer whose start throws resolves music false and stops the layers already started', async () => {
+    const { ctx, player, errors } = setup();
+    await player.unlock();
+    throwingStarts(ctx, 1);
+    await expect(player.music('theme')).resolves.toBe(false);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'theme' }));
+    expect(player.inspect().music).toBeNull();
+    expect(sources(ctx).filter(s => s.startedAt !== undefined).every(s => s.stoppedAt !== undefined)).toBe(true);
+  });
+
+  it('a queued bed that throws on unlock still lets unlock resolve', async () => {
+    const { ctx, player, errors } = setup();
+    await player.ambience('calm');
+    throwingSources(ctx);
+    await expect(player.unlock()).resolves.toBe(true);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'calm' }));
+    expect(player.inspect().ambience).toBeNull();
+  });
+});
