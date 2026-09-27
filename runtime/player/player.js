@@ -66,9 +66,11 @@ export function createPlayer(opts) {
   const live = new Map();
   /** @type {Record<'music' | 'ambience', Bed | null>} */
   const beds = { music: null, ambience: null };
-  /** @type {Record<'music' | 'ambience', { id: string | null, fadeSec: number } | undefined>} */
+  /** @type {Record<'music' | 'ambience', { id: string | null, fadeSec: number, token: number } | undefined>} */
   const pending = { music: undefined, ambience: undefined };
   const tokens = { music: 0, ambience: 0 };
+  /** The music id being loaded right now, so setState can aim at it rather than the old bed. @type {string | null} */
+  let loadingMusic = null;
   /** @type {string | null} */
   let pendingState = null;
   let enabled = true, hidden = false;
@@ -117,14 +119,15 @@ export function createPlayer(opts) {
   };
   // Wanted (lifecycle) AND actually running: after setEnabled(true) without a gesture the context
   // is still suspended, and sounds started then would hold voices and all burst out on resume.
-  const running = () => !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
+  // `enabled` is checked directly because disabling suspends only after the stop fade.
+  const running = () => enabled && !hidden && !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
 
   function loadCatalog() {
     if (assets) return Promise.resolve(assets);
     if (typeof catalog !== 'string') { assets = catalog.assets ?? {}; return Promise.resolve(assets); }
     catalogLoad ??= fetcher(catalog)
       .then(r => { if (!r.ok) throw new Error(`catalog ${catalog} unavailable`); return r.json(); })
-      .then(j => { assets = j.assets ?? {}; return assets; })
+      .then(j => { assets = j.assets ?? {}; warned.delete(`E_CATALOG:${catalog}`); return assets; })
       .catch(e => { catalogLoad = null; warnOnce('E_CATALOG', text(e), String(catalog)); return null; });
     return catalogLoad;
   }
@@ -146,6 +149,15 @@ export function createPlayer(opts) {
 
   function build() {
     const c = contextFactory();
+    try { graph(c); } catch (e) {
+      // The context exists but its graph does not: close it so a retry does not leak contexts.
+      Promise.resolve().then(() => c.close?.()).catch(() => {});
+      throw e;
+    }
+  }
+
+  /** @param {AudioContext} c */
+  function graph(c) {
     ctx = c;
     const shaper = c.createWaveShaper();
     shaper.curve = clipperCurve();
@@ -190,9 +202,9 @@ export function createPlayer(opts) {
     }
   }
 
-  /** @param {Bed} bed @param {number} [fadeSec] */
-  function stopBed(bed, fadeSec = RAMP) {
-    const t = /** @type {AudioContext} */ (ctx).currentTime;
+  /** @param {Bed} bed @param {number} [fadeSec] @param {number} [at] when the fade starts (default now) */
+  function stopBed(bed, fadeSec = RAMP, at) {
+    const t = at ?? /** @type {AudioContext} */ (ctx).currentTime;
     ramp(bed.group.gain, 0, fadeSec, t);
     for (const n of bed.layers.values()) { try { n.src.stop(t + Math.max(RAMP, fade(fadeSec))); } catch { /* already stopped */ } }
   }
@@ -278,34 +290,40 @@ export function createPlayer(opts) {
   function bed(bus, id, { fadeSec: requested = 2 } = {}) {
     const fadeSec = fade(requested);
     const token = ++tokens[bus];
-    if (!ctx || !running() || !buses) { pending[bus] = { id, fadeSec }; return Promise.resolve(false); }
+    if (!ctx || !running() || !buses) { pending[bus] = { id, fadeSec, token }; return Promise.resolve(false); }
+    pending[bus] = undefined; // a direct request supersedes anything queued
     const cur = beds[bus];
+    if (bus === 'music') loadingMusic = cur && cur.id === id ? null : id;
     if (cur && cur.id === id) return Promise.resolve(true);
     if (id === null) { if (cur) stopBed(cur, fadeSec); beds[bus] = null; return Promise.resolve(true); }
     const out = buses[bus];
+    /** @param {boolean} ok */
+    const done = ok => { if (bus === 'music' && token === tokens.music) loadingMusic = null; return ok; };
     return loadCatalog().then(a => {
-      if (!a || token !== tokens[bus]) return false;
+      if (!a || token !== tokens[bus]) return done(false);
       const asset = a[id];
-      if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return false; }
+      if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return done(false); }
       const parts = asset.layers?.length ? asset.layers : [{ name: '', file: asset.file }];
       return Promise.all(parts.map(p => load(p.file))).then(bufs => {
-        if (token !== tokens[bus] || !running() || bufs.every(b => !b)) return false;
+        if (token !== tokens[bus] || bufs.every(b => !b)) return done(false);
+        // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
+        if (!running()) { pending[bus] = { id, fadeSec, token }; return done(false); }
         /** @type {Map<string, Node>} */
         const layers = new Map();
         /** @type {GainNode | null} */
         let group = null;
         try {
-          return startBed(bus, id, asset, parts, bufs, out, fadeSec, layers, g => { group = g; });
+          return done(startBed(bus, id, asset, parts, bufs, out, fadeSec, layers, g => { group = g; }));
         } catch (e) {
           // A Web Audio call threw partway: stop what started, leave the previous bed, resolve false.
           discard([...layers.values()]);
           if (beds[bus]?.layers === layers) beds[bus] = null; // it failed after the swap
           try { /** @type {GainNode | null} */ (group)?.disconnect(); } catch { /* already disconnected */ }
           report('E_PLAYBACK', text(e), id);
-          return false;
+          return done(false);
         }
       });
-    }).catch(e => { report('E_PLAYBACK', text(e), id); return false; });
+    }).catch(e => { report('E_PLAYBACK', text(e), id); return done(false); });
   }
 
   /**
@@ -336,19 +354,23 @@ export function createPlayer(opts) {
       layers.set(p.name, n); // before start(): a throwing start must still be torn down
       n.src.start(t);
     });
-    // Once every layer has ended (a crossfade or stop faded it out), free the whole bed's graph.
+    const previous = beds[bus];
+    /** @type {Bed} */
+    const started = { id, asset, group, layers, startTime: t, state };
+    beds[bus] = started;
+    // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
+    // out), free the whole bed's graph, and forget the bed if it is still the current one.
     let ended = 0;
     for (const n of layers.values()) {
       n.src.onended = () => {
         if (++ended < layers.size) return;
+        if (beds[bus] === started) beds[bus] = null;
         for (const m of layers.values()) { try { m.src.disconnect(); m.gain.disconnect(); } catch { /* already disconnected */ } }
         try { group.disconnect(); } catch { /* already disconnected */ }
       };
     }
-    const previous = beds[bus];
-    beds[bus] = { id, asset, group, layers, startTime: t, state };
     if (bus === 'music') pendingState = null;
-    if (previous) stopBed(previous, fadeSec);
+    if (previous) stopBed(previous, fadeSec, t); // fade out exactly as the new bed fades in
     return true;
   }
 
@@ -360,7 +382,10 @@ export function createPlayer(opts) {
   function setState(state, { fadeSec: requested = 1.5, at = 'now' } = {}) {
     const fadeSec = fade(requested);
     const cur = beds.music;
-    if (!cur || !ctx) { pendingState = state; return false; }
+    const queued = pending.music && pending.music.token === tokens.music ? pending.music.id : null;
+    const next = loadingMusic ?? queued;
+    // No music yet, or other music is on its way: the state applies when that music starts.
+    if (!cur || !ctx || (next !== null && next !== cur.id)) { pendingState = state; return false; }
     const { asset } = cur;
     if (!asset.layers?.length) { warnOnce('E_NOT_ADAPTIVE', `"${cur.id}" has no adaptive layers`, cur.id); return false; }
     const on = asset.states?.[state];
@@ -396,6 +421,7 @@ export function createPlayer(opts) {
       beds[b] = null;
     }
     pendingState = null;
+    loadingMusic = null;
     if (ctx) for (const n of live.values()) stopNode(n, fadeSec);
     live.clear();
     vm.clear();
@@ -421,7 +447,7 @@ export function createPlayer(opts) {
     for (const b of BEDS) {
       const p = pending[b];
       pending[b] = undefined;
-      if (p) await bed(b, p.id, { fadeSec: p.fadeSec });
+      if (p && p.token === tokens[b]) await bed(b, p.id, { fadeSec: p.fadeSec }); // else a newer request won
     }
   }
 
@@ -430,8 +456,12 @@ export function createPlayer(opts) {
     enabled = !!value;
     if (!enabled) {
       stopAll();
-      if (lifecycle) void lifecycle.setEnabled(false).catch(e => report('E_CONTEXT', text(e)));
-    } else if (lifecycle) lifecycle.allow(); // resuming needs a gesture: the next unlock() does it
+      // Suspend once the stop fade has finished, so the context does not freeze mid-ramp. play()
+      // and beds are refused meanwhile, because running() checks `enabled`. Re-enabling inside the
+      // delay cancels the suspend: the context never stopped, so no gesture is needed.
+      const life = lifecycle;
+      if (life) setTimeout(() => { if (!enabled) void life.setEnabled(false).catch(e => report('E_CONTEXT', text(e))); }, RAMP * 1000 + 10);
+    } else if (lifecycle) lifecycle.allow(); // resuming a suspended context needs a gesture: the next unlock() does it
   }
 
   /** @param {boolean} value */

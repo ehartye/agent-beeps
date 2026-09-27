@@ -36,6 +36,8 @@ function setup(over: Record<string, unknown> = {}, { failing = [] as string[], g
   return { ctx, player, fetched, errors, gates, contexts: () => contexts };
 }
 const settle = () => new Promise(r => setTimeout(r, 0));
+/** Longer than the player's post-fade suspend delay (RAMP + 10 ms) after setEnabled(false). */
+const afterSuspendDelay = () => new Promise(r => setTimeout(r, 60));
 const sources = (ctx: FakeContext) => ctx.nodes('bufferSource');
 
 describe('player graph', () => {
@@ -62,7 +64,7 @@ describe('player graph', () => {
     const { ctx, player } = setup();
     await player.unlock();
     player.setEnabled(false);
-    await settle();
+    await afterSuspendDelay();
     player.setEnabled(true);
     expect(player.play('coin')).toBeNull();
     expect(ctx.state).toBe('suspended');
@@ -171,7 +173,7 @@ describe('music and ambience beds', () => {
     player.setEnabled(false);
     gates.forEach(g => g.open());
     expect(await pending).toBe(false);
-    await settle();
+    await afterSuspendDelay();
     expect(sources(ctx).every(s => s.stoppedAt !== undefined)).toBe(true);
     expect(ctx.state).toBe('suspended');
     expect(player.inspect().music).toBeNull();
@@ -415,5 +417,96 @@ describe('spec re-review fixes', () => {
     await settle();
     expect(player.play('coin')).not.toBeNull();
     expect(catalogFetches).toBeLessThanOrEqual(3);
+  });
+});
+
+describe('bed and state races', () => {
+  it('a direct request during unlock wins over the bed queued before it', async () => {
+    const { ctx, player, gates } = setup({}, { gated: ['index.json'] });
+    await player.music('calm'); // queued: no context yet
+    const unlocking = player.unlock();
+    await settle(); // context resumed; unlock now waits for the catalog
+    const storm = player.music('storm');
+    gates.forEach(g => g.open());
+    await unlocking;
+    expect(await storm).toBe(true);
+    await settle();
+    expect(sources(ctx)).toHaveLength(1);
+    expect(player.inspect().music).toMatchObject({ id: 'storm' });
+  });
+
+  it('re-queues a bed whose buffers arrive while hidden and starts it when shown', async () => {
+    const { ctx, player, gates } = setup({}, { gated: ['storm.wav'] });
+    await player.unlock();
+    const storm = player.music('storm');
+    await settle();
+    player.setHidden(true);
+    await settle();
+    gates.forEach(g => g.open());
+    expect(await storm).toBe(false);
+    expect(sources(ctx)).toHaveLength(0);
+    player.setHidden(false);
+    await settle();
+    expect(sources(ctx)).toHaveLength(1);
+    expect(player.inspect().music).toMatchObject({ id: 'storm' });
+  });
+
+  it('forgets a non-looping bed once it ends, so the same id plays again', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    expect(await player.music('coin')).toBe(true);
+    expect(sources(ctx)[0].loop).toBe(false);
+    sources(ctx)[0].onended?.();
+    expect(player.inspect().music).toBeNull();
+    expect(await player.music('coin')).toBe(true);
+    expect(sources(ctx)).toHaveLength(2);
+  });
+
+  it('a state set while new music loads applies to that music, not the old bed', async () => {
+    const { player, errors, gates } = setup({}, { gated: ['bed.wav', 'pulse.wav', 'threat.wav'] });
+    await player.unlock();
+    await player.music('calm');
+    const theme = player.music('theme');
+    await settle();
+    player.setState('danger');
+    gates.forEach(g => g.open());
+    expect(await theme).toBe(true);
+    expect(errors.map(e => e.code)).not.toContain('E_NOT_ADAPTIVE');
+    expect(player.inspect().music).toMatchObject({ id: 'theme', state: 'danger', layers: { bed: 1, pulse: 1, threat: 1 } });
+  });
+
+  it('fades the old bed out from the moment the new one fades in', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('calm');
+    ctx.currentTime = 5;
+    await player.music('storm', { fadeSec: 2 });
+    const [old, fresh] = sources(ctx);
+    const oldGroup = (old.outputs[0] as FakeNode).outputs[0] as FakeNode;
+    const t = fresh.startedAt as number;
+    expect(t).toBeGreaterThan(5);
+    expect((oldGroup.gain as FakeParam).events.at(-1)).toMatchObject({ kind: 'linear', value: 0, time: t + 2 });
+    expect(old.stoppedAt).toBe(t + 2);
+  });
+
+  it('disabling suspends only after the stop fade, and play() is already dropped', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('calm');
+    player.setEnabled(false);
+    expect(player.play('coin')).toBeNull();
+    await settle();
+    expect(ctx.state).toBe('running'); // still fading out
+    await afterSuspendDelay();
+    expect(ctx.state).toBe('suspended');
+  });
+
+  it('closes a context whose graph failed to build', async () => {
+    const { ctx, player, errors } = setup();
+    let closed = 0;
+    Object.assign(ctx, { close: async () => { closed++; }, createWaveShaper: () => { throw new Error('no shaper'); } });
+    expect(await player.unlock()).toBe(false);
+    expect(errors.map(e => e.code)).toContain('E_CONTEXT');
+    expect(closed).toBe(1);
   });
 });
