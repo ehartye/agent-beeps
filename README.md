@@ -96,10 +96,12 @@ public/audio` (writes `index.json`) and `beeps player export src/vendor` (vendor
     import { createPlayer } from './vendor/beeps-player/player/player.js';
     const player = createPlayer({ catalog: '/audio/index.json' }); // wherever the server serves public/audio/
     button.onclick = () => player.unlock();
+    document.addEventListener('visibilitychange', () => player.setHidden(document.hidden));
 
 `player.play(id)`, `player.music(id)`/`player.ambience(id)` (crossfading beds) and
 `player.setState(state)` (adaptive layers) do the rest: voice budget, priorities and crossfades are
-automatic, and the master never hard-limits below its -1.5 dBFS knee.
+automatic, and the master never hard-limits below its -1.5 dBFS knee. Full API and error codes:
+`skills/beeps-compose/references/game-player.md`.
 
 ## Sound engine
 

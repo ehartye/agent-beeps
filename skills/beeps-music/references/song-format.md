@@ -122,7 +122,9 @@ Songs never snap to the project scale: the notes you write are the notes that pl
   reuses the cache. Output `excerpt` records the source key and original ranges; whole-song lint
   does not apply to an excerpt. Selected passages are joined in form order, without crossfades.
 - Add `--only pad,bass` to excerpt the full-length solo render instead. Its title and `solo` output
-  identify the selected tracks; it uses the solo's normalized level, not the full mix's trim.
+  identify the selected tracks; it uses the solo's normalized level, not the full mix's trim. It
+  renders the full song's tail length (the arrangement's natural release/reverb ring), not just where
+  the selected tracks' own notes stop.
 - `node <plugin-root>/scripts/format-song.mjs <song.json>` reformats a song to one line per
   progression, track, pattern and section (readable diffs; content unchanged).
 - `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's
@@ -147,8 +149,12 @@ and the song must have `"loop": true`.
 - one sidecar listing the layers and states
 
 `nullResidualDb` reports how closely the layers sum to the mix. Anything under -60 dB is effectively
-exact (inaudible). A layer whose tracks never sound in any section still exports (as a silent stem);
-the export warns rather than failing, since a silent layer may be a placeholder for later material.
+exact (inaudible). A residual at or above -60 dB is often the mix hitting the safety clipper: each
+layer is rendered (and clipped) on its own, so if the *summed* mix reached above the clipper's
+-1.5 dBFS knee while no single layer did on its own, the mix comes back nonlinearly reshaped near its
+peaks and the layers no longer sum back to it exactly. A layer whose tracks never sound in any
+section still exports (as a silent stem); the export warns rather than failing, since a silent layer
+may be a placeholder for later material.
 
 Stems and layers both render the full song filtered down to their own tracks, rather than a
 stripped-down song, so every note, chance roll (`?`) and noise seed comes from the same shared

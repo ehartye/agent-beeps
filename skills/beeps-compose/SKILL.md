@@ -52,7 +52,8 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   The player handles the voice budget, priorities, crossfades and adaptive music states, and it never
   hard-limits below its -1.5 dBFS knee. Its voice priority follows `meta.priority` (1 = most
   important, 5 = least): a new sound may steal a voice only from one with a strictly larger number.
-  Engines that are not web games use the WAVs and sidecars directly.
+  Engines that are not web games use the WAVs and sidecars directly. Full API, error codes and the
+  required `visibilitychange` wiring: `references/game-player.md`.
 
 ## Never
 
