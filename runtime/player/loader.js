@@ -32,6 +32,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode }) {
   const buffers = new Map();
   /** @type {Map<string, number>} */
   const failures = new Map();
+  let generation = 0; // bumped by reset(): a failure from before it does not count against later attempts
 
   /** The catalog's assets, or null if it could not be loaded (the next call tries again). */
   function loadCatalog() {
@@ -66,8 +67,19 @@ export function createLoader({ catalog, base, fetcher, report, now, decode }) {
       void loadCatalog();
     },
     /**
+     * Forget past failures so the next catalog() / retryCatalog() / load() fetches and reports again
+     * (e.g. when the player offers "toggle sound to try again"). Decoded buffers, a loaded catalog and
+     * loads in flight are kept.
+     */
+    reset() {
+      failures.clear();
+      retryAt = -Infinity;
+      catalogReported = false;
+      generation++;
+    },
+    /**
      * A decoded buffer for `file` (relative to `base`), or null. A failed file is retried once on
-     * the next call, then stays silent.
+     * the next call, then stays silent until reset().
      * @param {string} file
      * @returns {Promise<AudioBuffer | null>}
      */
@@ -76,11 +88,17 @@ export function createLoader({ catalog, base, fetcher, report, now, decode }) {
       const cached = buffers.get(url);
       if (cached) return cached;
       if ((failures.get(url) ?? 0) >= 2) return Promise.resolve(null);
+      const gen = generation;
       const p = Promise.resolve()
         .then(() => fetcher(url))
         .then(r => { if (!r.ok) throw new Error(`${url} unavailable`); return r.arrayBuffer(); })
         .then(decode)
-        .catch(e => { buffers.delete(url); failures.set(url, (failures.get(url) ?? 0) + 1); report('E_LOAD', text(e), file); return null; });
+        .catch(e => {
+          if (buffers.get(url) === p) buffers.delete(url);
+          if (gen === generation) failures.set(url, (failures.get(url) ?? 0) + 1);
+          report('E_LOAD', text(e), file);
+          return null;
+        });
       buffers.set(url, p);
       return p;
     },

@@ -133,6 +133,72 @@ describe('sound effects', () => {
   });
 });
 
+describe('retry()', () => {
+  it('after two failed loads play() is silent with no new report; retry() fetches and reports again', async () => {
+    const failing = ['coin.wav'];
+    const { ctx, player, errors, fetched } = setup({}, { failing });
+    await player.unlock();
+    for (let i = 0; i < 2; i++) { ctx.currentTime = i; expect(await player.play('coin')!.ready).toBe(false); }
+    ctx.currentTime = 2;
+    expect(await player.play('coin')!.ready).toBe(false);
+    expect(fetched.filter(u => u.endsWith('coin.wav'))).toHaveLength(2);
+    expect(errors.filter(e => e.code === 'E_LOAD')).toHaveLength(2);
+    player.retry();
+    ctx.currentTime = 3;
+    expect(await player.play('coin')!.ready).toBe(false);
+    expect(fetched.filter(u => u.endsWith('coin.wav'))).toHaveLength(3);
+    expect(errors.filter(e => e.code === 'E_LOAD')).toHaveLength(3);
+    expect(sources(ctx)).toHaveLength(0);
+  });
+
+  it('plays a sound that failed twice once it loads after retry()', async () => {
+    const failing = ['coin.wav'];
+    const { ctx, player, fetched } = setup({}, { failing });
+    await player.unlock();
+    for (let i = 0; i < 3; i++) { ctx.currentTime = i; expect(await player.play('coin')!.ready).toBe(false); }
+    failing.length = 0; // the network is back
+    player.retry();
+    ctx.currentTime = 4;
+    expect(await player.play('coin')!.ready).toBe(true);
+    expect(fetched.filter(u => u.endsWith('coin.wav'))).toHaveLength(3);
+    expect(sources(ctx)).toHaveLength(1);
+  });
+
+  it('refetches and re-reports a failed catalog immediately, inside the throttle window', async () => {
+    let catalogFetches = 0;
+    const { player, errors } = setup({
+      fetcher: async (url: string) => {
+        if (url.endsWith('index.json')) catalogFetches++;
+        return { ok: !url.endsWith('index.json'), json: async () => catalog, arrayBuffer: async () => new ArrayBuffer(8) };
+      },
+    });
+    await player.unlock();
+    expect(player.play('coin')).toBeNull(); await settle();
+    expect(player.play('coin')).toBeNull(); await settle();
+    expect(catalogFetches).toBe(2);
+    expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(1);
+    player.retry();
+    expect(player.play('coin')).toBeNull(); await settle();
+    expect(catalogFetches).toBe(3);
+    expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(2);
+  });
+
+  it('keeps playback, loaded buffers and the context', async () => {
+    const { ctx, player, fetched, contexts } = setup();
+    await player.unlock();
+    expect(await player.music('calm')).toBe(true);
+    expect(await player.play('coin')!.ready).toBe(true);
+    player.retry();
+    expect(player.inspect().music).toEqual({ id: 'calm', state: null, layers: {} });
+    expect(sources(ctx).every(s => s.stoppedAt === undefined)).toBe(true);
+    ctx.currentTime = 1;
+    expect(await player.play('coin')!.ready).toBe(true);
+    expect(fetched.filter(u => u.endsWith('coin.wav'))).toHaveLength(1);
+    expect(contexts()).toBe(1);
+    expect(ctx.state).toBe('running');
+  });
+});
+
 describe('music and ambience beds', () => {
   it('crossfades to a new bed and ignores a repeat request', async () => {
     const { ctx, player } = setup();

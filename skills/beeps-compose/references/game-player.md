@@ -36,6 +36,10 @@ createPlayer({
 - **`setEnabled(enabled)`** — a mute/off switch distinct from tab visibility: stops everything with a
   fade, then suspends; re-enabling needs the next `unlock()`-driven gesture to resume.
 - **`stopAll(fadeSec?)`** — fades out every voice and both beds and clears the voice budget.
+- **`retry()`** — forgets failed loads: a file that failed twice (then silent) and a failed catalog
+  (retry throttle, one-report-per-outage) are fetched and reported again on the next `play()`,
+  `music()`/`ambience()` or `unlock()`. Keeps loaded sounds, playback and the context — call it from
+  a "toggle sound to try again" handler.
 
 ## Playing
 

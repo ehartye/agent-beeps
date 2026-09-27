@@ -439,6 +439,16 @@ export function createPlayer(opts) {
       .catch(e => report('E_CONTEXT', text(e)));
   }
 
+  /**
+   * Forget failed loads so the next play() / music() / ambience() / unlock() fetches and reports
+   * again: for a "toggle sound to try again" after a network blip. Keeps loaded sounds, whatever is
+   * playing, and the AudioContext.
+   */
+  function retry() {
+    loader.reset();
+    for (const k of warned) if (k.startsWith('E_LOAD:') || k.startsWith('E_CATALOG:')) warned.delete(k);
+  }
+
   /** A snapshot for tests, debugging and game UI. */
   function inspect() {
     const m = beds.music, a = beds.ambience;
@@ -450,7 +460,7 @@ export function createPlayer(opts) {
   }
 
   return {
-    unlock, play, setState, setLevel, setEnabled, setHidden, stopAll, inspect,
+    unlock, play, setState, setLevel, setEnabled, setHidden, stopAll, retry, inspect,
     /** @param {string | null} id @param {{ fadeSec?: number }} [o] */
     music: (id, o) => bed('music', id, o),
     /** @param {string | null} id @param {{ fadeSec?: number }} [o] */
