@@ -40,14 +40,19 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   noise sits in the band you meant.
 - `beeps measure <name>` - every feature. `beeps lint <name...>` - cited craft rules; fix every
   error, justify every warning.
-- `beeps export <name> --wav assets/sfx/<name>.wav --manifest` writes a WAV plus a sidecar; add
-  `--variants` to export every declared variant for no-repeat playback. For a web game, run
-  `beeps bundle assets/audio` (one `index.json` catalog) and `beeps player export src/vendor`, then
-  `createPlayer({ catalog: '/audio/index.json' })`. The player handles the voice budget, priorities,
-  crossfades and adaptive music states, and it never hard-limits below its -1.5 dBFS knee. Its voice
-  priority follows `meta.priority` (1 = most important, 5 = least): a new sound may steal a voice only
-  from one with a strictly larger number. Engines that are not web games use the WAVs and sidecars
-  directly.
+- `beeps export <name> --wav public/audio/<name>.wav --manifest` writes a WAV plus a sidecar; add
+  `--variants` to export every declared variant for no-repeat playback. For a web game, export every
+  SFX and song into that one folder, then `beeps bundle public/audio` (writes `index.json`) and
+  `beeps player export src/vendor` (vendors `src/vendor/beeps-player/`):
+  ```js
+  import { createPlayer } from './vendor/beeps-player/player/player.js';
+  const player = createPlayer({ catalog: '/audio/index.json' }); // wherever the server serves public/audio/
+  button.onclick = () => player.unlock(); // must run from a user gesture
+  ```
+  The player handles the voice budget, priorities, crossfades and adaptive music states, and it never
+  hard-limits below its -1.5 dBFS knee. Its voice priority follows `meta.priority` (1 = most
+  important, 5 = least): a new sound may steal a voice only from one with a strictly larger number.
+  Engines that are not web games use the WAVs and sidecars directly.
 
 ## Never
 

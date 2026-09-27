@@ -80,12 +80,26 @@ the render's trim. Loudness names its metric (`momentary-max` for patches, `inte
 Keep each WAV and its sidecar together when moving them. Without `--manifest`, export is unchanged.
 Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
 
-`beeps export <patch> --variants --manifest` writes every declared variant (`<stem>.<i>.wav`) and one
-sidecar listing them, their weights, no-repeat and the patch priority. `beeps song export <song>
---layers --manifest` also writes each adaptive layer (`<stem>.<layer>.wav`, loop-folded at the mix's
-trim) and reports `nullResidualDb`, how closely the layers sum back to the mix. With `--variants`,
-the sidecar is `<wav>.json` while the audio files are `<stem>.<i>.wav`; there is no `<wav>` file
-itself. `beeps bundle` resolves them from the sidecar's variant list.
+`beeps export <patch> --variants --manifest` writes every declared variant as `<stem>.<i>.wav` (there
+is no `<wav>` file itself; the sidecar is `<wav>.json`) and one sidecar listing them, their weights,
+no-repeat and the patch priority; `beeps bundle` resolves the variant list from the sidecar. `beeps
+song export <song> --layers --manifest` also writes each adaptive layer (`<stem>.<layer>.wav`,
+loop-folded at the mix's trim) and reports `nullResidualDb`, how closely the layers sum back to the
+mix.
+
+## Game player
+
+Export SFX and music sidecars into one folder (e.g. `public/audio/`), then `beeps bundle
+public/audio` (writes `index.json`) and `beeps player export src/vendor` (vendors
+`src/vendor/beeps-player/`). Import it and unlock it from a user gesture:
+
+    import { createPlayer } from './vendor/beeps-player/player/player.js';
+    const player = createPlayer({ catalog: '/audio/index.json' }); // wherever the server serves public/audio/
+    button.onclick = () => player.unlock();
+
+`player.play(id)`, `player.music(id)`/`player.ambience(id)` (crossfading beds) and
+`player.setState(state)` (adaptive layers) do the rest: voice budget, priorities and crossfades are
+automatic, and the master never hard-limits below its -1.5 dBFS knee.
 
 ## Sound engine
 

@@ -146,11 +146,13 @@ and the song must have `"loop": true`.
 - `theme.<layer>.wav` for each layer, loop-folded and at the mix's trim
 - one sidecar listing the layers and states
 
-`nullResidualDb` reports how closely the layers sum to the mix. Anything under -60 dB is exact up to
-16-bit rounding. A layer whose tracks never sound in any section still exports (as a silent stem);
+`nullResidualDb` reports how closely the layers sum to the mix. Anything under -60 dB is effectively
+exact (inaudible). A layer whose tracks never sound in any section still exports (as a silent stem);
 the export warns rather than failing, since a silent layer may be a placeholder for later material.
 
 Stems and layers both render the full song filtered down to their own tracks, rather than a
 stripped-down song, so every note, chance roll (`?`) and noise seed comes from the same shared
 random stream as the mix and lines up sample-for-sample when summed. `song render --only` uses the
-same filter, so a solo preview now plays the mix's own notes too, not a re-rolled solo performance.
+same filter, so a solo preview plays the mix's own notes, not a re-rolled solo performance.
+
+Play an adaptive song in a game with `beeps bundle` and `beeps player export` (README, "Game player").
