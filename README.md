@@ -52,7 +52,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 |---|---|
 | `capabilities` | schema, source types, archetypes, directions, error codes |
 | `init` | create `.agent-beeps/` (scale, loudness target) |
-| `archetypes`, `generate` | 16 SFX archetypes; diverse lint-clean candidate sets |
+| `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
 | `new`, `batch`, `list` | save patches; atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
 | `mutate`, `crossover` | direction-steered variations; blend two patches |
@@ -63,6 +63,8 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `instruments` | bundled instrument patches songs can name |
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
+| `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
+| `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
@@ -77,6 +79,29 @@ Only songs authored with `loop: true` are labeled as loops. The sidecar marks
 the render's trim. Loudness names its metric (`momentary-max` for patches, `integrated` for songs).
 Keep each WAV and its sidecar together when moving them. Without `--manifest`, export is unchanged.
 Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
+
+`beeps export <patch> --variants --manifest` writes every declared variant as `<stem>.<i>.wav` (there
+is no `<wav>` file itself; the sidecar is `<wav>.json`), and that sidecar lists them, their weights,
+no-repeat and the patch priority; `beeps bundle` resolves the variant list from the sidecar. `beeps
+song export <song> --layers --manifest` also writes each adaptive layer (`<stem>.<layer>.wav`,
+loop-folded at the mix's trim) and reports `nullResidualDb`, how closely the layers sum back to the
+mix.
+
+## Game player
+
+Export SFX and music sidecars into one folder (e.g. `public/audio/`), then `beeps bundle
+public/audio` (writes `index.json`) and `beeps player export src/vendor` (vendors
+`src/vendor/beeps-player/`). Import it and unlock it from a user gesture:
+
+    import { createPlayer } from './vendor/beeps-player/player/player.js';
+    const player = createPlayer({ catalog: '/audio/index.json' }); // wherever the server serves public/audio/
+    button.onclick = () => player.unlock();
+    document.addEventListener('visibilitychange', () => player.setHidden(document.hidden));
+
+`player.play(id)`, `player.music(id)`/`player.ambience(id)` (crossfading beds) and
+`player.setState(state)` (adaptive layers) do the rest: voice budget, priorities and crossfades are
+automatic, and the master never hard-limits below its -1.5 dBFS knee. Full API and error codes:
+`skills/beeps-compose/references/game-player.md`.
 
 ## Sound engine
 

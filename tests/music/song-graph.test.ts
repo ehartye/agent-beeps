@@ -37,6 +37,19 @@ describe('song engine', () => {
     expect(buffers.size).toBeLessThanOrEqual(8);
   });
 
+  it('plays only the chosen tracks, with the noise and chance hits of the full song', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4, rhythm: 'x?x?' } }, 'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' } } });
+    const hats = (only?: string[]) => {
+      const f = new FakeContext();
+      buildSong(asCtx(f), s, instruments(), only ? { only } : {});
+      return { oscs: f.count('osc'), noise: f.nodes('bufferSource').map(b => Array.from((b.buffer as AudioBuffer).getChannelData(0).subarray(0, 4))) };
+    };
+    const full = hats(), solo = hats(['hat']);
+    expect(solo.oscs).toBe(0);
+    expect(solo.noise.length).toBeGreaterThan(0);
+    expect(solo.noise).toEqual(full.noise);
+  });
+
   it('builds one master reverb, not one per note', () => {
     const f = new FakeContext();
     buildSong(asCtx(f), song({ master: { reverb: { preset: 'space' } }, tracks: { pad: { instrument: 'pad', sends: { reverb: -6 } }, hat: { instrument: 'hat' } } }), instruments());

@@ -126,8 +126,8 @@ export function resolveInstruments(p: OpenProject, song: Song): Record<string, P
  */
 export function soloSong(song: Song, { only, sections }: { only?: string[]; sections?: string[] }): Song {
   const out = structuredClone(song);
-  for (const t of only ?? []) if (!(t in song.tracks)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
-  for (const x of sections ?? []) if (!(x in song.sections)) throw new BeepsError('E_USAGE', `no section "${x}"`, { hint: `sections: ${Object.keys(song.sections).join(', ')}` });
+  for (const t of only ?? []) if (!Object.hasOwn(song.tracks, t)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
+  for (const x of sections ?? []) if (!Object.hasOwn(song.sections, x)) throw new BeepsError('E_USAGE', `no section "${x}"`, { hint: `sections: ${Object.keys(song.sections).join(', ')}` });
   if (only?.length) for (const sec of Object.values(out.sections)) sec.play = Object.fromEntries(Object.entries(sec.play).filter(([t]) => only.includes(t)));
   if (sections?.length) out.form = out.form.filter(f => sections.includes(f));
   if (!out.form.length) throw new BeepsError('E_USAGE', 'no sections left to render');

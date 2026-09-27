@@ -208,6 +208,19 @@
           "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory"
         }
       ]
+    },
+    {
+      "id": "song-adaptive-states",
+      "statement": "Every adaptive state is music on its own: the calm state may be all the player hears for minutes, so render and listen to each state's layers alone, not only the full mix.",
+      "check": "judgement",
+      "severity": "warn",
+      "appliesTo": "song",
+      "sources": [
+        {
+          "title": "Collins, Game Sound (MIT Press, 2008), ch. 8: variable mixing (layering of instruments)",
+          "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory"
+        }
+      ]
     }
   ]
 }

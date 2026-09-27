@@ -54,7 +54,9 @@ describe('export manifests', () => {
     expect(readFileSync(join(moved, movedManifest.file))).toEqual(wav);
     const ambience = run(p.paths.root, 'export', 'coin', '--wav', 'audio/bed.wav', '--seed', '7', '--manifest', '--role', 'ambience');
     expect(ambience.status, ambience.stderr).toBe(0);
-    expect(JSON.parse(readFileSync(ambience.data.manifest, 'utf8'))).toMatchObject({ role: 'ambience', loop: false });
+    const ambienceManifest = JSON.parse(readFileSync(ambience.data.manifest, 'utf8'));
+    expect(ambienceManifest).toMatchObject({ role: 'ambience', loop: false });
+    expect(ambienceManifest).not.toHaveProperty('priority');
   });
 
   it.skipIf(!hasChromium).each([false, true])('exports song identity, delivered measurements and actual loop state (loop=%s)', loop => {

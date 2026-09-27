@@ -21,6 +21,12 @@ describe('song lint', () => {
     expect(r.judgement).toEqual(['song-register-bands', 'song-fatigue']);
   });
 
+  it('asks for each adaptive state to stand alone only when the song is adaptive', () => {
+    const adaptive = song({ loop: true, adaptive: { layers: { bed: ['pad'], pulse: ['hat'] }, states: { calm: ['bed'], full: ['bed', 'pulse'] }, initial: 'calm' } });
+    expect(lintSong(adaptive, good(), project).judgement).toContain('song-adaptive-states');
+    expect(lintSong(song(), good(), project).judgement).not.toContain('song-adaptive-states');
+  });
+
   it('flags peaks, clipping and a peak-limited level', () => {
     const r = lintSong(song(), good({ delivered: { integratedLufs: -25, truePeakDb: -0.5, clippedSamples: 3, peakLimited: true } }), project);
     expect(r.errors.map(f => f.rule)).toEqual(['song-true-peak', 'song-no-clipping']);

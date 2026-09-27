@@ -8,6 +8,8 @@ import type { RenderedSong } from './render/song-pipeline.ts';
 
 const Role = z.enum(['sfx', 'music', 'ambience']);
 export type ExportRole = z.infer<typeof Role>;
+const Variant = z.strictObject({ file: z.string().min(1), weight: z.number().min(0).optional() });
+const LayerFile = z.strictObject({ name: z.string().min(1), file: z.string().min(1) });
 export const ExportManifestSchema = z.strictObject({
   schema: z.literal('beeps/audio-asset@1'),
   id: z.string().min(1), label: z.string().min(1), description: z.string(),
@@ -16,7 +18,18 @@ export const ExportManifestSchema = z.strictObject({
   renderKey: z.string().min(1),
   loudness: z.strictObject({ metric: z.enum(['momentary-max', 'integrated']), lufs: z.number() }),
   truePeakDb: z.number(), normalizationAlreadyApplied: z.literal(true),
+  // Optional, additive: sidecars written before these existed stay valid.
+  // 1 is most important, 5 least (FMOD convention, as meta.priority and the kit)
+  priority: z.number().int().min(1).max(5).optional(),
+  variants: z.array(Variant).min(1).optional(),
+  noRepeat: z.boolean().optional(),
+  bpm: z.number().positive().optional(),
+  meter: z.number().int().positive().optional(),
+  layers: z.array(LayerFile).min(1).optional(),
+  states: z.record(z.string(), z.array(z.string())).optional(),
+  initialState: z.string().optional(),
 });
+export type ExportManifest = z.infer<typeof ExportManifestSchema>;
 
 export function exportRole(role: string | undefined, manifest: boolean | undefined, fallback: ExportRole): ExportRole {
   if (role !== undefined && !manifest) throw new BeepsError('E_USAGE', '--role requires --manifest');
@@ -26,7 +39,7 @@ export function exportRole(role: string | undefined, manifest: boolean | undefin
 }
 
 /** Called after the WAV copy. Internal exports use writeWav's canonical 44-byte PCM header. */
-export function writeExportManifest(wav: string, rendered: Rendered | RenderedSong, role: ExportRole): string {
+export function writeExportManifest(wav: string, rendered: Rendered | RenderedSong, role: ExportRole, extra: Partial<ExportManifest> = {}, path = `${wav}.json`): string {
   const header = Buffer.alloc(44), fd = openSync(wav, 'r');
   let bytes: number;
   try { bytes = readSync(fd, header, 0, header.length, 0); } finally { closeSync(fd); }
@@ -48,8 +61,9 @@ export function writeExportManifest(wav: string, rendered: Rendered | RenderedSo
       ? { metric: 'integrated', lufs: rendered.features.delivered?.integratedLufs }
       : { metric: 'momentary-max', lufs: rendered.features.delivered.momentaryMaxLufs },
     truePeakDb: delivered?.truePeakDb, normalizationAlreadyApplied: true,
+    ...(song ? { bpm: song.bpm, meter: song.meter } : role === 'sfx' ? { priority: (rendered as Rendered).patch.meta?.priority ?? 3 } : {}),
+    ...extra,
   });
-  const path = `${wav}.json`;
   writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
   return path;
 }

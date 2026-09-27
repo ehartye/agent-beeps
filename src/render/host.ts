@@ -58,7 +58,8 @@ export interface RenderHost {
   /** PNG buffers: one per item, or a single contact sheet. */
   looks(items: LookItem[], sheet?: boolean): Promise<Buffer[]>;
   /** Render a song in the page; its PCM stays there until pulled and freed. */
-  renderSong(song: Song, instruments: Record<string, Patch>): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
+  /** `only`: play just these tracks' notes out of the full song, so every random draw matches the mix. */
+  renderSong(song: Song, instruments: Record<string, Patch>, opts?: { only?: string[] }): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
   pullSong(id: number, frames: number): Promise<Float32Array[]>;
   songLook(id: number, features: object, label: string): Promise<Buffer>;
   songPcmLook(channels: Float32Array[], features: object, label: string): Promise<Buffer>;
@@ -128,9 +129,9 @@ export async function openRenderHost(): Promise<RenderHost> {
       const urls = await page.evaluate(([p, s]) => (window as any).beepsLooks(p, s), [payload, sheet] as const) as string[];
       return urls.map(u => Buffer.from(u.slice(u.indexOf(',') + 1), 'base64'));
     },
-    async renderSong(song, instruments) {
+    async renderSong(song, instruments, opts = {}) {
       try {
-        return await page.evaluate(([s, i]) => (window as any).beepsRenderSong(s, i), [song, instruments] as const);
+        return await page.evaluate(([s, i, o]) => (window as any).beepsRenderSong(s, i, o), [song, instruments, opts] as const);
       } catch (e) {
         throw new BeepsError('E_RENDER', `song render failed: ${(e as Error).message.slice(0, 400)}`);
       }

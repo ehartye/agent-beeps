@@ -88,7 +88,7 @@ The asset manifest gains these optional fields. They are additive, so existing s
 ### Voice manager (SFX bus)
 
 - **Budget:** at most `voices` SFX play at once (default 8).
-- **Stealing:** when the budget is full, a new sound takes the slot of the oldest voice with a *strictly lower* priority, fading that voice out over 20 ms. If no voice has lower priority, the new sound is dropped and `play` returns null.
+- **Stealing:** when the budget is full, a new sound takes the slot of the oldest *less important* voice, fading that voice out over 20 ms. Priority 1 is the most important and 5 the least, the FMOD convention used by `meta.priority` and the kit, so the victim's number must be strictly larger. If no voice is less important, the new sound is dropped and `play` returns null.
 - **Priority is one-way:** a lower-priority sound never displaces a higher one. So the player's damage sound beats a pickup in the same frame, as the craft rule requires.
 - **Retrigger limits:** each sound has a cooldown (default 50 ms) and an instance cap (default 3). Both can be overridden per call and per asset.
 - **Variant choice:** the engine's `createPicker` chooses variants, using the manifest's weights and `noRepeat`. The picker takes a patch, so the runtime passes it `{ variation: { variants, weights, noRepeat } }` built from the manifest. Repeats therefore behave as they do under the audition page's ×75 button.
@@ -198,3 +198,15 @@ The runtime never throws into the game loop. Every problem is reported through `
 - **A new public API that games vendor.** Vendoring lets each game choose when to update, and the header records the version. A breaking change requires a new major version.
 - **Loop-folded layer tails.** Reverb and delay tails fold separately in each layer. The null test proves the layers still add up to the mix.
 - **Clipper aliasing on real overloads.** This is accepted and documented, and the voice budget keeps overloads rare.
+
+## Amendments made while planning (2026-09-27)
+
+1. The player is vendored as a directory, `<dir>/beeps-player/{player,engine}/*.js`, which keeps
+   the runtime's relative imports. It is not a single inlined file. No bundler is needed and names
+   cannot collide. The header and `VERSION.json` record the versions.
+2. `song export --layers` is a flag. Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`.
+3. Stems and layers render the full song with an `only` track filter applied when notes are scheduled. They are not built with `soloSong`, which changed the shared random stream: chance hits, random arps and noise seeds came out differently, and the layers could not null. Full renders keep their output and cache keys. The same filter makes `song render --only` play the mix's actual notes.
+4. The player uses catalog keys as asset ids and accepts any `{ assets: {...} }` object, including
+   hand-built game manifests whose keys differ from the sidecar ids.
+5. The per-sound instance cap replaces that sound's oldest instance rather than dropping the new
+   request.

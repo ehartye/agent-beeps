@@ -33,7 +33,7 @@ export function variantPatch(patch, variant, seed) {
 /**
  * Picks variants for successive plays: honours permutation weights and never repeats the
  * previous variant when noRepeat is set and there is more than one variant.
- * @param {Patch} patch
+ * @param {{ variation?: { variants?: number, weights?: number[], noRepeat?: boolean } }} patch a Patch, or just its variation
  * @param {number} seed
  */
 export function createPicker(patch, seed) {

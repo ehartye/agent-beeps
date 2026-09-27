@@ -13,10 +13,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-27-game-runtime-design.md`.
 
+**Priority direction:** `priority` 1 is the most important and 5 the least. This is the FMOD convention already used by `meta.priority`, `src/kit.ts` and `patch-format.md`. A new sound may steal only a voice whose number is strictly *larger*, that is, a less important voice.
+
 **Amendments to the spec, made while planning.** Task 0 records them in the spec.
 1. **The player is vendored as a directory, not a single inlined file.** `beeps player export <dir>` writes `<dir>/beeps-player/{player,engine}/*.js` and keeps the runtime's relative imports. That needs no bundler and has no risk of name collisions. The header and `VERSION.json` still record the versions.
 2. **`song export --layers` is a flag, not `--layers <dir>`.** Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`, so the sidecar can name them relative to itself.
-3. **Stems already keep loop folding and the mix trim.** `song stems` renders `{ ...soloSong(...), loop: s.loop }` with `trimDb: mix.trimDb`. So the layer renderer reuses that path, and no new solo option is needed.
+3. **Stems and layers render the full song with an `only` track filter.** This was revised during Task 6. Every note, chance roll and noise seed then matches the mix, full-render output and cache keys stay unchanged, and `ENGINE_VERSION` stays 1. The plan's first approach used `soloSong`, which removes plays. That changed the shared random stream: `?` hits, random arps and noise seeds came out differently, and layers nulled at only -23 dB. `song render --only` uses the same filter, with its own solo trim and `loop: false`.
 4. **The player's catalog keys are the asset ids.** It accepts any `{ assets: { <key>: <sidecar> } }`: both `beeps/audio-bundle@1` and the hand-built manifests games already have. Space to Grow keys its assets by game ids such as `music-garden`, which differ from the sidecar ids.
 5. **The per-sound instance cap replaces the sound's own oldest instance.** It does not drop the new request. A repeated sound, such as footsteps, keeps sounding current.
 
@@ -509,11 +511,9 @@ import type { Project } from '../schema/project.ts';
 export async function renderLayers(host: RenderHost, song: Song, instruments: Record<string, Patch>, mix: RenderedSong, opts: { project: Project; rendersDir: string }): Promise<Record<string, RenderedSong>> {
   if (!song.adaptive) throw new BeepsError('E_USAGE', `song "${song.name}" has no adaptive block`);
   const out: Record<string, RenderedSong> = {};
-  for (const [name, tracks] of Object.entries(song.adaptive.layers)) {
-    // Same as song stems: solo keeps the full form; restore loop folding; reuse the mix's trim.
-    const solo = { ...soloSong(song, { only: tracks }), loop: song.loop };
-    out[name] = await renderSong(host, solo, instruments, { ...opts, trimDb: mix.trimDb });
-  }
+  // The full song filtered to the layer's tracks (renderSong's `only`): every note, chance roll and
+  // noise seed matches the mix, so the layers sum back to it. Reuse the mix's trim.
+  for (const [name, tracks] of Object.entries(song.adaptive.layers)) out[name] = await renderSong(host, song, instruments, { ...opts, only: tracks, trimDb: mix.trimDb });
   return out;
 }
 
@@ -817,20 +817,21 @@ import { createVoiceManager } from '../../runtime/player/voices.js';
 const opts = (priority = 3, over = {}) => ({ priority, cooldownSec: 0, cap: 3, ...over });
 
 describe('voice manager', () => {
-  it('grants voices up to the budget, then drops equal or lower priority requests', () => {
+  it('grants voices up to the budget, then drops equally or less important requests', () => {
     const vm = createVoiceManager({ budget: 2 });
     expect(vm.request('a', opts(), 0)).toMatchObject({ steal: null });
     expect(vm.request('b', opts(), 0.1)).toMatchObject({ steal: null });
     expect(vm.request('c', opts(3), 0.2)).toBeNull();
-    expect(vm.request('c', opts(1), 0.3)).toBeNull();
+    expect(vm.request('c', opts(5), 0.3)).toBeNull();
     expect(vm.size).toBe(2);
   });
 
-  it('lets a strictly higher priority steal the oldest lower-priority voice', () => {
+  it('lets a more important sound (smaller number) steal the oldest less important voice', () => {
     const vm = createVoiceManager({ budget: 2 });
+    // a is the oldest less important voice; b is less important still but newer: the rule picks age.
     const a = vm.request('a', opts(2), 0)!;
     vm.request('b', opts(4), 0.1);
-    const hit = vm.request('hit', opts(5), 0.2)!;
+    const hit = vm.request('hit', opts(1), 0.2)!;
     expect(hit.steal).toBe(a.key);
     expect(vm.has(a.key)).toBe(false);
     expect(vm.size).toBe(2);
@@ -873,7 +874,8 @@ Expected: FAIL, because the module is not found.
 ```js
 // runtime/player/voices.js
 // Which sound effects may sound: a voice budget, strict-priority stealing, a cooldown and an
-// instance cap per sound. Pure bookkeeping on a caller-supplied clock; the player does the audio.
+// instance cap per sound. Priority 1 is the most important (FMOD convention, as in meta.priority).
+// Pure bookkeeping on a caller-supplied clock; the player does the audio.
 
 /**
  * @typedef {{ key: number, id: string, priority: number, startedAt: number }} Voice
@@ -907,9 +909,9 @@ export function createVoiceManager({ budget = 8 } = {}) {
       const same = active.filter(v => v.id === id);
       if (same.length >= cap) steal = oldest(same);
       else if (active.length >= budget) {
-        const lower = active.filter(v => v.priority < priority);
-        if (!lower.length) return null;
-        steal = oldest(lower);
+        const lessImportant = active.filter(v => v.priority > priority);
+        if (!lessImportant.length) return null;
+        steal = oldest(lessImportant);
       }
       if (steal) active = active.filter(v => v !== steal);
       const voice = { key: nextKey++, id, priority, startedAt: now };
@@ -1059,7 +1061,10 @@ export function createLifecycle(ctx, { enabled = true, hidden = false } = {}) {
   /** @type {Promise<void>} */
   let chain = Promise.resolve();
   const reconcile = () => {
-    chain = chain.catch(() => {}).then(() => (state.enabled && !state.hidden ? ctx.resume() : ctx.suspend()));
+    // Snapshot the desired state now: the callback below runs later, on a queued microtask, by
+    // which time a rapid second call may already have mutated `state` again.
+    const running = state.enabled && !state.hidden;
+    chain = chain.catch(() => {}).then(() => (running ? ctx.resume() : ctx.suspend()));
     return chain;
   };
   return {
@@ -1120,7 +1125,7 @@ import { asCtx, FakeContext, FakeParam } from '../helpers/fake-context.ts';
 
 const catalog = { assets: {
   coin: { file: 'coin.wav', loop: false, priority: 3 },
-  hit: { file: 'hit.wav', loop: false, priority: 5 },
+  hit: { file: 'hit.wav', loop: false, priority: 1 },
   step: { file: 'step.0.wav', loop: false, noRepeat: true, variants: [{ file: 'step.0.wav' }, { file: 'step.1.wav' }] },
   calm: { file: 'calm.wav', loop: true },
   storm: { file: 'storm.wav', loop: true },
@@ -1172,6 +1177,18 @@ describe('player graph', () => {
     expect(contexts()).toBe(0);
   });
 
+  it('plays nothing after re-enabling until the next unlock resumes the context', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    player.setEnabled(false);
+    await settle();
+    player.setEnabled(true);
+    expect(player.play('coin')).toBeNull();
+    expect(ctx.state).toBe('suspended');
+    await player.unlock();
+    expect(player.play('coin')).not.toBeNull();
+  });
+
   it('clamps levels and ignores non-numbers', () => {
     const { player } = setup();
     player.setLevel('music', 5); player.setLevel('sfx', -1); player.setLevel('ambience', NaN); player.setLevel('nope', 0.5);
@@ -1188,7 +1205,7 @@ describe('sound effects', () => {
     expect(errors.filter(e => e.code === 'E_UNKNOWN_ASSET')).toHaveLength(1);
   });
 
-  it('keeps to the voice budget and lets only a higher priority steal', async () => {
+  it('keeps to the voice budget and lets only a more important sound steal', async () => {
     const { ctx, player } = setup({ voices: 2 });
     await player.unlock();
     const a = player.play('coin')!; ctx.currentTime = 0.1;
@@ -1409,7 +1426,9 @@ export function createPlayer(opts) {
     param.setValueAtTime(param.value, at);
     param.linearRampToValueAtTime(to, at + Math.max(RAMP, sec));
   };
-  const running = () => !!lifecycle && lifecycle.running;
+  // Wanted (lifecycle) AND actually running: after setEnabled(true) without a gesture the context
+  // is still suspended, and sounds started then would hold voices and all burst out on resume.
+  const running = () => !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
 
   function loadCatalog() {
     if (assets) return Promise.resolve(assets);
