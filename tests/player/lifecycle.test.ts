@@ -26,6 +26,25 @@ it('applies rapid hide and show in order, ending in the latest state', async () 
   expect(ctx.state).toBe('running');
 });
 
+it('does not poison the queue: a rejected resume is followed by a later call that succeeds', async () => {
+  const calls: string[] = [];
+  let fail = true;
+  const ctx = {
+    state: 'suspended',
+    async resume() {
+      calls.push('resume');
+      if (fail) { fail = false; throw new Error('NotAllowedError'); }
+      this.state = 'running';
+    },
+    async suspend() { calls.push('suspend'); this.state = 'suspended'; },
+  };
+  const life = createLifecycle(ctx as unknown as AudioContext);
+  await expect(life.reconcile()).rejects.toThrow('NotAllowedError');
+  await life.reconcile();
+  expect(calls).toEqual(['resume', 'resume']);
+  expect(ctx.state).toBe('running');
+});
+
 it('allow() re-enables without resuming until the next reconcile', async () => {
   const { ctx, calls, release } = context();
   release();

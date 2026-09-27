@@ -49,4 +49,46 @@ describe('voice manager', () => {
     vm.clear();
     expect(vm.size).toBe(0);
   });
+
+  it('clear() also resets the cooldown map', () => {
+    const vm = createVoiceManager({ budget: 8 });
+    vm.request('coin', opts(3, { cooldownSec: 1 }), 0);
+    vm.clear();
+    expect(vm.request('coin', opts(3, { cooldownSec: 1 }), 0.1)).not.toBeNull();
+  });
+
+  it('treats a clock that moves backwards (a recreated context) as the cooldown having elapsed', () => {
+    const vm = createVoiceManager({ budget: 8 });
+    vm.request('coin', opts(3, { cooldownSec: 1 }), 5);
+    expect(vm.request('coin', opts(3, { cooldownSec: 1 }), 1)).not.toBeNull();
+  });
+
+  it('clamps a non-positive cap to at least 1 instead of crashing', () => {
+    const vm = createVoiceManager({ budget: 8 });
+    let first: ReturnType<typeof vm.request> = null;
+    expect(() => { first = vm.request('step', opts(3, { cap: 0 }), 0); }).not.toThrow();
+    expect(first).not.toBeNull();
+    const second = vm.request('step', opts(3, { cap: 0 }), 0.1)!;
+    expect(second.steal).toBe(first!.key);
+    expect(vm.size).toBe(1);
+  });
+
+  it('a cap steal while the budget is full keeps size at the budget', () => {
+    const vm = createVoiceManager({ budget: 3 });
+    vm.request('x', opts(3), 0);
+    vm.request('step', opts(3, { cap: 2 }), 0.1);
+    vm.request('step', opts(3, { cap: 2 }), 0.2);
+    expect(vm.size).toBe(3);
+    const third = vm.request('step', opts(3, { cap: 2 }), 0.3);
+    expect(third).not.toBeNull();
+    expect(vm.size).toBe(3);
+  });
+
+  it('a dropped request when the budget is full does not record a cooldown', () => {
+    const vm = createVoiceManager({ budget: 1 });
+    const a = vm.request('a', opts(1), 0)!;
+    expect(vm.request('b', opts(1, { cooldownSec: 1 }), 0.1)).toBeNull();
+    vm.release(a.key);
+    expect(vm.request('b', opts(1, { cooldownSec: 1 }), 0.2)).not.toBeNull();
+  });
 });

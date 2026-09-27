@@ -29,11 +29,14 @@ export function createVoiceManager({ budget = 8 } = {}) {
      */
     request(id, { priority, cooldownSec, cap }, now) {
       const last = lastStart.get(id);
-      if (last !== undefined && now - last < cooldownSec) return null;
+      // now < last means the clock went backwards (e.g. a recreated AudioContext, whose currentTime
+      // restarts at 0): treat the cooldown as elapsed rather than blocking on a stale future time.
+      if (last !== undefined && now >= last && now - last < cooldownSec) return null;
       /** @type {Voice | null} */
       let steal = null;
       const same = active.filter(v => v.id === id);
-      if (same.length >= cap) steal = oldest(same);
+      const effectiveCap = Math.max(1, cap);
+      if (same.length >= effectiveCap) steal = oldest(same);
       else if (active.length >= budget) {
         const lessImportant = active.filter(v => v.priority > priority);
         if (!lessImportant.length) return null;
@@ -49,7 +52,7 @@ export function createVoiceManager({ budget = 8 } = {}) {
     release(key) { active = active.filter(v => v.key !== key); },
     /** @param {number} key */
     has(key) { return active.some(v => v.key === key); },
-    clear() { active = []; },
+    clear() { active = []; lastStart.clear(); },
     get size() { return active.length; },
   };
 }
