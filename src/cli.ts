@@ -8,6 +8,7 @@ import { registerCapabilities } from './commands/capabilities.ts';
 import { registerAuditionCommands } from './commands/audition.ts';
 import { registerGenerateCommands } from './commands/generate.ts';
 import { registerSongCommands } from './commands/songs.ts';
+import { registerPlayerCommands } from './commands/player.ts';
 
 const root = join(import.meta.dirname, '..');
 export const VERSION: string = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
@@ -27,6 +28,7 @@ export function buildProgram(io: Io): Command {
   registerGenerateCommands(program, io);
   registerAuditionCommands(program, io);
   registerSongCommands(program, io);
+  registerPlayerCommands(program, io);
   return program;
 }
 
