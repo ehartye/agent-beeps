@@ -37,6 +37,6 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .action((dir: string) => io.emit(bundleDir(resolve(dir))));
   const player = program.command('player').description('the browser runtime games use to play exported audio');
   player.command('export <dir>')
-    .description('vendor the player into <dir>/beeps-player/ (import beeps-player/player/player.js)')
+    .description('vendor the player into <dir>/beeps-player/, replacing that folder (import beeps-player/player/player.js)')
     .action((dir: string) => io.emit(exportPlayer(dir)));
 }

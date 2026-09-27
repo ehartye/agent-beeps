@@ -81,7 +81,7 @@ Keep each WAV and its sidecar together when moving them. Without `--manifest`, e
 Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
 
 `beeps export <patch> --variants --manifest` writes every declared variant as `<stem>.<i>.wav` (there
-is no `<wav>` file itself; the sidecar is `<wav>.json`) and one sidecar listing them, their weights,
+is no `<wav>` file itself; the sidecar is `<wav>.json`), and that sidecar lists them, their weights,
 no-repeat and the patch priority; `beeps bundle` resolves the variant list from the sidecar. `beeps
 song export <song> --layers --manifest` also writes each adaptive layer (`<stem>.<layer>.wav`,
 loop-folded at the mix's trim) and reports `nullResidualDb`, how closely the layers sum back to the
