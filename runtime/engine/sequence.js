@@ -27,7 +27,7 @@ export const GATE_DEFAULTS = { notes: 1, chords: 1, arp: 0.9, bass: 0.95, steps:
 export const noteToMidi = note => Math.round(hzToMidi(noteToHz(note)));
 
 /** A euclidean token in a step string: glyph(hits,steps[,rotation]), e.g. x(3,8) or X(5,16,2). */
-export const EUCLID = /([Xxo?])\((\d+),(\d+)(?:,(\d+))?\)/g;
+const EUCLID = /([Xxo?])\((\d{1,3}),(\d{1,3})(?:,(\d{1,3}))?\)/g;
 
 /**
  * Step strings with each euclidean token spelled out: `hits` spread as evenly as possible over

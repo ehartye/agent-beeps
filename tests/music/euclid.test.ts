@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { expandEuclid, parseSteps } from '../../runtime/engine/sequence.js';
-import { parseSong } from '../../src/schema/song.ts';
+import { z } from 'zod';
+import { parseSong, SongSchema } from '../../src/schema/song.ts';
 import { songInput } from '../helpers/songs.ts';
 
 // Toussaint, "The Euclidean Algorithm Generates Traditional Musical Rhythms" (2005), Bjorklund forms.
@@ -47,9 +48,29 @@ describe('euclidean rhythms in songs', () => {
 
   it('accepts them in steps and rhythm fields', () => expect(withSteps('X(5,16)').ok).toBe(true));
 
-  it('reports a bad euclidean token against its field with a hint', () => {
+  it('reports an impossible euclidean token once, against its field', () => {
     const r = withSteps('x(9,8)');
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.issues[0]).toMatchObject({ pointer: '/patterns/hat-a/steps' });
+    if (!r.ok) {
+      expect(r.issues).toHaveLength(1);
+      expect(r.issues[0]).toMatchObject({ pointer: '/patterns/hat-a/steps', message: expect.stringMatching(/hits must be 1-8/) });
+    }
+  });
+
+  it('reports a malformed token once, with the grammar', () => {
+    const r = withSteps('x(3)');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.issues).toHaveLength(1);
+      expect(r.issues[0].message).toMatch(/x\(3,8\)/);
+    }
+  });
+
+  it('publishes the step grammar, euclidean tokens included, in the JSON schema', () => {
+    const schema = z.toJSONSchema(SongSchema, { io: 'input' }) as any;
+    const pattern = schema.properties.patterns.additionalProperties.properties.steps.pattern as string;
+    expect(pattern).toBeTypeOf('string');
+    expect(new RegExp(pattern).test('X... x(3,8) o(5,16,2) _')).toBe(true);
+    expect(new RegExp(pattern).test('x(3)')).toBe(false);
   });
 });

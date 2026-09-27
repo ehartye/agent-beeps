@@ -11,12 +11,14 @@ const Note = z.string().regex(/^[A-G](#|b)?-?\d$/, 'notes in songs are names lik
  * A euclidean token glyph(hits,steps[,rotation]) such as x(3,8) spells out an even spread of hits.
  */
 const STEPS_HINT = 'steps use X (accent) x (hit) o (ghost) ? (hit half the time) . (rest) _ (hold), or euclidean x(3,8) / X(5,16,2) (hits, steps, rotation); spaces and | are ignored';
-const Steps = z.string().superRefine((s, ctx) => {
+const STEPS_GRAMMAR = /^(?:[Xxo?._|\s]|[Xxo?]\(\d{1,3},\d{1,3}(?:,\d{1,3})?\))+$/;
+// The regex publishes the grammar in the JSON schema; the refinement checks counts and hits.
+const Steps = z.string().regex(STEPS_GRAMMAR, STEPS_HINT).superRefine((s, ctx) => {
+  if (!STEPS_GRAMMAR.test(s)) return; // already reported by the regex
   let flat: string;
   try { flat = expandEuclid(s); } catch (e) { ctx.addIssue({ code: 'custom', message: (e as Error).message }); return; }
-  if (!/^[Xxo?._|\s]+$/.test(flat)) ctx.addIssue({ code: 'custom', message: STEPS_HINT });
-  else if (!/[Xxo?]/.test(flat)) ctx.addIssue({ code: 'custom', message: 'a step string needs at least one hit' });
-});
+  if (!/[Xxo?]/.test(flat)) ctx.addIssue({ code: 'custom', message: 'a step string needs at least one hit' });
+}).describe(STEPS_HINT);
 const Octave = z.number().int().min(0).max(8).describe('octave the chord/bass root lands in (C4 = middle C; bass usually 2). spread voicing puts the root one octave lower');
 const Gate = z.union([z.number().min(0.05).max(4), z.literal('patch')]);
 
