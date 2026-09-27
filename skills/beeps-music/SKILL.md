@@ -23,6 +23,11 @@ comes from the arrangement (parts entering, dropping out, changing register) mor
 notes. For long-play music (exploration, menus) keep melody understated, leave space, and let the
 loop end at the density it began with.
 
+A jingle or sting (victory, level up, game over) is a one-shot song: `loop: false`, one to four
+bars at a brisk tempo, a clear rhythmic figure up front, and a last held tonic chord whose tail
+rings out; the render keeps the tail. Listener-fatigue judgement applies only to loops and songs
+over 30 s. It is still trimmed to `project.musicLoudness`; tag it `jingle`.
+
 ## 2. Pick instruments
 
 `beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums)
