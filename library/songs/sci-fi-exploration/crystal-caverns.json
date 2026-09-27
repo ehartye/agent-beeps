@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/song@1",
+  "name": "crystal-caverns",
+  "title": "Crystal Caverns",
+  "description": "Resonant caves of singing crystal: a B pedal drone under slow B minor glass chords, bells that ring in the cave reverb, water drips answered by their own echoes, and a deeper chamber with tom pulses.",
+  "tags": ["exploration", "ambient", "sci-fi"],
+  "bpm": 70,
+  "loop": true,
+  "seed": 7,
+  "progressions": {
+    "cave": [["Bm9", 8], ["Gmaj7", 8], ["D/F#", 8], ["Em9", 4], ["F#sus4", 4]],
+    "deep": [["Em9", 8], ["Gmaj7", 8], ["Bm9", 8], ["F#sus4", 4], ["F#7", 4]]
+  },
+  "tracks": {
+    "drone": {"instrument": "drone", "gainDb": -25, "sends": {"reverb": -14}},
+    "sub": {"instrument": "sub-bass", "gainDb": -24},
+    "pad": {"instrument": "glass-pad", "gainDb": -12, "cutoff": 2500, "spread": 0.6, "sends": {"reverb": -6}},
+    "bells": {"instrument": "glass-bell", "gainDb": -16, "pan": -0.25, "humanize": 0.3, "sends": {"reverb": -4, "delay": -12}},
+    "shimmer": {"instrument": "shimmer", "gainDb": -20, "pan": 0.3, "sends": {"reverb": -4}},
+    "choir": {"instrument": "choir-pad", "gainDb": -19, "pan": 0.1, "cutoff": 3000, "sends": {"reverb": -4, "delay": -16}},
+    "drip": {"instrument": {"duration": 0.08, "layers": [{"source": {"type": "osc", "wave": "sine", "pitch": "C6"}, "pitchEnv": [{"at": 0.035, "to": "G6", "curve": "exp"}], "amp": {"attack": 0.001, "decay": 0.07, "sustain": 0, "release": 0.05}}]}, "gainDb": -18, "pan": 0.45, "sends": {"delay": -2, "reverb": -6}},
+    "tom": {"instrument": "tom", "gainDb": -16, "pan": -0.1, "sends": {"reverb": -6}}
+  },
+  "patterns": {
+    "drone-b": {"bars": 8, "notes": [[0, "B1", 32]]},
+    "drone-e": {"bars": 8, "notes": [[0, "E2", 32]]},
+    "pad-cave": {"bars": 8, "chords": {"progression": "cave", "octave": 4}},
+    "pad-deep": {"bars": 8, "chords": {"progression": "deep", "octave": 4}},
+    "sub-cave": {"bars": 8, "bass": {"progression": "cave", "octave": 2}},
+    "sub-deep": {"bars": 8, "bass": {"progression": "deep", "octave": 2}},
+    "bell-cave": {"bars": 8, "vel": 0.8, "arp": {"progression": "cave", "rate": 1, "shape": "random", "octaves": 1, "octave": 5, "rhythm": "x.x..x.."}},
+    "shimmer-a": {"bars": 8, "notes": [[4, "F#5", 4, 0.7], [14, "B5", 4, 0.6], [22, "A5", 4, 0.5], [28, "C#6", 4, 0.6]]},
+    "choir-b": {"bars": 8, "notes": [[0, "F#5", 6, 0.7], [6, "E5", 2, 0.6], [8, "D5", 8, 0.7], [16, "C#5", 6, 0.6], [22, "D5", 2, 0.5], [24, "E5", 4, 0.7], [28, "C#5", 4, 0.6]]},
+    "drip-a": {"bars": 4, "gate": "patch", "notes": [[1.5, "B6", 0.25, 0.6], [6.75, "F#6", 0.25, 0.4], [9, "D7", 0.25, 0.5], [13.25, "A6", 0.25, 0.35]]},
+    "tom-pulse": {"bars": 1, "steps": "X.......o.......", "note": "B2"}
+  },
+  "sections": {
+    "intro": {"bars": 8, "play": {"drone": "drone-b", "pad": "pad-cave", "drip": "drip-a"}, "mix": {"pad": {"gainDb": -18, "cutoff": 900}}},
+    "a": {"bars": 8, "play": {"drone": "drone-b", "pad": "pad-cave", "bells": "bell-cave", "shimmer": "shimmer-a", "drip": "drip-a"}, "mix": {"pad": {"gainDb": -12, "cutoff": 2500}}, "ramp": true},
+    "b": {"bars": 8, "play": {"drone": "drone-b", "pad": "pad-cave", "sub": "sub-cave", "choir": "choir-b", "shimmer": "shimmer-a", "drip": "drip-a"}},
+    "deep": {"bars": 8, "play": {"drone": "drone-e", "pad": "pad-deep", "sub": "sub-deep", "tom": "tom-pulse", "drip": "drip-a"}, "mix": {"pad": {"gainDb": -15, "cutoff": 1400}}},
+    "a2": {"bars": 8, "play": {"drone": "drone-b", "pad": "pad-cave", "bells": "bell-cave", "shimmer": "shimmer-a", "drip": "drip-a"}, "mix": {"pad": {"gainDb": -12, "cutoff": 2500}}, "ramp": true},
+    "outro": {"bars": 8, "play": {"drone": "drone-b", "pad": "pad-cave", "drip": "drip-a"}, "mix": {"pad": {"gainDb": -18, "cutoff": 900}}, "ramp": true}
+  },
+  "form": ["intro", "a", "b", "deep", "a2", "outro"],
+  "master": {"reverb": {"preset": "cave", "returnDb": -2}, "delay": {"beats": 1.5, "feedback": 0.5, "returnDb": -6, "cutoff": 3000}}
+}

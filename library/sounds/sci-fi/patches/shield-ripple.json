@@ -1,0 +1,199 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "shield-ripple",
+  "family": "hit",
+  "archetype": "hit",
+  "tags": [
+    "repeating",
+    "impact"
+  ],
+  "duration": 0.48,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": 180,
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1,
+            "wave": "sine"
+          },
+          {
+            "ratio": 2.5,
+            "index": 1.5,
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0,
+      "gainDb": -7,
+      "pitchEnv": [
+        {
+          "at": 0.08,
+          "to": 250,
+          "curve": "exp"
+        },
+        {
+          "at": 0.38,
+          "to": 155,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.36,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2600,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 120
+      },
+      "start": 0,
+      "gainDb": -5,
+      "pitchEnv": [
+        {
+          "at": 0.1,
+          "to": 65,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.1,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0,
+      "gainDb": -17,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.025,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 660
+      },
+      "start": 0.015,
+      "gainDb": -15,
+      "pitchEnv": [
+        {
+          "at": 0.36,
+          "to": 330,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.36,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 9,
+        "depth": 0.25
+      },
+      "pan": -0.25
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 990
+      },
+      "start": 0.025,
+      "gainDb": -17,
+      "pitchEnv": [
+        {
+          "at": 0.42,
+          "to": 440,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.4,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "pan": 0.25
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0,
+      "gainDb": -17,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.22,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 600,
+        "q": 0.7,
+        "env": {
+          "to": 2600,
+          "time": 0.2
+        }
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -23
+    }
+  },
+  "variation": {
+    "pitchCents": 20,
+    "gainDb": 0.6,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A shield absorbing a hit and spreading it into a ringing electronic ripple."
+  }
+}

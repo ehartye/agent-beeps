@@ -7,8 +7,8 @@ const skillsDir = join(root, 'skills');
 const skills = readdirSync(skillsDir);
 
 describe('skills', () => {
-  it('ships the five skills', () => {
-    expect(skills.sort()).toEqual(['beeps-audition', 'beeps-compose', 'beeps-craft', 'beeps-setup', 'beeps-taste']);
+  it('ships the six skills', () => {
+    expect(skills.sort()).toEqual(['beeps-audition', 'beeps-compose', 'beeps-craft', 'beeps-music', 'beeps-setup', 'beeps-taste']);
   });
 
   for (const s of skills) {

@@ -1,0 +1,77 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "curious-alien",
+  "family": "jump",
+  "archetype": "jump",
+  "tags": [
+    "repeating"
+  ],
+  "duration": 0.45,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 188.44
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.15271,
+          "to": 394.97,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.2,
+        "sustain": 0.3231,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2389.8,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 188.44
+      },
+      "start": 0.18,
+      "gainDb": -5,
+      "pitchEnv": [
+        {
+          "at": 0.15271,
+          "to": 394.97,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.2,
+        "sustain": 0.3231,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2389.8,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 20,
+    "gainDb": 1,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A curious alien greeting you with two rising chirps."
+  }
+}

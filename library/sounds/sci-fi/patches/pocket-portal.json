@@ -1,0 +1,64 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "pocket-portal",
+  "family": "whoosh",
+  "archetype": "whoosh",
+  "tags": [
+    "motion"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.10919,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2400,
+        "q": 2,
+        "env": {
+          "to": 350,
+          "time": 0.26259
+        }
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 18,
+        "depth": 0.6
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "start": 0,
+      "gainDb": -29.165,
+      "amp": {
+        "attack": 0.10919,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 4000,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "priority": 2,
+    "intent": "oneshot",
+    "description": "A small portal opening with a soft resonant whoosh."
+  }
+}

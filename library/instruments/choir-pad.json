@@ -1,0 +1,85 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "choir-pad",
+  "family": "music",
+  "tags": [
+    "pad",
+    "sustain",
+    "vocal"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 9
+        }
+      },
+      "amp": {
+        "attack": 1.0,
+        "decay": 2,
+        "sustain": 0.8,
+        "release": 2.2
+      },
+      "filter": {
+        "type": "peaking",
+        "cutoff": 800,
+        "q": 3,
+        "gainDb": 14
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 4.8,
+        "depth": 7
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 11
+        }
+      },
+      "gainDb": -6,
+      "amp": {
+        "attack": 1.2,
+        "decay": 2,
+        "sustain": 0.8,
+        "release": 2.2
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1150,
+        "q": 4
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "gainDb": -30,
+      "amp": {
+        "attack": 1.2,
+        "decay": 2,
+        "sustain": 0.7,
+        "release": 2
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2600,
+        "q": 2
+      }
+    }
+  ],
+  "meta": {
+    "description": "Vowel-like aah pad: sawtooth through two formant peaks with a breath of pink noise."
+  }
+}

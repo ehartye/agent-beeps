@@ -1,0 +1,31 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "shaker",
+  "family": "music",
+  "tags": [
+    "drum",
+    "shaker",
+    "texture"
+  ],
+  "duration": 0.12,
+  "layers": [
+    {
+      "source": {
+        "type": "grains",
+        "rate": 900,
+        "grainDecay": 0.002,
+        "center": 6500,
+        "q": 1.2
+      },
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.08,
+        "sustain": 0,
+        "release": 0.04
+      }
+    }
+  ],
+  "meta": {
+    "description": "Soft grainy shaker: a short burst of Poisson grains."
+  }
+}

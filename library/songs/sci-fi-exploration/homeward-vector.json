@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/song@1",
+  "name": "homeward-vector",
+  "title": "Homeward Vector",
+  "description": "The journey home and the library's closing theme: Eb major strings (Ebmaj9, Cm9, Abmaj7, Bbsus4 to Bb) under a singable theremin melody and a soft pluck arp, a bittersweet turn through Abm6, gentle drums in the middle, and a quiet close that loops back to the dawn.",
+  "tags": ["exploration", "sci-fi", "warm", "nostalgic", "theme"],
+  "bpm": 80,
+  "loop": true,
+  "seed": 21,
+  "progressions": {
+    "home": [["Ebmaj9", 8], ["Cm9", 8], ["Abmaj7", 8], ["Bbsus4", 4], ["Bb", 4]],
+    "bitter": [["Abmaj7", 8], ["Abm6", 8], ["Ebmaj9", 8], ["Bbsus4", 4], ["Bb", 4]]
+  },
+  "tracks": {
+    "strings": {"instrument": "string-pad", "gainDb": -8, "sends": {"reverb": -7}, "spread": 0.7},
+    "bass": {"instrument": "sub-bass", "gainDb": -18},
+    "arp": {"instrument": "soft-pluck", "gainDb": -17, "pan": -0.25, "sends": {"reverb": -10, "delay": -9}, "humanize": 0.4},
+    "lead": {"instrument": "theremin", "gainDb": -13, "sends": {"reverb": -7, "delay": -14}},
+    "bell": {"instrument": "glass-bell", "gainDb": -18, "pan": 0.35, "sends": {"reverb": -5, "delay": -8}},
+    "kick": {"instrument": "kick", "gainDb": -16},
+    "snare": {"instrument": "snare", "gainDb": -23, "sends": {"reverb": -10}},
+    "shaker": {"instrument": "shaker", "gainDb": -26, "pan": 0.3, "humanize": 0.5}
+  },
+  "patterns": {
+    "strings-home": {"bars": 8, "chords": {"progression": "home", "octave": 4, "voicing": "spread"}},
+    "strings-bitter": {"bars": 8, "chords": {"progression": "bitter", "octave": 4, "voicing": "spread"}},
+    "bass-home": {"bars": 8, "bass": {"progression": "home", "octave": 2}},
+    "bass-home-move": {"bars": 8, "bass": {"progression": "home", "octave": 2, "rhythm": "x.......x...x...", "tones": [0, 0, 2]}},
+    "bass-bitter": {"bars": 8, "bass": {"progression": "bitter", "octave": 2}},
+    "arp-home": {"bars": 8, "arp": {"progression": "home", "rate": 2, "shape": "up", "octaves": 1, "octave": 4, "rhythm": "x.xx.xx."}},
+    "arp-bitter": {"bars": 8, "arp": {"progression": "bitter", "rate": 2, "shape": "updown", "octaves": 1, "octave": 4, "rhythm": "x..x.x.."}},
+    "lead-a": {"bars": 8, "notes": [[0, "Bb4", 1.5, 0.8], [1.5, "Eb5", 0.5, 0.8], [2, "F5", 2], [4, "G5", 3], [7, "F5", 1, 0.8], [8, "Eb5", 3], [11, "D5", 1, 0.8], [12, "C5", 4, 0.85], [16, "Eb5", 2], [18, "G5", 2], [20, "C6", 3], [23, "Bb5", 1, 0.8], [24, "Ab5", 2, 0.85], [26, "G5", 2, 0.8], [28, "F5", 4, 0.75]]},
+    "lead-b": {"bars": 8, "notes": [[0, "G5", 3], [3, "F5", 1, 0.8], [4, "Eb5", 2], [6, "D5", 2, 0.8], [8, "Eb5", 3], [11, "G5", 1, 0.8], [12, "Bb5", 4], [16, "C6", 3], [19, "Bb5", 1, 0.8], [20, "G5", 2], [22, "Eb5", 2, 0.85], [24, "F5", 4, 0.8], [28, "D5", 4, 0.7]]},
+    "lead-c": {"bars": 8, "notes": [[0, "C5", 4, 0.8], [4, "Eb5", 2], [6, "G5", 2], [8, "F5", 3], [11, "Eb5", 1, 0.8], [12, "B4", 4, 0.85], [16, "D5", 3, 0.8], [19, "Eb5", 1, 0.8], [20, "G5", 4], [24, "F5", 4, 0.75], [28, "D5", 4, 0.65]]},
+    "lead-last": {"bars": 8, "notes": [[0, "Bb4", 1.5, 0.7], [1.5, "Eb5", 0.5, 0.7], [2, "F5", 2, 0.75], [4, "G5", 8, 0.7]]},
+    "bell": {"bars": 8, "notes": [[2, "Bb5", 2, 0.6], [10, "G5", 2, 0.5], [18, "C6", 2, 0.5], [28, "F5", 3, 0.4]]},
+    "kick": {"bars": 1, "steps": "X.......o.x....."},
+    "snare": {"bars": 1, "steps": "....x.......x..."},
+    "shaker": {"bars": 1, "steps": "..o...o...o...oo"}
+  },
+  "sections": {
+    "dawn": {"bars": 8, "play": {"strings": "strings-home", "arp": "arp-home", "bell": "bell"}, "mix": {"strings": {"gainDb": -8, "cutoff": 3000}, "arp": {"gainDb": -25, "cutoff": 2500}}},
+    "theme": {"bars": 8, "play": {"strings": "strings-home", "bass": "bass-home", "arp": "arp-home", "lead": "lead-a"}, "mix": {"strings": {"gainDb": -9, "cutoff": 5000}, "arp": {"gainDb": -18, "cutoff": 8000}}, "ramp": true},
+    "theme2": {"bars": 8, "play": {"strings": "strings-home", "bass": "bass-home-move", "arp": "arp-home", "lead": "lead-b", "kick": "kick", "snare": "snare", "shaker": "shaker"}, "mix": {"strings": {"gainDb": -8, "cutoff": 6000}}},
+    "bitter": {"bars": 8, "play": {"strings": "strings-bitter", "bass": "bass-bitter", "arp": "arp-bitter", "lead": "lead-c", "shaker": "shaker"}, "mix": {"strings": {"gainDb": -9, "cutoff": 4000}}},
+    "theme3": {"bars": 8, "play": {"strings": "strings-home", "bass": "bass-home-move", "arp": "arp-home", "lead": "lead-a", "bell": "bell", "kick": "kick", "snare": "snare", "shaker": "shaker"}, "mix": {"strings": {"gainDb": -6, "cutoff": 7000}, "lead": {"gainDb": -11}}},
+    "home": {"bars": 8, "play": {"strings": "strings-home", "bass": "bass-home", "arp": "arp-home", "lead": "lead-last", "bell": "bell"}, "mix": {"strings": {"gainDb": -8, "cutoff": 3000}, "bass": {"gainDb": -30}, "arp": {"gainDb": -25, "cutoff": 2500}}, "ramp": true}
+  },
+  "form": ["dawn", "theme", "theme2", "bitter", "theme3", "home"],
+  "master": {"reverb": {"preset": "hall", "returnDb": -3}, "delay": {"beats": 0.75, "feedback": 0.35, "returnDb": -6, "cutoff": 3000}}
+}

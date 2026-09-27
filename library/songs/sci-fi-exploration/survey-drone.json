@@ -1,0 +1,53 @@
+{
+  "schema": "beeps/song@1",
+  "name": "survey-drone",
+  "title": "Survey Drone",
+  "description": "Gliding low over an unmapped planet: a driving 16th-note E dorian pluck arp over a pulsing bass, hats that arrive once the survey is underway, one short lead phrase, and a weightless break before the pass repeats.",
+  "tags": ["exploration", "sci-fi", "driving"],
+  "bpm": 100,
+  "loop": true,
+  "seed": 7,
+  "progressions": {
+    "scan": [["Em9", 8], ["A9", 8]],
+    "vista": [["Gmaj7", 8], ["D/F#", 8], ["Em9", 8], ["A7sus4", 4], ["A9", 4]],
+    "vista-up": [["Gmaj7", 8], ["D6/9", 8], ["Em9", 8], ["A7sus4", 4], ["A9", 4]]
+  },
+  "tracks": {
+    "air": {"instrument": "nebula", "gainDb": -18, "sends": {"reverb": -10}},
+    "pad": {"instrument": "warm-pad", "gainDb": -9, "sends": {"reverb": -8}, "spread": 0.6},
+    "arp": {"instrument": "pluck", "gainDb": -12, "cutoff": 5000, "pan": -0.15, "sends": {"reverb": -12, "delay": -12}, "humanize": 0.2},
+    "bass": {"instrument": "pulse-bass", "gainDb": -11, "keytrack": 0.5, "cutoff": 1800},
+    "kick": {"instrument": "kick", "gainDb": -10},
+    "hat": {"instrument": "hat", "gainDb": -19, "pan": 0.2, "humanize": 0.3},
+    "lead": {"instrument": "soft-lead", "gainDb": -12, "pan": 0.1, "sends": {"reverb": -8, "delay": -12}},
+    "ping": {"instrument": "sonar", "gainDb": -18, "pan": 0.4, "sends": {"delay": -4, "reverb": -6}}
+  },
+  "patterns": {
+    "air": {"bars": 8, "notes": [[0, "E3", 32]]},
+    "pad-scan": {"bars": 4, "chords": {"progression": "scan", "octave": 3, "voicing": "close"}},
+    "pad-vista": {"bars": 8, "chords": {"progression": "vista-up", "octave": 3, "voicing": "close"}},
+    "arp-scan": {"bars": 4, "arp": {"progression": "scan", "rate": 4, "shape": "updown", "octaves": 2, "octave": 4}},
+    "arp-vista": {"bars": 8, "arp": {"progression": "vista-up", "rate": 4, "shape": "up", "octaves": 2, "octave": 4}},
+    "arp-drift": {"bars": 4, "arp": {"progression": "scan", "rate": 2, "shape": "converge", "octaves": 2, "octave": 4, "rhythm": "x.xx.x.x"}},
+    "bass-scan": {"bars": 4, "bass": {"progression": "scan", "octave": 2, "rhythm": "x.xx.xx.x.xx.xx.", "tones": [0, 0, 0, 2]}},
+    "bass-vista": {"bars": 8, "bass": {"progression": "vista", "octave": 2, "rhythm": "x.xx.xx.x.xx.xx.", "tones": [0, 0, 0, 2]}},
+    "kick": {"bars": 1, "steps": "x.......x......."},
+    "hat-8": {"bars": 1, "steps": "..x...x...x...x."},
+    "hat-16": {"bars": 1, "steps": "..x.o.x...x.o.xo"},
+    "lead": {"bars": 8, "notes": [[0, "D5", 2], [2, "F#5", 4, 0.8], [8, "A5", 6], [14, "F#5", 2, 0.7], [16, "G5", 6, 0.9], [24, "E5", 4, 0.8], [28, "C#5", 4, 0.7]]},
+    "ping": {"bars": 4, "notes": [[0, "B5", 1], [10, "E6", 1, 0.7]]},
+    "arp-scan-down": {"bars": 4, "arp": {"progression": "scan", "rate": 4, "shape": "down", "octaves": 2, "octave": 4}}
+  },
+  "sections": {
+    "intro": {"bars": 8, "play": {"air": "air", "pad": "pad-scan", "arp": "arp-scan"}, "mix": {"pad": {"gainDb": -15, "cutoff": 1200}, "arp": {"gainDb": -18, "cutoff": 1400}}},
+    "drive": {"bars": 8, "play": {"air": "air", "pad": "pad-scan", "arp": "arp-scan", "bass": "bass-scan", "kick": "kick"}, "mix": {"pad": {"gainDb": -9, "cutoff": 5000}, "arp": {"gainDb": -12, "cutoff": 5000}}, "ramp": true},
+    "survey": {"bars": 16, "play": {"pad": "pad-scan", "arp": ["arp-scan", "arp-scan-down"], "bass": "bass-scan", "kick": "kick"}},
+    "vista": {"bars": 8, "play": {"pad": "pad-vista", "arp": "arp-vista", "bass": "bass-vista", "kick": "kick", "hat": "hat-8"}, "mix": {"pad": {"gainDb": -8, "cutoff": 7000}, "hat": {"gainDb": -19}}},
+    "sighting": {"bars": 8, "play": {"pad": "pad-vista", "arp": "arp-vista", "bass": "bass-vista", "kick": "kick", "hat": "hat-16", "lead": "lead"}, "mix": {"pad": {"gainDb": -7, "cutoff": 9000}}},
+    "hover": {"bars": 8, "play": {"air": "air", "pad": "pad-scan", "arp": "arp-drift", "ping": "ping"}, "mix": {"pad": {"gainDb": -14, "cutoff": 1600}, "arp": {"gainDb": -17, "cutoff": 2200}}},
+    "return": {"bars": 8, "play": {"pad": "pad-scan", "arp": "arp-scan", "bass": "bass-scan", "kick": "kick", "hat": "hat-8"}, "mix": {"pad": {"gainDb": -9, "cutoff": 5000}, "arp": {"gainDb": -12, "cutoff": 5000}}},
+    "outro": {"bars": 8, "play": {"air": "air", "pad": "pad-scan", "arp": "arp-scan"}, "mix": {"pad": {"gainDb": -15, "cutoff": 1200}, "arp": {"gainDb": -18, "cutoff": 1400}}, "ramp": true}
+  },
+  "form": ["intro", "drive", "survey", "vista", "sighting", "hover", "return", "outro"],
+  "master": {"reverb": {"preset": "hall", "returnDb": -4}, "delay": {"beats": 0.75, "feedback": 0.3, "returnDb": -6, "cutoff": 3000}}
+}

@@ -22,7 +22,7 @@ const Rule = z.strictObject({
   params: z.record(z.string(), z.unknown()).optional(),
   check: z.enum(['auto', 'judgement']),
   severity: z.enum(['error', 'warn']),
-  appliesTo: z.enum(['patch', 'kit']),
+  appliesTo: z.enum(['patch', 'kit', 'song']),
   rationale: z.string().optional(),
   sources: z.array(Source).min(1),
 });
@@ -50,7 +50,7 @@ export function loadRules(path = RULES_PATH): CraftRule[] {
 }
 
 /** Collects findings, routing each to errors or warnings by the rule's severity (or an explicit one). */
-class Collector {
+export class Collector {
   readonly errors: Finding[] = [];
   readonly warnings: Finding[] = [];
   private readonly byId: Map<string, CraftRule>;
@@ -74,7 +74,7 @@ class Collector {
     const f: Finding = { rule: id, message, ...(pointer !== undefined ? { pointer } : {}) };
     (severity === 'error' ? this.errors : this.warnings).push(f);
   }
-  report(scope: 'patch' | 'kit', rules: CraftRule[]): LintReport {
+  report(scope: 'patch' | 'kit' | 'song', rules: CraftRule[]): LintReport {
     return { errors: this.errors, warnings: this.warnings, judgement: rules.filter(r => r.check === 'judgement' && r.appliesTo === scope).map(r => r.id) };
   }
 }

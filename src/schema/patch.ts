@@ -31,6 +31,8 @@ const QFilter = z.strictObject({
 });
 const Filter = z.union([ResonantFilter, QFilter]);
 
+export const REVERB_PRESET_NAMES = ['small', 'room', 'hall', 'cave', 'space'] as const;
+
 const Wave = z.enum(['sine', 'square', 'sawtooth', 'triangle']);
 
 const Osc = z.strictObject({
@@ -107,7 +109,7 @@ export const PatchSchema = z.strictObject({
   layers: z.array(Layer).min(1).max(8),
   fx: z.strictObject({
     delay: z.strictObject({ time: z.number().positive().max(2), feedback: z.number().min(0).max(0.9), sendDb: z.number().min(-60).max(0) }).optional(),
-    reverb: z.strictObject({ preset: z.enum(['small', 'room', 'hall', 'cave']), sendDb: z.number().min(-60).max(0) }).optional(),
+    reverb: z.strictObject({ preset: z.enum(REVERB_PRESET_NAMES), sendDb: z.number().min(-60).max(0) }).optional(),
   }).optional(),
   variation: z.strictObject({
     pitchCents: z.number().min(0).max(1200).default(0),

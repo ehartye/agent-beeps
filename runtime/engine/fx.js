@@ -8,6 +8,7 @@ export const REVERB_PRESETS = /** @type {const} */ ({
   room: { decay: 0.9, lpStart: 8000, lpEnd: 2500, preDelay: 0.012 },
   hall: { decay: 2.2, lpStart: 7000, lpEnd: 1800, preDelay: 0.025 },
   cave: { decay: 3.5, lpStart: 5000, lpEnd: 1200, preDelay: 0.04 },
+  space: { decay: 7, lpStart: 7000, lpEnd: 900, preDelay: 0.06 },
 });
 
 /** @type {WeakMap<BaseAudioContext, Map<string, AudioBuffer>>} */

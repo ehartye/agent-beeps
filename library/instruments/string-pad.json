@@ -1,0 +1,43 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "string-pad",
+  "family": "music",
+  "tags": [
+    "pad",
+    "sustain",
+    "strings"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 7,
+          "detuneCents": 22
+        }
+      },
+      "amp": {
+        "attack": 0.6,
+        "decay": 1.5,
+        "sustain": 0.85,
+        "release": 1.2
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2600,
+        "resonanceDb": -2
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 5.2,
+        "depth": 6
+      }
+    }
+  ],
+  "meta": {
+    "description": "Ensemble strings: many detuned saws, soft attack, gentle vibrato. Chords and long melody notes."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "synth-brass",
+  "family": "music",
+  "tags": [
+    "lead",
+    "brass",
+    "pad"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 10
+        }
+      },
+      "amp": {
+        "attack": 0.12,
+        "decay": 0.6,
+        "sustain": 0.8,
+        "release": 0.4
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 500,
+        "resonanceDb": 3,
+        "env": {
+          "to": 2600,
+          "time": 0.35
+        }
+      }
+    }
+  ],
+  "meta": {
+    "description": "Saw brass that swells open: horn calls and big chords."
+  }
+}

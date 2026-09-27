@@ -1,7 +1,7 @@
 ---
 name: beeps-compose
 description: Compose procedural game and UI sounds with agent-beeps - generate diverse candidates from archetypes, author or edit JSON patches, render, measure and look at them, and export loudness-matched WAVs.
-when_to_use: Use when asked for a sound effect, UI sound, jingle-length cue, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch, or when a beeps command fails with E_SCHEMA and a pointer.
+when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
 ---
 
 # Compose sounds

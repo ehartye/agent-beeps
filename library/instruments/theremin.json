@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "theremin",
+  "family": "music",
+  "tags": [
+    "lead",
+    "sustain"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C5"
+      },
+      "amp": {
+        "attack": 0.12,
+        "decay": 1,
+        "sustain": 0.9,
+        "release": 0.5
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 5.5,
+        "depth": 18
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C5"
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.15,
+        "decay": 1,
+        "sustain": 0.8,
+        "release": 0.4
+      }
+    }
+  ],
+  "meta": {
+    "description": "Sine lead with slow vibrato and a soft onset: the classic sci-fi voice."
+  }
+}

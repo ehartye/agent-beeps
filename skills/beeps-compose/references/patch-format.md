@@ -21,7 +21,7 @@
 - `name`, `family`: lowercase-dash. Family sets the loudness offset and groups kit checks (coin,
   pickup, ui-click, ui-hover, blip, confirm, no, hit, explosion, ...).
 - `duration`: note-off time in seconds; each layer releases after it.
-- `layers`: 1-8. `fx`: optional `delay {time, feedback<=0.9, sendDb}` and `reverb {preset: small|room|hall|cave, sendDb}`.
+- `layers`: 1-8. `fx`: optional `delay {time, feedback<=0.9, sendDb}` and `reverb {preset: small|room|hall|cave|space, sendDb}`.
 - `variation`: `pitchCents`, `gainDb`, `variants` (1-16), `noRepeat`, `weights` (relative play odds per variant).
 - `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed.
 
@@ -38,7 +38,8 @@
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
 
 `pitch` is a note name (`E6`, `F#5`, `Bb3`) or Hz. Pitched sources snap to the project scale
-(`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key.
+(`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key. Songs
+(beeps-music) never snap: a patch played as an instrument sounds the notes the song writes.
 
 ## Per layer
 

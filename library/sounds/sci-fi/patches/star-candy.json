@@ -1,0 +1,94 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "star-candy",
+  "family": "coin",
+  "archetype": "coin-arp",
+  "tags": [
+    "repeating",
+    "bright"
+  ],
+  "duration": 0.22,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 614.88
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.0337,
+          "to": 737.86,
+          "curve": "step"
+        },
+        {
+          "at": 0.07,
+          "to": 1024.8,
+          "curve": "step"
+        }
+      ],
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.192024,
+        "sustain": 0.2,
+        "release": 0.06
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 5000,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": 2349,
+        "partials": [
+          [
+            1,
+            0,
+            0.25
+          ],
+          [
+            2.01,
+            -9,
+            0.15
+          ],
+          [
+            3.02,
+            -15,
+            0.1
+          ]
+        ]
+      },
+      "start": 0.07,
+      "gainDb": -12.782,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.35,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "fx": {
+    "delay": {
+      "time": 0.12,
+      "feedback": 0.2,
+      "sendDb": -18
+    }
+  },
+  "variation": {
+    "pitchCents": 25,
+    "gainDb": 1,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A sparkling reward for collecting star candy."
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "soft-lead",
+  "family": "music",
+  "tags": [
+    "lead",
+    "sustain",
+    "soft"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C5"
+      },
+      "amp": {
+        "attack": 0.03,
+        "decay": 0.8,
+        "sustain": 0.8,
+        "release": 0.35
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 5,
+        "depth": 9
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "square",
+        "pitch": "C5"
+      },
+      "gainDb": -18,
+      "amp": {
+        "attack": 0.05,
+        "decay": 0.6,
+        "sustain": 0.6,
+        "release": 0.3
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2200,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Mellow triangle/square lead with light vibrato: understated melodies."
+  }
+}

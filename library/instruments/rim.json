@@ -1,0 +1,40 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "rim",
+  "family": "music",
+  "tags": [
+    "drum",
+    "click"
+  ],
+  "duration": 0.05,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": 1700,
+        "modes": [
+          [
+            1,
+            30,
+            0
+          ],
+          [
+            2.3,
+            25,
+            -6
+          ]
+        ],
+        "exciter": "impulse"
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.05,
+        "sustain": 0,
+        "release": 0.03
+      }
+    }
+  ],
+  "meta": {
+    "description": "Woody rim click (modal): quiet ticking percussion."
+  }
+}

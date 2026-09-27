@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describeSource, installRuntime, resolveRuntime } from '../scripts/managed-runtime.js';
@@ -11,7 +11,9 @@ describe('managed runtime', () => {
     const d = describeSource(root);
     expect(d.name).toBe('agent-beeps');
     expect(d.fingerprint).toMatch(/^[0-9a-f]{64}$/);
-    expect(d.key).toMatch(/^0\.1\.0-[0-9a-f]{16}-/);
+    const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+    expect(d.key.startsWith(`${version}-`)).toBe(true);
+    expect(d.key).toMatch(/^[0-9.]+-[0-9a-f]{16}-/);
     expect(d.files).toContain('runtime/engine/notes.js');
   });
 

@@ -10,6 +10,15 @@ set, and every audition scores how well the agent predicted the pick.
 No sample files, no AI audio: every sound is a small, editable patch that games can also play live
 through the same engine, with seeded variations so repeated sounds do not fatigue.
 
+Agents also compose **music**: a `beeps/song@1` document plays those same patches as instruments
+through chord progressions (voice-led from chord symbols), arps, bass lines, step drums, melodies,
+sections and mix moves. Songs render to loopable, loudness-matched WAVs, are linted against cited
+music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
+holds a 13-track example library; `library/instruments/` holds 25 instrument patches.
+
+[`library/sounds/sci-fi/`](library/sounds/sci-fi/) contains 18 approved effects across Expedition,
+Arcade and Oddities, with purpose labels, playback seeds and measured kit levels.
+
 ## Workflow
 
 1. **Compose**: `beeps generate coin --count 6 --prompt "coin pickup for a cozy platformer"`
@@ -25,6 +34,11 @@ through the same engine, with seeded variations so repeated sounds do not fatigu
    - **Refine**: brighter, darker, punchier, softer, shorter, longer, less harsh, more character,
      more like #k, surprise.
    - **Ship**.
+
+   For a sampler of different sound roles, use `beeps audition open --set <id> --flow explore`.
+   It offers labeled playback without duels, voting, or predictions. Pads show the patch name
+   and `meta.description` (intended use), in exploration and comparison views alike.
+
 4. **Refine rounds**: `beeps audition wait` hands the agent each refine request; `beeps mutate
    <champion> --toward darker` breeds variations that measurably move that way; `beeps audition
    round` adds them. In hand-off mode the server breeds rounds itself.
@@ -45,6 +59,9 @@ through the same engine, with seeded variations so repeated sounds do not fatigu
 | `predict`, `audition open/wait/round/status/list/close/stats` | the owner's listening loop |
 | `serve` | the LAN audition server (idempotent; `--stop`) |
 | `taste show/fit/stats` | the learned taste profile and prediction hit rates |
+| `instruments` | bundled instrument patches songs can name |
+| `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
+| `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
@@ -58,6 +75,17 @@ sources snap to the project scale. The engine is plain browser JavaScript
 (`runtime/engine/patch.js`): games can import it and call
 `buildPatch(audioContext, patch, { trimDb, variant, seed })`.
 
+Songs use `runtime/engine/song.js`: `buildSong(ctx, song, instruments, { lazy: true })` returns
+`advance(t)`, which builds only the notes that start before `t`. Call it a couple of seconds ahead
+of the playhead. Offline renders do this with `OfflineAudioContext.suspend()`, and it keeps a
+multi-minute song's graph small. Songs are trimmed to `project.musicLoudness` (integrated, −20 LUFS
+by default).
+
+`beeps song render aurora-station --sections return` extracts that passage from the full delivered
+WAV, preserving inherited mix settings, effects and level. The first request renders the whole
+song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
+passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
 ## Install / Claude Code plugin
 
 ```text
@@ -69,12 +97,14 @@ Setup installs the runtime and Chromium into `~/.agent-beeps/releases/<version-h
 (`AGENT_BEEPS_HOME` moves it) and every skill runs that release through
 `scripts/run-managed.js`. Rerun setup after each plugin update.
 
-Skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`.
+Skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`, `beeps-music`.
 
 ## Requirements
 
 Node.js 24 or newer with npm. Chromium is downloaded by setup. The audition server listens on port
-47301 on all interfaces; other machines need the firewall to allow Node inbound.
+47301 on all interfaces. Links use the machine's hostname and its LAN addresses (physical LAN first,
+then Tailscale; WSL/Hyper-V adapters are skipped). Other machines need the firewall to allow Node
+inbound.
 
 ## Development
 

@@ -186,10 +186,15 @@ function toast(text) {
 
 // ---------- views ----------
 function padFor(c, { marksOn = false, label = String(c.index) } = {}) {
+  const name = c.name.replace(/-(?:\d+|m[0-9a-f]+)-\d+$/, '').replaceAll('-', ' ');
+  const title = name.charAt(0).toUpperCase() + name.slice(1);
+  const description = c.patch.meta?.description?.trim();
   const pad = h('article', { class: 'pad', 'data-index': c.index });
-  const face = h('button', { class: 'face', 'aria-label': `Play ${label}`, onclick: () => play(c.index, { pad }) },
+  const face = h('button', { class: 'face', 'aria-label': `Play ${label}: ${title}`, onclick: () => play(c.index, { pad }) },
     h('img', { src: `${c.look}?t=${encodeURIComponent(token)}`, alt: '' }), h('canvas'), h('span', { class: 'key' }, label));
-  pad.append(face, h('div', { class: 'words' }, c.words.map(w => h('span', { class: 'word' }, w))));
+  pad.append(h('h2', { class: 'sound-name' }, title), face);
+  if (description) pad.append(h('p', { class: 'sound-purpose' }, description));
+  pad.append(h('div', { class: 'words' }, c.words.map(w => h('span', { class: 'word' }, w))));
   if (marksOn) {
     const m = marks.get(c.index);
     if (m) pad.classList.add(m);
@@ -304,8 +309,10 @@ async function shippedView(s) {
 
 async function render() {
   const s = data.state;
+  const exploring = data.session.flow === 'explore';
   $('#prompt').textContent = data.session.prompt || data.session.family;
-  $('#meta').replaceChildren(h('div', {}, `${data.session.archetype && data.session.archetype !== data.session.family ? `${data.session.family} · ${data.session.archetype}` : data.session.family}`), h('div', {}, `${data.session.mode === 'live' ? 'agent is listening' : 'hand-off'} · round ${s.round}`));
+  $('#meta').replaceChildren(h('div', {}, `${data.session.archetype && data.session.archetype !== data.session.family ? `${data.session.family} · ${data.session.archetype}` : data.session.family}`), h('div', {}, exploring ? `${data.candidates.length} sounds to explore` : `${data.session.mode === 'live' ? 'agent is listening' : 'hand-off'} · round ${s.round}`));
+  $('#stages').hidden = exploring;
   const order = ['lineup', 'duel', 'refine', 'shipped'];
   const current = s.stage === 'waiting' ? 'refine' : s.stage;
   document.querySelectorAll('#stages li').forEach(li => {
@@ -319,7 +326,8 @@ async function render() {
   $('#withBed').disabled = !data.bed;
 
   let view;
-  if (s.stage === 'lineup') view = lineupView(s);
+  if (exploring && s.stage !== 'abandoned') view = [h('p', { class: 'hint' }, 'Tap a sound to hear its role. Explore at your own pace.'), h('div', { class: 'pads' }, data.candidates.map(c => padFor(c)))];
+  else if (s.stage === 'lineup') view = lineupView(s);
   else if (s.stage === 'duel' && data.next.length) view = duelView();
   else if (s.stage === 'duel' || s.stage === 'refine') view = refineView(s);
   else if (s.stage === 'waiting') view = waitingView(s);
@@ -329,11 +337,12 @@ async function render() {
   $('#keys').replaceChildren(...keysFor(s));
 
   clearTimeout(pollTimer);
-  if (s.stage === 'waiting') pollTimer = setTimeout(load, 1500);
+  if (!exploring && s.stage === 'waiting') pollTimer = setTimeout(load, 1500);
 }
 
 function keysFor(s) {
   const k = (key, what) => [h('kbd', {}, key), ` ${what}  `];
+  if (data.session.flow === 'explore') return [...k('1–9', 'play that number'), ...k('Esc', 'stop')];
   if (s.stage === 'lineup') return [...k('1–9', 'play that number'), ...k('H', 'keep last played'), ...k('X', 'dud last played'), ...k('Esc', 'stop')];
   if (s.stage === 'duel') return [...k('Space', 'play left then right'), ...k('← →', 'pick'), ...k('↓', 'same'), ...k('↑', 'both bad')];
   return [...k('Esc', 'stop')];
@@ -354,6 +363,11 @@ document.addEventListener('keydown', async e => {
   if (!data || e.target.matches('input, textarea')) return;
   const s = data.state;
   if (e.key === 'Escape') { stopAll(); return; }
+  if (data.session.flow === 'explore') {
+    const n = Number(e.key);
+    if (s.stage !== 'abandoned' && n >= 1 && n <= 9 && candidate(n)) play(n);
+    return;
+  }
   if (s.stage === 'lineup') {
     // Keys follow the pad labels (candidate numbers), which continue across rounds.
     const n = Number(e.key);

@@ -1,0 +1,45 @@
+{
+  "schema": "beeps/song@1",
+  "name": "drift-signal",
+  "title": "Drift Signal",
+  "description": "Open-space drift: a slow D dorian pad cycle, a sonar ping answered by its own echo, and a soft arp that surfaces and sinks away.",
+  "tags": ["exploration", "ambient", "sci-fi"],
+  "bpm": 76,
+  "loop": true,
+  "progressions": {
+    "drift": [["Dm9", 8], ["Bbmaj7", 8], ["Fmaj7", 8], ["C6/9", 8]],
+    "lift": [["Gm9", 8], ["Bbmaj7", 8], ["Dm9", 8], ["Asus4", 4], ["A7sus4", 4]]
+  },
+  "tracks": {
+    "air": {"instrument": "nebula", "gainDb": -8, "pan": 0, "sends": {"reverb": -12}},
+    "pad": {"instrument": "glass-pad", "gainDb": -6, "sends": {"reverb": -8}, "spread": 0.5},
+    "sub": {"instrument": "sub-bass", "gainDb": -15},
+    "arp": {"instrument": "soft-pluck", "gainDb": -4, "pan": -0.2, "sends": {"reverb": -10, "delay": -8}, "humanize": 0.4},
+    "ping": {"instrument": "sonar", "gainDb": -9, "pan": 0.35, "sends": {"delay": -4, "reverb": -6}},
+    "lead": {"instrument": "theremin", "gainDb": -13, "sends": {"reverb": -7, "delay": -14}},
+    "tick": {"instrument": "rim", "gainDb": -4, "pan": 0.25, "sends": {"reverb": -12}, "humanize": 0.5}
+  },
+  "patterns": {
+    "air-hold": {"bars": 8, "notes": [[0, "D3", 32]]},
+    "pad-drift": {"bars": 8, "chords": {"progression": "drift", "octave": 4}},
+    "pad-lift": {"bars": 8, "chords": {"progression": "lift", "octave": 4}},
+    "sub-drift": {"bars": 8, "bass": {"progression": "drift", "octave": 2}},
+    "sub-lift": {"bars": 8, "bass": {"progression": "lift", "octave": 2}},
+    "arp-drift": {"bars": 8, "arp": {"progression": "drift", "rate": 2, "shape": "updown", "octaves": 2, "octave": 4, "rhythm": "x.xx.x.x"}},
+    "arp-lift": {"bars": 8, "arp": {"progression": "lift", "rate": 2, "shape": "up", "octaves": 2, "octave": 4, "rhythm": "x.x.xx.x"}},
+    "ping": {"bars": 4, "notes": [[0, "A5", 1], [10, "D6", 1, 0.7]]},
+    "lead-a": {"bars": 8, "notes": [[0, "A4", 6], [6, "C5", 2, 0.8], [8, "D5", 8], [18, "F5", 2, 0.7], [20, "E5", 6], [28, "C5", 4, 0.8]]},
+    "lead-b": {"bars": 8, "notes": [[0, "D5", 6], [6, "E5", 2, 0.8], [8, "F5", 6], [14, "G5", 2, 0.7], [16, "A5", 10], [28, "E5", 4, 0.7]]},
+    "tick": {"bars": 1, "steps": "....x.......x..o"}
+  },
+  "sections": {
+    "intro": {"bars": 8, "play": {"air": "air-hold", "ping": "ping", "pad": "pad-drift"}, "mix": {"pad": {"gainDb": -16, "cutoff": 900}}},
+    "rise": {"bars": 8, "play": {"air": "air-hold", "ping": "ping", "pad": "pad-drift", "sub": "sub-drift"}, "mix": {"pad": {"gainDb": -6, "cutoff": 6000}}, "ramp": true},
+    "a": {"bars": 8, "play": {"air": "air-hold", "pad": "pad-drift", "sub": "sub-drift", "arp": "arp-drift", "tick": "tick"}},
+    "b": {"bars": 8, "play": {"air": "air-hold", "pad": "pad-drift", "sub": "sub-drift", "arp": "arp-drift", "lead": "lead-a", "tick": "tick"}},
+    "lift": {"bars": 8, "play": {"pad": "pad-lift", "sub": "sub-lift", "arp": "arp-lift", "lead": "lead-b", "tick": "tick"}},
+    "fall": {"bars": 8, "play": {"air": "air-hold", "ping": "ping", "pad": "pad-drift"}, "mix": {"pad": {"gainDb": -16, "cutoff": 900}}, "ramp": true}
+  },
+  "form": ["intro", "rise", "a", "b", "lift", "a", "fall"],
+  "master": {"reverb": {"preset": "space", "returnDb": -2}, "delay": {"beats": 0.75, "feedback": 0.45, "returnDb": -3, "cutoff": 3000}}
+}

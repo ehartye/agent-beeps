@@ -10,6 +10,7 @@ export const DIR = '.agent-beeps';
 export interface ProjectPaths {
   root: string; dir: string; projectFile: string;
   patches: string; sets: string; sessions: string; taste: string; renders: string; kit: string;
+  songs: string; albums: string;
 }
 
 export function pathsFor(root: string): ProjectPaths {
@@ -18,6 +19,7 @@ export function pathsFor(root: string): ProjectPaths {
     root, dir, projectFile: join(dir, 'project.json'),
     patches: join(dir, 'patches'), sets: join(dir, 'sets'), sessions: join(dir, 'sessions'),
     taste: join(dir, 'taste'), renders: join(dir, 'renders'), kit: join(dir, 'kit.json'),
+    songs: join(dir, 'songs'), albums: join(dir, 'albums'),
   };
 }
 
@@ -51,7 +53,7 @@ export function initProject(root: string, overrides: Partial<Pick<Project, 'targ
   const paths = pathsFor(resolve(root));
   const base = defaultProject();
   const project = parseProject({ ...base, ...overrides, scale: { ...base.scale, ...overrides.scale } });
-  for (const d of [paths.dir, paths.patches, paths.sets, paths.sessions, paths.taste, paths.renders]) mkdirSync(d, { recursive: true });
+  for (const d of [paths.dir, paths.patches, paths.sets, paths.sessions, paths.taste, paths.renders, paths.songs]) mkdirSync(d, { recursive: true });
   if (!existsSync(paths.projectFile)) writeFileSync(paths.projectFile, JSON.stringify(project, null, 2) + '\n');
   if (!existsSync(paths.kit)) writeFileSync(paths.kit, JSON.stringify({ schema: 'beeps/kit@1', sounds: [] }, null, 2) + '\n');
   const ignore = join(paths.dir, '.gitignore');

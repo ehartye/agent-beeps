@@ -1,0 +1,170 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "comet-blaster",
+  "family": "laser",
+  "archetype": "laser",
+  "tags": [
+    "repeating"
+  ],
+  "duration": 0.38,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": 902.86
+      },
+      "start": 0,
+      "gainDb": -10,
+      "pitchEnv": [
+        {
+          "at": 0.14639,
+          "to": 102.93,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.18,
+        "sustain": 0,
+        "release": 0.04
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3000,
+        "resonanceDb": 2,
+        "env": {
+          "to": 994.1,
+          "time": 0.15
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "fm",
+        "pitch": 190,
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1,
+            "wave": "sine"
+          },
+          {
+            "ratio": 2,
+            "index": 1.6,
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0,
+      "gainDb": -3,
+      "pitchEnv": [
+        {
+          "at": 0.24,
+          "to": 80,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.24,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      },
+      "drive": 0.12
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 180
+      },
+      "start": 0,
+      "gainDb": -3,
+      "pitchEnv": [
+        {
+          "at": 0.14,
+          "to": 70,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.14,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0,
+      "gainDb": -8,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.045,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0,
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 400,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "small",
+      "sendDb": -22
+    }
+  },
+  "variation": {
+    "pitchCents": 20,
+    "gainDb": 0.6,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A comet blaster shot with a sharp discharge, throaty energy body and short recoil tail."
+  }
+}

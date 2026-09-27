@@ -1,0 +1,79 @@
+/* Album page: the booth's hardware, with each track drawn as its measured loudness arc over its sections. */
+:root {
+  --sec-1: #3b4a8a; --sec-2: #6a3b8a; --sec-3: #2f6f6a; --sec-4: #8a5a2b; --sec-5: #7a2f4a; --sec-6: #4a6a2f;
+  --arc: #ffae42;
+}
+
+.transport {
+  position: sticky; top: 0; z-index: 5;
+  display: grid; grid-template-columns: 1fr auto auto; gap: 10px 20px; align-items: center;
+  margin: 14px 0 18px; padding: 14px 16px 12px;
+  background: var(--panel); border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 0 var(--groove), 0 10px 24px rgba(29,34,38,.12);
+}
+.np { min-width: 0; }
+.np-label { font: 600 11px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); }
+.np-title { font: 800 26px/1.05 var(--display); text-transform: uppercase; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-desc { font-size: 13px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.controls { display: flex; gap: 8px; align-items: center; }
+.deckkey { border: 0; width: 44px; height: 44px; border-radius: 12px; background: var(--pad); box-shadow: var(--pad-shadow); font-size: 16px; }
+.deckkey.big { width: 60px; height: 60px; font-size: 22px; background: var(--ink); color: var(--body); }
+.deckkey:active { transform: translateY(3px); box-shadow: none; }
+.modes { flex-wrap: wrap; }
+.scrub { grid-column: 1 / -1; }
+.clock { display: flex; justify-content: space-between; font: 400 11px/1.6 var(--mono); color: var(--ink-soft); }
+.clock #sec { font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: .08em; }
+
+/* The signature: section bands with the loudness arc drawn over them; click or drag to seek. */
+.strip { position: relative; height: 40px; border-radius: 8px; overflow: hidden; background: #0c0c10; cursor: pointer; touch-action: none; }
+.strip.big { height: 64px; }
+.strip .band { position: absolute; top: 0; bottom: 0; opacity: .8; border-right: 1px solid rgba(255,255,255,.25); }
+.strip .band span { position: absolute; left: 5px; top: 4px; font: 600 10px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: #fff; opacity: .85; white-space: nowrap; }
+.strip svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.strip .played { position: absolute; top: 0; bottom: 0; left: 0; background: rgba(255,255,255,.14); pointer-events: none; }
+.strip .head { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 8px #fff; pointer-events: none; }
+
+.tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.track { background: var(--panel); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 1px 0 var(--groove); display: grid; grid-template-columns: 34px 1fr; gap: 4px 12px; }
+.track[data-playing="true"] { box-shadow: 0 0 0 2px var(--signal), 0 1px 0 var(--groove); }
+.track .no { font: 800 28px/1 var(--display); color: var(--ink-soft); text-align: right; padding-top: 2px; }
+.track .body { min-width: 0; display: grid; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.track h2 { margin: 0; font: 800 22px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; }
+.track h2 button { all: unset; cursor: pointer; }
+.track h2 button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.facts { font: 400 11px/1.4 var(--mono); color: var(--ink-soft); }
+.desc { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.verdict { display: flex; gap: 6px; }
+.verdict button { border: 0; border-radius: 999px; padding: 6px 14px; background: var(--body); box-shadow: 0 2px 0 var(--groove); font: 600 13px/1 var(--text); }
+.verdict button[aria-pressed="true"][data-mark="love"] { background: var(--love); color: #fff; box-shadow: 0 2px 0 #8d1f4b; }
+.verdict button[aria-pressed="true"][data-mark="keep"] { background: var(--ok); color: #fff; box-shadow: 0 2px 0 #11563a; }
+.verdict button[aria-pressed="true"][data-mark="dud"] { background: var(--dud); color: #fff; box-shadow: 0 2px 0 #4a4f55; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chips button { border: 1px solid var(--groove); background: transparent; border-radius: 999px; padding: 3px 9px; font: 500 12px/1.3 var(--text); color: var(--ink-soft); }
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--body); border-color: var(--ink); }
+.track textarea, .album-note textarea { width: 100%; resize: vertical; border: 0; border-radius: 10px; padding: 8px 10px; background: var(--pad); color: var(--ink); font: 14px/1.4 var(--text); box-shadow: inset 0 1px 3px rgba(0,0,0,.12); }
+.look { font-size: 12px; }
+.look summary { cursor: pointer; color: var(--ink-soft); font: 600 11px/1.6 var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.look img { width: 100%; border-radius: 8px; margin-top: 6px; }
+.saved { font: 400 11px/1.4 var(--mono); color: var(--ok); min-height: 1.4em; }
+.album-note { margin-top: 20px; display: grid; gap: 6px; }
+.album-note label { font: 600 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+.error { background: var(--panel); border-radius: var(--radius); padding: 16px; }
+.track[data-status="pending"], .track[data-status="failed"] { opacity: .7; }
+.track h2 button:disabled { cursor: default; }
+.moment-editor { margin-bottom: 18px; padding: 14px 16px; background: var(--panel); border-left: 3px solid var(--arc); border-radius: var(--radius); }
+.moment-editor label { display: block; margin: 6px 0; font-weight: 600; }
+.moment-editor textarea { width: 100%; resize: vertical; padding: 8px 10px; margin-bottom: 8px; border: 1px solid var(--groove); border-radius: 8px; background: var(--pad); color: var(--ink); font: 14px/1.4 var(--text); }
+.moments { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.moments li { display: flex; align-items: baseline; gap: 10px; font-size: 14px; overflow-wrap: anywhere; }
+.moments button { flex-shrink: 0; font-family: var(--mono); }
+
+@media (max-width: 720px) {
+  .transport { grid-template-columns: 1fr auto; }
+  .modes { grid-column: 1 / -1; }
+  .np-title { font-size: 21px; }
+  .track { grid-template-columns: 1fr; }
+  .track .no { text-align: left; font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

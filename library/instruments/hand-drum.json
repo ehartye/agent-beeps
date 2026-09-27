@@ -1,0 +1,19 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "hand-drum",
+  "family": "music",
+  "tags": ["drum", "hand", "tom"],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": { "type": "modal", "pitch": "G3", "modes": [[1, 40, 0], [1.59, 30, -4], [2.14, 26, -8], [2.3, 22, -10], [2.65, 18, -14]], "exciter": "noiseBurst" },
+      "amp": { "attack": 0.001, "decay": 0.35, "sustain": 0, "release": 0.1 }
+    },
+    {
+      "source": { "type": "noise", "color": "pink" }, "gainDb": -18,
+      "amp": { "attack": 0.001, "decay": 0.03, "sustain": 0, "release": 0.02 },
+      "filter": { "type": "bandpass", "cutoff": 2200, "q": 1.2 }
+    }
+  ],
+  "meta": { "description": "Hand drum (djembe/tabla-like membrane, modal): a pitched slap with a skin rustle. Steps with `note` tune it (G3 open tone, C4-D4 higher slaps); vary x/o accents for a played feel." }
+}

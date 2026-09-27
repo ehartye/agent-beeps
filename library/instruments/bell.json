@@ -1,0 +1,43 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "bell",
+  "family": "music",
+  "tags": [
+    "bell",
+    "mallet"
+  ],
+  "duration": 0.2,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C5",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 0
+          },
+          {
+            "ratio": 3.5,
+            "index": 2.2
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 2.4,
+        "sustain": 0,
+        "release": 1.2
+      }
+    }
+  ],
+  "meta": {
+    "description": "FM bell rooted at C5 with an inharmonic ratio: long ring, bright strike. Octave 5-6."
+  }
+}

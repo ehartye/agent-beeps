@@ -1,0 +1,46 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "sub-bass",
+  "family": "music",
+  "tags": [
+    "bass"
+  ],
+  "duration": 0.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.4,
+        "sustain": 0.85,
+        "release": 0.15
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C3"
+      },
+      "gainDb": -16,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.3,
+        "sustain": 0.6,
+        "release": 0.12
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 900,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Round sine sub with a little triangle for small speakers."
+  }
+}

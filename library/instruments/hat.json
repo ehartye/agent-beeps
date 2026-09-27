@@ -1,0 +1,36 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "hat",
+  "family": "music",
+  "tags": [
+    "drum",
+    "hat"
+  ],
+  "duration": 0.05,
+  "layers": [
+    {
+      "source": {
+        "type": "metal",
+        "base": 40,
+        "bands": [
+          7000,
+          10500
+        ]
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.05,
+        "sustain": 0,
+        "release": 0.02
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 6500,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "description": "Closed hat: 808 metal voice through a highpass, very short."
+  }
+}

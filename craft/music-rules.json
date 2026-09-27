@@ -1,0 +1,210 @@
+{
+  "$comment": "agent-beeps music craft rules (appliesTo: song). Same shape and meaning as rules.json; beeps song lint checks the auto rules and lists every judgement rule. GUIDE.md section 10 is the reasoning.",
+  "schema": "beeps/rules@1",
+  "rules": [
+    {
+      "id": "song-true-peak",
+      "statement": "The delivered song's true peak is at or below -1 dBTP.",
+      "value": -1,
+      "unit": "dBTP",
+      "params": {
+        "toleranceDb": 0.1
+      },
+      "check": "auto",
+      "severity": "error",
+      "appliesTo": "song",
+      "sources": [
+        {
+          "title": "EBU R 128: Loudness normalisation and permitted maximum level of audio signals",
+          "url": "https://tech.ebu.ch/docs/r/r128.pdf"
+        },
+        {
+          "title": "Audiokinetic: Mastering a Game with Wwise, Part 1 (PlayStation Studios staff)",
+          "url": "https://www.audiokinetic.com/en/community/blog/mastering-a-game-with-wwise-part1/"
+        }
+      ]
+    },
+    {
+      "id": "song-no-clipping",
+      "statement": "The delivered song has no clipped samples.",
+      "value": 0,
+      "unit": "samples",
+      "check": "auto",
+      "severity": "error",
+      "appliesTo": "song",
+      "sources": [
+        {
+          "title": "Recommendation ITU-R BS.1770-5: Algorithms to measure audio programme loudness and true-peak audio level",
+          "url": "https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf"
+        }
+      ]
+    },
+    {
+      "id": "song-loudness-target",
+      "statement": "The delivered song sits within 2 LU of project.musicLoudness (integrated). A song more than 2 LU under is peak-limited: its transients cap the level.",
+      "value": 2,
+      "unit": "LU",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "No games loudness standard exists; reported platform practice is -24 to -23 LUFS integrated for console and measured shipped games average about -18.5. The -20 LUFS default is this plugin's choice: under the -18 LUFS max-momentary one-shots so sound effects read over music.",
+      "sources": [
+        {
+          "title": "Schappler: Listening for Loudness in Video Games",
+          "url": "https://www.stephenschappler.com/2013/07/26/listening-for-loudness-in-video-games/"
+        },
+        {
+          "title": "Audiokinetic: Mastering a Game with Wwise, Part 1 (PlayStation Studios staff)",
+          "url": "https://www.audiokinetic.com/en/community/blog/mastering-a-game-with-wwise-part1/"
+        }
+      ]
+    },
+    {
+      "id": "song-loudness-range",
+      "statement": "Loudness range (EBU Tech 3342) is at most 20 LU, and at least 3 LU for songs longer than a minute.",
+      "value": {
+        "max": 20,
+        "min": 3
+      },
+      "unit": "LU",
+      "params": {
+        "minAppliesAboveSec": 60
+      },
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "20 LU is the maximum PlayStation staff report for a game mix. The 3 LU floor is this plugin's: a minute of music with no dynamic contour does not breathe, and it is the first thing listeners tire of.",
+      "sources": [
+        {
+          "title": "EBU Tech 3342: Loudness Range",
+          "url": "https://tech.ebu.ch/docs/tech/tech3342.pdf"
+        },
+        {
+          "title": "Audiokinetic: Mastering a Game with Wwise, Part 1 (PlayStation Studios staff)",
+          "url": "https://www.audiokinetic.com/en/community/blog/mastering-a-game-with-wwise-part1/"
+        }
+      ]
+    },
+    {
+      "id": "song-loop-seam",
+      "statement": "A loop song's level steps no more than 3 dB across the loop point (median 100 ms block level over the last 1.5 s against the first 1.5 s).",
+      "value": 3,
+      "unit": "dB",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "The 3 dB bound is this plugin's. The render folds the tail onto the start, so the seam is continuous in time; a level jump is what remains audible as a restart.",
+      "sources": [
+        {
+          "title": "Collins, Game Sound (MIT Press, 2008), ch. 2 and 8: looping and variability",
+          "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory"
+        }
+      ]
+    },
+    {
+      "id": "song-loop-length",
+      "statement": "A loop song lasts at least 60 s when tagged exploration, ambient or level, and at least 20 s otherwise.",
+      "value": {
+        "long": 60,
+        "short": 20
+      },
+      "unit": "s",
+      "params": {
+        "longTags": [
+          "exploration",
+          "ambient",
+          "level",
+          "overworld"
+        ]
+      },
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "Collins finds loop length set by how long the player stays: the longest-played genres had the longest loops, boss music the shortest. The second counts are this plugin's.",
+      "sources": [
+        {
+          "title": "Collins, Game Sound (MIT Press, 2008), ch. 2 p. 27",
+          "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory"
+        }
+      ]
+    },
+    {
+      "id": "song-low-end",
+      "statement": "Energy below 120 Hz is at most 40% of the song's spectrum, and at least 2%.",
+      "value": {
+        "max": 0.4,
+        "min": 0.02
+      },
+      "unit": "share",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "Both bounds are this plugin's. Composer testing found songs at 47% low share whose spectrograms showed a solid 50-110 Hz band and a 175 Hz centroid: muddy. Low end masks everything above it and eats headroom; a song with none sounds thin on good speakers.",
+      "sources": [
+        {
+          "title": "Robjohns (Sound on Sound): Can static EQ tackle masking effectively?",
+          "url": "https://www.soundonsound.com/sound-advice/q-can-static-eq-tackle-masking-effectively"
+        }
+      ]
+    },
+    {
+      "id": "song-register",
+      "statement": "Pitched notes stay between E1 (41 Hz) and C8 (4186 Hz).",
+      "value": {
+        "lowestMidi": 28,
+        "highestMidi": 108
+      },
+      "unit": "MIDI note",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "Both bounds are this plugin's. Below E1 a note is felt more than heard, reads as rumble on good speakers and vanishes on laptops and phones; above C8 it is a whistle. Notes outside the range are almost always an octave slip.",
+      "sources": [
+        {
+          "title": "Robjohns (Sound on Sound): Can static EQ tackle masking effectively?",
+          "url": "https://www.soundonsound.com/sound-advice/q-can-static-eq-tackle-masking-effectively"
+        }
+      ]
+    },
+    {
+      "id": "song-unused",
+      "statement": "Every track and pattern is played somewhere in the form.",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "Dead parts are usually a typo in a section's play map, not a choice.",
+      "sources": [
+        {
+          "title": "Robjohns (Sound on Sound): Can static EQ tackle masking effectively?",
+          "url": "https://www.soundonsound.com/sound-advice/q-can-static-eq-tackle-masking-effectively"
+        }
+      ]
+    },
+    {
+      "id": "song-register-bands",
+      "statement": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+      "check": "judgement",
+      "severity": "warn",
+      "appliesTo": "song",
+      "sources": [
+        {
+          "title": "Robjohns (Sound on Sound): Can static EQ tackle masking effectively?",
+          "url": "https://www.soundonsound.com/sound-advice/q-can-static-eq-tackle-masking-effectively"
+        }
+      ]
+    },
+    {
+      "id": "song-fatigue",
+      "statement": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start.",
+      "check": "judgement",
+      "severity": "warn",
+      "appliesTo": "song",
+      "sources": [
+        {
+          "title": "Collins, Game Sound (MIT Press, 2008), ch. 8: listener fatigue and variability",
+          "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory"
+        }
+      ]
+    }
+  ]
+}

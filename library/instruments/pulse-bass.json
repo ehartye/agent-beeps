@@ -1,0 +1,55 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "pulse-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "pluck"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C2",
+        "unison": {
+          "voices": 2,
+          "detuneCents": 8
+        }
+      },
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.35,
+        "sustain": 0.55,
+        "release": 0.12
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1400,
+        "resonanceDb": 5,
+        "env": {
+          "to": 260,
+          "time": 0.25
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.4,
+        "sustain": 0.8,
+        "release": 0.12
+      }
+    }
+  ],
+  "meta": {
+    "description": "Analog-style saw bass with a plucky filter envelope; set track keytrack ~0.5."
+  }
+}

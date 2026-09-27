@@ -145,3 +145,123 @@ export function renderLooks(items, sheet) {
   }
   return out;
 }
+
+const SW = 1400, SH = 440, BAND_H = 22, SWAVE_H = 110, SSPEC_H = 200;
+const SECTION_COLORS = ['#3b4a8a', '#6a3b8a', '#2f6f6a', '#8a5a2b', '#7a2f4a', '#4a6a2f'];
+
+/**
+ * A song's look: section bands, waveform with the per-second loudness arc (orange), a log-frequency
+ * spectrogram of the whole piece, and the headline numbers per section.
+ * @param {Float32Array[]} channels
+ * @param {Record<string, any>} f song features (see src/measure/song.ts)
+ * @param {string} label
+ */
+export function renderSongLook(channels, f, label) {
+  const sr = 48000;
+  const n = channels[0].length;
+  const x = new Float32Array(n);
+  for (const ch of channels) for (let i = 0; i < n; i++) x[i] += ch[i] / channels.length;
+  const c = document.createElement('canvas');
+  c.width = SW; c.height = SH;
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+  g.fillStyle = '#0c0c10'; g.fillRect(0, 0, SW, SH);
+  const dur = n / sr;
+  const tx = (/** @type {number} */ t) => (t / dur) * SW;
+
+  // Sections
+  g.font = '11px sans-serif';
+  (f.sections ?? []).forEach((/** @type {any} */ s, /** @type {number} */ i) => {
+    g.fillStyle = SECTION_COLORS[i % SECTION_COLORS.length];
+    g.fillRect(tx(s.start), 0, Math.max(1, tx(s.end) - tx(s.start) - 1), BAND_H);
+    g.fillStyle = '#fff';
+    g.fillText(s.name, tx(s.start) + 4, 15);
+  });
+
+  // Waveform
+  let peak = 1e-9;
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(x[i]));
+  const per = n / SW, mid = BAND_H + SWAVE_H / 2;
+  g.strokeStyle = '#8fb7ff';
+  g.beginPath();
+  for (let col = 0; col < SW; col++) {
+    let lo = 0, hi = 0;
+    for (let i = Math.floor(col * per); i < Math.floor((col + 1) * per); i++) { lo = Math.min(lo, x[i]); hi = Math.max(hi, x[i]); }
+    g.moveTo(col + 0.5, mid - (hi / peak) * (SWAVE_H / 2 - 4));
+    g.lineTo(col + 0.5, mid - (lo / peak) * (SWAVE_H / 2 - 4) + 0.5);
+  }
+  g.stroke();
+  // Loudness arc: -50 LUFS at the bottom of the waveform band, -5 at the top
+  if (f.arc?.length) {
+    g.strokeStyle = '#ffae42'; g.lineWidth = 2;
+    g.beginPath();
+    f.arc.forEach((/** @type {number} */ v, /** @type {number} */ i) => {
+      const y = BAND_H + SWAVE_H - ((Math.max(-50, Math.min(-5, v)) + 50) / 45) * SWAVE_H;
+      const xx = tx(i + 0.5);
+      if (i) g.lineTo(xx, y); else g.moveTo(xx, y);
+    });
+    g.stroke(); g.lineWidth = 1;
+  }
+
+  // Spectrogram
+  const fftN = 4096;
+  const img = g.createImageData(SW, SSPEC_H);
+  const fMin = Math.log(30), fMax = Math.log(16000);
+  const cols = [];
+  let maxDb = -Infinity;
+  const win = new Float64Array(fftN);
+  for (let i = 0; i < fftN; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (fftN - 1));
+  for (let col = 0; col < SW; col++) {
+    const start = Math.floor((col / SW) * Math.max(0, n - fftN));
+    const re = new Float64Array(fftN), im = new Float64Array(fftN);
+    for (let i = 0; i < fftN && start + i < n; i++) re[i] = x[start + i] * win[i];
+    fft(re, im);
+    const out = new Float64Array(SSPEC_H);
+    for (let row = 0; row < SSPEC_H; row++) {
+      const hz = Math.exp(fMin + ((SSPEC_H - 1 - row) / (SSPEC_H - 1)) * (fMax - fMin));
+      const k = Math.min(fftN / 2, Math.round((hz / sr) * fftN));
+      const d = 10 * Math.log10(re[k] * re[k] + im[k] * im[k] + 1e-20);
+      out[row] = d;
+      if (d > maxDb) maxDb = d;
+    }
+    cols.push(out);
+  }
+  // Fixed scale in dBFS at playback level (the trim applied), not normalised per image: a part
+  // made 5 dB quieter looks 5 dB quieter from one render to the next.
+  const ref = 20 * Math.log10(fftN / 4) - (f.trimDb ?? 0); // a full-scale sine peaks at 0 dBFS
+  const FLOOR = -100, TOP = -20;
+  for (let col = 0; col < SW; col++) for (let row = 0; row < SSPEC_H; row++) {
+    const [rr, gg, b] = heat((cols[col][row] - ref - FLOOR) / (TOP - FLOOR));
+    const p = (row * SW + col) * 4;
+    img.data[p] = rr; img.data[p + 1] = gg; img.data[p + 2] = b; img.data[p + 3] = 255;
+  }
+  const specY = BAND_H + SWAVE_H;
+  g.putImageData(img, 0, specY);
+  g.font = '10px monospace';
+  for (const hz of [50, 100, 250, 1000, 4000, 10000]) {
+    const y = specY + (SSPEC_H - 1) * (1 - (Math.log(hz) - fMin) / (fMax - fMin));
+    const label = hz >= 1000 ? `${hz / 1000}k` : `${hz}`;
+    g.fillStyle = '#000000b0'; g.fillRect(1, y - 9, label.length * 6 + 4, 11);
+    g.fillStyle = '#ffffffd0'; g.fillText(label, 3, y);
+  }
+  // Legend: the colour scale in dBFS
+  const lx = SW - 190, ly = specY + 6;
+  g.fillStyle = '#000000b0'; g.fillRect(lx - 4, ly - 2, 188, 22);
+  for (let i = 0; i < 120; i++) { const [lr, lg, lb] = heat(i / 119); g.fillStyle = `rgb(${lr},${lg},${lb})`; g.fillRect(lx + 30 + i, ly + 2, 1, 8); }
+  g.fillStyle = '#ffffffd0';
+  g.fillText(`${FLOOR}`, lx, ly + 10); g.fillText(`${TOP} dBFS`, lx + 152, ly + 10);
+  // Section boundaries through both panes
+  g.strokeStyle = '#ffffff40';
+  for (const s of f.sections ?? []) { g.beginPath(); g.moveTo(tx(s.start) + 0.5, BAND_H); g.lineTo(tx(s.start) + 0.5, specY + SSPEC_H); g.stroke(); }
+
+  // Numbers
+  const ty = specY + SSPEC_H;
+  const mmss = (/** @type {number} */ s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  g.fillStyle = '#e8e8f0'; g.font = 'bold 14px sans-serif';
+  g.fillText(label, 8, ty + 20);
+  g.font = '12px monospace';
+  g.fillText(`${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
+  const secs = (f.sections ?? []).map((/** @type {any} */ s) => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`).join('  ');
+  g.fillText(secs.slice(0, 190), 8, ty + 58);
+  if (secs.length > 190) g.fillText(secs.slice(190, 380), 8, ty + 74);
+  return c.toDataURL('image/png');
+}

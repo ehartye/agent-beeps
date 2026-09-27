@@ -6,9 +6,16 @@ when_to_use: Use when a set of candidate sounds is ready for the owner to choose
 
 # Audition with the owner
 
+For a sampler of **different roles** (a scanner, a shield, an alien), open with `--flow explore`.
+This shows labeled playback pads without voting, duels, a winner, or a prediction requirement.
+Give every patch a meaningful name and a short `meta.description` explaining its intended use.
+The page displays both; generated seed/variant suffixes are omitted from the displayed name.
+Use `--flow compare` (the default) only for alternatives competing for the **same role**.
+Exploration needs no wait/refine loop; share its URL and let the owner listen.
+
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`. The owner listens on a page served to
 the local network (`http://<this-host>:<port>/s/<id>?t=<token>`; port 47301 unless busy); they judge in
-three stages:
+these comparison stages:
 **lineup** (keep and dud), **duel** (A vs B, sides randomised, next pair chosen where the taste
 model is least sure), **refine** (nudge the champion: brighter, darker, punchier, softer, shorter,
 longer, less harsh, more character, more like #k, surprise) and **ship**. Only these explicit

@@ -1,0 +1,187 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "asteroid-burst",
+  "family": "explosion",
+  "archetype": "explosion",
+  "tags": [
+    "impact"
+  ],
+  "duration": 1.15,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "start": 0,
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.45,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 4500,
+        "resonanceDb": 0,
+        "env": {
+          "to": 350,
+          "time": 0.5
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "brown"
+      },
+      "start": 0,
+      "gainDb": -5,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.85,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 45,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 150,
+        "grainDecay": 0.012,
+        "center": 1200,
+        "q": 0.6,
+        "rateEnd": 0.03
+      },
+      "start": 0.09,
+      "gainDb": -8,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.8,
+        "sustain": 0,
+        "release": 0.18
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 220
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.27,
+          "to": 50,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.27,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1600,
+        "resonanceDb": 0
+      },
+      "drive": 0.2
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0.15,
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2400,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0.33,
+      "gainDb": -17,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.15,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1600,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "modal",
+        "pitch": 180,
+        "modes": [
+          [
+            1,
+            14,
+            0
+          ],
+          [
+            1.8,
+            10,
+            -8
+          ],
+          [
+            3.9,
+            8,
+            -14
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "start": 0.22,
+      "gainDb": -18,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.05
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -18
+    }
+  },
+  "variation": {
+    "pitchCents": 20,
+    "gainDb": 0.6,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 4,
+    "intent": "oneshot",
+    "description": "A violent asteroid rupture: a heavy shockwave, secondary cracks and a shower of crumbling debris."
+  }
+}

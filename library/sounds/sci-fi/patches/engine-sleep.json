@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "engine-sleep",
+  "family": "powerdown",
+  "archetype": "powerdown",
+  "tags": [],
+  "duration": 0.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 511.722
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.45,
+          "to": 304.79,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.5,
+        "sustain": 0.3,
+        "release": 0.08
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2128.5,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 15.706,
+        "depth": 44.022
+      }
+    }
+  ],
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A ship engine winding down into standby."
+  }
+}

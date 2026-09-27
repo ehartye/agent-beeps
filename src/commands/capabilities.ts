@@ -6,6 +6,8 @@ import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { SCALES } from '../../runtime/engine/notes.js';
 import { REVERB_PRESETS } from '../../runtime/engine/fx.js';
 import { FEATURE_NAMES } from '../measure/index.ts';
+import { songJsonSchema } from '../schema/song.ts';
+import { QUALITIES } from '../../runtime/engine/chords.js';
 
 const EXAMPLE = {
   schema: 'beeps/patch@1', name: 'coin', family: 'coin', tags: ['repeating'], duration: 0.3,
@@ -50,7 +52,13 @@ export function registerCapabilities(program: Command, io: Io) {
           'Every render writes a look.png (waveform, spectrogram, features): look at it; you cannot hear.',
         ],
         example: EXAMPLE,
-        ...(opts.schema ? { patchSchema: patchJsonSchema() } : {}),
+        music: {
+          chordQualities: Object.keys(QUALITIES).filter(Boolean),
+          patternKinds: ['notes', 'chords', 'arp', 'bass', 'steps'],
+          arpShapes: ['up', 'down', 'updown', 'random', 'converge'],
+          notes: ['Songs play patches as instruments (beeps instruments lists the bundled ones, their roots and layer offsets).', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
+        },
+        ...(opts.schema ? { patchSchema: patchJsonSchema(), songSchema: songJsonSchema() } : {}),
       });
     });
 }

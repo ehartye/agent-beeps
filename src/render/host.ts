@@ -6,6 +6,7 @@ import { extname, join, normalize, sep } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { BeepsError } from '../errors.ts';
 import type { Patch } from '../schema/patch.ts';
+import type { Song } from '../schema/song.ts';
 import type { Scale } from '../schema/project.ts';
 
 export const RUNTIME_DIR = join(import.meta.dirname, '..', '..', 'runtime');
@@ -56,6 +57,12 @@ export interface RenderHost {
   render(items: RenderItem[]): Promise<RenderResult[]>;
   /** PNG buffers: one per item, or a single contact sheet. */
   looks(items: LookItem[], sheet?: boolean): Promise<Buffer[]>;
+  /** Render a song in the page; its PCM stays there until pulled and freed. */
+  renderSong(song: Song, instruments: Record<string, Patch>): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
+  pullSong(id: number, frames: number): Promise<Float32Array[]>;
+  songLook(id: number, features: object, label: string): Promise<Buffer>;
+  songPcmLook(channels: Float32Array[], features: object, label: string): Promise<Buffer>;
+  freeSong(id: number): Promise<void>;
   page: import('playwright').Page;
   url: string;
   close(): Promise<void>;
@@ -77,14 +84,30 @@ export async function openRenderHost(): Promise<RenderHost> {
     throw new BeepsError('E_BROWSER_MISSING', 'Chromium for Playwright is not installed', { hint: 'Run the beeps-setup skill' });
   }
   const { server, url } = await serveStatic(RUNTIME_DIR);
-  const browser = await playwright.chromium.launch();
-  const page = await browser.newPage();
+  const closeServer = () => new Promise<void>(r => server.close(() => r()));
+  // A busy machine (several renders at once) can take a while to bring Chromium up: allow 60 s,
+  // retry once, and never leave a browser or server behind when giving up.
+  let browser: import('playwright').Browser | undefined;
+  let page!: import('playwright').Page;
   const errors: string[] = [];
-  page.on('pageerror', e => errors.push(e.message));
-  await page.goto(`${url}/render.html`);
-  await page.waitForFunction(() => (window as any).beepsReady === true, null, { timeout: 15000 }).catch(() => {
-    throw new BeepsError('E_RENDER', `render page failed to load: ${errors.join('; ') || 'timeout'}`);
-  });
+  for (let attempt = 1; ; attempt++) {
+    try {
+      browser = await playwright.chromium.launch({ timeout: 60000 });
+      page = await browser.newPage();
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`${url}/render.html`, { timeout: 60000 });
+      await page.waitForFunction(() => (window as any).beepsReady === true, null, { timeout: 60000 });
+      break;
+    } catch (e) {
+      await browser?.close().catch(() => {});
+      browser = undefined;
+      if (attempt >= 2 || errors.length) {
+        await closeServer();
+        throw new BeepsError('E_RENDER', `render page failed to load: ${errors.join('; ') || (e as Error).message.split('\n')[0]}`, { hint: 'the machine may be overloaded (other renders running); retry, or lower --jobs' });
+      }
+    }
+  }
+  const b = browser!;
   return {
     page,
     url,
@@ -105,9 +128,45 @@ export async function openRenderHost(): Promise<RenderHost> {
       const urls = await page.evaluate(([p, s]) => (window as any).beepsLooks(p, s), [payload, sheet] as const) as string[];
       return urls.map(u => Buffer.from(u.slice(u.indexOf(',') + 1), 'base64'));
     },
+    async renderSong(song, instruments) {
+      try {
+        return await page.evaluate(([s, i]) => (window as any).beepsRenderSong(s, i), [song, instruments] as const);
+      } catch (e) {
+        throw new BeepsError('E_RENDER', `song render failed: ${(e as Error).message.slice(0, 400)}`);
+      }
+    },
+    async pullSong(id, frames) {
+      const CHUNK = 1 << 21; // 2 M samples (8 MB) per call keeps each transfer small
+      const out = [new Float32Array(frames), new Float32Array(frames)];
+      for (let ch = 0; ch < 2; ch++) for (let start = 0; start < frames; start += CHUNK) {
+        const b64 = await page.evaluate(([i, c, s, n]) => (window as any).beepsSongChunk(i, c, s, n), [id, ch, start, CHUNK] as const) as string;
+        out[ch].set(decode(b64), start);
+      }
+      return out;
+    },
+    async songLook(id, features, label) {
+      const url = await page.evaluate(([i, f, l]) => (window as any).beepsSongLook(i, f, l), [id, features, label] as const) as string;
+      return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+    },
+    async songPcmLook(channels, features, label) {
+      const mono = new Float32Array(channels[0].length);
+      for (let i = 0; i < mono.length; i++) mono[i] = channels.reduce((sum, ch) => sum + ch[i], 0) / channels.length;
+      await page.evaluate(n => { (window as any).beepsPreview = new Float32Array(n); }, mono.length);
+      try {
+        for (let start = 0; start < mono.length; start += 1 << 21) {
+          await page.evaluate(([offset, pcm]) => {
+            const bytes = Uint8Array.from(atob(pcm), c => c.charCodeAt(0));
+            (window as any).beepsPreview.set(new Float32Array(bytes.buffer), offset);
+          }, [start, encode(mono.subarray(start, start + (1 << 21)))] as const);
+        }
+        const url = await page.evaluate(([f, l]) => (window as any).beepsPreviewLook(f, l), [features, label] as const) as string;
+        return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+      } finally { await page.evaluate(() => { delete (window as any).beepsPreview; }); }
+    },
+    async freeSong(id) { await page.evaluate(i => (window as any).beepsFreeSong(i), id); },
     async close() {
-      await browser.close();
-      await new Promise<void>(r => server.close(() => r()));
+      await b.close();
+      await closeServer();
     },
   };
 }

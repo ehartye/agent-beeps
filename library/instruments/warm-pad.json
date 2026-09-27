@@ -1,0 +1,52 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "warm-pad",
+  "family": "music",
+  "tags": [
+    "pad",
+    "sustain",
+    "soft"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C4",
+        "unison": {
+          "voices": 4,
+          "detuneCents": 12
+        }
+      },
+      "amp": {
+        "attack": 0.9,
+        "decay": 2,
+        "sustain": 0.8,
+        "release": 2
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1200,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C4"
+      },
+      "gainDb": -9,
+      "amp": {
+        "attack": 1.2,
+        "decay": 2,
+        "sustain": 0.8,
+        "release": 2
+      }
+    }
+  ],
+  "meta": {
+    "description": "Soft triangle-and-sine pad, no edge, slow attack: sits under everything. Sounds at the written octave."
+  }
+}
