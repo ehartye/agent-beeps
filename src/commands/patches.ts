@@ -1,5 +1,5 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
@@ -101,12 +101,29 @@ export function registerPatchCommands(program: Command, io: Io) {
     .requiredOption('--wav <path>', 'output WAV path')
     .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .option('--variant <n>', 'variant index', int, 0)
+    .option('--variants [n]', 'export variants 0..n-1 (default: every declared variant) as <wav-stem>.<i>.wav; the sidecar lists them')
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: sfx (default), music or ambience; requires --manifest')
-    .action(async (ref: string, opts: { wav: string; seed?: number; variant: number; manifest?: boolean; role?: string }) => {
+    .action(async (ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string }) => {
       const role = exportRole(opts.role, opts.manifest, 'sfx');
       const p = openProject(io.projectDir());
       const seed = opts.seed ?? readKit(p.paths.root).sounds.find(s => s.name === ref)?.seed ?? 1;
+      if (opts.variants !== undefined) {
+        const patch = loadPatch(p, ref);
+        const n = opts.variants === true ? (patch.variation?.variants ?? 1) : Number(opts.variants);
+        if (!Number.isInteger(n) || n < 1 || n > 16) throw new BeepsError('E_USAGE', '--variants takes a count from 1 to 16');
+        const outs = await withHost(host => renderAndMeasure(host, Array.from({ length: n }, (_, variant) => ({ patch, seed, variant })), { project: p.project, rendersDir: p.paths.renders }));
+        const ok = outs.map(o => { if (!o.ok) throw new BeepsError('E_RENDER', o.error); return o; });
+        const dest = resolve(opts.wav), stem = dest.replace(/\.wav$/i, '');
+        mkdirSync(dirname(dest), { recursive: true });
+        const wavs = ok.map((o, i) => { const f = `${stem}.${i}.wav`; copyFileSync(o.wavPath, f); return f; });
+        const weights = patch.variation?.weights;
+        const manifest = opts.manifest
+          ? writeExportManifest(wavs[0], ok[0], role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true }, `${dest}.json`)
+          : undefined;
+        io.emit({ ...summary(ok[0]), wavs, ...(manifest ? { manifest } : {}) });
+        return;
+      }
       const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       const dest = resolve(opts.wav);
