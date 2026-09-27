@@ -79,7 +79,7 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   // about music heard for a long time, so a short one-shot (a jingle or sting) is out of its scope.
   const bands = registerOverlaps(song, spans);
   const heardLong = song.loop || f.durationSec > c.param<number>('song-fatigue', 'appliesToLoopsOrAboveSec');
-  const inScope = rules.filter(r => r.id !== 'song-fatigue' || heardLong);
+  const inScope = rules.filter(r => (r.id !== 'song-fatigue' || heardLong) && (r.id !== 'song-adaptive-states' || !!song.adaptive));
   return {
     ...c.report('song', inScope),
     judgementChecks: inScope.filter(r => r.check === 'judgement' && r.appliesTo === 'song').map(r => ({
