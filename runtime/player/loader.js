@@ -40,7 +40,14 @@ export function createLoader({ catalog, base, fetcher, report, now, decode }) {
     catalogLoad ??= Promise.resolve()
       .then(() => fetcher(catalog))
       .then(r => { if (!r.ok) throw new Error(`catalog ${catalog} unavailable`); return r.json(); })
-      .then(j => { assets = /** @type {Record<string, A>} */ (j?.assets ?? {}); catalogReported = false; return assets; })
+      .then(j => {
+        if (!j || typeof j.assets !== 'object' || j.assets === null || Array.isArray(j.assets)) {
+          throw new Error(`${catalog}: not a beeps audio catalog (no "assets" object)`);
+        }
+        assets = /** @type {Record<string, A>} */ (j.assets);
+        catalogReported = false;
+        return assets;
+      })
       .catch(e => {
         catalogLoad = null;
         if (!catalogReported) { catalogReported = true; report('E_CATALOG', text(e), catalog); }

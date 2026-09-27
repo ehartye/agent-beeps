@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { initProject, savePatch } from '../../src/project.ts';
+import { addToKit, emptyKit, writeKit } from '../../src/kit.ts';
 import { chromiumAvailable } from '../../src/render/host.ts';
 import { coin } from '../helpers/patches.ts';
 
@@ -32,6 +33,26 @@ it.skipIf(!hasChromium)('exports every declared variant with one sidecar listing
   const bad = run(p.paths.root, 'export', 'coin', '--wav', 'audio/bad.wav', '--variants', '0');
   expect(bad.status).not.toBe(0);
   expect(JSON.parse(bad.stderr).error.code).toBe('E_USAGE');
+});
+
+it.skipIf(!hasChromium)('warns when the kit priority differs from meta.priority, and keeps meta.priority in the sidecar', () => {
+  const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-variants-')));
+  savePatch(p, { ...coin(), meta: { priority: 2, intent: 'oneshot' } });
+  writeKit(p.paths.root, addToKit(emptyKit(), { name: 'coin', family: 'coin', priority: 5 }));
+  const r = run(p.paths.root, 'export', 'coin', '--wav', 'audio/coin.wav', '--manifest');
+  expect(r.status, r.stderr).toBe(0);
+  expect(r.data.warnings).toEqual(['kit priority (5) differs from meta.priority (2); the sidecar uses meta.priority']);
+  const m = JSON.parse(readFileSync(join(p.paths.root, 'audio/coin.wav.json'), 'utf8'));
+  expect(m.priority).toBe(2);
+});
+
+it.skipIf(!hasChromium)('warns, rather than errors, when --variants exceeds the declared count', () => {
+  const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-variants-')));
+  savePatch(p, { ...coin(), variation: { pitchCents: 30, gainDb: 1, variants: 2, noRepeat: true } });
+  const r = run(p.paths.root, 'export', 'coin', '--wav', 'audio/coin.wav', '--variants', '4');
+  expect(r.status, r.stderr).toBe(0);
+  expect(r.data.wavs).toHaveLength(4);
+  expect(r.data.warnings).toEqual([`--variants 4 exceeds the patch's declared 2 variant(s)`]);
 });
 
 it.skipIf(!hasChromium)('rejects --variant combined with --variants and writes no files', () => {

@@ -12,7 +12,7 @@ const sidecar = (id: string, file: string, extra: Record<string, unknown> = {}) 
 });
 
 /** Runs `fn`, returning what it threw (or undefined) without letting the throw escape. */
-function catches(fn: () => unknown): (Error & { code?: string }) | undefined {
+function catches(fn: () => unknown): (Error & { code?: string; hint?: string }) | undefined {
   try { fn(); return undefined; } catch (e) { return e as Error & { code?: string }; }
 }
 
@@ -171,6 +171,29 @@ describe('beeps bundle', () => {
     writeFileSync(join(dir, 'ok.wav'), '');
     const r = bundleDir(dir);
     expect(r.assets).toEqual(['ok']);
+  });
+
+  it('refuses to overwrite an index.json that is not a beeps audio bundle', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-bundle-foreign-index-'));
+    writeFileSync(join(dir, 'ok.wav.json'), JSON.stringify(sidecar('ok', 'ok.wav')));
+    writeFileSync(join(dir, 'ok.wav'), '');
+    writeFileSync(join(dir, 'index.json'), JSON.stringify({ schema: 'something-else@1', hello: 'world' }));
+    const err = catches(() => bundleDir(dir));
+    expect(err?.code).toBe('E_CONFLICT');
+    expect(err?.message).toMatch(/index\.json/);
+    expect(err?.hint).toBeTruthy();
+    expect(JSON.parse(readFileSync(join(dir, 'index.json'), 'utf8'))).toEqual({ schema: 'something-else@1', hello: 'world' });
+  });
+
+  it('overwrites its own previous bundle without complaint', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-bundle-reuse-index-'));
+    writeFileSync(join(dir, 'ok.wav.json'), JSON.stringify(sidecar('ok', 'ok.wav')));
+    writeFileSync(join(dir, 'ok.wav'), '');
+    bundleDir(dir);
+    writeFileSync(join(dir, 'more.wav.json'), JSON.stringify(sidecar('more', 'more.wav')));
+    writeFileSync(join(dir, 'more.wav'), '');
+    const r = bundleDir(dir);
+    expect(r.assets.sort()).toEqual(['more', 'ok']);
   });
 
   it('skips a junction instead of following it into another directory', ctx => {

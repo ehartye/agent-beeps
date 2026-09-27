@@ -1,6 +1,6 @@
 // One catalog for the game player: every export sidecar under a directory, keyed by asset id, with
 // file paths made relative to that directory.
-import { lstatSync, readFileSync, readdirSync, writeFileSync, type Stats } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, writeFileSync, type Stats } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
@@ -62,6 +62,17 @@ function assetPath(dir: string, rel: string, field: string, raw: string): string
 }
 
 export function bundleDir(dir: string): { index: string; assets: string[] } {
+  const index = join(dir, 'index.json');
+  if (existsSync(index)) {
+    let previous: unknown;
+    try { previous = JSON.parse(readFileSync(index, 'utf8')); } catch { previous = undefined; }
+    const schema = previous && typeof previous === 'object' ? (previous as { schema?: unknown }).schema : undefined;
+    // index.json is bundleDir's own output file: overwriting a previous bundle is fine, but a
+    // foreign or hand-written index.json at that path must not be silently clobbered.
+    if (schema !== 'beeps/audio-bundle@1') {
+      throw new BeepsError('E_CONFLICT', `${index} already exists and is not a beeps/audio-bundle@1 catalog`, { hint: 'move or remove the existing index.json before bundling this directory' });
+    }
+  }
   const sidecars = listSidecars(dir);
   // A Map, not a plain object: an asset id of "constructor" (or any other Object.prototype name)
   // must never be mistaken for an inherited property.
@@ -92,7 +103,6 @@ export function bundleDir(dir: string): { index: string; assets: string[] } {
     assets.set(m.id, { ...m, file, ...(variants ? { variants } : {}), ...(layers ? { layers } : {}) });
     from.set(m.id, rel);
   }
-  const index = join(dir, 'index.json');
   writeFileSync(index, JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n');
   return { index, assets: [...assets.keys()] };
 }

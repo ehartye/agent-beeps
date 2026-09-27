@@ -107,12 +107,20 @@ export function registerPatchCommands(program: Command, io: Io) {
     .action(async function (this: Command, ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string }) {
       const role = exportRole(opts.role, opts.manifest, 'sfx');
       const p = openProject(io.projectDir());
-      const seed = opts.seed ?? readKit(p.paths.root).sounds.find(s => s.name === ref)?.seed ?? 1;
+      const patch = loadPatch(p, ref);
+      const kitEntry = readKit(p.paths.root).sounds.find(s => s.name === ref);
+      const seed = opts.seed ?? kitEntry?.seed ?? 1;
+      const warnings: string[] = [];
+      const metaPriority = patch.meta?.priority ?? 3;
+      if (kitEntry && kitEntry.priority !== metaPriority) {
+        warnings.push(`kit priority (${kitEntry.priority}) differs from meta.priority (${metaPriority}); the sidecar uses meta.priority`);
+      }
       if (opts.variants !== undefined) {
         if (this.getOptionValueSource('variant') === 'cli') throw new BeepsError('E_USAGE', '--variant and --variants cannot be combined');
-        const patch = loadPatch(p, ref);
         const n = opts.variants === true ? (patch.variation?.variants ?? 1) : Number(opts.variants);
         if (!Number.isInteger(n) || n < 1 || n > 16) throw new BeepsError('E_USAGE', '--variants takes a count from 1 to 16');
+        const declared = patch.variation?.variants ?? 1;
+        if (n > declared) warnings.push(`--variants ${n} exceeds the patch's declared ${declared} variant(s)`);
         const outs = await withHost(host => renderAndMeasure(host, Array.from({ length: n }, (_, variant) => ({ patch, seed, variant })), { project: p.project, rendersDir: p.paths.renders }));
         const ok = outs.map(o => { if (!o.ok) throw new BeepsError('E_RENDER', o.error); return o; });
         const dest = resolve(opts.wav), stem = dest.replace(/\.wav$/i, '');
@@ -122,15 +130,15 @@ export function registerPatchCommands(program: Command, io: Io) {
         const manifest = opts.manifest
           ? writeExportManifest(wavs[0], ok[0], role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true }, `${dest}.json`)
           : undefined;
-        io.emit({ ...summary(ok[0]), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}) });
+        io.emit({ ...summary(ok[0]), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
         return;
       }
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       const dest = resolve(opts.wav);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(o.wavPath, dest);
       const manifest = opts.manifest ? writeExportManifest(dest, o, role) : undefined;
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...(manifest ? { manifest } : {}) });
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 }

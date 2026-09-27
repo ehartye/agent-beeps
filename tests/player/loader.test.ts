@@ -53,6 +53,20 @@ describe('catalog loading', () => {
     expect(loader.assets).toBeNull();
   });
 
+  it('reports a catalog with no "assets" object as E_CATALOG, not an empty catalog', async () => {
+    const errors: { code: string; id?: string }[] = [];
+    const loader = createLoader({
+      catalog: '/audio/index.json', base: '/audio/',
+      fetcher: async () => ({ ok: true, json: async () => ({ schema: 'beeps/audio-bundle@1' }), arrayBuffer: async () => new ArrayBuffer(8) }),
+      report: (code: string, _message: string, id?: string) => errors.push({ code, id }),
+      now: () => 0,
+      decode: async () => ({}) as unknown as AudioBuffer,
+    });
+    expect(await loader.catalog()).toBeNull();
+    expect(errors).toEqual([{ code: 'E_CATALOG', id: '/audio/index.json' }]);
+    expect(loader.assets).toBeNull();
+  });
+
   it('throttles retryCatalog to one attempt per window, then recovers', async () => {
     let up = false;
     const { loader, fetched, tick } = setup({ catalogOk: () => up });
