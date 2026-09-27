@@ -147,6 +147,12 @@ describe('register evidence for unpitched instruments', () => {
     expect(r.judgementChecks.find(j => j.rule === 'song-register-bands')!.data).toEqual([{ section: 'a', overlaps: ['pad D4 and hat D4 share a band'] }]);
   });
 
+  it('does not warn about the register of trigger notes on an unpitched track', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4 } }, 'hat-a': { bars: 1, notes: [[0, 'C9', 1]] } } });
+    expect(lintSong(s, good(), project, { pad: patch(PAD), hat: patch(HAT) }).warnings.filter(f => f.rule === 'song-register')).toEqual([]);
+    expect(lintSong(s, good(), project, { pad: patch(PAD), hat: patch(PAD) }).warnings).toContainEqual(expect.objectContaining({ rule: 'song-register', pointer: '/patterns/hat-a' }));
+  });
+
   it('keeps treating a track as pitched when its instrument is unknown', () => {
     expect(registerOverlaps(song(held), {})).toEqual([{ section: 'a', overlaps: ['pad D4 and hat D4 share a band'] }]);
   });

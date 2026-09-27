@@ -53,7 +53,8 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
   const outside = new Map<string, { lo: number; hi: number; layer: boolean }>();
   for (const e of compileSong(song).events) {
-    if (e.midi === null) continue;
+    // An instrument with no pitched layer (null span) does not sound its trigger note.
+    if (e.midi === null || spans[e.track] === null) continue;
     const span = spans[e.track];
     const lo = e.midi + (span?.low ?? 0), hi = e.midi + (span?.high ?? 0);
     if (lo >= reg.lowestMidi && hi <= reg.highestMidi) continue;

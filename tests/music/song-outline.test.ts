@@ -10,7 +10,7 @@ describe('song outline voicings', () => {
     for (const slash of [true, false]) {
       it(`lists the notes the compiled ${voicing} chords play with slash ${slash}`, () => {
         const s = song({
-          progressions: { a: [['C/E', 4], ['F/A', 4]] },
+          progressions: { a: [['C/D', 4], ['Am/G', 4]] }, // slash basses outside the chord
           patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4, voicing, slash } }, 'hat-a': { bars: 1, steps: 'x' } },
         });
         const outline = songOutline(s, { pad: patch(PAD) }).voicings['pad-a'];
@@ -18,6 +18,7 @@ describe('song outline voicings', () => {
         const beat = 60 / s.bpm;
         const compiled = [0, 1].map(i => [...new Set(events.filter(e => e.time >= i * 4 * beat - 1e-9 && e.time < (i + 1) * 4 * beat - 1e-9).map(e => e.midi!))]
           .sort((a, b) => a - b).map(midiName).join(' '));
+        // voiceLead returns each chord's voices in ascending order, as sorted here.
         expect(outline.map(line => line.split(': ')[1])).toEqual(compiled);
       });
     }

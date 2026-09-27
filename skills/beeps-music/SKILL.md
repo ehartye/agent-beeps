@@ -55,8 +55,9 @@ and brightness, and the lint. **Open every look.png.** Check that:
 - Sections that should thin out are visibly quieter or darker (per-section LUFS and Hz).
 - The spectrogram bottom is not a solid bright band (a boomy bass); nothing piles up at one height.
 - Register-band evidence compares held pitched notes that coincide, including instrument layer
-  offsets and repeated sections. It omits unknown-duration one-shots and release/effect tails;
-  use listening and stems to judge actual masking.
+  offsets and repeated sections. It omits unknown-duration one-shots, release/effect tails and
+  instruments with no pitched layer (noise, grains, metal beds); use listening and stems to judge
+  actual masking.
 - Loop songs: the end looks like the start (seam under 3 dB).
 
 Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down. Every part you
