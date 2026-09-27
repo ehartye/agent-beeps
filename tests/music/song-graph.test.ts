@@ -4,6 +4,7 @@ import { noteToHz } from '../../runtime/engine/notes.js';
 import { FakeContext, asCtx } from '../helpers/fake-context.ts';
 import { patch } from '../helpers/patches.ts';
 import { HAT, PAD, song } from '../helpers/songs.ts';
+import { soloSong } from '../../src/music.ts';
 
 const instruments = () => ({ pad: patch(PAD), hat: patch(HAT) });
 
@@ -35,6 +36,16 @@ describe('song engine', () => {
     const buffers = new Set(f.nodes('bufferSource').map(b => b.buffer));
     expect(f.nodes('bufferSource').length).toBe(16);
     expect(buffers.size).toBeLessThanOrEqual(8);
+  });
+
+  it('gives a track the same noise whether or not other tracks play, so solos sum to the mix', () => {
+    const hatNoise = (s: ReturnType<typeof song>) => {
+      const f = new FakeContext();
+      buildSong(asCtx(f), s, instruments());
+      return f.nodes('bufferSource').map(b => Array.from((b.buffer as AudioBuffer).getChannelData(0).subarray(0, 4)));
+    };
+    const full = song();
+    expect(hatNoise(soloSong(full, { only: ['hat'] }))).toEqual(hatNoise(full));
   });
 
   it('builds one master reverb, not one per note', () => {

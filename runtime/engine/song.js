@@ -203,14 +203,17 @@ export function buildSong(ctx, song, instruments, opts = {}) {
 
   /** @type {Map<string, Patch>} */
   const voices = new Map();
+  // Notes played so far per track: seeds count within a track, so a solo gets the mix's noise.
+  /** @type {Map<string, number>} */
+  const played = new Map();
   let cursor = 0;
   /** Build every not-yet-built note that starts before context time `t`; returns how many. */
   const advance = (/** @type {number} */ t) => {
     const from = cursor;
-    while (cursor < c.events.length && when + c.events[cursor].time < t) playEvent(c.events[cursor], cursor++);
+    while (cursor < c.events.length && when + c.events[cursor].time < t) playEvent(c.events[cursor++]);
     return cursor - from;
   };
-  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i) => {
+  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e) => {
     const bus = buses[e.track];
     const t = song.tracks[e.track];
     const shift = e.midi !== null && bus.root !== null ? e.midi - bus.root : 0;
@@ -225,7 +228,9 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       out.connect(pan).connect(bus.input);
     } else out.connect(bus.input);
     const at = when + e.time;
-    const seed = song.seed * 101 + (i % SEED_POOL);
+    const n = played.get(e.track) ?? 0;
+    played.set(e.track, n + 1);
+    const seed = song.seed * 101 + (n % SEED_POOL);
     p.layers.forEach((layer, li) => buildLayer(ctx, layer, { when: at, duration: /** @type {Patch} */ (p).duration, seed: seed + li * 7919, out }));
   };
   if (!lazy) advance(Infinity);

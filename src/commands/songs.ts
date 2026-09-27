@@ -1,5 +1,5 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
@@ -7,6 +7,7 @@ import { openProject, readJsonFile, type OpenProject } from '../project.ts';
 import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { renderSongExcerpt } from '../render/song-excerpt.ts';
+import { nullResidualDb, readChannels, renderLayers } from '../render/layers.ts';
 import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
@@ -202,16 +203,37 @@ export function registerSongCommands(program: Command, io: Io) {
     .requiredOption('--wav <path>', 'output WAV path')
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: music (default), ambience or sfx; requires --manifest')
-    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string }) => {
+    .option('--layers', 'adaptive songs: also write each layer as <wav-stem>.<layer>.wav (loop-folded, at the mix trim) and list them in the sidecar')
+    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean }) => {
       const role = exportRole(opts.role, opts.manifest, 'music');
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
-      const r = await withHost(host => renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders }));
+      if (opts.layers && !s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`, { hint: 'add adaptive.layers, adaptive.states and adaptive.initial (see references/song-format.md)' });
+      const instruments = resolveInstruments(p, s);
+      const rendered = await withHost(async host => {
+        const r = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders });
+        const layers = opts.layers ? await renderLayers(host, s, instruments, r, { project: p.project, rendersDir: p.paths.renders }) : undefined;
+        return { r, layers };
+      });
+      const { r } = rendered;
       const dest = resolve(opts.wav);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(r.wavPath, dest);
-      const manifest = opts.manifest ? writeExportManifest(dest, r, role) : undefined;
-      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec, ...(manifest ? { manifest } : {}) });
+      let layerFiles: Record<string, string> | undefined, residual: number | undefined;
+      if (rendered.layers) {
+        const stem = dest.replace(/.wav$/i, '');
+        layerFiles = Object.fromEntries(Object.entries(rendered.layers).map(([name, lr]) => { const f = `${stem}.${name}.wav`; copyFileSync(lr.wavPath, f); return [name, f]; }));
+        residual = nullResidualDb(readChannels(r.wavPath), Object.values(rendered.layers).map(lr => readChannels(lr.wavPath)));
+      }
+      const extra = layerFiles && s.adaptive
+        ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial }
+        : {};
+      const manifest = opts.manifest ? writeExportManifest(dest, r, role, extra) : undefined;
+      // The layers must sum to the approved mix; far above the 16-bit floor means a layer diverged.
+      const warnings = residual !== undefined && residual > -60 ? [`layers differ from the mix by ${Math.round(residual)} dB: a layer does not sum back to the approved mix`] : [];
+      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec,
+        ...(layerFiles ? { layers: layerFiles, nullResidualDb: Math.round((residual ?? 0) * 10) / 10 } : {}),
+        ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 
   const album = program.command('album').description('put rendered songs in front of the owner on the LAN listening page');
