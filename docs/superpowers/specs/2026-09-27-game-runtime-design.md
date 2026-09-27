@@ -88,7 +88,7 @@ The asset manifest gains these optional fields. They are additive, so existing s
 ### Voice manager (SFX bus)
 
 - **Budget:** at most `voices` SFX play at once (default 8).
-- **Stealing:** when the budget is full, a new sound takes the slot of the oldest voice with a *strictly lower* priority, fading that voice out over 20 ms. If no voice has lower priority, the new sound is dropped and `play` returns null.
+- **Stealing:** when the budget is full, a new sound takes the slot of the oldest *less important* voice, fading that voice out over 20 ms. Priority 1 is the most important and 5 the least, the FMOD convention used by `meta.priority` and the kit, so the victim's number must be strictly larger. If no voice is less important, the new sound is dropped and `play` returns null.
 - **Priority is one-way:** a lower-priority sound never displaces a higher one. So the player's damage sound beats a pickup in the same frame, as the craft rule requires.
 - **Retrigger limits:** each sound has a cooldown (default 50 ms) and an instance cap (default 3). Both can be overridden per call and per asset.
 - **Variant choice:** the engine's `createPicker` chooses variants, using the manifest's weights and `noRepeat`. The picker takes a patch, so the runtime passes it `{ variation: { variants, weights, noRepeat } }` built from the manifest. Repeats therefore behave as they do under the audition page's ×75 button.
