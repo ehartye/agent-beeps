@@ -52,7 +52,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 |---|---|
 | `capabilities` | schema, source types, archetypes, directions, error codes |
 | `init` | create `.agent-beeps/` (scale, loudness target) |
-| `archetypes`, `generate` | 16 SFX archetypes; diverse lint-clean candidate sets |
+| `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
 | `new`, `batch`, `list` | save patches; atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
 | `mutate`, `crossover` | direction-steered variations; blend two patches |
@@ -63,6 +63,8 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `instruments` | bundled instrument patches songs can name |
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
+| `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
+| `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
@@ -77,6 +79,13 @@ Only songs authored with `loop: true` are labeled as loops. The sidecar marks
 the render's trim. Loudness names its metric (`momentary-max` for patches, `integrated` for songs).
 Keep each WAV and its sidecar together when moving them. Without `--manifest`, export is unchanged.
 Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
+
+`beeps export <patch> --variants --manifest` writes every declared variant (`<stem>.<i>.wav`) and one
+sidecar listing them, their weights, no-repeat and the patch priority. `beeps song export <song>
+--layers --manifest` also writes each adaptive layer (`<stem>.<layer>.wav`, loop-folded at the mix's
+trim) and reports `nullResidualDb`, how closely the layers sum back to the mix. With `--variants`,
+the sidecar is `<wav>.json` while the audio files are `<stem>.<i>.wav`; there is no `<wav>` file
+itself. `beeps bundle` resolves them from the sidecar's variant list.
 
 ## Sound engine
 

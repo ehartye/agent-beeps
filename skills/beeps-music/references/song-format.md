@@ -128,3 +128,29 @@ Songs never snap to the project scale: the notes you write are the notes that pl
 - `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's
   level against the mix (`vsMixLu`), brightness, low-end share and per-section level. It flags parts
   more than 18 LU under the mix (inaudible) and writes stem WAVs (`--out dir`) for layered playback.
+
+## Adaptive layers (for the game player)
+
+`adaptive` splits a loop into layers the game fades by state. Every track is in exactly one layer,
+and the song must have `"loop": true`.
+
+    "adaptive": {
+      "layers": { "bed": ["pad", "bass"], "pulse": ["arp", "hat"], "threat": ["drums", "lead"] },
+      "states": { "calm": ["bed"], "explore": ["bed", "pulse"], "danger": ["bed", "pulse", "threat"] },
+      "initial": "explore"
+    }
+
+`beeps song export <name> --wav audio/theme.wav --layers --manifest` writes:
+
+- the mix
+- `theme.<layer>.wav` for each layer, loop-folded and at the mix's trim
+- one sidecar listing the layers and states
+
+`nullResidualDb` reports how closely the layers sum to the mix. Anything under -60 dB is exact up to
+16-bit rounding. A layer whose tracks never sound in any section still exports (as a silent stem);
+the export warns rather than failing, since a silent layer may be a placeholder for later material.
+
+Stems and layers both render the full song filtered down to their own tracks, rather than a
+stripped-down song, so every note, chance roll (`?`) and noise seed comes from the same shared
+random stream as the mix and lines up sample-for-sample when summed. `song render --only` uses the
+same filter, so a solo preview now plays the mix's own notes too, not a re-rolled solo performance.

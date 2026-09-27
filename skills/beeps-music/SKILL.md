@@ -96,6 +96,10 @@ whole-track notes. **Note here** captures the current position before the owner 
 notes include the section and exact render identity. `beeps album feedback <id>` returns all notes.
 Revise from the notes and open a new album; earlier albums retain their audio and feedback.
 
+For a game that should react to play, add an `adaptive` block (layers and states;
+`references/song-format.md`) and export with `--layers --manifest`. Listen to each state's layers
+alone as well as the full mix (`song-adaptive-states`).
+
 ## Never
 
 - Put a loudness literal anywhere: `gainDb` is balance between tracks only.
