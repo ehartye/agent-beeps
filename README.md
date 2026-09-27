@@ -100,7 +100,8 @@ public/audio` (writes `index.json`) and `beeps player export src/vendor` (vendor
 
 `player.play(id)`, `player.music(id)`/`player.ambience(id)` (crossfading beds) and
 `player.setState(state)` (adaptive layers) do the rest: voice budget, priorities and crossfades are
-automatic, and the master never hard-limits below its -1.5 dBFS knee. Full API and error codes:
+automatic, and the master never hard-limits below its -1.5 dBFS knee. `player.retry()` re-fetches
+after failed loads (e.g. on a sound toggle). Full API and error codes:
 `skills/beeps-compose/references/game-player.md`.
 
 ## Sound engine

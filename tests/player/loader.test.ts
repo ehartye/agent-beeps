@@ -115,3 +115,57 @@ describe('buffer loading', () => {
     expect(errors).toEqual(['E_LOAD']);
   });
 });
+
+describe('reset', () => {
+  it('re-enables fetching a file that failed twice, and reports again', async () => {
+    let up = false;
+    const { loader, fetched, errors } = setup({ fileOk: () => up });
+    for (let i = 0; i < 3; i++) expect(await loader.load('coin.wav')).toBeNull();
+    expect(fetched.filter(u => u === '/audio/coin.wav')).toHaveLength(2);
+    loader.reset();
+    expect(await loader.load('coin.wav')).toBeNull();
+    expect(fetched.filter(u => u === '/audio/coin.wav')).toHaveLength(3);
+    expect(errors.filter(e => e.code === 'E_LOAD')).toHaveLength(3);
+    loader.reset();
+    up = true;
+    expect(await loader.load('coin.wav')).not.toBeNull();
+    expect(fetched.filter(u => u === '/audio/coin.wav')).toHaveLength(4);
+  });
+
+  it('re-reports a failed catalog and lifts the retry throttle', async () => {
+    const { loader, fetched, errors } = setup({ catalogOk: () => false });
+    await loader.catalog();
+    loader.retryCatalog();
+    await new Promise(r => setTimeout(r, 0));
+    expect(catalogFetches(fetched)).toBe(2);
+    expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(1);
+    loader.reset();
+    loader.retryCatalog(); // inside the old throttle window, but reset lifts it
+    await new Promise(r => setTimeout(r, 0));
+    expect(catalogFetches(fetched)).toBe(3);
+    expect(errors.filter(e => e.code === 'E_CATALOG')).toHaveLength(2);
+  });
+
+  it('keeps decoded buffers and a loaded catalog', async () => {
+    const { loader, fetched } = setup();
+    await loader.catalog();
+    const a = await loader.load('coin.wav');
+    loader.reset();
+    expect(loader.assets).toEqual(assets);
+    expect(await loader.load('coin.wav')).toBe(a);
+    expect(await loader.catalog()).toEqual(assets);
+    expect(fetched).toEqual(['/audio/index.json', '/audio/coin.wav']);
+  });
+
+  it('a failure already in flight when reset is called does not count against the new attempts', async () => {
+    let up = false;
+    const { loader, fetched } = setup({ fileOk: () => up });
+    await loader.load('coin.wav');
+    const inFlight = loader.load('coin.wav'); // second failure, still pending
+    loader.reset();
+    expect(await inFlight).toBeNull();
+    expect(await loader.load('coin.wav')).toBeNull(); // attempt 1 after reset
+    expect(await loader.load('coin.wav')).toBeNull(); // attempt 2 after reset
+    expect(fetched.filter(u => u === '/audio/coin.wav')).toHaveLength(4);
+  });
+});

@@ -36,6 +36,10 @@ createPlayer({
 - **`setEnabled(enabled)`** — a mute/off switch distinct from tab visibility: stops everything with a
   fade, then suspends; re-enabling needs the next `unlock()`-driven gesture to resume.
 - **`stopAll(fadeSec?)`** — fades out every voice and both beds and clears the voice budget.
+- **`retry()`** — forgets failed loads: a file that failed twice (then silent) and a failed catalog
+  (retry throttle, one-report-per-outage) are fetched and reported again: the catalog on the next
+  `unlock()`, `play()`, `music()` or `ambience()`, a file on the next call that needs it. Keeps loaded sounds, playback and the context — call it from
+  a "toggle sound to try again" handler.
 
 ## Playing
 
@@ -84,8 +88,8 @@ from the CLI's `ErrorCode`s (`E_SCHEMA`, `E_USAGE`, ...), which never reach a ga
 |---|---|
 | `E_UNKNOWN_ASSET` | no asset with that id in the catalog |
 | `E_NOT_SFX` | `play()` was called on a looping asset |
-| `E_CATALOG` | the catalog could not be loaded (network, or not a valid `{ assets }` document) |
-| `E_LOAD` | one audio file failed to fetch or decode (`id` is the file path) |
+| `E_CATALOG` | the catalog could not be loaded (network, or not a valid `{ assets }` document); reported once per outage, see `retry()` |
+| `E_LOAD` | one audio file failed to fetch or decode (`id` is the file path); tried twice, then silent until `retry()` |
 | `E_PLAYBACK` | a Web Audio call threw while starting or running a sound |
 | `E_CONTEXT` | the `AudioContext` could not be built, resumed or suspended |
 | `E_NOT_ADAPTIVE` | `setState()` was called on music with no `layers` |
