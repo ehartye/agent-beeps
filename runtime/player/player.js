@@ -440,8 +440,8 @@ export function createPlayer(opts) {
   }
 
   /**
-   * Forget failed loads so the next play() / music() / ambience() / unlock() fetches and reports
-   * again: for a "toggle sound to try again" after a network blip. Keeps loaded sounds, whatever is
+   * Forget failed loads so they are fetched and reported again (the catalog on the next unlock(),
+   * play(), music() or ambience(); a file on the next call that needs it): for a "toggle sound to try again" after a network blip. Keeps loaded sounds, whatever is
    * playing, and the AudioContext.
    */
   function retry() {
