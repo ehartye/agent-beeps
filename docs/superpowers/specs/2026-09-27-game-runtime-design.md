@@ -198,3 +198,15 @@ The runtime never throws into the game loop. Every problem is reported through `
 - **A new public API that games vendor.** Vendoring lets each game choose when to update, and the header records the version. A breaking change requires a new major version.
 - **Loop-folded layer tails.** Reverb and delay tails fold separately in each layer. The null test proves the layers still add up to the mix.
 - **Clipper aliasing on real overloads.** This is accepted and documented, and the voice budget keeps overloads rare.
+
+## Amendments made while planning (2026-09-27)
+
+1. The player is vendored as a directory, `<dir>/beeps-player/{player,engine}/*.js`, which keeps
+   the runtime's relative imports. It is not a single inlined file. No bundler is needed and names
+   cannot collide. The header and `VERSION.json` record the versions.
+2. `song export --layers` is a flag. Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`.
+3. `song stems` already renders loop-folded solos at the mix trim, and layers reuse that path.
+4. The player uses catalog keys as asset ids and accepts any `{ assets: {...} }` object, including
+   hand-built game manifests whose keys differ from the sidecar ids.
+5. The per-sound instance cap replaces that sound's oldest instance rather than dropping the new
+   request.
