@@ -18,7 +18,7 @@
 **Amendments to the spec, made while planning.** Task 0 records them in the spec.
 1. **The player is vendored as a directory, not a single inlined file.** `beeps player export <dir>` writes `<dir>/beeps-player/{player,engine}/*.js` and keeps the runtime's relative imports. That needs no bundler and has no risk of name collisions. The header and `VERSION.json` still record the versions.
 2. **`song export --layers` is a flag, not `--layers <dir>`.** Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`, so the sidecar can name them relative to itself.
-3. **Stems already keep loop folding and the mix trim.** `song stems` renders `{ ...soloSong(...), loop: s.loop }` with `trimDb: mix.trimDb`. So the layer renderer reuses that path, and no new solo option is needed.
+3. **Stems and layers render the full song with an `only` track filter.** This was revised during Task 6. Every note, chance roll and noise seed then matches the mix, full-render output and cache keys stay unchanged, and `ENGINE_VERSION` stays 1. The plan's first approach used `soloSong`, which removes plays. That changed the shared random stream: `?` hits, random arps and noise seeds came out differently, and layers nulled at only -23 dB. `song render --only` uses the same filter, with its own solo trim and `loop: false`.
 4. **The player's catalog keys are the asset ids.** It accepts any `{ assets: { <key>: <sidecar> } }`: both `beeps/audio-bundle@1` and the hand-built manifests games already have. Space to Grow keys its assets by game ids such as `music-garden`, which differ from the sidecar ids.
 5. **The per-sound instance cap replaces the sound's own oldest instance.** It does not drop the new request. A repeated sound, such as footsteps, keeps sounding current.
 
@@ -511,11 +511,9 @@ import type { Project } from '../schema/project.ts';
 export async function renderLayers(host: RenderHost, song: Song, instruments: Record<string, Patch>, mix: RenderedSong, opts: { project: Project; rendersDir: string }): Promise<Record<string, RenderedSong>> {
   if (!song.adaptive) throw new BeepsError('E_USAGE', `song "${song.name}" has no adaptive block`);
   const out: Record<string, RenderedSong> = {};
-  for (const [name, tracks] of Object.entries(song.adaptive.layers)) {
-    // Same as song stems: solo keeps the full form; restore loop folding; reuse the mix's trim.
-    const solo = { ...soloSong(song, { only: tracks }), loop: song.loop };
-    out[name] = await renderSong(host, solo, instruments, { ...opts, trimDb: mix.trimDb });
-  }
+  // The full song filtered to the layer's tracks (renderSong's `only`): every note, chance roll and
+  // noise seed matches the mix, so the layers sum back to it. Reuse the mix's trim.
+  for (const [name, tracks] of Object.entries(song.adaptive.layers)) out[name] = await renderSong(host, song, instruments, { ...opts, only: tracks, trimDb: mix.trimDb });
   return out;
 }
 

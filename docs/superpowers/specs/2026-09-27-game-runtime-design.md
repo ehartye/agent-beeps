@@ -205,7 +205,7 @@ The runtime never throws into the game loop. Every problem is reported through `
    the runtime's relative imports. It is not a single inlined file. No bundler is needed and names
    cannot collide. The header and `VERSION.json` record the versions.
 2. `song export --layers` is a flag. Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`.
-3. `song stems` already renders loop-folded solos at the mix trim, and layers reuse that path.
+3. Stems and layers render the full song with an `only` track filter applied when notes are scheduled. They are not built with `soloSong`, which changed the shared random stream: chance hits, random arps and noise seeds came out differently, and the layers could not null. Full renders keep their output and cache keys. The same filter makes `song render --only` play the mix's actual notes.
 4. The player uses catalog keys as asset ids and accepts any `{ assets: {...} }` object, including
    hand-built game manifests whose keys differ from the sidecar ids.
 5. The per-sound instance cap replaces that sound's oldest instance rather than dropping the new
