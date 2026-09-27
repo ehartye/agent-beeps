@@ -9,6 +9,7 @@ import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipelin
 import { sha256 } from '../hash.ts';
 import { readKit } from '../kit.ts';
 import { int, outcomeJson, summary, withHost } from './shared.ts';
+import { exportRole, writeExportManifest } from '../export-manifest.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
   program.command('init')
@@ -100,7 +101,10 @@ export function registerPatchCommands(program: Command, io: Io) {
     .requiredOption('--wav <path>', 'output WAV path')
     .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .option('--variant <n>', 'variant index', int, 0)
-    .action(async (ref: string, opts: { wav: string; seed?: number; variant: number }) => {
+    .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
+    .option('--role <role>', 'manifest role: sfx (default), music or ambience; requires --manifest')
+    .action(async (ref: string, opts: { wav: string; seed?: number; variant: number; manifest?: boolean; role?: string }) => {
+      const role = exportRole(opts.role, opts.manifest, 'sfx');
       const p = openProject(io.projectDir());
       const seed = opts.seed ?? readKit(p.paths.root).sounds.find(s => s.name === ref)?.seed ?? 1;
       const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
@@ -108,6 +112,7 @@ export function registerPatchCommands(program: Command, io: Io) {
       const dest = resolve(opts.wav);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(o.wavPath, dest);
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath });
+      const manifest = opts.manifest ? writeExportManifest(dest, o, role) : undefined;
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...(manifest ? { manifest } : {}) });
     });
 }

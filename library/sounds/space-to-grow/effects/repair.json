@@ -1,0 +1,149 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-repair",
+  "family": "confirm",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.58,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "D4",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": -2,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.11,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 160,
+        "center": 1600,
+        "grainDecay": 0.008,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.16,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "A3",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": -5,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.14,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.17
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "F#4"
+      },
+      "gainDb": -13,
+      "amp": {
+        "attack": 0.025,
+        "decay": 0.3,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.25
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "A4",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -18,
+      "amp": {
+        "attack": 0.015,
+        "decay": 0.24,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.32
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "The fitting catches. Two small hardware contacts and a restrained warm resonance mark a successful repair; only after materials are spent."
+  }
+}

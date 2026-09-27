@@ -1,0 +1,223 @@
+{
+  "schema": "beeps/song@1",
+  "name": "stg-ambience-garden",
+  "title": "Garden habitat · leaves and distant air",
+  "description": "A sheltered plot: broad leaf-air, fine irregular leaf contact, a faraway life-support motor and two almost incidental water drops. No melodic motif.",
+  "tags": [
+    "ambience",
+    "space-to-grow"
+  ],
+  "bpm": 48,
+  "meter": 4,
+  "loop": true,
+  "seed": 701,
+  "tracks": {
+    "air": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 1500,
+              "q": 0.45
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": -0.25,
+            "lfo": {
+              "target": "gain",
+              "rate": 0.07,
+              "depth": 0.12
+            }
+          }
+        ]
+      },
+      "gainDb": -4,
+      "highpass": 380
+    },
+    "leaves": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "grains",
+              "rate": 35,
+              "center": 3200,
+              "grainDecay": 0.028,
+              "q": 0.65,
+              "rateEnd": 1
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": 0.4,
+            "lfo": {
+              "target": "gain",
+              "rate": 0.11,
+              "depth": 0.22
+            }
+          }
+        ]
+      },
+      "gainDb": -12,
+      "highpass": 1200
+    },
+    "distant": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "brown"
+            },
+            "filter": {
+              "type": "lowpass",
+              "cutoff": 420,
+              "resonanceDb": 0
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D3"
+            },
+            "gainDb": -20,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            }
+          }
+        ]
+      },
+      "gainDb": -13,
+      "highpass": 90
+    },
+    "drops": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A5"
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.09,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "pitchEnv": [
+              {
+                "at": 0.08,
+                "to": "D5"
+              }
+            ]
+          }
+        ]
+      },
+      "gainDb": -14,
+      "pan": -0.4,
+      "sends": {
+        "reverb": -15
+      }
+    }
+  },
+  "patterns": {
+    "air": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          16
+        ]
+      ]
+    },
+    "leaves": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          16
+        ]
+      ]
+    },
+    "distant": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D3",
+          16
+        ]
+      ]
+    },
+    "drops": {
+      "bars": 4,
+      "notes": [
+        [
+          3.7,
+          "A5",
+          0.15,
+          0.6
+        ],
+        [
+          12.1,
+          "F#5",
+          0.12,
+          0.45
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "habitat": {
+      "bars": 4,
+      "play": {
+        "air": "air",
+        "leaves": "leaves",
+        "distant": "distant",
+        "drops": "drops"
+      }
+    }
+  },
+  "form": [
+    "habitat"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -10
+    }
+  }
+}

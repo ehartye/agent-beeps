@@ -1,0 +1,37 @@
+{
+  "schema": "beeps/song@1",
+  "name": "clementines-window",
+  "title": "Clementine’s Window",
+  "description": "Inside Plot 7B, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and warm upper chords leave room for the room itself.",
+  "tags": ["interior", "repose", "space-to-grow"],
+  "bpm": 76,
+  "loop": true,
+  "seed": 270927,
+  "instruments": {
+    "garden-reed": {"duration": 2, "layers": [{"source": {"type": "additive", "pitch": "C4", "partials": [[1, 0, 3], [2, -14, 2], [3, -21, 1.5]]}, "amp": {"attack": 0.045, "decay": 0.5, "sustain": 0.6, "release": 0.3}, "filter": {"type": "lowpass", "cutoff": 2400, "resonanceDb": 0}}, {"source": {"type": "noise", "color": "pink"}, "gainDb": -34, "amp": {"attack": 0.055, "decay": 0.25, "sustain": 0.12, "release": 0.2}, "filter": {"type": "bandpass", "cutoff": 1700, "q": 0.7}}]},
+    "root-bass": {"duration": 2, "layers": [{"source": {"type": "osc", "wave": "triangle", "pitch": "C2"}, "amp": {"attack": 0.045, "decay": 0.6, "sustain": 0.35, "release": 0.22}, "filter": {"type": "lowpass", "cutoff": 500, "resonanceDb": 0}}]}
+  },
+  "progressions": {
+    "room": [["Dmaj9", 4], ["Gmaj7", 4], ["Em9", 4], ["Dmaj9", 4]]
+  },
+  "tracks": {
+    "pad": {"instrument": "warm-pad", "gainDb": -29, "highpass": 160, "spread": 0.4, "sends": {"reverb": -15}},
+    "piano": {"instrument": "felt-piano", "gainDb": -8, "pan": -0.08, "sends": {"reverb": -14}, "humanize": 0.25},
+    "roots": {"instrument": "root-bass", "gainDb": -22},
+    "pluck": {"instrument": "soft-pluck", "gainDb": -15, "pan": 0.28, "sends": {"reverb": -16}}
+  },
+  "patterns": {
+    "pad-room": {"bars": 4, "chords": {"progression": "room", "octave": 4, "voicing": "close", "slash": false}, "vel": 0.65},
+    "bass-room": {"bars": 4, "bass": {"progression": "room", "octave": 2}, "gate": 0.8, "vel": 0.65},
+    "breath": {"bars": 4, "notes": [[0, "F#4", 2, 0.6], [3, "A4", 1, 0.4], [6, "B4", 2, 0.48], [10, "E4", 2, 0.45], [14, "F#4", 1.5, 0.42]]},
+    "theme": {"bars": 4, "notes": [[1, "D5", 1, 0.72], [2.5, "F#5", 0.5, 0.58], [3, "A5", 2, 0.68], [6, "E5", 1.5, 0.55], [9, "D5", 1, 0.65], [10.5, "B4", 0.5, 0.5], [11, "A4", 2, 0.58], [14, "E5", 1, 0.48]], "transpose": -12},
+    "answer": {"bars": 4, "notes": [[2, "A5", 1, 0.45], [7, "F#5", 1, 0.35], [11, "B4", 1, 0.4], [14, "E5", 1, 0.35]]}
+  },
+  "sections": {
+    "window": {"bars": 4, "play": {"pad": "pad-room", "roots": "bass-room", "piano": "breath"}, "mix": {"pad": {"gainDb": -29}, "piano": {"gainDb": -10}, "roots": {"gainDb": -23}}},
+    "letter": {"bars": 4, "play": {"pad": "pad-room", "roots": "bass-room", "piano": "theme"}, "mix": {"pad": {"gainDb": -26}, "piano": {"gainDb": -7}, "roots": {"gainDb": -21}}},
+    "kettle": {"bars": 4, "play": {"pad": "pad-room", "roots": "bass-room", "piano": "breath", "pluck": "answer"}, "mix": {"pad": {"gainDb": -27}, "piano": {"gainDb": -8}}}
+  },
+  "form": ["window", "letter", "kettle", "window"],
+  "master": {"reverb": {"preset": "room", "returnDb": -8}}
+}

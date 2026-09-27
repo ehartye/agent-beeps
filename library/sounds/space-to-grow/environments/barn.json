@@ -1,0 +1,245 @@
+{
+  "schema": "beeps/song@1",
+  "name": "stg-ambience-barn",
+  "title": "Barn · the sleeping portal",
+  "description": "A low resonant field inside a timber-and-metal workspace, subdued air movement and sparse mechanical settling. The portal is powered but not yet travelling.",
+  "tags": [
+    "ambience",
+    "space-to-grow"
+  ],
+  "bpm": 48,
+  "meter": 4,
+  "loop": true,
+  "seed": 704,
+  "tracks": {
+    "motor": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D3"
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "lfo": {
+              "target": "gain",
+              "rate": 0.14,
+              "depth": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A3"
+            },
+            "gainDb": -15,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": 0.15
+          }
+        ]
+      },
+      "gainDb": -26,
+      "highpass": 85
+    },
+    "air": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 850,
+              "q": 0.7
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": -0.3
+          }
+        ]
+      },
+      "gainDb": -8,
+      "highpass": 300
+    },
+    "field": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D4"
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "lfo": {
+              "target": "gain",
+              "rate": 0.09,
+              "depth": 0.3
+            },
+            "pan": 0.4
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A4"
+            },
+            "gainDb": -18,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": -0.4
+          }
+        ]
+      },
+      "gainDb": -22,
+      "sends": {
+        "reverb": -18
+      }
+    },
+    "settling": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "A3",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.008,
+              "decay": 0.28,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ]
+      },
+      "gainDb": -4,
+      "pan": -0.5,
+      "sends": {
+        "reverb": -19
+      }
+    }
+  },
+  "patterns": {
+    "motor": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D2",
+          16
+        ]
+      ]
+    },
+    "air": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          16
+        ]
+      ]
+    },
+    "field": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D3",
+          16
+        ]
+      ]
+    },
+    "settling": {
+      "bars": 4,
+      "notes": [
+        [
+          4.8,
+          "A3",
+          0.35,
+          0.4
+        ],
+        [
+          11.3,
+          "D4",
+          0.3,
+          0.28
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "habitat": {
+      "bars": 4,
+      "play": {
+        "motor": "motor",
+        "air": "air",
+        "field": "field",
+        "settling": "settling"
+      }
+    }
+  },
+  "form": [
+    "habitat"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -10
+    }
+  }
+}
