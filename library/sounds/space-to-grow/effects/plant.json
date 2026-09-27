@@ -1,0 +1,72 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-plant",
+  "family": "foley",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.22,
+  "layers": [
+    {
+      "source": {
+        "type": "grains",
+        "rate": 75,
+        "center": 1800,
+        "grainDecay": 0.009,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -6,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.09,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "brown"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 380,
+        "q": 0.55
+      },
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.007,
+        "decay": 0.11,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "A3"
+      },
+      "gainDb": -9,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.14,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A seed tucked in. A tiny seed-shell rattle lands in soft soil; a rounded low pluck confirms planting without becoming a reward chime."
+  }
+}

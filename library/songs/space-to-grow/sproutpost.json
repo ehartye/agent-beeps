@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/song@1",
+  "name": "sproutpost",
+  "title": "Sproutpost",
+  "description": "Clementine’s orbital garden: a breathy, wistful D-major seed motif, warm plucked strings and a small hand-drum pulse. The middle opens into Lydian sunlight before returning to the quiet beds.",
+  "tags": ["exploration", "space-to-grow"],
+  "bpm": 80,
+  "loop": true,
+  "seed": 270927,
+  "instruments": {
+    "garden-reed": {"duration": 2, "layers": [{"source": {"type": "additive", "pitch": "C4", "partials": [[1, 0, 3], [2, -14, 2], [3, -21, 1.5]]}, "amp": {"attack": 0.045, "decay": 0.5, "sustain": 0.6, "release": 0.3}, "filter": {"type": "lowpass", "cutoff": 2400, "resonanceDb": 0}}, {"source": {"type": "noise", "color": "pink"}, "gainDb": -34, "amp": {"attack": 0.055, "decay": 0.25, "sustain": 0.12, "release": 0.2}, "filter": {"type": "bandpass", "cutoff": 1700, "q": 0.7}}]},
+    "root-bass": {"duration": 2, "layers": [{"source": {"type": "osc", "wave": "triangle", "pitch": "C2"}, "amp": {"attack": 0.045, "decay": 0.6, "sustain": 0.35, "release": 0.22}, "filter": {"type": "lowpass", "cutoff": 500, "resonanceDb": 0}}]}
+  },
+  "progressions": {
+    "home": [["Dmaj9", 4], ["Gmaj7", 4], ["Bm7", 4], ["D6", 4]],
+    "sun": [["Dmaj9", 4], ["E/D", 4], ["Gmaj9", 4], ["Dmaj9", 4]]
+  },
+  "tracks": {
+    "pad": {"instrument": "warm-pad", "gainDb": -20, "highpass": 180, "spread": 0.6, "sends": {"reverb": -13}},
+    "pluck": {"instrument": "soft-pluck", "gainDb": -10, "pan": -0.23, "humanize": 0.28, "sends": {"reverb": -15}},
+    "roots": {"instrument": "root-bass", "gainDb": -18},
+    "melody": {"instrument": "garden-reed", "gainDb": -10, "pan": 0.12, "sends": {"reverb": -10, "delay": -17}},
+    "drum": {"instrument": "hand-drum", "gainDb": -10, "pan": 0.15, "humanize": 0.25},
+    "seed": {"instrument": "glass-bell", "gainDb": -15, "pan": 0.35, "sends": {"reverb": -11}}
+  },
+  "patterns": {
+    "pad-home": {"bars": 4, "chords": {"progression": "home", "octave": 4, "voicing": "close", "slash": false}, "vel": 0.65},
+    "pluck-home": {"bars": 4, "arp": {"progression": "home", "octave": 4, "rate": 1, "shape": "updown", "octaves": 1, "rhythm": "x..xx.x."}, "gate": 0.75, "vel": 0.65},
+    "bass-home": {"bars": 4, "bass": {"progression": "home", "octave": 2}, "gate": 0.8, "vel": 0.65},
+    "pad-sun": {"bars": 4, "chords": {"progression": "sun", "octave": 4, "voicing": "close", "slash": false}, "vel": 0.65},
+    "pluck-sun": {"bars": 4, "arp": {"progression": "sun", "octave": 4, "rate": 1, "shape": "updown", "octaves": 1, "rhythm": "x..xx.x."}, "gate": 0.75, "vel": 0.65},
+    "bass-sun": {"bars": 4, "bass": {"progression": "sun", "octave": 2}, "gate": 0.8, "vel": 0.65},
+    "theme": {"bars": 4, "notes": [[1, "D5", 1, 0.72], [2.5, "F#5", 0.5, 0.58], [3, "A5", 2, 0.68], [6, "E5", 1.5, 0.55], [9, "D5", 1, 0.65], [10.5, "B4", 0.5, 0.5], [11, "A4", 2, 0.58], [14, "E5", 1, 0.48]]},
+    "answer": {"bars": 4, "notes": [[1, "F#5", 1, 0.65], [2.5, "A5", 0.5, 0.56], [3, "B5", 2, 0.62], [6, "G#5", 1.5, 0.48], [9, "F#5", 1, 0.56], [11, "E5", 1.5, 0.5], [14, "D5", 1.5, 0.42]]},
+    "pulse": {"bars": 2, "steps": "x.......o...x...........o.......", "note": "D3"},
+    "dew": {"bars": 4, "notes": [[2, "A5", 1, 0.55], [10, "F#6", 1, 0.4]]}
+  },
+  "sections": {
+    "beds": {"bars": 4, "play": {"pad": "pad-home", "pluck": "pluck-home", "roots": "bass-home"}, "mix": {"pad": {"gainDb": -22}, "pluck": {"gainDb": -12}, "roots": {"gainDb": -21}}},
+    "shoots": {"bars": 4, "play": {"pad": "pad-home", "pluck": "pluck-home", "roots": "bass-home", "melody": "theme"}, "mix": {"pad": {"gainDb": -20}, "pluck": {"gainDb": -10}, "roots": {"gainDb": -18}}},
+    "paths": {"bars": 4, "play": {"pad": "pad-home", "pluck": "pluck-home", "roots": "bass-home", "drum": "pulse", "seed": "dew"}},
+    "sunlight": {"bars": 4, "play": {"pad": "pad-sun", "pluck": "pluck-sun", "roots": "bass-sun", "melody": "answer", "drum": "pulse"}, "mix": {"pad": {"gainDb": -18}}},
+    "water": {"bars": 4, "play": {"pad": "pad-home", "pluck": "pluck-home", "roots": "bass-home", "melody": "theme"}, "mix": {"pad": {"gainDb": -21}, "melody": {"gainDb": -12}}}
+  },
+  "form": ["beds", "shoots", "paths", "sunlight", "water", "beds"],
+  "master": {"reverb": {"preset": "room", "returnDb": -5}, "delay": {"beats": 0.75, "feedback": 0.23, "returnDb": -12, "cutoff": 2200}}
+}

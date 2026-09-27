@@ -1,0 +1,122 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-rest",
+  "family": "confirm",
+  "tags": [
+    "space-to-grow"
+  ],
+  "duration": 0.88,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 550,
+        "q": 0.55
+      },
+      "gainDb": -7,
+      "amp": {
+        "attack": 0.16,
+        "decay": 0.4,
+        "sustain": 0.05,
+        "release": 0.2
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "A4",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -7,
+      "amp": {
+        "attack": 0.045,
+        "decay": 0.4,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "F#4",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -5,
+      "amp": {
+        "attack": 0.045,
+        "decay": 0.42,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.23
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "D3"
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.08,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.14
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Breathe, then begin again. A warm descending ceramic pair over a soft exhale; a short rest transition, never a persistent hum."
+  },
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -21
+    }
+  }
+}

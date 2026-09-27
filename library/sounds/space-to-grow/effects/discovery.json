@@ -1,0 +1,167 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-discovery",
+  "family": "confirm",
+  "tags": [
+    "space-to-grow"
+  ],
+  "duration": 0.96,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "D5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.45,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "F#5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -7,
+      "amp": {
+        "attack": 0.014,
+        "decay": 0.45,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.16,
+      "pan": -0.3
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "A5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -10,
+      "amp": {
+        "attack": 0.018,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.34,
+      "pan": 0.3
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "B5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.022,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.57
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "D3"
+      },
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.05,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 2,
+    "intent": "oneshot",
+    "description": "Something new in the Almanac. Four soft glass notes unfold upward, with a low warm anchor. Reserve for first discoveries."
+  },
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -21
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-till",
+  "family": "foley",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.26,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "brown"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 650,
+        "q": 0.55
+      },
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.1,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 110,
+        "center": 950,
+        "grainDecay": 0.013,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.17,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "D3",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Soil and steel. A padded cultivator bite, small metal handle knock and loose soil settling. Successful tilling only."
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-water",
+  "family": "foley",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.62,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1700,
+        "q": 0.55
+      },
+      "gainDb": -5,
+      "amp": {
+        "attack": 0.018,
+        "decay": 0.25,
+        "sustain": 0.16,
+        "release": 0.12
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 180,
+        "center": 1500,
+        "grainDecay": 0.017,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.42,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "A4"
+      },
+      "gainDb": -11,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.09,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "pitchEnv": [
+        {
+          "at": 0.08,
+          "to": "D4"
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "F#5"
+      },
+      "gainDb": -16,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.065,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.13,
+      "pitchEnv": [
+        {
+          "at": 0.06,
+          "to": "A4"
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "D5"
+      },
+      "gainDb": -15,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.08,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.31,
+      "pitchEnv": [
+        {
+          "at": 0.07,
+          "to": "F#4"
+        }
+      ]
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Watering the roots. A brief soft pour with staggered round droplets; useful for repeated watering without a piercing hiss."
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-harvest",
+  "family": "pickup",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "D4",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.17,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 55,
+        "center": 2100,
+        "grainDecay": 0.009,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.09,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "F#5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -13,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.23,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.055
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "A5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -17,
+      "amp": {
+        "attack": 0.009,
+        "decay": 0.27,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.12
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Picked with care. A plant stem releases with a woody pluck and two restrained sunlit overtones. A small harvest, not a jackpot."
+  }
+}

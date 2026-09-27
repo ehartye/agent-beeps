@@ -1,0 +1,121 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-door",
+  "family": "foley",
+  "tags": [
+    "space-to-grow",
+    "repeating"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "A3",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": -6,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.08,
+        "sustain": 0,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 650,
+        "q": 0.55
+      },
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.045,
+        "decay": 0.2,
+        "sustain": 0.08,
+        "release": 0.09
+      }
+    },
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "D3",
+        "modes": [
+          [
+            1,
+            7,
+            0
+          ],
+          [
+            2.76,
+            5,
+            -10
+          ],
+          [
+            5.4,
+            3,
+            -24
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "gainDb": -8,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.1,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.24
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 25,
+        "center": 720,
+        "grainDecay": 0.025,
+        "q": 0.8,
+        "rateEnd": 0.25
+      },
+      "gainDb": -16,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.15,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Habitat door. A rounded latch and short air seal, ending in a cushioned closing catch; neither a heavy slam nor a UI beep."
+  }
+}

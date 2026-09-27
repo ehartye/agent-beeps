@@ -66,6 +66,17 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
 
+For game integration, add `--manifest` to `beeps export <patch> --wav audio/cue.wav` or
+`beeps song export <song> --wav audio/theme.wav`. It writes an adjacent `<wav>.json` with the
+asset's label, description, relative WAV filename, loop flag, exact duration, sample rate,
+channels, render identity and measured delivered loudness/true peak. Roles default to `sfx`
+for patches and `music` for songs; `--role ambience` overrides the role and requires `--manifest`.
+Only songs authored with `loop: true` are labeled as loops. The sidecar marks
+`normalizationAlreadyApplied: true`: play the WAV at its delivered level, without reapplying
+the render's trim. Loudness names its metric (`momentary-max` for patches, `integrated` for songs).
+Keep each WAV and its sidecar together when moving them. Without `--manifest`, export is unchanged.
+Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
+
 ## Sound engine
 
 Seven source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`

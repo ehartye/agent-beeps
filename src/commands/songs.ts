@@ -18,6 +18,7 @@ import type { Patch } from '../schema/patch.ts';
 import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '../album.ts';
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
+import { exportRole, writeExportManifest } from '../export-manifest.ts';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -199,14 +200,18 @@ export function registerSongCommands(program: Command, io: Io) {
   song.command('export <ref>')
     .description('write the loudness-trimmed WAV of a song')
     .requiredOption('--wav <path>', 'output WAV path')
-    .action(async (ref: string, opts: { wav: string }) => {
+    .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
+    .option('--role <role>', 'manifest role: music (default), ambience or sfx; requires --manifest')
+    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string }) => {
+      const role = exportRole(opts.role, opts.manifest, 'music');
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
       const r = await withHost(host => renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders }));
       const dest = resolve(opts.wav);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(r.wavPath, dest);
-      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec });
+      const manifest = opts.manifest ? writeExportManifest(dest, r, role) : undefined;
+      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec, ...(manifest ? { manifest } : {}) });
     });
 
   const album = program.command('album').description('put rendered songs in front of the owner on the LAN listening page');

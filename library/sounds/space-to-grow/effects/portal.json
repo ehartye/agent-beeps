@@ -1,0 +1,139 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "stg-portal",
+  "family": "transition",
+  "tags": [
+    "space-to-grow"
+  ],
+  "duration": 1.48,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "D3"
+      },
+      "gainDb": -7,
+      "amp": {
+        "attack": 0.12,
+        "decay": 0.8,
+        "sustain": 0.12,
+        "release": 0.25
+      },
+      "pitchEnv": [
+        {
+          "at": 0.7,
+          "to": "A3"
+        },
+        {
+          "at": 1.2,
+          "to": "D4"
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 900,
+        "q": 0.6,
+        "env": {
+          "to": 3000,
+          "time": 1.1
+        }
+      },
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.2,
+        "decay": 0.7,
+        "sustain": 0.08,
+        "release": 0.3
+      },
+      "pan": -0.2
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "A4",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.04,
+        "decay": 0.65,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.68,
+      "pan": 0.35
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "D5",
+        "partials": [
+          [
+            1,
+            0,
+            0.5
+          ],
+          [
+            2.76,
+            -17,
+            0.22
+          ],
+          [
+            5.4,
+            -29,
+            0.08
+          ]
+        ]
+      },
+      "gainDb": -18,
+      "amp": {
+        "attack": 0.06,
+        "decay": 0.55,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.92,
+      "pan": -0.3
+    }
+  ],
+  "variation": {
+    "pitchCents": 16,
+    "gainDb": 0.7,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Across the threshold. A low field gathers, airy pressure passes and a crystalline fifth opens into the Upside. One cue per completed travel."
+  },
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -21
+    }
+  }
+}

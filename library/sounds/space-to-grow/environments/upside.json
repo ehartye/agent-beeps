@@ -1,0 +1,245 @@
+{
+  "schema": "beeps/song@1",
+  "name": "stg-ambience-upside",
+  "title": "The Upside · drifting air and glass",
+  "description": "A weightless wash passing between high crystalline resonances. The lowest layer is breath rather than bass; space remains for the score.",
+  "tags": [
+    "ambience",
+    "space-to-grow"
+  ],
+  "bpm": 48,
+  "meter": 4,
+  "loop": true,
+  "seed": 702,
+  "tracks": {
+    "wind": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 1800,
+              "q": 0.45
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": -0.3,
+            "lfo": {
+              "target": "cutoff",
+              "rate": 0.06,
+              "depth": 360
+            }
+          }
+        ]
+      },
+      "gainDb": -4,
+      "highpass": 500,
+      "sends": {
+        "reverb": -18
+      }
+    },
+    "drifting": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "brown"
+            },
+            "filter": {
+              "type": "lowpass",
+              "cutoff": 800,
+              "resonanceDb": 0
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": 0.4,
+            "lfo": {
+              "target": "gain",
+              "rate": 0.08,
+              "depth": 0.14
+            }
+          }
+        ]
+      },
+      "gainDb": -12,
+      "highpass": 220
+    },
+    "glass": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "D5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  3
+                ],
+                [
+                  2.76,
+                  -17,
+                  1.6
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.8
+                ]
+              ]
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.25,
+              "decay": 0.8,
+              "sustain": 0.12,
+              "release": 1.2
+            }
+          }
+        ]
+      },
+      "gainDb": -15.5,
+      "pan": 0.4,
+      "sends": {
+        "reverb": -9
+      }
+    },
+    "answer": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  3
+                ],
+                [
+                  2.76,
+                  -17,
+                  1.6
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.8
+                ]
+              ]
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.25,
+              "decay": 0.8,
+              "sustain": 0.12,
+              "release": 1.2
+            }
+          }
+        ]
+      },
+      "gainDb": -14.5,
+      "pan": -0.5,
+      "sends": {
+        "reverb": -10
+      }
+    }
+  },
+  "patterns": {
+    "wind": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          16
+        ]
+      ]
+    },
+    "drifting": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          16
+        ]
+      ]
+    },
+    "glass": {
+      "bars": 4,
+      "notes": [
+        [
+          1.3,
+          "D5",
+          2,
+          0.55
+        ],
+        [
+          10.7,
+          "A5",
+          2,
+          0.4
+        ]
+      ]
+    },
+    "answer": {
+      "bars": 4,
+      "notes": [
+        [
+          6.5,
+          "A5",
+          1.8,
+          0.35
+        ],
+        [
+          14.1,
+          "F#5",
+          1.7,
+          0.45
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "habitat": {
+      "bars": 4,
+      "play": {
+        "wind": "wind",
+        "drifting": "drifting",
+        "glass": "glass",
+        "answer": "answer"
+      }
+    }
+  },
+  "form": [
+    "habitat"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "space",
+      "returnDb": -10
+    }
+  }
+}
