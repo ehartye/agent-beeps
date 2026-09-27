@@ -78,7 +78,8 @@ export function songTail(song, instruments) {
   let ring = 0;
   for (const p of Object.values(instruments)) {
     const release = Math.max(...p.layers.map(l => l.amp.release));
-    ring = Math.max(ring, release, patchLength({ ...p, duration: Math.min(p.duration, 0.01) }));
+    // A gate:'patch' event can begin just before the form ends and play its full duration.
+    ring = Math.max(ring, release, patchLength(p));
   }
   let fx = 0;
   const r = song.master.reverb;
@@ -117,7 +118,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   if (song.master.delay) {
     const d = song.master.delay;
     delayIn = ctx.createGain();
-    const line = ctx.createDelay(4);
+    const line = ctx.createDelay(d.beats * c.spb);
     line.delayTime.value = d.beats * c.spb;
     // Darkening each repeat keeps echoes behind the dry sound instead of stacking up bright.
     const tone = ctx.createBiquadFilter();

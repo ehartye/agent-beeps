@@ -30,6 +30,8 @@ export function getPointer(obj: unknown, ptr: string): unknown {
 export function setPointer(obj: unknown, ptr: string, value: unknown): void {
   const keys = parsePointer(ptr);
   if (!keys.length) throw new Error('cannot set the root');
+  // Validate the complete path before creating objects or following inherited properties.
+  if (keys.some(key => key === '__proto__' || key === 'constructor' || key === 'prototype')) throw new Error(`unsafe pointer: ${ptr}`);
   let cur: any = obj;
   for (const key of keys.slice(0, -1)) {
     if (cur[key] === undefined) cur[key] = {};

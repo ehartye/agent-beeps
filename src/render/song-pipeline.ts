@@ -14,7 +14,7 @@ import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
 
 /** Bump when song rendering or measurement changes, so cached renders are redone. */
-export const SONG_PIPELINE_VERSION = 4;
+export const SONG_PIPELINE_VERSION = 5;
 
 export interface RenderedSong {
   key: string; song: Song; trimDb: number; features: SongFeatures;

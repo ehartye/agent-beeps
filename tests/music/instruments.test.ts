@@ -34,4 +34,16 @@ describe('song instruments', () => {
     const missing = song({ tracks: { pad: { instrument: { base: 'nope' } }, hat: { instrument: 'hat' } } });
     expect(() => resolveInstruments(p, missing)).toThrow(/no instrument "nope"/);
   });
+
+  it('rejects an override that would mutate the object prototype before validating its patch', () => {
+    const s = song({ tracks: { pad: { instrument: { base: 'warm-pad', set: { '/__proto__/beepsInstrumentTest': true } } }, hat: { instrument: 'hat' } } });
+    try {
+      expect(() => resolveInstruments(p, s)).toThrow(expect.objectContaining({
+        code: 'E_SCHEMA', pointer: '/tracks/pad/instrument/set', message: expect.stringMatching(/unsafe pointer/),
+      }));
+      expect(Object.prototype).not.toHaveProperty('beepsInstrumentTest');
+    } finally {
+      delete (Object.prototype as Record<string, unknown>).beepsInstrumentTest;
+    }
+  });
 });
