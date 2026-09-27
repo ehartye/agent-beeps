@@ -1,0 +1,212 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "hyperdrive-charge",
+  "family": "powerup",
+  "archetype": "powerup",
+  "tags": [
+    "bright"
+  ],
+  "duration": 1.65,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 55
+      },
+      "start": 0,
+      "gainDb": -3,
+      "pitchEnv": [
+        {
+          "at": 0.55,
+          "to": 110,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.5,
+        "decay": 0.25,
+        "sustain": 0.7,
+        "release": 0.35
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "fm",
+        "pitch": 110,
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1,
+            "wave": "sine"
+          },
+          {
+            "ratio": 2,
+            "index": 0.8,
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0,
+      "gainDb": -5,
+      "pitchEnv": [
+        {
+          "at": 0.6,
+          "to": 220,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.45,
+        "decay": 0.2,
+        "sustain": 0.6,
+        "release": 0.3
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 450,
+        "resonanceDb": 0,
+        "env": {
+          "to": 1800,
+          "time": 0.65
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 220
+      },
+      "start": 0.08,
+      "gainDb": -15,
+      "pitchEnv": [
+        {
+          "at": 0.6,
+          "to": 440,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.2,
+        "decay": 0.4,
+        "sustain": 0,
+        "release": 0.12
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0.1,
+      "gainDb": -20,
+      "amp": {
+        "attack": 0.15,
+        "decay": 0.4,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 700,
+        "q": 0.6,
+        "env": {
+          "to": 2400,
+          "time": 0.6
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 160
+      },
+      "start": 0.68,
+      "gainDb": -6,
+      "pitchEnv": [
+        {
+          "at": 0.18,
+          "to": 65,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.18,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": 110,
+        "partials": [
+          [
+            1,
+            0,
+            1.4
+          ],
+          [
+            2,
+            -8,
+            1.2
+          ],
+          [
+            4,
+            -18,
+            0.8
+          ]
+        ]
+      },
+      "start": 0.7,
+      "gainDb": -10,
+      "amp": {
+        "attack": 0.05,
+        "decay": 0.25,
+        "sustain": 0.35,
+        "release": 0.3
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "small",
+      "sendDb": -24
+    }
+  },
+  "variation": {
+    "pitchCents": 20,
+    "gainDb": 0.6,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 4,
+    "intent": "oneshot",
+    "description": "The hyperdrive builds from a rising energy swell into a sustained, powerful reactor hum."
+  }
+}

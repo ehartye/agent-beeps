@@ -16,6 +16,9 @@ sections and mix moves. Songs render to loopable, loudness-matched WAVs, are lin
 music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
 holds a 13-track example library; `library/instruments/` holds 25 instrument patches.
 
+[`library/sounds/sci-fi/`](library/sounds/sci-fi/) contains 18 approved effects across Expedition,
+Arcade and Oddities, with purpose labels, playback seeds and measured kit levels.
+
 ## Workflow
 
 1. **Compose**: `beeps generate coin --count 6 --prompt "coin pickup for a cozy platformer"`

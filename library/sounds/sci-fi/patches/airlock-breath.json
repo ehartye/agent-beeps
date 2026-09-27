@@ -1,0 +1,59 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "airlock-breath",
+  "family": "whoosh",
+  "archetype": "whoosh",
+  "tags": [
+    "motion"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.16139,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 423.41,
+        "q": 0.54578,
+        "env": {
+          "to": 2674.8,
+          "time": 0.25967
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "start": 0,
+      "gainDb": -26.42,
+      "amp": {
+        "attack": 0.16139,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 4000,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "meta": {
+    "priority": 2,
+    "intent": "oneshot",
+    "description": "An airlock releasing pressure before opening."
+  }
+}

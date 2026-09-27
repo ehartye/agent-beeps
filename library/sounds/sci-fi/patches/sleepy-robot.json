@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "sleepy-robot",
+  "family": "powerdown",
+  "archetype": "powerdown",
+  "tags": [],
+  "duration": 0.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 602.06
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.45,
+          "to": 145.14,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.5,
+        "sustain": 0.3,
+        "release": 0.08
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2308.1,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 7,
+        "depth": 90
+      }
+    }
+  ],
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A sleepy robot powering down with a falling murmur."
+  }
+}

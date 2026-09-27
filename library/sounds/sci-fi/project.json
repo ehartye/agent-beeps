@@ -1,0 +1,11 @@
+{
+  "schema": "beeps/project@1",
+  "scale": {
+    "root": "C",
+    "mode": "majorPentatonic",
+    "snap": true
+  },
+  "targetLoudness": -18,
+  "musicLoudness": -20,
+  "sampleRate": 48000
+}

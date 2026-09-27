@@ -1,0 +1,59 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "scanner-pulse",
+  "family": "alarm",
+  "archetype": "alarm",
+  "tags": [
+    "scanner"
+  ],
+  "duration": 0.58352,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 860.47
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.14588,
+          "to": 688.38,
+          "curve": "step"
+        },
+        {
+          "at": 0.29176,
+          "to": 860.47,
+          "curve": "step"
+        },
+        {
+          "at": 0.43764,
+          "to": 688.38,
+          "curve": "step"
+        }
+      ],
+      "amp": {
+        "attack": 0.005,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0.03
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2800,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 9,
+        "depth": 0.8
+      }
+    }
+  ],
+  "meta": {
+    "priority": 5,
+    "intent": "oneshot",
+    "description": "A scanner pulse checking for nearby objects."
+  }
+}

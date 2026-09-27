@@ -1,0 +1,59 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "cosmic-owl",
+  "family": "alarm",
+  "archetype": "alarm",
+  "tags": [
+    "alert"
+  ],
+  "duration": 0.52,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 330
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.13,
+          "to": 440,
+          "curve": "exp"
+        },
+        {
+          "at": 0.26,
+          "to": 330,
+          "curve": "exp"
+        },
+        {
+          "at": 0.42,
+          "to": 220,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.02,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0.1
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3792.5,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 5,
+        "depth": 0.35
+      }
+    }
+  ],
+  "meta": {
+    "priority": 5,
+    "intent": "oneshot",
+    "description": "A low, rounded call from a cosmic owl."
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "navigation-online",
+  "family": "confirm",
+  "archetype": "confirm",
+  "tags": [
+    "ui"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": 734.71,
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 0,
+            "wave": "sine"
+          },
+          {
+            "ratio": 2,
+            "index": 0.95562,
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.03
+      }
+    },
+    {
+      "source": {
+        "type": "fm",
+        "pitch": 918.39,
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 0,
+            "wave": "sine"
+          },
+          {
+            "ratio": 2,
+            "index": 0.95562,
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0.083528,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.22177,
+        "sustain": 0,
+        "release": 0.05
+      }
+    }
+  ],
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "The navigation system finishing startup and becoming ready."
+  }
+}

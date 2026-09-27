@@ -1,0 +1,131 @@
+{
+  "schema": "beeps/kit@1",
+  "sounds": [
+    {
+      "name": "scanner-pulse",
+      "family": "alarm",
+      "priority": 5,
+      "trimDb": -14.76,
+      "seed": 260926
+    },
+    {
+      "name": "relic-discovered",
+      "family": "pickup",
+      "priority": 3,
+      "trimDb": -11.84,
+      "seed": 260937
+    },
+    {
+      "name": "curious-alien",
+      "family": "jump",
+      "priority": 3,
+      "trimDb": -9.42,
+      "seed": 260948
+    },
+    {
+      "name": "navigation-online",
+      "family": "confirm",
+      "priority": 3,
+      "trimDb": -11.01,
+      "seed": 260959
+    },
+    {
+      "name": "airlock-breath",
+      "family": "whoosh",
+      "priority": 2,
+      "trimDb": 3.53,
+      "seed": 260970
+    },
+    {
+      "name": "engine-sleep",
+      "family": "powerdown",
+      "priority": 3,
+      "trimDb": -11.27,
+      "seed": 260981
+    },
+    {
+      "name": "comet-blaster",
+      "family": "laser",
+      "priority": 3,
+      "trimDb": -5.56,
+      "seed": 261026
+    },
+    {
+      "name": "shield-ripple",
+      "family": "hit",
+      "priority": 3,
+      "trimDb": -2.42,
+      "seed": 261037
+    },
+    {
+      "name": "hyperdrive-charge",
+      "family": "powerup",
+      "priority": 4,
+      "trimDb": -13.76,
+      "seed": 261048
+    },
+    {
+      "name": "asteroid-burst",
+      "family": "explosion",
+      "priority": 4,
+      "trimDb": -8.36,
+      "seed": 261059
+    },
+    {
+      "name": "energy-shard",
+      "family": "coin",
+      "priority": 3,
+      "trimDb": -7.94,
+      "seed": 261070
+    },
+    {
+      "name": "gravity-hop",
+      "family": "jump",
+      "priority": 3,
+      "trimDb": -8.75,
+      "seed": 261081
+    },
+    {
+      "name": "crystal-switch",
+      "family": "ui-click",
+      "priority": 2,
+      "trimDb": 0.98,
+      "seed": 261126
+    },
+    {
+      "name": "pocket-portal",
+      "family": "whoosh",
+      "priority": 2,
+      "trimDb": 6.78,
+      "seed": 261137
+    },
+    {
+      "name": "sleepy-robot",
+      "family": "powerdown",
+      "priority": 3,
+      "trimDb": -11.19,
+      "seed": 261148
+    },
+    {
+      "name": "star-candy",
+      "family": "coin",
+      "priority": 3,
+      "trimDb": -9.9,
+      "seed": 261159
+    },
+    {
+      "name": "bubble-ray",
+      "family": "laser",
+      "priority": 3,
+      "trimDb": -4.9,
+      "seed": 261170
+    },
+    {
+      "name": "cosmic-owl",
+      "family": "alarm",
+      "priority": 5,
+      "trimDb": -15.71,
+      "seed": 261181
+    }
+  ]
+}
