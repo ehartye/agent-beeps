@@ -11,8 +11,9 @@ No sample files, no AI audio: every sound is a small, editable patch that games 
 through the same engine, with seeded variations so repeated sounds do not fatigue.
 
 Agents also compose **music**: a `beeps/song@1` document plays those same patches as instruments
-through chord progressions (voice-led from chord symbols), arps, bass lines, step drums, melodies,
-sections and mix moves. Songs render to loopable, loudness-matched WAVs, are linted against cited
+through chord progressions (voice-led from chord symbols), arps, bass lines, step drums (including
+Euclidean rhythms such as `x(3,8)`), melodies, sections and mix moves, from loops to one-shot jingles.
+Songs render to loopable, loudness-matched WAVs, are linted against cited
 music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
 holds a 13-track example library; `library/instruments/` holds 25 instrument patches.
 
@@ -124,6 +125,7 @@ npm install
 npm test          # vitest; browser tests run when Playwright's Chromium is installed
 npm run typecheck
 node scripts/beeps.mjs capabilities
+claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals in evals/
 ```
 
 Specs and plans are in `docs/superpowers/`.
