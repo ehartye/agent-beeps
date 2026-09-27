@@ -1061,7 +1061,10 @@ export function createLifecycle(ctx, { enabled = true, hidden = false } = {}) {
   /** @type {Promise<void>} */
   let chain = Promise.resolve();
   const reconcile = () => {
-    chain = chain.catch(() => {}).then(() => (state.enabled && !state.hidden ? ctx.resume() : ctx.suspend()));
+    // Snapshot the desired state now: the callback below runs later, on a queued microtask, by
+    // which time a rapid second call may already have mutated `state` again.
+    const running = state.enabled && !state.hidden;
+    chain = chain.catch(() => {}).then(() => (running ? ctx.resume() : ctx.suspend()));
     return chain;
   };
   return {
@@ -1172,6 +1175,18 @@ describe('player graph', () => {
     const { player, contexts } = setup();
     expect(player.play('coin')).toBeNull();
     expect(contexts()).toBe(0);
+  });
+
+  it('plays nothing after re-enabling until the next unlock resumes the context', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    player.setEnabled(false);
+    await settle();
+    player.setEnabled(true);
+    expect(player.play('coin')).toBeNull();
+    expect(ctx.state).toBe('suspended');
+    await player.unlock();
+    expect(player.play('coin')).not.toBeNull();
   });
 
   it('clamps levels and ignores non-numbers', () => {
@@ -1411,7 +1426,9 @@ export function createPlayer(opts) {
     param.setValueAtTime(param.value, at);
     param.linearRampToValueAtTime(to, at + Math.max(RAMP, sec));
   };
-  const running = () => !!lifecycle && lifecycle.running;
+  // Wanted (lifecycle) AND actually running: after setEnabled(true) without a gesture the context
+  // is still suspended, and sounds started then would hold voices and all burst out on resume.
+  const running = () => !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
 
   function loadCatalog() {
     if (assets) return Promise.resolve(assets);
