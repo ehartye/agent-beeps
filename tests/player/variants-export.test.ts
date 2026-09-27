@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { initProject, savePatch } from '../../src/project.ts';
@@ -20,6 +20,7 @@ it.skipIf(!hasChromium)('exports every declared variant with one sidecar listing
   const r = run(p.paths.root, 'export', 'coin', '--wav', 'audio/coin.wav', '--variants', '--manifest');
   expect(r.status, r.stderr).toBe(0);
   expect(r.data.wavs.map((f: string) => basename(f))).toEqual(['coin.0.wav', 'coin.1.wav', 'coin.2.wav']);
+  expect(r.data.wav).toBe(r.data.wavs[0]);
   const m = JSON.parse(readFileSync(join(p.paths.root, 'audio/coin.wav.json'), 'utf8'));
   expect(m).toMatchObject({ id: 'coin', file: 'coin.0.wav', priority: 4, noRepeat: true,
     variants: [{ file: 'coin.0.wav', weight: 2 }, { file: 'coin.1.wav', weight: 1 }, { file: 'coin.2.wav', weight: 1 }] });
@@ -31,4 +32,13 @@ it.skipIf(!hasChromium)('exports every declared variant with one sidecar listing
   const bad = run(p.paths.root, 'export', 'coin', '--wav', 'audio/bad.wav', '--variants', '0');
   expect(bad.status).not.toBe(0);
   expect(JSON.parse(bad.stderr).error.code).toBe('E_USAGE');
+});
+
+it.skipIf(!hasChromium)('rejects --variant combined with --variants and writes no files', () => {
+  const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-variants-')));
+  savePatch(p, { ...coin(), variation: { pitchCents: 30, gainDb: 1, variants: 3, noRepeat: true } });
+  const r = run(p.paths.root, 'export', 'coin', '--wav', 'audio/x.wav', '--variant', '1', '--variants', '2');
+  expect(r.status).not.toBe(0);
+  expect(JSON.parse(r.stderr).error.code).toBe('E_USAGE');
+  expect(existsSync(join(p.paths.root, 'audio'))).toBe(false);
 });

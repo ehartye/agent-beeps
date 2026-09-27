@@ -19,6 +19,7 @@ export const ExportManifestSchema = z.strictObject({
   loudness: z.strictObject({ metric: z.enum(['momentary-max', 'integrated']), lufs: z.number() }),
   truePeakDb: z.number(), normalizationAlreadyApplied: z.literal(true),
   // Optional, additive: sidecars written before these existed stay valid.
+  // 1 is most important, 5 least (FMOD convention, as meta.priority and the kit)
   priority: z.number().int().min(1).max(5).optional(),
   variants: z.array(Variant).min(1).optional(),
   noRepeat: z.boolean().optional(),
@@ -60,7 +61,7 @@ export function writeExportManifest(wav: string, rendered: Rendered | RenderedSo
       ? { metric: 'integrated', lufs: rendered.features.delivered?.integratedLufs }
       : { metric: 'momentary-max', lufs: rendered.features.delivered.momentaryMaxLufs },
     truePeakDb: delivered?.truePeakDb, normalizationAlreadyApplied: true,
-    ...(song ? { bpm: song.bpm, meter: song.meter } : { priority: (rendered as Rendered).patch.meta?.priority ?? 3 }),
+    ...(song ? { bpm: song.bpm, meter: song.meter } : role === 'sfx' ? { priority: (rendered as Rendered).patch.meta?.priority ?? 3 } : {}),
     ...extra,
   });
   writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');

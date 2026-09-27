@@ -104,11 +104,12 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--variants [n]', 'export variants 0..n-1 (default: every declared variant) as <wav-stem>.<i>.wav; the sidecar lists them')
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: sfx (default), music or ambience; requires --manifest')
-    .action(async (ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string }) => {
+    .action(async function (this: Command, ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string }) {
       const role = exportRole(opts.role, opts.manifest, 'sfx');
       const p = openProject(io.projectDir());
       const seed = opts.seed ?? readKit(p.paths.root).sounds.find(s => s.name === ref)?.seed ?? 1;
       if (opts.variants !== undefined) {
+        if (this.getOptionValueSource('variant') === 'cli') throw new BeepsError('E_USAGE', '--variant and --variants cannot be combined');
         const patch = loadPatch(p, ref);
         const n = opts.variants === true ? (patch.variation?.variants ?? 1) : Number(opts.variants);
         if (!Number.isInteger(n) || n < 1 || n > 16) throw new BeepsError('E_USAGE', '--variants takes a count from 1 to 16');
@@ -121,7 +122,7 @@ export function registerPatchCommands(program: Command, io: Io) {
         const manifest = opts.manifest
           ? writeExportManifest(wavs[0], ok[0], role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true }, `${dest}.json`)
           : undefined;
-        io.emit({ ...summary(ok[0]), wavs, ...(manifest ? { manifest } : {}) });
+        io.emit({ ...summary(ok[0]), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}) });
         return;
       }
       const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
