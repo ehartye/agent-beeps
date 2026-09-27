@@ -12,6 +12,14 @@ export const PLAYER_VERSION = '1';
 const RAMP = 0.02; // seconds: no level change is instant, so nothing clicks
 /** @type {readonly ['music', 'ambience']} */
 const BEDS = ['music', 'ambience'];
+/** A usable fade length: a non-finite or non-positive one would schedule NaN times, which throw. @param {unknown} x */
+const fade = x => (typeof x === 'number' && Number.isFinite(x) && x > 0 ? x : RAMP);
+/** Stable FNV-1a hash, so each sound gets its own variant pattern from one player seed. @param {string} s */
+const hash = s => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+};
 
 /**
  * @typedef {{ file: string, weight?: number }} VariantFile
@@ -85,13 +93,21 @@ export function createPlayer(opts) {
     const k = `${code}:${id}`;
     if (!warned.has(k)) { warned.add(k); report(code, message, id); }
   };
+  /**
+   * Freeze `param` at whatever it is doing at `at`, even mid-ramp, so the next ramp starts there and
+   * nothing snaps. Browsers have cancelAndHoldAtTime; the fallback holds the current value.
+   * @param {AudioParam} param @param {number} at
+   */
+  const hold = (param, at) => {
+    if (typeof param.cancelAndHoldAtTime === 'function') param.cancelAndHoldAtTime(at);
+    else { param.cancelScheduledValues(at); param.setValueAtTime(param.value, at); }
+  };
   /** @param {unknown} e */
   const text = e => String((/** @type {any} */ (e))?.message ?? e);
   /** @param {AudioParam} param @param {number} to @param {number} [sec] @param {number} [at] */
   const ramp = (param, to, sec = RAMP, at = /** @type {AudioContext} */ (ctx).currentTime) => {
-    param.cancelScheduledValues(at);
-    param.setValueAtTime(param.value, at);
-    param.linearRampToValueAtTime(to, at + Math.max(RAMP, sec));
+    hold(param, at);
+    param.linearRampToValueAtTime(to, at + Math.max(RAMP, fade(sec)));
   };
   // Wanted (lifecycle) AND actually running: after setEnabled(true) without a gesture the context
   // is still suspended, and sounds started then would hold voices and all burst out on resume.
@@ -157,7 +173,7 @@ export function createPlayer(opts) {
   function stopNode(n, fadeSec = RAMP) {
     const t = /** @type {AudioContext} */ (ctx).currentTime;
     ramp(n.gain.gain, 0, fadeSec, t);
-    try { n.src.stop(t + Math.max(RAMP, fadeSec)); } catch { /* already stopped */ }
+    try { n.src.stop(t + Math.max(RAMP, fade(fadeSec))); } catch { /* already stopped */ }
   }
 
   /** Best-effort teardown of nodes from a start that failed partway: never throws. @param {Node[]} nodes */
@@ -172,7 +188,7 @@ export function createPlayer(opts) {
   function stopBed(bed, fadeSec = RAMP) {
     const t = /** @type {AudioContext} */ (ctx).currentTime;
     ramp(bed.group.gain, 0, fadeSec, t);
-    for (const n of bed.layers.values()) { try { n.src.stop(t + Math.max(RAMP, fadeSec)); } catch { /* already stopped */ } }
+    for (const n of bed.layers.values()) { try { n.src.stop(t + Math.max(RAMP, fade(fadeSec))); } catch { /* already stopped */ } }
   }
 
   /**
@@ -181,7 +197,8 @@ export function createPlayer(opts) {
    * @param {{ pan?: number, gainDb?: number, cooldownSec?: number, cap?: number }} [o]
    */
   function play(id, { pan = 0, gainDb = 0, cooldownSec, cap } = {}) {
-    if (!ctx || !running() || !assets || !buses) return null;
+    if (!ctx || !running() || !buses) return null;
+    if (!assets) { void loadCatalog(); return null; } // a failed catalog retries, as beds do
     const asset = assets[id];
     if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return null; }
     if (asset.loop) { warnOnce('E_NOT_SFX', `"${id}" loops: play it with music() or ambience()`, id); return null; }
@@ -195,7 +212,7 @@ export function createPlayer(opts) {
     const files = asset.variants?.length ? asset.variants : [{ file: asset.file }];
     let picker = pickers.get(id);
     if (!picker) {
-      picker = createPicker(/** @type {any} */ ({ variation: { variants: files.length, weights: files.map(f => f.weight ?? 1), noRepeat: asset.noRepeat ?? true } }), seed);
+      picker = createPicker(/** @type {any} */ ({ variation: { variants: files.length, weights: files.map(f => f.weight ?? 1), noRepeat: asset.noRepeat ?? true } }), (seed ^ hash(id)) >>> 0);
       pickers.set(id, picker);
     }
     const file = files[picker.next()].file;
@@ -210,7 +227,7 @@ export function createPlayer(opts) {
         const v = live.get(grant.key);
         live.delete(grant.key);
         vm.release(grant.key);
-        if (v) stopNode(v, fadeSec);
+        if (v) stopNode(v, fade(fadeSec));
       },
     };
     handle.ready = load(file).then(buffer => {
@@ -247,7 +264,8 @@ export function createPlayer(opts) {
    * @param {{ fadeSec?: number }} [o]
    * @returns {Promise<boolean>}
    */
-  function bed(bus, id, { fadeSec = 2 } = {}) {
+  function bed(bus, id, { fadeSec: requested = 2 } = {}) {
+    const fadeSec = fade(requested);
     const token = ++tokens[bus];
     if (!ctx || !running() || !buses) { pending[bus] = { id, fadeSec }; return Promise.resolve(false); }
     const cur = beds[bus];
@@ -295,7 +313,7 @@ export function createPlayer(opts) {
     group.gain.value = 0;
     group.connect(out);
     group.gain.setValueAtTime(0, t);
-    group.gain.linearRampToValueAtTime(1, t + Math.max(RAMP, fadeSec));
+    group.gain.linearRampToValueAtTime(1, t + Math.max(RAMP, fade(fadeSec)));
     const adaptive = !!asset.layers?.length;
     const wanted = pendingState && asset.states?.[pendingState] ? pendingState : null;
     const state = adaptive ? (bus === 'music' && wanted ? wanted : asset.initialState ?? null) : null;
@@ -307,6 +325,15 @@ export function createPlayer(opts) {
       layers.set(p.name, n); // before start(): a throwing start must still be torn down
       n.src.start(t);
     });
+    // Once every layer has ended (a crossfade or stop faded it out), free the whole bed's graph.
+    let ended = 0;
+    for (const n of layers.values()) {
+      n.src.onended = () => {
+        if (++ended < layers.size) return;
+        for (const m of layers.values()) { try { m.src.disconnect(); m.gain.disconnect(); } catch { /* already disconnected */ } }
+        try { group.disconnect(); } catch { /* already disconnected */ }
+      };
+    }
     const previous = beds[bus];
     beds[bus] = { id, asset, group, layers, startTime: t, state };
     if (bus === 'music') pendingState = null;
@@ -319,7 +346,8 @@ export function createPlayer(opts) {
    * @param {string} state
    * @param {{ fadeSec?: number, at?: 'now' | 'bar' }} [o]
    */
-  function setState(state, { fadeSec = 1.5, at = 'now' } = {}) {
+  function setState(state, { fadeSec: requested = 1.5, at = 'now' } = {}) {
+    const fadeSec = fade(requested);
     const cur = beds.music;
     if (!cur || !ctx) { pendingState = state; return false; }
     const { asset } = cur;
@@ -330,8 +358,7 @@ export function createPlayer(opts) {
     for (const [name, n] of cur.layers) {
       const target = on.includes(name) ? 1 : 0;
       const param = n.gain.gain;
-      param.cancelScheduledValues(when);
-      param.setValueAtTime(n.target, when);
+      hold(param, when); // the actual level at `when`, not the previous goal: a fade in progress never snaps
       param.linearRampToValueAtTime(target, when + Math.max(RAMP, fadeSec));
       n.target = target;
     }
@@ -349,6 +376,7 @@ export function createPlayer(opts) {
 
   /** @param {number} [fadeSec] */
   function stopAll(fadeSec = RAMP) {
+    fadeSec = fade(fadeSec);
     for (const b of BEDS) {
       tokens[b]++;
       pending[b] = undefined;
@@ -373,12 +401,17 @@ export function createPlayer(opts) {
     try { await life.reconcile(); } catch (e) { report('E_CONTEXT', text(e)); return false; }
     await loadCatalog();
     if (!running()) return false;
+    await drainPending();
+    return running();
+  }
+
+  /** Start the beds requested while the context could not run (before unlock, or while hidden). */
+  async function drainPending() {
     for (const b of BEDS) {
       const p = pending[b];
       pending[b] = undefined;
       if (p) await bed(b, p.id, { fadeSec: p.fadeSec });
     }
-    return running();
   }
 
   /** @param {boolean} value */
@@ -393,7 +426,10 @@ export function createPlayer(opts) {
   /** @param {boolean} value */
   function setHidden(value) {
     hidden = !!value;
-    if (lifecycle) void lifecycle.setHidden(hidden).catch(e => report('E_CONTEXT', text(e)));
+    if (!lifecycle) return;
+    void lifecycle.setHidden(hidden)
+      .then(() => (running() ? drainPending() : undefined))
+      .catch(e => report('E_CONTEXT', text(e)));
   }
 
   /** A snapshot for tests, debugging and game UI. */

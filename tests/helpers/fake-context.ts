@@ -28,7 +28,7 @@ export class FakeNode {
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
   start(t = 0) { this.startedAt = t; }
   stop(t = 0) { this.stoppedAt = t; }
-  disconnect() {}
+  disconnect() { this.disconnected = true; }
 }
 
 export class FakeContext {

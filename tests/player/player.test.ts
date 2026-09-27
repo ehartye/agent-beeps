@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { createPlayer } from '../../runtime/player/player.js';
 import { clipperCurve } from '../../runtime/engine/fx.js';
-import { asCtx, FakeContext, FakeParam } from '../helpers/fake-context.ts';
+import { asCtx, FakeContext, FakeNode, FakeParam } from '../helpers/fake-context.ts';
 
 const catalog = { assets: {
   coin: { file: 'coin.wav', loop: false, priority: 3 },
@@ -267,5 +267,110 @@ describe('promises never reject', () => {
     await expect(player.unlock()).resolves.toBe(true);
     expect(errors).toContainEqual(expect.objectContaining({ code: 'E_PLAYBACK', id: 'calm' }));
     expect(player.inspect().ambience).toBeNull();
+  });
+});
+
+describe('spec review fixes', () => {
+  const layerGain = (ctx: FakeContext, i: number) => (sources(ctx)[i].outputs[0] as FakeNode).gain as FakeParam;
+  const allTimesFinite = (ctx: FakeContext) => ctx.created.every(n =>
+    Object.values(n).every(v => !(v instanceof FakeParam) || v.events.every(e => Number.isFinite(e.time)))
+    && (n.stoppedAt === undefined || Number.isFinite(n.stoppedAt)));
+
+  it('a state change mid-fade starts from the current gain, not the previous goal (fallback path)', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    ctx.currentTime = 1;
+    player.setState('danger', { fadeSec: 2 });
+    const threat = layerGain(ctx, 2);
+    threat.value = 0.4; // halfway up the fade
+    ctx.currentTime = 2;
+    player.setState('explore', { fadeSec: 2 });
+    const sets = threat.events.filter(e => e.kind === 'set' && e.time === 2);
+    expect(sets.map(e => e.value)).toEqual([0.4]);
+    expect(threat.events.at(-1)).toMatchObject({ kind: 'linear', value: 0, time: 4 });
+  });
+
+  it('uses cancelAndHoldAtTime when the browser has it', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const threat = layerGain(ctx, 2) as FakeParam & { cancelAndHoldAtTime?: (t: number) => void };
+    const held: number[] = [];
+    threat.cancelAndHoldAtTime = (t: number) => { held.push(t); };
+    ctx.currentTime = 1;
+    player.setState('danger', { fadeSec: 1 });
+    expect(held).toEqual([1]);
+    expect(threat.events.filter(e => e.kind === 'set' || e.kind === 'cancel')).toHaveLength(0);
+    expect(threat.events.at(-1)).toMatchObject({ kind: 'linear', value: 1, time: 2 });
+  });
+
+  it('never schedules a non-finite time for a NaN fadeSec', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme', { fadeSec: NaN });
+    player.setState('danger', { fadeSec: NaN });
+    player.setState('calm', { fadeSec: NaN, at: 'bar' });
+    await player.music('storm', { fadeSec: NaN });
+    await player.ambience('calm', { fadeSec: NaN });
+    const h = player.play('coin')!;
+    await h.ready;
+    h.stop(NaN);
+    player.stopAll(NaN);
+    expect(allTimesFinite(ctx)).toBe(true);
+  });
+
+  it('starts a bed requested while hidden once the tab is shown again, without another unlock', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    player.setHidden(true);
+    await settle();
+    expect(await player.music('storm')).toBe(false);
+    expect(sources(ctx)).toHaveLength(0);
+    player.setHidden(false);
+    for (let i = 0; i < 5; i++) await settle();
+    expect(ctx.state).toBe('running');
+    expect(sources(ctx)).toHaveLength(1);
+    expect(player.inspect().music).toMatchObject({ id: 'storm' });
+  });
+
+  it('disconnects an old bed once its faded-out sources end', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('calm');
+    await player.music('storm');
+    const [old] = sources(ctx);
+    const gain = old.outputs[0] as FakeNode;
+    const group = gain.outputs[0] as FakeNode;
+    expect(group.disconnected).toBeUndefined();
+    old.onended?.();
+    expect(old.disconnected).toBe(true);
+    expect(gain.disconnected).toBe(true);
+    expect(group.disconnected).toBe(true);
+    expect((sources(ctx)[1].outputs[0] as FakeNode).outputs[0]).not.toBe(group);
+  });
+
+  it('gives each sound its own variant pattern', async () => {
+    const three = (p: string) => ({ file: `${p}.0.wav`, loop: false, variants: [0, 1, 2].map(i => ({ file: `${p}.${i}.wav` })) });
+    const { player } = setup({ catalog: { assets: { a: three('a'), b: three('b') } } });
+    await player.unlock();
+    const seq = (id: string) => Array.from({ length: 16 }, () => player.play(id)!.file.split('.')[1]).join('');
+    expect(seq('a')).not.toBe(seq('b'));
+  });
+
+  it('retries a failed catalog when a sound is played', async () => {
+    let catalogFetches = 0;
+    const { player, errors } = setup({
+      fetcher: async (url: string) => {
+        const ok = !url.endsWith('index.json') || catalogFetches++ > 0;
+        return { ok, json: async () => catalog, arrayBuffer: async () => new ArrayBuffer(8) };
+      },
+    });
+    await player.unlock();
+    expect(errors.map(e => e.code)).toContain('E_CATALOG');
+    expect(player.play('coin')).toBeNull();
+    await settle();
+    expect(player.play('coin')).not.toBeNull();
+    expect(catalogFetches).toBe(2);
   });
 });
