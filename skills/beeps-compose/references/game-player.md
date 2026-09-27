@@ -11,7 +11,7 @@ createPlayer({
   catalog: '/audio/index.json',        // a URL, or an in-memory { assets: {...} }
   baseUrl,                             // asset URLs resolve against this (default: catalog's own directory)
   voices: 8,                           // total concurrent SFX voices
-  defaults: { cooldownSec: 0.05, cap: 3 }, // per-sound floor when an asset sets neither
+  defaults: { cooldownSec: 0.05, cap: 3 }, // fallback: a per-call value wins, then the asset's, then this
   onError(e) {},                       // { code, message, id? } — see "Error codes" below
   context,                             // an existing AudioContext to reuse
   contextFactory: () => new AudioContext(), // or build one lazily instead
@@ -51,14 +51,15 @@ createPlayer({
   Never rejects.
 - **`setState(state, { fadeSec, at: 'now' | 'bar' })`** — fades the current music's adaptive layers to
   a named state (`asset.states[state]`). `at: 'bar'` waits for the asset's next bar line (needs
-  `bpm`); default is immediate. Returns `false` (via `onError`) if there is no current music, no
-  adaptive layers, or no such state.
+  `bpm`); default is immediate. With no music playing, or other music still loading, the state is
+  kept and applied when that music starts (returns `false`, no error). It returns `false` and
+  reports `E_NOT_ADAPTIVE` or `E_UNKNOWN_STATE` for music without layers or an undeclared state.
 - **`setLevel(bus, value)`** — `bus` is `'music' | 'ambience' | 'sfx' | 'master'`; `value` is clamped
   to 0..1 and ramped in.
 
 ## Priority and voice stealing
 
-An asset's `priority` (or a per-call override) follows the FMOD convention also used by
+An asset's `priority` follows the FMOD convention also used by
 `meta.priority` and the kit: **1 is most important, 5 is least**. When the voice budget is full, a
 new sound may steal only a voice whose priority number is *strictly larger* (less important); it
 never drops the new request outright unless there is nothing to steal. A repeated sound with its own
@@ -84,11 +85,11 @@ from the CLI's `ErrorCode`s (`E_SCHEMA`, `E_USAGE`, ...), which never reach a ga
 | `E_UNKNOWN_ASSET` | no asset with that id in the catalog |
 | `E_NOT_SFX` | `play()` was called on a looping asset |
 | `E_CATALOG` | the catalog could not be loaded (network, or not a valid `{ assets }` document) |
-| `E_LOAD` | one audio file failed to fetch or decode |
+| `E_LOAD` | one audio file failed to fetch or decode (`id` is the file path) |
 | `E_PLAYBACK` | a Web Audio call threw while starting or running a sound |
 | `E_CONTEXT` | the `AudioContext` could not be built, resumed or suspended |
 | `E_NOT_ADAPTIVE` | `setState()` was called on music with no `layers` |
-| `E_UNKNOWN_STATE` | `setState()` named a state the asset does not declare |
+| `E_UNKNOWN_STATE` | `setState()` named a state the asset does not declare (`id` is the state name) |
 
 None of the player's public promises ever reject; failures always resolve (usually `false`/`null`)
 and report through `onError` instead, so a game never needs a `.catch()` on player calls.
