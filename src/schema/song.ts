@@ -1,12 +1,22 @@
 import { z } from 'zod';
 import { parseChord } from '../../runtime/engine/chords.js';
+import { expandEuclid } from '../../runtime/engine/sequence.js';
 import { parsePatch, pointerOf, REVERB_PRESET_NAMES, type Issue, type Patch } from './patch.ts';
 
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
 const Name = z.string().regex(NAME, 'lowercase letters, digits and dashes');
 const Note = z.string().regex(/^[A-G](#|b)?-?\d$/, 'notes in songs are names like A4, F#3 or Bb2');
-/** Step strings: X accent, x hit, o ghost, . rest, _ hold the previous hit; spaces and | are ignored. */
-const Steps = z.string().regex(/^[Xxo?._|\s]+$/, 'steps use X (accent) x (hit) o (ghost) ? (hit half the time) . (rest) _ (hold); spaces and | are ignored').refine(s => /[Xxo?]/.test(s), 'a step string needs at least one hit');
+/**
+ * Step strings: X accent, x hit, o ghost, . rest, _ hold the previous hit; spaces and | are ignored.
+ * A euclidean token glyph(hits,steps[,rotation]) such as x(3,8) spells out an even spread of hits.
+ */
+const STEPS_HINT = 'steps use X (accent) x (hit) o (ghost) ? (hit half the time) . (rest) _ (hold), or euclidean x(3,8) / X(5,16,2) (hits, steps, rotation); spaces and | are ignored';
+const Steps = z.string().superRefine((s, ctx) => {
+  let flat: string;
+  try { flat = expandEuclid(s); } catch (e) { ctx.addIssue({ code: 'custom', message: (e as Error).message }); return; }
+  if (!/^[Xxo?._|\s]+$/.test(flat)) ctx.addIssue({ code: 'custom', message: STEPS_HINT });
+  else if (!/[Xxo?]/.test(flat)) ctx.addIssue({ code: 'custom', message: 'a step string needs at least one hit' });
+});
 const Octave = z.number().int().min(0).max(8).describe('octave the chord/bass root lands in (C4 = middle C; bass usually 2). spread voicing puts the root one octave lower');
 const Gate = z.union([z.number().min(0.05).max(4), z.literal('patch')]);
 
