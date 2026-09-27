@@ -446,7 +446,6 @@ export function createPlayer(opts) {
    */
   function retry() {
     loader.reset();
-    for (const k of warned) if (k.startsWith('E_LOAD:') || k.startsWith('E_CATALOG:')) warned.delete(k);
   }
 
   /** A snapshot for tests, debugging and game UI. */
