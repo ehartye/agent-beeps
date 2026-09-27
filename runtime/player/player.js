@@ -10,7 +10,7 @@ import { createLifecycle } from './lifecycle.js';
 import { createLoader, text } from './loader.js';
 import { RAMP, fade, hold, ramp, span } from './params.js';
 
-export const PLAYER_VERSION = '1';
+export { PLAYER_VERSION } from './version.js';
 /** @type {readonly ['music', 'ambience']} */
 const BEDS = ['music', 'ambience'];
 /** Stable FNV-1a hash, so each sound gets its own variant pattern from one player seed. @param {string} s */

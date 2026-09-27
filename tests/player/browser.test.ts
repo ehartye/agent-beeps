@@ -1,7 +1,7 @@
 // tests/player/browser.test.ts
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,7 +10,7 @@ import { exportPlayer } from '../../src/commands/player.ts';
 import { writeWav } from '../../src/audio/wav.ts';
 
 const hasChromium = await chromiumAvailable();
-let browser: Browser | undefined, site: { server: Server; url: string } | undefined;
+let browser: Browser | undefined, site: { server: Server; url: string } | undefined, siteDir: string | undefined;
 const tone = (sec: number, hz: number) => {
   const n = Math.round(48000 * sec), c = new Float32Array(n);
   for (let i = 0; i < n; i++) c[i] = 0.25 * Math.sin((2 * Math.PI * hz * i) / 48000);
@@ -20,9 +20,11 @@ const tone = (sec: number, hz: number) => {
 beforeAll(async () => {
   if (!hasChromium) return;
   const dir = mkdtempSync(join(tmpdir(), 'beeps-player-site-'));
+  siteDir = dir;
   exportPlayer(dir);
   mkdirSync(join(dir, 'audio'));
-  for (const [f, sec, hz] of [['coin.wav', 0.3, 880], ['theme.wav', 4, 110], ['theme.bed.wav', 4, 110], ['theme.pulse.wav', 4, 220], ['theme.threat.wav', 4, 330]] as const) {
+  // coin is a full second so it is still sounding (voices: 1) when inspect() is read right after play().
+  for (const [f, sec, hz] of [['coin.wav', 1, 880], ['theme.wav', 4, 110], ['theme.bed.wav', 4, 110], ['theme.pulse.wav', 4, 220], ['theme.threat.wav', 4, 330]] as const) {
     writeFileSync(join(dir, 'audio', f), tone(sec, hz));
   }
   writeFileSync(join(dir, 'audio', 'index.json'), JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: {
@@ -35,10 +37,16 @@ beforeAll(async () => {
   site = await serveStatic(dir);
   browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 });
-afterAll(async () => { await browser?.close(); site?.server.close(); });
+afterAll(async () => {
+  await browser?.close();
+  if (site) await new Promise<void>(r => site!.server.close(() => r()));
+  if (siteDir) rmSync(siteDir, { recursive: true, force: true });
+});
 
 it.skipIf(!hasChromium)('plays a bundle through the vendored player in Chromium', async () => {
   const page = await browser!.newPage();
+  const pageErrors: string[] = [];
+  page.on('pageerror', e => pageErrors.push(e.message));
   await page.goto(`${site!.url}/index.html`);
   const result = await page.evaluate(async () => {
     // Indirect: a literal `import(...)` here would be rewritten by vitest's Vite SSR transform to
@@ -56,6 +64,7 @@ it.skipIf(!hasChromium)('plays a bundle through the vendored player in Chromium'
     player.setState('danger', { fadeSec: 0.1 });
     return { started, played, before, after: player.inspect(), errors };
   });
+  expect(pageErrors).toEqual([]);
   expect(result.errors).toEqual([]);
   expect(result).toMatchObject({
     started: true, played: true,
@@ -66,6 +75,8 @@ it.skipIf(!hasChromium)('plays a bundle through the vendored player in Chromium'
 
 it.skipIf(!hasChromium)('the master clipper passes signals below its knee through unchanged', async () => {
   const page = await browser!.newPage();
+  const pageErrors: string[] = [];
+  page.on('pageerror', e => pageErrors.push(e.message));
   await page.goto(`${site!.url}/index.html`);
   const maxDiff = await page.evaluate(async () => {
     // See the note in the previous test: indirect import avoids the Vite SSR dynamic-import rewrite.
@@ -87,5 +98,6 @@ it.skipIf(!hasChromium)('the master clipper passes signals below its knee throug
     for (let i = 0; i < d.length; i++) m = Math.max(m, Math.abs(out[i] - d[i]));
     return m;
   });
+  expect(pageErrors).toEqual([]);
   expect(maxDiff).toBeLessThan(1e-6);
 });
