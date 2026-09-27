@@ -19,7 +19,7 @@ import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readRev
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 3;
+export const SERVER_API = 4;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -168,7 +168,7 @@ export class AuditionServer {
       return existsSync(file) ? [{ name: s.name, family: s.family, trimDb: s.trimDb ?? 0, seed: s.seed ?? 1, patch: JSON.parse(readFileSync(file, 'utf8')) }] : [];
     }) : [];
     return {
-      session: { id: session.id, prompt: session.prompt, family: session.family, archetype: session.archetype, mode: session.mode, context: session.context, createdAt: session.createdAt },
+      session: { id: session.id, prompt: session.prompt, family: session.family, archetype: session.archetype, mode: session.mode, flow: session.flow, context: session.context, createdAt: session.createdAt },
       state: { ...state, candidates: undefined },
       candidates: state.candidates.map(c => ({
         index: c.index, name: c.name, seed: c.seed, trimDb: c.trimDb, round: c.round,
@@ -209,7 +209,7 @@ export class AuditionServer {
           try {
             const s = readSession(p, id);
             const st = foldSession(s, readEvents(p, id));
-            out.push({ id, project: basename(root), prompt: s.prompt, family: s.family, stage: st.stage, round: st.round, createdAt: s.createdAt });
+            out.push({ id, project: basename(root), prompt: s.prompt, family: s.family, stage: s.flow === 'explore' && st.stage !== 'abandoned' ? 'explore' : st.stage, round: st.round, createdAt: s.createdAt });
           } catch { /* skip unreadable sessions */ }
         }
       }

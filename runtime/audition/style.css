@@ -25,6 +25,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background:
@@ -67,6 +68,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pad.dud { opacity: .45; filter: grayscale(1); }
 .pad.love { box-shadow: 0 0 0 3px var(--love), var(--pad-shadow); }
 .pad.playing { transform: translateY(2px); box-shadow: 0 1px 0 #9ea39a, 0 0 0 3px var(--signal); }
+.sound-name { margin: 0; font: 600 18px/1.2 var(--text); overflow-wrap: anywhere; }
+.sound-purpose { margin: 0; color: var(--ink-soft); font: 400 14px/1.4 var(--text); overflow-wrap: anywhere; }
 .face { position: relative; border: 0; padding: 0; border-radius: 9px; overflow: hidden; aspect-ratio: 900 / 240; background: #101014; display: block; width: 100%; }
 /* The look image is 900x300: waveform + spectrogram on top, a text strip below. Crop the strip. */
 .face img { width: 100%; height: 125%; object-fit: cover; object-position: top; display: block; image-rendering: auto; opacity: .95; }

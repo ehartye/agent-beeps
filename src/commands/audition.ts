@@ -52,7 +52,7 @@ const brief = (p: OpenProject, id: string) => {
   const session = readSession(p, id);
   const state = foldSession(session, readEvents(p, id));
   return {
-    id, stage: state.stage, round: state.round, prompt: session.prompt, mode: session.mode,
+    id, stage: session.flow === 'explore' && state.stage !== 'abandoned' ? 'explore' : state.stage, flow: session.flow, round: state.round, prompt: session.prompt, mode: session.mode,
     champion: state.champion, shortlist: state.shortlist, loved: state.loved, duds: state.duds,
     duels: state.duels.length, pendingRefine: state.pendingRefine, shipped: state.shipped,
     candidates: state.candidates.map(c => ({ index: c.index, name: c.name, round: c.round, setId: c.setId, look: c.look })),
@@ -106,22 +106,23 @@ export function registerAuditionCommands(program: Command, io: Io) {
   const audition = program.command('audition').description('owner auditions: open, wait, round, status, list, close, stats');
 
   audition.command('open')
-    .description('open an audition of a candidate set on the LAN page (requires a sealed prediction)')
+    .description('open a comparison or exploration of a candidate set on the LAN page')
     .requiredOption('--set <id>', 'candidate set id')
     .option('--prompt <text>', 'what the sound is for, shown to the owner')
+    .option('--flow <flow>', 'compare: choose between alternatives; explore: listen to different sound roles without duels or predictions', 'compare')
     .option('--mode <mode>', 'live: you answer each refine request with beeps audition wait / mutate / round. handoff: the server breeds refine rounds itself (use when you will not be waiting)', 'live')
     .option('--context <list>', 'kit,bed', 'kit')
     .option('--no-predict', 'open without a prediction (recorded)')
-    .action(async (opts: { set: string; prompt?: string; mode: 'live' | 'handoff'; context: string; predict: boolean }) => {
+    .action(async (opts: { set: string; prompt?: string; mode: 'live' | 'handoff'; flow: 'compare' | 'explore'; context: string; predict: boolean }) => {
       const p = openProject(io.projectDir());
       const ctx = opts.context.split(',');
-      const session = openSession(p, opts.set, { prompt: opts.prompt, mode: opts.mode, context: { kit: ctx.includes('kit'), bed: ctx.includes('bed') }, requirePrediction: opts.predict });
+      const session = openSession(p, opts.set, { prompt: opts.prompt, mode: opts.mode, flow: opts.flow, context: { kit: ctx.includes('kit'), bed: ctx.includes('bed') }, requirePrediction: opts.predict });
       const info = await ensureServer();
       registerProject(p.paths.root);
       const notes: string[] = [];
       if (ctx.includes('kit') && readKit(p.paths.root).sounds.length === 0) notes.push('the kit is empty, so "play with kit" is unavailable until a sound ships');
-      io.emit({ url: sessionUrl(info, session.id), ipUrl: sessionIpUrl(info, session.id), session: session.id, mode: session.mode, candidates: session.candidates.length, notes,
-        next: session.mode === 'live'
+      io.emit({ url: sessionUrl(info, session.id), ipUrl: sessionIpUrl(info, session.id), session: session.id, mode: session.mode, flow: session.flow, candidates: session.candidates.length, notes,
+        next: session.flow === 'explore' ? 'give the owner the url to explore the labeled sounds; no winner or comparative feedback is requested' : session.mode === 'live'
           ? `give the owner the url, then run beeps audition wait --id ${session.id} (in the background) and answer each event`
           : `give the owner the url and end your turn. Later: beeps audition status --id ${session.id}; once shipped, the patch is in .agent-beeps/patches/ and the kit - export it (beeps export <name> --wav <path>) or play it with the engine` });
     });

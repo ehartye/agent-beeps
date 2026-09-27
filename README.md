@@ -31,6 +31,11 @@ holds a 13-track example library; `library/instruments/` holds 25 instrument pat
    - **Refine**: brighter, darker, punchier, softer, shorter, longer, less harsh, more character,
      more like #k, surprise.
    - **Ship**.
+
+   For a sampler of different sound roles, use `beeps audition open --set <id> --flow explore`.
+   It offers labeled playback without duels, voting, or predictions. Pads show the patch name
+   and `meta.description` (intended use), in exploration and comparison views alike.
+
 4. **Refine rounds**: `beeps audition wait` hands the agent each refine request; `beeps mutate
    <champion> --toward darker` breeds variations that measurably move that way; `beeps audition
    round` adds them. In hand-off mode the server breeds rounds itself.

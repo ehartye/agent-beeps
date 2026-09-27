@@ -33,10 +33,21 @@ beforeEach(() => {
 });
 
 describe('audition sessions', () => {
+  it('opens exploration without a prediction and never turns unrelated sounds into comparative verdicts', () => {
+    const s = openSession(p, set.id, { flow: 'explore' });
+    expect(readSession(p, s.id).flow).toBe('explore');
+    expect(existsSync(join(p.paths.sessions, s.id, 'prediction.json'))).toBe(false);
+    expect(appendEvent(p, s.id, { type: 'play', index: 1, mode: 'single' }).verdicts).toBe(0);
+    expect(() => appendEvent(p, s.id, { type: 'lineup', loved: [1], duds: [2] })).toThrow(/explor/);
+    expect(readEvents(p, s.id)).toHaveLength(1);
+    expect(readVerdicts(join(p.paths.taste, 'verdicts.jsonl')).rows).toHaveLength(0);
+  });
+
   it('refuses to open without a sealed agent prediction unless told not to', () => {
     expect(() => openSession(p, set.id, {})).toThrow(/prediction/);
     const s = openSession(p, set.id, { requirePrediction: false });
     expect(s.candidates).toHaveLength(4);
+    expect(s.flow).toBe('compare');
   });
 
   it('validates prediction indexes against the set', () => {

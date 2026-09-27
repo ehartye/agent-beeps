@@ -41,6 +41,7 @@ export const SessionSchema = z.object({
   archetype: z.string().nullable(),
   prompt: z.string(),
   mode: z.enum(['live', 'handoff']),
+  flow: z.enum(['compare', 'explore']).default('compare'),
   context: z.object({ kit: z.boolean(), bed: z.boolean() }),
   createdAt: z.string(),
   candidates: z.array(SessionCandidate),
@@ -104,23 +105,25 @@ export function writePrediction(p: OpenProject, setId: string, pred: Omit<Predic
   return full;
 }
 
-export function openSession(p: OpenProject, setId: string, opts: { prompt?: string; mode?: 'live' | 'handoff'; context?: { kit: boolean; bed: boolean }; requirePrediction?: boolean }): Session {
+export function openSession(p: OpenProject, setId: string, opts: { prompt?: string; mode?: 'live' | 'handoff'; flow?: 'compare' | 'explore'; context?: { kit: boolean; bed: boolean }; requirePrediction?: boolean }): Session {
   const set = readSet(p, setId);
   const predFile = join(p.paths.sets, setId, 'prediction.json');
-  const agent = existsSync(predFile) ? PredictionSchema.parse(JSON.parse(readFileSync(predFile, 'utf8'))) : null;
-  if (!agent && opts.requirePrediction !== false) {
+  const agent = opts.flow !== 'explore' && existsSync(predFile) ? PredictionSchema.parse(JSON.parse(readFileSync(predFile, 'utf8'))) : null;
+  if (opts.flow !== 'explore' && !agent && opts.requirePrediction !== false) {
     throw new BeepsError('E_PREDICTION_REQUIRED', `record your prediction for set ${setId} before opening the audition`, { hint: `beeps predict --set ${setId} --pick <n> --shortlist <a,b> --why "..."  (or pass --no-predict, which is recorded)` });
   }
   const candidates = candidatesFromSet(set, 0, 1);
   const session = SessionSchema.parse({
     schema: 'beeps/session@1', id: newId(set.archetype ?? set.family), setId, project: p.paths.root,
     family: set.family, archetype: set.archetype, prompt: opts.prompt ?? set.prompt ?? '',
-    mode: opts.mode ?? 'live', context: opts.context ?? { kit: true, bed: false },
+    mode: opts.mode ?? 'live', flow: opts.flow, context: opts.context ?? { kit: true, bed: false },
     createdAt: new Date().toISOString(), candidates,
   });
   const dir = sessionDir(p, session.id);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'session.json'), JSON.stringify(session, null, 2) + '\n');
+  writeFileSync(join(dir, 'events.jsonl'), '');
+  if (session.flow === 'explore') return session;
   // Sealed until ship: the server never serves prediction.json before the owner commits.
   const model = loadModel(p);
   const ranked = rank(tasteVectors(candidates.map(c => c.raw)).x.map((x, i) => ({ index: candidates[i].index, x })), model);
@@ -128,7 +131,6 @@ export function openSession(p: OpenProject, setId: string, opts: { prompt?: stri
     // With no judgements yet every utility is zero: record no pick rather than an arbitrary one.
     agent, model: { pick: model.n ? ranked[0].index : null, shortlist: model.n ? ranked.slice(0, 3).map(r => r.index) : [], verdicts: model.n, ranking: ranked },
   }, null, 2) + '\n');
-  writeFileSync(join(dir, 'events.jsonl'), '');
   return session;
 }
 
@@ -339,6 +341,7 @@ export function appendEvent(p: OpenProject, id: string, raw: unknown): { event: 
   const dir = sessionDir(p, id);
   return withLock(dir, () => {
     const session = readSession(p, id);
+    if (session.flow === 'explore' && !['play', 'abandon'].includes(parsed.data.type)) throw conflict('exploration sessions accept playback only; compare alternatives in a comparison session');
     const events = readEvents(p, id);
     const before = foldSession(session, events);
     if (before.stage === 'shipped' || before.stage === 'abandoned') throw conflict(`session ${id} is ${before.stage}`);
