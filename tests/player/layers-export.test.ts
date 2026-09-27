@@ -43,15 +43,29 @@ it.skipIf(!hasChromium)('layers of a song with chance hits, a random arp and noi
   const base = songInput();
   writeFileSync(join(p.paths.root, 'rand.json'), JSON.stringify(songInput({
     name: 'random-demo', loop: true,
-    tracks: { ...base.tracks, arp: { instrument: { ...base.tracks.pad.instrument, name: 'arp' }, gainDb: -6 } },
+    tracks: { ...base.tracks, arp: { instrument: { ...base.tracks.pad.instrument, name: 'arp' }, gainDb: -6 }, ghost: { instrument: { ...base.tracks.pad.instrument, name: 'ghost' } } },
     patterns: { ...base.patterns,
       'arp-a': { bars: 2, arp: { progression: 'a', octave: 5, shape: 'random', rate: 4, rhythm: 'x??x' } },
       'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' } },
     sections: { a: { bars: 2, play: { pad: 'pad-a', arp: 'arp-a', hat: 'hat-a' } } },
-    adaptive: { layers: { bed: ['pad'], lead: ['arp'], pulse: ['hat'] }, states: { calm: ['bed'], full: ['bed', 'lead', 'pulse'] }, initial: 'calm' },
+    adaptive: { layers: { bed: ['pad'], lead: ['arp'], pulse: ['hat'], ghost: ['ghost'] }, states: { calm: ['bed'], full: ['bed', 'lead', 'pulse', 'ghost'] }, initial: 'calm' },
   })));
   const s = run(p.paths.root, 'song', 'new', 'rand.json'); expect(s.status, s.stderr).toBe(0);
   const r = run(p.paths.root, 'song', 'export', 'random-demo', '--wav', 'audio/rand.wav', '--layers');
   expect(r.status, r.stderr).toBe(0);
   expect(r.data.nullResidualDb).toBeLessThan(-60);
+  // A layer whose tracks never play in any section is almost certainly a mistake.
+  expect(r.data.warnings).toContain('layer "ghost" is silent in every section');
+});
+
+// One layer holding every track renders the very notes of the mix: a perfect null must still be a number.
+it.skipIf(!hasChromium)('reports a perfect null as a finite number', () => {
+  const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-layers-one-')));
+  writeFileSync(join(p.paths.root, 'one.json'), JSON.stringify(songInput({ name: 'one-layer', loop: true,
+    adaptive: { layers: { all: ['pad', 'hat'] }, states: { on: ['all'] }, initial: 'on' } })));
+  const s = run(p.paths.root, 'song', 'new', 'one.json'); expect(s.status, s.stderr).toBe(0);
+  const r = run(p.paths.root, 'song', 'export', 'one-layer', '--wav', 'audio/one.wav', '--layers');
+  expect(r.status, r.stderr).toBe(0);
+  expect(typeof r.data.nullResidualDb).toBe('number');
+  expect(r.data.nullResidualDb).toBeLessThanOrEqual(-60);
 });

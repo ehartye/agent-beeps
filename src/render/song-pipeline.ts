@@ -23,9 +23,9 @@ export interface RenderedSong {
   excerpt?: { sourceKey: string; sourceRanges: { name: string; start: number; end: number }[] };
 }
 
-/** The cache key of a song render. A full render (no `only`) keeps the key it had before solos existed. */
+/** The cache key of a song render. A full render (no or empty `only`) keeps the key it had before solos existed. */
 export function songRenderKey(song: Song, instruments: Record<string, Patch>, { target, fixedTrim, only }: { target: number; fixedTrim?: number; only?: string[] }): string {
-  return renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, ...(fixedTrim !== undefined ? { fixedTrim } : {}), ...(only ? { only: [...new Set(only)].sort() } : {}) });
+  return renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, ...(fixedTrim !== undefined ? { fixedTrim } : {}), ...(only?.length ? { only: [...new Set(only)].sort() } : {}) });
 }
 
 /**
@@ -33,8 +33,10 @@ export function songRenderKey(song: Song, instruments: Record<string, Patch>, { 
  * `only` renders the full song but plays just those tracks' notes: stems and adaptive layers, which
  * must line up with and sum back to the mix (same form, loop folding, chance rolls and noise seeds).
  */
-export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim, only }: { project: Project; rendersDir: string; trimDb?: number; only?: string[] }): Promise<RenderedSong> {
-  for (const t of only ?? []) if (!(t in song.tracks)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
+export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim, only: onlyTracks }: { project: Project; rendersDir: string; trimDb?: number; only?: string[] }): Promise<RenderedSong> {
+  // An empty list filters nothing: it is a full render, with the full render's key.
+  const only = onlyTracks?.length ? onlyTracks : undefined;
+  for (const t of only ?? []) if (!Object.hasOwn(song.tracks, t)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
   const target = project.musicLoudness;
   const key = songRenderKey(song, instruments, { target, fixedTrim, only });
   const dir = join(rendersDir, `song-${key.slice(0, 40)}`);

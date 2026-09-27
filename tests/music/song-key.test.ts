@@ -1,17 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { songRenderKey } from '../../src/render/song-pipeline.ts';
-import { defaultProject } from '../../src/schema/project.ts';
-import { patch } from '../helpers/patches.ts';
-import { HAT, PAD, song } from '../helpers/songs.ts';
+import { renderKey } from '../../src/hash.ts';
+import { SONG_PIPELINE_VERSION, songRenderKey } from '../../src/render/song-pipeline.ts';
+import { parseSong } from '../../src/schema/song.ts';
+import { parsePatch } from '../../src/schema/patch.ts';
 
-const s = song({ loop: true, patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4 } }, 'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' } } });
-const instruments = { pad: patch(PAD), hat: patch(HAT) };
-const target = defaultProject().musicLoudness;
+// Fixtures inlined, so edits to the shared test helpers never move the pinned key.
+const PAD = {
+  schema: 'beeps/patch@1', name: 'pad', family: 'music', duration: 1,
+  layers: [{ source: { type: 'osc', wave: 'sawtooth', pitch: 'C4' }, amp: { attack: 0.2, decay: 0.5, sustain: 0.7, release: 0.5 }, filter: { type: 'lowpass', cutoff: 2000, resonanceDb: 0 } }],
+};
+const HAT = {
+  schema: 'beeps/patch@1', name: 'hat', family: 'music', duration: 0.05,
+  layers: [{ source: { type: 'noise', color: 'white' }, amp: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 }, filter: { type: 'highpass', cutoff: 7000, resonanceDb: 0 } }],
+};
+const parsedSong = parseSong({
+  schema: 'beeps/song@1', name: 'test-song', bpm: 120, loop: true,
+  progressions: { a: [['C', 4], ['F', 4]] },
+  tracks: { pad: { instrument: PAD }, hat: { instrument: HAT, gainDb: -6 } },
+  patterns: {
+    'pad-a': { bars: 2, chords: { progression: 'a', octave: 4 } },
+    'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' },
+  },
+  sections: { a: { bars: 2, play: { pad: 'pad-a', hat: 'hat-a' } } },
+  form: ['a'],
+});
+if (!parsedSong.ok) throw new Error(JSON.stringify(parsedSong.issues));
+const s = parsedSong.song;
+const patchOf = (x: unknown) => { const r = parsePatch(x); if (!r.ok) throw new Error(JSON.stringify(r.issues)); return r.patch; };
+const instruments = { pad: patchOf(PAD), hat: patchOf(HAT) };
+const target = -20;
 
 describe('song render key', () => {
   it('is unchanged for a full render, so approved mixes keep their cached audio', () => {
+    // The formula full renders used before solo-by-filter existed.
+    expect(songRenderKey(s, instruments, { target })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION }));
+    expect(songRenderKey(s, instruments, { target, fixedTrim: -3 })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, fixedTrim: -3 }));
     // Recorded before solo-by-filter existed; a change here re-renders every approved song.
     expect(songRenderKey(s, instruments, { target })).toBe('e8159013aad6f83fc8f318f7f965ea57c8bb8109f83822713ba47b15b6fa357e');
+  });
+
+  it('treats an empty track list as no filter', () => {
+    expect(songRenderKey(s, instruments, { target, only: [] })).toBe(songRenderKey(s, instruments, { target }));
   });
 
   it('gives solos their own key, whatever the order of the tracks', () => {

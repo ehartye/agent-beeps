@@ -7,7 +7,7 @@ import { openProject, readJsonFile, type OpenProject } from '../project.ts';
 import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { renderSongExcerpt } from '../render/song-excerpt.ts';
-import { nullResidualDb, readChannels, renderLayers } from '../render/layers.ts';
+import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, reportedResidualDb } from '../render/layers.ts';
 import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
@@ -71,15 +71,18 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
   };
 }
 
-/** Render songs across up to `jobs` headless browsers (each OfflineAudioContext runs on its own thread). */
-export async function renderMany(p: OpenProject, songs: Song[], jobs = 3): Promise<RenderedSong[]> {
+/**
+ * Render songs across up to `jobs` headless browsers (each OfflineAudioContext runs on its own thread).
+ * `only`: play just these tracks' notes out of each full song (see renderSong).
+ */
+export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?: string[]): Promise<RenderedSong[]> {
   const instruments = songs.map(s => resolveInstruments(p, s));
   const out: RenderedSong[] = new Array(songs.length);
   let next = 0;
   const worker = () => withHost(async host => {
     while (next < songs.length) {
       const i = next++;
-      out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders });
+      out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders, ...(only?.length ? { only } : {}) });
     }
   });
   await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, songs.length)) }, worker));
@@ -126,7 +129,9 @@ export function registerSongCommands(program: Command, io: Io) {
       const list = (x?: string) => x?.split(',').map(v => v.trim()).filter(Boolean);
       const selected = list(opts.sections);
       const only = list(opts.only);
-      const songs = refs.map(r => loadSong(p, r)).map(s => {
+      const loaded = refs.map(r => loadSong(p, r));
+      // What a solo reports as: the song with only these tracks playing, not looping, so its tail shows.
+      const songs = loaded.map(s => {
         if (!only?.length) return s;
         const solo = soloSong(s, { only });
         solo.title = `${s.title ?? s.name} — ${only.join(', ')} solo`;
@@ -135,7 +140,10 @@ export function registerSongCommands(program: Command, io: Io) {
       if (selected) for (const s of songs) for (const name of selected) {
         if (!s.form.includes(name)) throw new BeepsError('E_USAGE', `no played section "${name}"`);
       }
-      const out = await renderMany(p, songs, opts.jobs);
+      // A solo renders the full song with only these tracks' notes, so it plays the mix's chance
+      // hits, arp orders and noise; it keeps its own (solo-normalized) level. Sections excerpt it as before.
+      const renders = only?.length ? loaded.map((s, i) => ({ ...s, loop: false, title: songs[i].title })) : loaded;
+      const out = (await renderMany(p, renders, opts.jobs, only)).map((r, i) => (only?.length ? { ...r, song: songs[i] } : r));
       const previews = selected ? await withHost(async host => {
         const results: RenderedSong[] = [];
         for (const r of out) results.push(await renderSongExcerpt(host, r, selected));
@@ -220,19 +228,26 @@ export function registerSongCommands(program: Command, io: Io) {
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(r.wavPath, dest);
       let layerFiles: Record<string, string> | undefined, residual: number | undefined;
+      const warnings: string[] = [];
       if (rendered.layers) {
-        const stem = dest.replace(/.wav$/i, '');
-        layerFiles = Object.fromEntries(Object.entries(rendered.layers).map(([name, lr]) => { const f = `${stem}.${name}.wav`; copyFileSync(lr.wavPath, f); return [name, f]; }));
-        residual = nullResidualDb(readChannels(r.wavPath), Object.values(rendered.layers).map(lr => readChannels(lr.wavPath)));
+        layerFiles = Object.fromEntries(Object.entries(rendered.layers).map(([name, lr]) => { const f = layerWavPath(dest, name); copyFileSync(lr.wavPath, f); return [name, f]; }));
+        // Sum one layer at a time, so only the running sum and one layer are ever in memory.
+        let sum: Float32Array[] | undefined;
+        for (const lr of Object.values(rendered.layers)) sum = addChannels(sum, readChannels(lr.wavPath));
+        residual = nullResidualDb(readChannels(r.wavPath), sum ?? []);
+        // The layers must sum to the approved mix; far above the 16-bit floor means a layer diverged.
+        if (residual > -60) warnings.push(`layers differ from the mix by ${Math.round(residual)} dB: a layer does not sum back to the approved mix`);
+        const sounding = new Set(compileSong(s).events.map(e => e.track));
+        for (const [name, tracks] of Object.entries(s.adaptive?.layers ?? {})) {
+          if (!tracks.some(t => sounding.has(t))) warnings.push(`layer "${name}" is silent in every section`);
+        }
       }
       const extra = layerFiles && s.adaptive
         ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial }
         : {};
       const manifest = opts.manifest ? writeExportManifest(dest, r, role, extra) : undefined;
-      // The layers must sum to the approved mix; far above the 16-bit floor means a layer diverged.
-      const warnings = residual !== undefined && residual > -60 ? [`layers differ from the mix by ${Math.round(residual)} dB: a layer does not sum back to the approved mix`] : [];
       io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec,
-        ...(layerFiles ? { layers: layerFiles, nullResidualDb: Math.round((residual ?? 0) * 10) / 10 } : {}),
+        ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity) } : {}),
         ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 
