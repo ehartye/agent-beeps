@@ -26,6 +26,35 @@ export const GATE_DEFAULTS = { notes: 1, chords: 1, arp: 0.9, bass: 0.95, steps:
 /** @param {string} note */
 export const noteToMidi = note => Math.round(hzToMidi(noteToHz(note)));
 
+/** A euclidean token in a step string: glyph(hits,steps[,rotation]), e.g. x(3,8) or X(5,16,2). */
+const EUCLID = /([Xxo?])\((\d{1,3}),(\d{1,3})(?:,(\d{1,3}))?\)/g;
+
+/**
+ * Step strings with each euclidean token spelled out: `hits` spread as evenly as possible over
+ * `steps` (Bjorklund's algorithm, the forms Toussaint lists), every hit written as the token's
+ * glyph, rotated left by `rotation`. x(3,8) is x..x..x. and x(3,8,1) is ..x..x.x.
+ * @param {string} steps
+ */
+export function expandEuclid(steps) {
+  return steps.replace(EUCLID, (_, glyph, k, n, r) => {
+    const hits = Number(k), count = Number(n);
+    if (count < 1 || count > 64) throw new Error(`${glyph}(${k},${n}): steps must be 1-64`);
+    if (hits < 1 || hits > count) throw new Error(`${glyph}(${k},${n}): hits must be 1-${count}`);
+    /** @type {number[][]} */
+    let a = Array.from({ length: hits }, () => [1]), b = Array.from({ length: count - hits }, () => [0]);
+    // Pair at least once: x(3,4) is x.xx, not xxx.
+    if (b.length) do {
+      const m = Math.min(a.length, b.length);
+      const rest = a.length > m ? a.slice(m) : b.slice(m);
+      a = a.slice(0, m).map((g, i) => [...g, ...b[i]]);
+      b = rest;
+    } while (b.length > 1);
+    const cells = [...a, ...b].flat();
+    const rot = Number(r ?? 0) % count;
+    return [...cells.slice(rot), ...cells.slice(0, rot)].map(c => (c ? glyph : '.')).join('');
+  });
+}
+
 /**
  * Hits of a step string: start step, length in steps (with _ holds), velocity.
  * @param {string} steps
@@ -33,7 +62,7 @@ export const noteToMidi = note => Math.round(hzToMidi(noteToHz(note)));
  * @returns {{ steps: number, hits: { at: number, len: number, vel: number, chance?: number }[] }}
  */
 export function parseSteps(steps) {
-  const s = steps.replace(/[\s|]/g, '');
+  const s = expandEuclid(steps).replace(/[\s|]/g, '');
   /** @type {{ at: number, len: number, vel: number, chance?: number }[]} */
   const hits = [];
   for (let i = 0; i < s.length; i++) {
