@@ -7,8 +7,8 @@ export const CATALOG_RETRY_SEC = 5;
 
 /** @typedef {{ ok: boolean, json(): Promise<any>, arrayBuffer(): Promise<ArrayBuffer> }} FetchResponse */
 
-/** @param {unknown} e */
-const text = e => String((/** @type {any} */ (e))?.message ?? e);
+/** A thrown value's message, for onError. @param {unknown} e */
+export const text = e => String((/** @type {any} */ (e))?.message ?? e);
 
 /**
  * @template A

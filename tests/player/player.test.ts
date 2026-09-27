@@ -597,3 +597,57 @@ describe('voice bookkeeping and API contracts', () => {
     expect((music.gain as FakeParam).events).toHaveLength(0);
   });
 });
+
+describe('context ownership and stale pending state', () => {
+  it('re-enabling inside the suspend delay keeps the context running, with no unlock needed', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    player.setEnabled(false);
+    player.setEnabled(true);
+    await afterSuspendDelay();
+    expect(ctx.state).toBe('running');
+    expect(await player.play('coin')!.ready).toBe(true);
+  });
+
+  it('never closes a context the game passed in', async () => {
+    const ctx = new FakeContext();
+    let closed = 0;
+    Object.assign(ctx, { close: async () => { closed++; }, createWaveShaper: () => { throw new Error('no shaper'); } });
+    const { player, errors } = setup({ contextFactory: undefined, context: asCtx(ctx) as AudioContext });
+    expect(await player.unlock()).toBe(false);
+    await settle();
+    expect(errors.map(e => e.code)).toContain('E_CONTEXT');
+    expect(closed).toBe(0);
+  });
+
+  it('a queued request for the current music makes setState apply to it, not to an older load', async () => {
+    const { player, gates } = setup({}, { gated: ['storm.wav'] });
+    await player.unlock();
+    await player.music('theme');
+    const storm = player.music('storm'); // loading
+    await settle();
+    player.setHidden(true);
+    await settle();
+    await player.music('theme'); // queued while hidden: back to the current music
+    expect(player.setState('danger')).toBe(true);
+    expect(player.inspect().music).toMatchObject({ id: 'theme', state: 'danger' });
+    gates.forEach(g => g.open());
+    expect(await storm).toBe(false);
+  });
+
+  it('drops a pending state when the music it was meant for fails to load', async () => {
+    let up = false;
+    const { player } = setup({
+      fetcher: async (url: string) => {
+        const ok = up || !/theme\.\w+\.wav$/.test(url);
+        return { ok, json: async () => catalog, arrayBuffer: async () => new ArrayBuffer(8) };
+      },
+    });
+    await player.unlock();
+    expect(player.setState('danger')).toBe(false);
+    expect(await player.music('theme')).toBe(false);
+    up = true;
+    expect(await player.music('theme')).toBe(true);
+    expect(player.inspect().music).toMatchObject({ id: 'theme', state: 'explore' });
+  });
+});

@@ -7,7 +7,7 @@ import { createPicker } from '../engine/variation.js';
 import { createVoiceManager } from './voices.js';
 import { nextBarTime } from './timing.js';
 import { createLifecycle } from './lifecycle.js';
-import { createLoader } from './loader.js';
+import { createLoader, text } from './loader.js';
 import { RAMP, fade, hold, ramp, span } from './params.js';
 
 export const PLAYER_VERSION = '1';
@@ -19,8 +19,6 @@ const hash = s => {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 };
-/** @param {unknown} e */
-const text = e => String((/** @type {any} */ (e))?.message ?? e);
 
 /**
  * @typedef {'music' | 'ambience'} BedBus
@@ -107,8 +105,9 @@ export function createPlayer(opts) {
   function build() {
     const c = contextFactory();
     try { graph(c); } catch (e) {
-      // The context exists but its graph does not: close it so a retry does not leak contexts.
-      Promise.resolve().then(() => c.close?.()).catch(() => {});
+      // The context exists but its graph does not: close it so a retry does not leak contexts, unless
+      // the game passed it in, in which case it is the game's to close.
+      if (c !== opts.context) Promise.resolve().then(() => c.close?.()).catch(() => {});
       throw e;
     }
   }
@@ -251,7 +250,11 @@ export function createPlayer(opts) {
   function bed(bus, id, { fadeSec: requested = 2 } = {}) {
     const fadeSec = fade(requested);
     const token = ++tokens[bus];
-    if (!running()) { pending[bus] = { id, fadeSec, token }; return Promise.resolve(false); }
+    if (!running()) {
+      pending[bus] = { id, fadeSec, token };
+      if (bus === 'music') loadingMusic = null; // any load in flight is now superseded
+      return Promise.resolve(false);
+    }
     pending[bus] = undefined; // a direct request supersedes anything queued
     const cur = beds[bus];
     if (bus === 'music') loadingMusic = cur && cur.id === id ? null : id;
@@ -259,17 +262,21 @@ export function createPlayer(opts) {
     if (id === null) { if (cur) stopBed(cur, fadeSec); beds[bus] = null; return Promise.resolve(true); }
     /** @param {boolean} ok */
     const done = ok => { if (bus === 'music' && token === tokens.music) loadingMusic = null; return ok; };
+    // The latest music request could not play: a state kept for it must not leak onto later music.
+    const fail = () => { if (bus === 'music' && token === tokens.music) pendingState = null; return false; };
     return loader.catalog().then(assets => {
-      if (!assets || token !== tokens[bus]) return false;
+      if (token !== tokens[bus]) return false;
+      if (!assets) return fail();
       const asset = assets[id];
-      if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return false; }
+      if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return fail(); }
       return Promise.all(partsOf(asset).map(p => loader.load(p.file))).then(bufs => {
-        if (token !== tokens[bus] || bufs.every(b => !b)) return false;
+        if (token !== tokens[bus]) return false;
+        if (bufs.every(b => !b)) return fail();
         // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
         if (!running()) { pending[bus] = { id, fadeSec, token }; return false; }
-        return startBed(bus, id, asset, bufs, fadeSec);
+        return startBed(bus, id, asset, bufs, fadeSec) || fail();
       });
-    }).catch(e => { report('E_PLAYBACK', text(e), id); return false; }).then(done);
+    }).catch(e => { report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
   }
 
   /** @param {Asset} asset @returns {LayerFile[]} */

@@ -16,6 +16,8 @@ export const span = x => Math.max(RAMP, fade(x));
  * Browsers have cancelAndHoldAtTime. The fallback holds the current value for an immediate change;
  * for a future `at` (a bar line) it holds `scheduled`, the last target, since the level now may be
  * mid-fade toward it and would snap back at the bar.
+ * Caveat (fallback only): a second bar-quantized change to the same bar holds the first's target,
+ * not where the first ramp would have reached, since the fallback cannot read the future value.
  * @param {AudioParam} param
  * @param {number} at
  * @param {number} now the context's current time
