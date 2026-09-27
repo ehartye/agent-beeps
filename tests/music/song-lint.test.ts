@@ -58,6 +58,14 @@ describe('song lint', () => {
     expect(check.data).toEqual([{ section: 'a', overlaps: ['pad C4-A4 and hat E4 share a band'] }]);
   });
 
+  it('keeps listener-fatigue judgement for loops and long songs, not for short one-shot jingles', () => {
+    const jingle = lintSong(song(), good({ durationSec: 6 }), project);
+    expect(jingle.judgement).toEqual(['song-register-bands']);
+    expect(jingle.judgementChecks.map(j => j.rule)).toEqual(['song-register-bands']);
+    expect(lintSong(song({ loop: true }), good({ durationSec: 6 }), project).judgement).toContain('song-fatigue');
+    expect(lintSong(song(), good({ durationSec: 45 }), project).judgement).toContain('song-fatigue');
+  });
+
   it('points at unused tracks and patterns', () => {
     const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a' } }, 'hat-a': { bars: 1, steps: 'x' }, spare: { bars: 1, steps: 'x' } }, sections: { a: { bars: 2, play: { pad: 'pad-a' } } } });
     const r = lintSong(s, good(), project);

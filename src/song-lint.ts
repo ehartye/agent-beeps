@@ -75,11 +75,14 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   }
   for (const t of Object.keys(song.tracks)) if (!usedTracks.has(t)) c.add('song-unused', `track "${t}" never plays`, `/tracks/${t}`);
   for (const p of Object.keys(song.patterns)) if (!played.has(p)) c.add('song-unused', `pattern "${p}" never plays`, `/patterns/${p}`);
-  // Judgement rules come with their statements: a bare id is not a checklist.
+  // Judgement rules come with their statements: a bare id is not a checklist. Listener fatigue is
+  // about music heard for a long time, so a short one-shot (a jingle or sting) is out of its scope.
   const bands = registerOverlaps(song, spans);
+  const heardLong = song.loop || f.durationSec > c.param<number>('song-fatigue', 'appliesToLoopsOrAboveSec');
+  const inScope = rules.filter(r => r.id !== 'song-fatigue' || heardLong);
   return {
-    ...c.report('song', rules),
-    judgementChecks: rules.filter(r => r.check === 'judgement' && r.appliesTo === 'song').map(r => ({
+    ...c.report('song', inScope),
+    judgementChecks: inScope.filter(r => r.check === 'judgement' && r.appliesTo === 'song').map(r => ({
       rule: r.id, check: r.statement, ...(r.id === 'song-register-bands' && bands.length ? { data: bands } : {}),
     })),
   };

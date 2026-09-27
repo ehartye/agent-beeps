@@ -199,6 +199,9 @@
       "check": "judgement",
       "severity": "warn",
       "appliesTo": "song",
+      "params": {
+        "appliesToLoopsOrAboveSec": 30
+      },
       "sources": [
         {
           "title": "Collins, Game Sound (MIT Press, 2008), ch. 8: listener fatigue and variability",
