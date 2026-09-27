@@ -53,7 +53,8 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
   const outside = new Map<string, { lo: number; hi: number; layer: boolean }>();
   for (const e of compileSong(song).events) {
-    if (e.midi === null) continue;
+    // An instrument with no pitched layer (null span) does not sound its trigger note.
+    if (e.midi === null || spans[e.track] === null) continue;
     const span = spans[e.track];
     const lo = e.midi + (span?.low ?? 0), hi = e.midi + (span?.high ?? 0);
     if (lo >= reg.lowestMidi && hi <= reg.highestMidi) continue;
@@ -91,11 +92,15 @@ const nn = (m: number) => `${NAMES[((Math.round(m) % 12) + 12) % 12]}${Math.floo
  * Per section, register bands shared by concurrently held pitched notes. Sweep note and section
  * boundaries rather than combining pitches that play at different times. One-shot durations
  * (dur: null) and release/effect tails are unknown here; this is advisory, not spectral masking.
+ * A null span marks an instrument with no pitched layer (noise, grains, metal): its trigger notes
+ * are not sounding pitches, so the track is left out. Noise through a resonant keytracked filter
+ * can still sound tonal; that case is not detected. An absent span (instrument unknown) keeps the
+ * written note as the pitch.
  */
 export function registerOverlaps(song: Song, spans: Record<string, { low: number; high: number } | null>) {
   const c = compileSong(song);
   type Range = { lo: number; hi: number };
-  const events = c.events.filter(e => e.midi !== null && e.dur !== null && e.dur > 0 && e.vel > 0);
+  const events = c.events.filter(e => e.midi !== null && e.dur !== null && e.dur > 0 && e.vel > 0 && spans[e.track] !== null);
   const edges = events.flatMap((e, id) => [{ time: e.time, id, start: true }, { time: e.time + e.dur!, id, start: false }]);
   // Section boundaries split sustained notes even when no new note starts there.
   for (const sec of c.sections) edges.push({ time: sec.start, id: -1, start: false }, { time: sec.end, id: -1, start: false });

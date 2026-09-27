@@ -41,7 +41,7 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
 }
 
 /** Event counts and sounding ranges per track, and the section timeline, without rendering. */
-function songOutline(song: Song, instruments: Record<string, Patch>) {
+export function songOutline(song: Song, instruments: Record<string, Patch>) {
   const c = compileSong(song);
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
   const perTrack: Record<string, { notes: number; lo: number | null; hi: number | null }> = {};
@@ -58,7 +58,7 @@ function songOutline(song: Song, instruments: Record<string, Patch>) {
     voicings: Object.fromEntries(Object.entries(song.patterns).filter(([, pt]) => pt.chords).map(([name, pt]) => {
       const spec = pt.chords!;
       const chords = song.progressions[spec.progression].map(([sym]) => parseChord(sym));
-      const v = voiceLead(chords, { octave: spec.octave, voicing: spec.voicing });
+      const v = voiceLead(chords, { octave: spec.octave, voicing: spec.voicing, slash: spec.slash });
       return [name, chords.map((ch, i) => `${ch.symbol}: ${v[i].map(m => midiName(m + pt.transpose)).join(' ')}`)];
     })),
     tracks: Object.fromEntries(Object.entries(perTrack).map(([k, v]) => {

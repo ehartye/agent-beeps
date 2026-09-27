@@ -128,3 +128,32 @@ describe('concurrent register evidence', () => {
     expect(registerOverlaps(s, {})).toEqual([]);
   });
 });
+
+describe('register evidence for unpitched instruments', () => {
+  const held = { patterns: {
+    'pad-a': { bars: 2, notes: [[0, 'D4', 8]] },
+    'hat-a': { bars: 2, notes: [[0, 'D4', 8]] },
+  } };
+
+  it('ignores trigger notes of a track whose instrument has no pitched layer', () => {
+    expect(registerOverlaps(song(held), { pad: { low: 0, high: 0 }, hat: null })).toEqual([]);
+    const r = lintSong(song(held), good(), project, { pad: patch(PAD), hat: patch(HAT) });
+    expect(r.judgementChecks.find(j => j.rule === 'song-register-bands')!.data).toBeUndefined();
+  });
+
+  it('still flags a mixed noise and pitched instrument by its pitched layers', () => {
+    const breathy = patch({ ...PAD, layers: [HAT.layers[0], PAD.layers[0]] });
+    const r = lintSong(song(held), good(), project, { pad: patch(PAD), hat: breathy });
+    expect(r.judgementChecks.find(j => j.rule === 'song-register-bands')!.data).toEqual([{ section: 'a', overlaps: ['pad D4 and hat D4 share a band'] }]);
+  });
+
+  it('does not warn about the register of trigger notes on an unpitched track', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4 } }, 'hat-a': { bars: 1, notes: [[0, 'C9', 1]] } } });
+    expect(lintSong(s, good(), project, { pad: patch(PAD), hat: patch(HAT) }).warnings.filter(f => f.rule === 'song-register')).toEqual([]);
+    expect(lintSong(s, good(), project, { pad: patch(PAD), hat: patch(PAD) }).warnings).toContainEqual(expect.objectContaining({ rule: 'song-register', pointer: '/patterns/hat-a' }));
+  });
+
+  it('keeps treating a track as pitched when its instrument is unknown', () => {
+    expect(registerOverlaps(song(held), {})).toEqual([{ section: 'a', overlaps: ['pad D4 and hat D4 share a band'] }]);
+  });
+});
