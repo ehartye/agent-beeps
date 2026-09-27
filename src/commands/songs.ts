@@ -161,9 +161,9 @@ export function registerSongCommands(program: Command, io: Io) {
       const worker = () => withHost(async host => {
         while (next < tracks.length) {
           const i = next++;
-          // Stems keep the full form and loop folding, so they line up sample for sample with the mix.
-          const solo = { ...soloSong(s, { only: [tracks[i]] }), loop: s.loop };
-          stems[i] = await renderSong(host, solo, instruments, { project: p.project, rendersDir: p.paths.renders, trimDb: mix.trimDb });
+          // Stems are the full song with one track's notes playing: they line up sample for sample
+          // with the mix and draw the same chance hits, arp orders and noise.
+          stems[i] = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders, trimDb: mix.trimDb, only: [tracks[i]] });
         }
       });
       await Promise.all(Array.from({ length: Math.max(1, Math.min(opts.jobs, tracks.length)) }, worker));

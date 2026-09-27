@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderKey } from '../hash.ts';
+import { BeepsError } from '../errors.ts';
 import { writeWav } from '../audio/wav.ts';
 import { applyTrimAndClip, measureSong, type SongFeatures } from '../measure/song.ts';
 import { integrated, truePeakDb } from '../measure/loudness.ts';
@@ -22,17 +23,27 @@ export interface RenderedSong {
   excerpt?: { sourceKey: string; sourceRanges: { name: string; start: number; end: number }[] };
 }
 
-/** `trimDb` fixes the trim instead of levelling to the target: stems play at their full mix's trim. */
-export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim }: { project: Project; rendersDir: string; trimDb?: number }): Promise<RenderedSong> {
+/** The cache key of a song render. A full render (no `only`) keeps the key it had before solos existed. */
+export function songRenderKey(song: Song, instruments: Record<string, Patch>, { target, fixedTrim, only }: { target: number; fixedTrim?: number; only?: string[] }): string {
+  return renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, ...(fixedTrim !== undefined ? { fixedTrim } : {}), ...(only ? { only: [...new Set(only)].sort() } : {}) });
+}
+
+/**
+ * `trimDb` fixes the trim instead of levelling to the target: stems play at their full mix's trim.
+ * `only` renders the full song but plays just those tracks' notes: stems and adaptive layers, which
+ * must line up with and sum back to the mix (same form, loop folding, chance rolls and noise seeds).
+ */
+export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim, only }: { project: Project; rendersDir: string; trimDb?: number; only?: string[] }): Promise<RenderedSong> {
+  for (const t of only ?? []) if (!(t in song.tracks)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
   const target = project.musicLoudness;
-  const key = renderKey({ song, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, ...(fixedTrim !== undefined ? { fixedTrim } : {}) });
+  const key = songRenderKey(song, instruments, { target, fixedTrim, only });
   const dir = join(rendersDir, `song-${key.slice(0, 40)}`);
   const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png'), meta = join(dir, 'meta.json');
   if (existsSync(meta) && existsSync(wavPath) && existsSync(lookPath)) {
     const m = JSON.parse(readFileSync(meta, 'utf8'));
     return { key, song, trimDb: m.trimDb, features: m.features, dir, wavPath, lookPath, cached: true };
   }
-  const r = await host.renderSong(song, instruments);
+  const r = await host.renderSong(song, instruments, only ? { only } : {});
   try {
     const authored = await host.pullSong(r.id, r.frames);
     const f = measureSong(authored, r.sampleRate, r.sections, { loop: song.loop });

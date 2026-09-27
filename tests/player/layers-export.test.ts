@@ -35,3 +35,23 @@ it.skipIf(!hasChromium)('exports adaptive layers next to the mix and they sum ba
   expect(plain.status).not.toBe(0);
   expect(JSON.parse(plain.stderr).error.code).toBe('E_USAGE');
 });
+
+// Chance hits and random arp orders are drawn from one song-wide stream, and the hat is seeded noise:
+// a layer only nulls if it plays exactly the notes (and noise) the mix played.
+it.skipIf(!hasChromium)('layers of a song with chance hits, a random arp and noise still sum to the mix', () => {
+  const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-layers-rand-')));
+  const base = songInput();
+  writeFileSync(join(p.paths.root, 'rand.json'), JSON.stringify(songInput({
+    name: 'random-demo', loop: true,
+    tracks: { ...base.tracks, arp: { instrument: { ...base.tracks.pad.instrument, name: 'arp' }, gainDb: -6 } },
+    patterns: { ...base.patterns,
+      'arp-a': { bars: 2, arp: { progression: 'a', octave: 5, shape: 'random', rate: 4, rhythm: 'x??x' } },
+      'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' } },
+    sections: { a: { bars: 2, play: { pad: 'pad-a', arp: 'arp-a', hat: 'hat-a' } } },
+    adaptive: { layers: { bed: ['pad'], lead: ['arp'], pulse: ['hat'] }, states: { calm: ['bed'], full: ['bed', 'lead', 'pulse'] }, initial: 'calm' },
+  })));
+  const s = run(p.paths.root, 'song', 'new', 'rand.json'); expect(s.status, s.stderr).toBe(0);
+  const r = run(p.paths.root, 'song', 'export', 'random-demo', '--wav', 'audio/rand.wav', '--layers');
+  expect(r.status, r.stderr).toBe(0);
+  expect(r.data.nullResidualDb).toBeLessThan(-60);
+});

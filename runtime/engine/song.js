@@ -93,14 +93,17 @@ export function songTail(song, instruments) {
  * @param {BaseAudioContext} ctx
  * @param {Song} song
  * @param {Record<string, Patch>} instruments  parsed instrument patch per track
- * @param {{ destination?: AudioNode, when?: number, lazy?: boolean }} [opts]
+ * @param {{ destination?: AudioNode, when?: number, lazy?: boolean, only?: string[] }} [opts]
+ *   only: play just these tracks' notes out of the full song. Every chance roll, arp order and
+ *   noise seed is still drawn as in the full song, so solos of the parts sum back to the mix.
  *   lazy: build no notes yet; call `advance(t)` to build every note starting before context time t.
  *   Notes built just ahead of the playhead keep the graph small (offline renders run several
  *   times faster, and live playback never holds a whole song's nodes).
  * @returns {{ end: number, length: number, sections: ReturnType<typeof compileSong>['sections'], advance: (t: number) => number, done: () => boolean }}
  */
 export function buildSong(ctx, song, instruments, opts = {}) {
-  const { destination = ctx.destination, when = 0, lazy = false } = opts;
+  const { destination = ctx.destination, when = 0, lazy = false, only } = opts;
+  const playing = only ? new Set(only) : undefined;
   const c = compileSong(song);
   const master = ctx.createGain();
   master.connect(destination);
@@ -203,17 +206,17 @@ export function buildSong(ctx, song, instruments, opts = {}) {
 
   /** @type {Map<string, Patch>} */
   const voices = new Map();
-  // Notes played so far per track: seeds count within a track, so a solo gets the mix's noise.
-  /** @type {Map<string, number>} */
-  const played = new Map();
   let cursor = 0;
   /** Build every not-yet-built note that starts before context time `t`; returns how many. */
   const advance = (/** @type {number} */ t) => {
     const from = cursor;
-    while (cursor < c.events.length && when + c.events[cursor].time < t) playEvent(c.events[cursor++]);
+    while (cursor < c.events.length && when + c.events[cursor].time < t) {
+      if (!playing || playing.has(c.events[cursor].track)) playEvent(c.events[cursor], cursor);
+      cursor++;
+    }
     return cursor - from;
   };
-  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e) => {
+  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i) => {
     const bus = buses[e.track];
     const t = song.tracks[e.track];
     const shift = e.midi !== null && bus.root !== null ? e.midi - bus.root : 0;
@@ -228,9 +231,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       out.connect(pan).connect(bus.input);
     } else out.connect(bus.input);
     const at = when + e.time;
-    const n = played.get(e.track) ?? 0;
-    played.set(e.track, n + 1);
-    const seed = song.seed * 101 + (n % SEED_POOL);
+    const seed = song.seed * 101 + (i % SEED_POOL);
     p.layers.forEach((layer, li) => buildLayer(ctx, layer, { when: at, duration: /** @type {Patch} */ (p).duration, seed: seed + li * 7919, out }));
   };
   if (!lazy) advance(Infinity);

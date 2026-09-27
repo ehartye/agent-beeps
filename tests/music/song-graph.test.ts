@@ -4,7 +4,6 @@ import { noteToHz } from '../../runtime/engine/notes.js';
 import { FakeContext, asCtx } from '../helpers/fake-context.ts';
 import { patch } from '../helpers/patches.ts';
 import { HAT, PAD, song } from '../helpers/songs.ts';
-import { soloSong } from '../../src/music.ts';
 
 const instruments = () => ({ pad: patch(PAD), hat: patch(HAT) });
 
@@ -38,14 +37,17 @@ describe('song engine', () => {
     expect(buffers.size).toBeLessThanOrEqual(8);
   });
 
-  it('gives a track the same noise whether or not other tracks play, so solos sum to the mix', () => {
-    const hatNoise = (s: ReturnType<typeof song>) => {
+  it('plays only the chosen tracks, with the noise and chance hits of the full song', () => {
+    const s = song({ patterns: { 'pad-a': { bars: 2, chords: { progression: 'a', octave: 4, rhythm: 'x?x?' } }, 'hat-a': { bars: 1, steps: 'x?x?x?x?x?x?x?x?' } } });
+    const hats = (only?: string[]) => {
       const f = new FakeContext();
-      buildSong(asCtx(f), s, instruments());
-      return f.nodes('bufferSource').map(b => Array.from((b.buffer as AudioBuffer).getChannelData(0).subarray(0, 4)));
+      buildSong(asCtx(f), s, instruments(), only ? { only } : {});
+      return { oscs: f.count('osc'), noise: f.nodes('bufferSource').map(b => Array.from((b.buffer as AudioBuffer).getChannelData(0).subarray(0, 4))) };
     };
-    const full = song();
-    expect(hatNoise(soloSong(full, { only: ['hat'] }))).toEqual(hatNoise(full));
+    const full = hats(), solo = hats(['hat']);
+    expect(solo.oscs).toBe(0);
+    expect(solo.noise.length).toBeGreaterThan(0);
+    expect(solo.noise).toEqual(full.noise);
   });
 
   it('builds one master reverb, not one per note', () => {

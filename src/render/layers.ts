@@ -1,10 +1,10 @@
 // src/render/layers.ts
-// Adaptive layers: each layer rendered alone the way song stems are (loop-folded, at the mix's
-// trim), so a game can fade them independently and their sum is still the approved mix.
+// Adaptive layers: each layer rendered alone the way song stems are (the full song with only its
+// tracks' notes playing, at the mix's trim), so a game can fade them independently and their sum
+// is still the approved mix.
 import { readFileSync } from 'node:fs';
 import { BeepsError } from '../errors.ts';
 import { readWav } from '../audio/wav.ts';
-import { soloSong } from '../music.ts';
 import { renderSong, type RenderedSong } from './song-pipeline.ts';
 import type { RenderHost } from './host.ts';
 import type { Song } from '../schema/song.ts';
@@ -15,9 +15,8 @@ export async function renderLayers(host: RenderHost, song: Song, instruments: Re
   if (!song.adaptive) throw new BeepsError('E_USAGE', `song "${song.name}" has no adaptive block`);
   const out: Record<string, RenderedSong> = {};
   for (const [name, tracks] of Object.entries(song.adaptive.layers)) {
-    // Same as song stems: solo keeps the full form; restore loop folding; reuse the mix's trim.
-    const solo = { ...soloSong(song, { only: tracks }), loop: song.loop };
-    out[name] = await renderSong(host, solo, instruments, { ...opts, trimDb: mix.trimDb });
+    // Same as song stems: the full song with only this layer's notes, at the mix's trim.
+    out[name] = await renderSong(host, song, instruments, { ...opts, trimDb: mix.trimDb, only: tracks });
   }
   return out;
 }

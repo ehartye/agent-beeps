@@ -8,7 +8,7 @@
   // Each item renders alone, so one bad patch never fails the batch.
   window.beepsRender = items => Promise.all(items.map(i =>
     renderOffline(i.patch, i.opts).catch(e => ({ error: String(e && e.message || e) }))));
-  window.beepsRenderSong = (song, instruments) => renderSongOffline(song, instruments);
+  window.beepsRenderSong = (song, instruments, opts) => renderSongOffline(song, instruments, opts);
   window.beepsSongChunk = (id, ch, start, count) => songChunk(id, ch, start, count);
   window.beepsSongLook = (id, features, label) => renderSongLook(songChannels(id), features, label);
   window.beepsPreviewLook = (features, label) => renderSongLook([window.beepsPreview], features, label);
