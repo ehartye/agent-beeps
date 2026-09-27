@@ -85,6 +85,47 @@ describe('beeps bundle', () => {
     expect(err?.message).toMatch(/missing\.wav/);
   });
 
+  it('rejects an asset path that names a directory, not a file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-bundle-dirfile-'));
+    mkdirSync(join(dir, 'sfx'));
+    writeFileSync(join(dir, 'sfx', 'a.wav.json'), JSON.stringify(sidecar('a', '.')));
+    const err = catches(() => bundleDir(dir));
+    expect(err?.code).toBe('E_SCHEMA');
+    expect(err?.message).toMatch(/sfx\/a\.wav\.json/);
+    expect(err?.message).toMatch(/"\."/);
+  });
+
+  it('rejects an asset path that is a symlink', ctx => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-bundle-linkfile-'));
+    const outside = mkdtempSync(join(tmpdir(), 'beeps-bundle-linkfile-target-'));
+    writeFileSync(join(outside, 'real.wav'), '');
+    writeFileSync(join(dir, 'a.wav.json'), JSON.stringify(sidecar('a', 'link.wav')));
+    try {
+      symlinkSync(join(outside, 'real.wav'), join(dir, 'link.wav'), 'file');
+    } catch {
+      // File symlinks need elevation or Developer Mode on Windows.
+      return ctx.skip('file symlink creation is not available without elevation on this host');
+    }
+    const err = catches(() => bundleDir(dir));
+    expect(err?.code).toBe('E_SCHEMA');
+    expect(err?.message).toMatch(/a\.wav\.json/);
+    expect(err?.message).toMatch(/link\.wav/);
+  });
+
+  it('rejects an asset path that is a junction (a link that needs no elevation on Windows)', ctx => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-bundle-linkdir-'));
+    const outside = mkdtempSync(join(tmpdir(), 'beeps-bundle-linkdir-target-'));
+    writeFileSync(join(dir, 'a.wav.json'), JSON.stringify(sidecar('a', 'link.wav')));
+    try {
+      symlinkSync(outside, join(dir, 'link.wav'), 'junction');
+    } catch {
+      return ctx.skip('junction creation is not available on this host');
+    }
+    const err = catches(() => bundleDir(dir));
+    expect(err?.code).toBe('E_SCHEMA');
+    expect(err?.message).toMatch(/link\.wav/);
+  });
+
   it('reports a missing bundle directory as E_NOT_FOUND', () => {
     const parent = mkdtempSync(join(tmpdir(), 'beeps-bundle-missing-dir-'));
     const err = catches(() => bundleDir(join(parent, 'does-not-exist')));

@@ -70,6 +70,16 @@ describe('player graph', () => {
     expect(player.play('coin')).not.toBeNull();
   });
 
+  it('reports a context that cannot be created instead of throwing, and retries on the next unlock', async () => {
+    let fail = true;
+    const { player, errors, ctx } = setup({ contextFactory: () => { if (fail) throw new Error('no audio'); return asCtx(ctx) as AudioContext; } });
+    expect(await player.unlock()).toBe(false);
+    expect(errors.map(e => e.code)).toContain('E_CONTEXT');
+    expect(player.play('coin')).toBeNull();
+    fail = false;
+    expect(await player.unlock()).toBe(true);
+  });
+
   it('clamps levels and ignores non-numbers', () => {
     const { player } = setup();
     player.setLevel('music', 5); player.setLevel('sfx', -1); player.setLevel('ambience', NaN); player.setLevel('nope', 0.5);

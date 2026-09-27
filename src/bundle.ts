@@ -1,6 +1,6 @@
 // One catalog for the game player: every export sidecar under a directory, keyed by asset id, with
 // file paths made relative to that directory.
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { lstatSync, readFileSync, readdirSync, writeFileSync, type Stats } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
@@ -39,16 +39,24 @@ function listSidecars(dir: string): string[] {
  * Resolves a sidecar's `file`/`variants[].file`/`layers[].file` against the sidecar's own directory.
  * Rejects anything that could point outside the bundle (an absolute path, a path that starts with
  * `..`, or one carrying a literal backslash — never a valid separator in these sidecars) and
- * requires the target to actually exist, so a stale or hand-edited sidecar fails loudly at bundle
- * time rather than 404ing in the browser.
+ * requires the target to be an existing regular file (not a directory or symlink), so a stale or
+ * hand-edited sidecar fails loudly at bundle time rather than 404ing in the browser.
  */
 function assetPath(dir: string, rel: string, field: string, raw: string): string {
   const joined = posix.join(posix.dirname(rel), raw);
   if (posix.isAbsolute(joined) || joined === '..' || joined.startsWith('../') || joined.includes('\\')) {
     throw new BeepsError('E_SCHEMA', `${rel}: ${field} "${raw}" is not a safe path relative to the bundle directory (resolves to "${joined}")`, { pointer: `/${field}` });
   }
-  if (!existsSync(join(dir, joined))) {
+  let stat: Stats;
+  try {
+    stat = lstatSync(join(dir, joined));
+  } catch {
     throw new BeepsError('E_NOT_FOUND', `${rel}: ${field} "${raw}" does not exist`, { pointer: `/${field}` });
+  }
+  // lstat, not stat: a symlink is refused even when its target is a real file, since it could point
+  // anywhere on disk and a copied or vendored bundle would not carry it.
+  if (stat.isSymbolicLink() || !stat.isFile()) {
+    throw new BeepsError('E_SCHEMA', `${rel}: ${field} "${raw}" is not a regular file (resolves to "${joined}")`, { pointer: `/${field}` });
   }
   return joined;
 }

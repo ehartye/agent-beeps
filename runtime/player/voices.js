@@ -35,7 +35,9 @@ export function createVoiceManager({ budget = 8 } = {}) {
       /** @type {Voice | null} */
       let steal = null;
       const same = active.filter(v => v.id === id);
-      const effectiveCap = Math.max(1, cap);
+      // A missing or NaN cap is the floor (1), never unlimited: Math.max(1, NaN) would be NaN,
+      // and `same.length >= NaN` is always false.
+      const effectiveCap = Math.max(1, Number.isFinite(cap) ? cap : 1);
       if (same.length >= effectiveCap) steal = oldest(same);
       else if (active.length >= budget) {
         const lessImportant = active.filter(v => v.priority > priority);

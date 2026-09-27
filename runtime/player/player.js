@@ -321,7 +321,10 @@ export function createPlayer(opts) {
   /** Call from a user gesture: creates or resumes the context, then starts queued beds. */
   async function unlock() {
     if (!enabled || hidden) return false;
-    if (!ctx) build();
+    if (!ctx) {
+      // No Web Audio (or a factory that throws) is reported, never thrown: the next unlock retries.
+      try { build(); } catch (e) { ctx = null; master = null; buses = null; lifecycle = null; report('E_CONTEXT', text(e)); return false; }
+    }
     const life = /** @type {ReturnType<typeof createLifecycle>} */ (lifecycle);
     try { await life.reconcile(); } catch (e) { report('E_CONTEXT', text(e)); return false; }
     await loadCatalog();

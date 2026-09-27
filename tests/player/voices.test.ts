@@ -73,6 +73,16 @@ describe('voice manager', () => {
     expect(vm.size).toBe(1);
   });
 
+  it('treats a non-finite cap (undefined, NaN) as the floor of 1, not as unlimited', () => {
+    for (const cap of [undefined, NaN]) {
+      const vm = createVoiceManager({ budget: 8 });
+      const first = vm.request('step', opts(3, { cap }), 0)!;
+      const second = vm.request('step', opts(3, { cap }), 0.1)!;
+      expect(second.steal).toBe(first.key);
+      expect(vm.size).toBe(1);
+    }
+  });
+
   it('a cap steal while the budget is full keeps size at the budget', () => {
     const vm = createVoiceManager({ budget: 3 });
     vm.request('x', opts(3), 0);
