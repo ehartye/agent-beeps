@@ -830,8 +830,9 @@ describe('voice manager', () => {
 
   it('lets a more important sound (smaller number) steal the oldest less important voice', () => {
     const vm = createVoiceManager({ budget: 2 });
-    const a = vm.request('a', opts(4), 0)!;
-    vm.request('b', opts(2), 0.1);
+    // a is the oldest less important voice; b is less important still but newer: the rule picks age.
+    const a = vm.request('a', opts(2), 0)!;
+    vm.request('b', opts(4), 0.1);
     const hit = vm.request('hit', opts(1), 0.2)!;
     expect(hit.steal).toBe(a.key);
     expect(vm.has(a.key)).toBe(false);
