@@ -28,6 +28,7 @@ export class FakeNode {
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
   start(t = 0) { this.startedAt = t; }
   stop(t = 0) { this.stoppedAt = t; }
+  disconnect() {}
 }
 
 export class FakeContext {
@@ -35,6 +36,10 @@ export class FakeContext {
   currentTime = 0;
   created: FakeNode[] = [];
   destination: FakeNode;
+  state = 'suspended';
+  async resume() { this.state = 'running'; }
+  async suspend() { this.state = 'suspended'; }
+  async decodeAudioData(_: ArrayBuffer) { return this.createBuffer(2, 4800, 48000); }
   constructor() { this.destination = new FakeNode(this, 'destination'); }
   private make(kind: string, params: Record<string, number> = {}) { const n = new FakeNode(this, kind, params); this.created.push(n); return n; }
   createOscillator() { const n = this.make('osc', { frequency: 440, detune: 0 }); n.type = 'sine'; return n; }
