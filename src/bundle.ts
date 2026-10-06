@@ -6,7 +6,7 @@ import { BeepsError } from './errors.ts';
 import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
 
 /**
- * Every `*.wav.json` sidecar under `dir`, as paths relative to it (posix separators), sorted.
+ * Every `*.wav.json` or `*.ogg.json` sidecar under `dir`, as paths relative to it (posix separators), sorted.
  * Never follows a symlink or (on Windows) a junction — `Dirent.isSymbolicLink()` reports the entry
  * itself, not its target, so a link back into an ancestor directory can't cause an infinite walk.
  * Skips dot-directories (`.git`, …) and `node_modules`.
@@ -26,7 +26,7 @@ function listSidecars(dir: string): string[] {
       if (entry.isDirectory()) {
         if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
         walk(full);
-      } else if (entry.isFile() && entry.name.endsWith('.wav.json')) {
+      } else if (entry.isFile() && /\.(wav|ogg)\.json$/.test(entry.name)) {
         out.push(relative(dir, full).split(sep).join('/'));
       }
     }

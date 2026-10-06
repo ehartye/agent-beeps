@@ -28,6 +28,10 @@ export const ExportManifestSchema = z.strictObject({
   layers: z.array(LayerFile).min(1).optional(),
   states: z.record(z.string(), z.array(z.string())).optional(),
   initialState: z.string().optional(),
+  /** Per state: the gain (dB) that brings the sum of that state's layers to the project's music loudness; the player applies it. */
+  stateTrimDb: z.record(z.string(), z.number()).optional(),
+  /** Present when the files were re-encoded after export (`beeps compress`); durationSec and the sample rate still describe the decoded audio. */
+  encoding: z.strictObject({ codec: z.literal('opus'), container: z.literal('ogg'), kbps: z.number().positive() }).optional(),
 });
 export type ExportManifest = z.infer<typeof ExportManifestSchema>;
 

@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { BeepsError } from '../errors.ts';
 import { readWav } from '../audio/wav.ts';
+import { integrated, samplePeakDb } from '../measure/loudness.ts';
 import { renderSong, type RenderedSong } from './song-pipeline.ts';
 import type { RenderHost } from './host.ts';
 import type { Song } from '../schema/song.ts';
@@ -56,3 +57,26 @@ export const reportedResidualDb = (db: number): number => (Number.isFinite(db) ?
 export const layerWavPath = (wav: string, layer: string): string => `${wav.replace(/\.wav$/i, '')}.${layer}.wav`;
 
 export const readChannels = (wavPath: string): Float32Array[] => readWav(readFileSync(wavPath)).channels;
+
+/** The gain that brings a state (the sum of its layers) to the music loudness, kept under -1.5 dBFS sample peak and within +-12 dB. */
+export function stateTrim(sum: Float32Array[], sampleRate: number, targetLufs: number): { lufs: number; peakDb: number; trimDb: number } {
+  const lufs = integrated(sum, sampleRate).lufs, peakDb = samplePeakDb(sum);
+  if (!Number.isFinite(lufs)) return { lufs: -99, peakDb: -99, trimDb: 0 };
+  const trimDb = Math.round(Math.max(-12, Math.min(12, targetLufs - lufs, -1.5 - peakDb)) * 10) / 10;
+  return { lufs: Math.round(lufs * 10) / 10, peakDb: Math.round(peakDb * 10) / 10, trimDb };
+}
+
+/** The song with only these tracks: their patterns and sections stay, everything else (and the adaptive block) is dropped, so lint judges the state as its own piece. */
+export function stateSong(song: Song, tracks: string[]): Song {
+  const out = structuredClone(song);
+  delete out.adaptive;
+  out.tracks = Object.fromEntries(Object.entries(out.tracks).filter(([t]) => tracks.includes(t)));
+  const used = new Set<string>();
+  for (const sec of Object.values(out.sections)) {
+    sec.play = Object.fromEntries(Object.entries(sec.play).filter(([t]) => tracks.includes(t)));
+    if (sec.mix) sec.mix = Object.fromEntries(Object.entries(sec.mix).filter(([t]) => tracks.includes(t)));
+    for (const ref of Object.values(sec.play)) for (const p of Array.isArray(ref) ? ref : ref === null ? [] : [ref]) used.add(p);
+  }
+  out.patterns = Object.fromEntries(Object.entries(out.patterns).filter(([p]) => used.has(p)));
+  return out;
+}
