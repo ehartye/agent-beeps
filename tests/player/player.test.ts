@@ -310,6 +310,40 @@ describe('ambience slots', () => {
   });
 });
 
+describe('ambience bed level', () => {
+  const groupOf = (ctx: FakeContext) => {
+    const gains = ctx.nodes('gain');
+    return gains.find(g => g.outputs.includes(gains[2]))!; // first gain feeding the ambience bus
+  };
+  const lastLinear = (n: FakeNode) => [...n.gain.events].reverse().find(e => e.kind === 'linear')!.value;
+
+  it('fades a bed in to its gainDb instead of unity', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.ambience('calm', { gainDb: -12 });
+    expect(lastLinear(groupOf(ctx))).toBeCloseTo(10 ** (-12 / 20), 5);
+  });
+
+  it('re-requesting the same bed with a new gainDb ramps it without restarting', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.ambience('calm', { gainDb: -6 });
+    expect(await player.ambience('calm', { gainDb: -18, fadeSec: 3 })).toBe(true);
+    expect(sources(ctx)).toHaveLength(1);
+    expect(sources(ctx)[0].stoppedAt).toBeUndefined();
+    expect(lastLinear(groupOf(ctx))).toBeCloseTo(10 ** (-18 / 20), 5);
+  });
+
+  it('defaults to unity and clamps an absurd gainDb', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.ambience('calm');
+    expect(lastLinear(groupOf(ctx))).toBe(1);
+    await player.ambience('storm', { gainDb: 99 });
+    expect(Math.max(...ctx.nodes('gain').flatMap(g => g.gain.events.filter((e: { kind: string }) => e.kind === "linear").map((e: { value: number }) => e.value)))).toBeLessThanOrEqual(10 ** (12 / 20) + 1e-9);
+  });
+});
+
 describe('adaptive layers', () => {
   it('starts every layer together, looping, in the initial state', async () => {
     const { ctx, player } = setup();

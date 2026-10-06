@@ -36,8 +36,8 @@ const hash = s => {
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
  * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number }} Playing one source and its gain
- * @typedef {{ id: string, asset: Asset, group: GainNode, layers: Map<string, Playing>, startTime: number, state: string | null }} Bed
- * @typedef {{ id: string | null, fadeSec: number, token: number }} Pending
+ * @typedef {{ id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, state: string | null }} Bed
+ * @typedef {{ id: string | null, fadeSec: number, token: number, slot?: string, gainDb?: number }} Pending
  */
 
 /**
@@ -254,10 +254,10 @@ export function createPlayer(opts) {
    * queued (before unlock or while hidden), or unavailable. Never rejects.
    * @param {BedBus} bus
    * @param {string | null} id
-   * @param {{ fadeSec?: number, slot?: string }} [o] `slot` (ambience only) names an independent bed
+   * @param {{ fadeSec?: number, slot?: string, gainDb?: number }} [o] `slot` (ambience only) names an independent bed; `gainDb` (-60..12) sets the bed's level, ramped if the same bed is requested again
    * @returns {Promise<boolean>}
    */
-  function bed(bus, id, { fadeSec: requested = 2, slot } = {}) {
+  function bed(bus, id, { fadeSec: requested = 2, slot, gainDb } = {}) {
     if (slot !== undefined && (bus !== 'ambience' || !SLOT_NAME.test(slot))) {
       report('E_USAGE', `bad ambience slot "${slot}": use 1-32 chars, lowercase letters, digits and dashes`, String(slot));
       return Promise.resolve(false);
@@ -270,15 +270,19 @@ export function createPlayer(opts) {
     }
     const fadeSec = fade(requested);
     const token = bump(key);
+    const level = gainDb === undefined ? undefined : 10 ** (Math.min(12, Math.max(-60, Number.isFinite(gainDb) ? gainDb : 0)) / 20);
     if (!running()) {
-      pending.set(key, { id, fadeSec, token });
+      pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) });
       if (bus === 'music') loadingMusic = null; // any load in flight is now superseded
       return Promise.resolve(false);
     }
     pending.delete(key); // a direct request supersedes anything queued
     const cur = beds.get(key) ?? null;
     if (bus === 'music') loadingMusic = cur && cur.id === id ? null : id;
-    if (cur && cur.id === id) return Promise.resolve(true);
+    if (cur && cur.id === id) {
+      if (level !== undefined && level !== cur.level) { cur.level = level; ramp(cur.group.gain, level, fadeSec, now()); }
+      return Promise.resolve(true);
+    }
     if (id === null) { if (cur) stopBed(cur, fadeSec); beds.delete(key); return Promise.resolve(true); }
     /** @param {boolean} ok */
     const done = ok => { if (bus === 'music' && token === tokenOf('music')) loadingMusic = null; return ok; };
@@ -293,8 +297,8 @@ export function createPlayer(opts) {
         if (token !== tokenOf(key)) return false;
         if (bufs.every(b => !b)) return fail();
         // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
-        if (!running()) { pending.set(key, { id, fadeSec, token }); return false; }
-        return startBed(key, id, asset, bufs, fadeSec) || fail();
+        if (!running()) { pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) }); return false; }
+        return startBed(key, id, asset, bufs, fadeSec, level ?? 1) || fail();
       });
     }).catch(e => { report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
   }
@@ -305,10 +309,10 @@ export function createPlayer(opts) {
   /**
    * Start a loaded bed's layers together, swap it in and fade the previous bed out. A Web Audio
    * failure partway is reported and torn down, leaving the previous bed playing.
-   * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec
+   * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec @param {number} level linear bed level
    * @returns {boolean}
    */
-  function startBed(key, id, asset, bufs, fadeSec) {
+  function startBed(key, id, asset, bufs, fadeSec, level) {
     const bus = busOf(key);
     const c = /** @type {AudioContext} */ (ctx);
     /** @type {Map<string, Playing>} */
@@ -322,7 +326,7 @@ export function createPlayer(opts) {
       g.gain.value = 0;
       g.connect(/** @type {NonNullable<typeof buses>} */ (buses)[bus]);
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(1, t + span(fadeSec));
+      g.gain.linearRampToValueAtTime(level, t + span(fadeSec));
       const wanted = bus === 'music' && pendingState && asset.states?.[pendingState] ? pendingState : null;
       const state = asset.layers?.length ? wanted ?? asset.initialState ?? null : null;
       const on = state ? new Set(asset.states?.[state] ?? []) : null;
@@ -335,7 +339,7 @@ export function createPlayer(opts) {
       });
       const previous = beds.get(key);
       /** @type {Bed} */
-      const started = { id, asset, group: g, layers, startTime: t, state };
+      const started = { id, asset, group: g, level, layers, startTime: t, state };
       beds.set(key, started);
       // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
       // out), free the whole bed's graph, and forget the bed if it is still the current one.
@@ -434,8 +438,7 @@ export function createPlayer(opts) {
       const p = pending.get(key);
       pending.delete(key);
       if (!p || p.token !== tokenOf(key)) continue; // a newer request won
-      const slot = key.startsWith('ambience:') ? key.slice('ambience:'.length) : undefined;
-      await bed(busOf(key), p.id, { fadeSec: p.fadeSec, ...(slot !== undefined ? { slot } : {}) });
+      await bed(busOf(key), p.id, { fadeSec: p.fadeSec, ...(p.slot !== undefined ? { slot: p.slot } : {}), ...(p.gainDb !== undefined ? { gainDb: p.gainDb } : {}) });
     }
   }
 
@@ -493,7 +496,7 @@ export function createPlayer(opts) {
     /**
      * Crossfade an ambience bed. Without `slot` it is the main ambience bed; with a slot name
      * (e.g. 'weather', 'biome') it is an independent bed layered with the others.
-     * @param {string | null} id @param {{ fadeSec?: number, slot?: string }} [o]
+     * @param {string | null} id @param {{ fadeSec?: number, slot?: string, gainDb?: number }} [o]
      */
     ambience: (id, o) => bed('ambience', id, o),
   };

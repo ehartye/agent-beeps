@@ -49,14 +49,16 @@ createPlayer({
   important voice to steal, or while the sound's own cooldown hasn't elapsed. `ready` is
   `Promise<boolean>` (true once actually sounding); it never rejects, even if the file fails to load
   or the Web Audio call throws — those report through `onError` instead.
-- **`music(id | null, { fadeSec })`** / **`ambience(id | null, { fadeSec, slot })`** → `Promise<boolean>`:
+- **`music(id | null, { fadeSec })`** / **`ambience(id | null, { fadeSec, slot, gainDb })`** → `Promise<boolean>`:
   crossfades that bed to a new looping asset (or fades it out on `null`). Resolves once it plays,
   `false` if superseded by a later call, queued (before unlock or while hidden), or unavailable.
   Never rejects.
   `ambience` takes an optional `slot` (lowercase-dash name, up to 8 slots): each slot is an
   independent bed that crossfades alone, so a game layers a base bed, a weather bed and a biome
   undertone instead of baking every combination. No `slot` is the main bed; `ambience(null, { slot })`
-  fades just that slot.
+  fades just that slot. `gainDb` (-60..12, default 0) sets a bed's level relative to the ambience bus,
+  because every bed is exported at the same loudness: set the weather bed under the base bed here.
+  Asking for the same bed again with a new `gainDb` ramps it over `fadeSec` without restarting.
 - **`setState(state, { fadeSec, at: 'now' | 'bar' })`** — fades the current music's adaptive layers to
   a named state (`asset.states[state]`). `at: 'bar'` waits for the asset's next bar line (needs
   `bpm`); default is immediate. With no music playing, or other music still loading, the state is
