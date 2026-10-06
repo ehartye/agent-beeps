@@ -22,6 +22,8 @@ export interface Asset {
   layers?: LayerFile[];
   states?: Record<string, string[]>;
   initialState?: string;
+  /** dB per state that brings it to the music loudness (written by `beeps song export --layers`); the player applies it to that state's layers. */
+  stateTrimDb?: Record<string, number>;
 }
 
 export interface PlayerError { code: string; message: string; id?: string }
@@ -46,8 +48,8 @@ export interface PlayerOptions {
 
 export interface PlayOptions {
   pan?: number; gainDb?: number; cooldownSec?: number; cap?: number;
-  /** 'bar': start on the next bar line of the music that is playing (a stinger that lands in time). Default 'now'. */
-  at?: 'now' | 'bar';
+  /** 'bar' or 'beat': start on the next bar line (beat) of the music that is playing, a stinger that lands in time. Default 'now'. */
+  at?: 'now' | 'beat' | 'bar';
 }
 export interface PlayHandle { id: string; file: string; ready: Promise<boolean>; stop(fadeSec?: number): void }
 
@@ -57,8 +59,8 @@ export interface BedOptions {
   gainDb?: number;
 }
 export interface MusicOptions extends BedOptions {
-  /** 'bar': start the crossfade on the next bar line of the music now playing. Default 'now'. */
-  at?: 'now' | 'bar';
+  /** 'bar' or 'beat': start the crossfade on the next bar line (beat) of the music now playing. Default 'now'. */
+  at?: 'now' | 'beat' | 'bar';
   /** Start the new loop at the phase the old one has reached (same bpm only), so beats and chords stay in step through the crossfade. */
   sync?: boolean;
 }
@@ -83,7 +85,7 @@ export interface Player {
   play(id: string, o?: PlayOptions): PlayHandle | null;
   music(id: string | null, o?: MusicOptions): Promise<boolean>;
   ambience(id: string | null, o?: AmbienceOptions): Promise<boolean>;
-  setState(state: string, o?: { fadeSec?: number; at?: 'now' | 'bar' }): boolean;
+  setState(state: string, o?: { fadeSec?: number; at?: 'now' | 'beat' | 'bar' }): boolean;
   setLevel(bus: LevelBus, value: number): void;
   /** Turn a bus down by `gainDb` (0 releases) over `fadeSec`, on top of its `setLevel` level. Dialogue and menus duck music and ambience with it. */
   duck(bus: LevelBus | LevelBus[], gainDb: number, o?: { fadeSec?: number }): void;

@@ -97,8 +97,10 @@ notes include the section and exact render identity. `beeps album feedback <id>`
 Revise from the notes and open a new album; earlier albums retain their audio and feedback.
 
 For a game that should react to play, add an `adaptive` block (layers and states;
-`references/song-format.md`) and export with `--layers --manifest`. Listen to each state's layers
-alone as well as the full mix (`song-adaptive-states`).
+`references/song-format.md`) and export with `--layers --manifest`. The full mix of an adaptive
+song is never heard (every layer at once), so judge `beeps song states <name>` instead: each
+state as its own piece, at the loudness it will play. Plan a score whose songs crossfade with
+`beeps song compat`, and listen to each state's layers alone (`song-adaptive-states`).
 
 ## Never
 

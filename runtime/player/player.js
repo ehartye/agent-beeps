@@ -32,7 +32,7 @@ const hash = s => {
  * @typedef {{ name: string, file: string }} LayerFile
  * @typedef {{ file: string, loop?: boolean, priority?: number, cooldownSec?: number, cap?: number,
  *   variants?: VariantFile[], noRepeat?: boolean, bpm?: number, meter?: number, durationSec?: number,
- *   layers?: LayerFile[], states?: Record<string, string[]>, initialState?: string }} Asset
+ *   layers?: LayerFile[], states?: Record<string, string[]>, initialState?: string, stateTrimDb?: Record<string, number> }} Asset
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
  * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number }} Playing one source and its gain
@@ -193,7 +193,7 @@ export function createPlayer(opts) {
   /**
    * Play a sound effect. Null when dropped (before unlock, hidden, unknown, voice budget, cooldown).
    * @param {string} id
-   * @param {{ pan?: number, gainDb?: number, cooldownSec?: number, cap?: number, at?: 'now' | 'bar' }} [o] `at: 'bar'` starts it on the next bar line of the music playing (a stinger that lands in time); with no music it starts now
+   * @param {{ pan?: number, gainDb?: number, cooldownSec?: number, cap?: number, at?: 'now' | 'beat' | 'bar' }} [o] `at: 'bar'` (or 'beat') starts it on the next bar line (beat) of the music playing, a stinger that lands in time; with no music it starts now
    */
   function play(id, { pan = 0, gainDb = 0, cooldownSec, cap, at = 'now' } = {}) {
     if (!ctx || !running() || !buses) return null;
@@ -237,7 +237,7 @@ export function createPlayer(opts) {
           if (live.get(grant.key) === node) { live.delete(grant.key); vm.release(grant.key); }
           try { node.src.disconnect(); node.gain.disconnect(); } catch { /* already disconnected */ }
         };
-        node.src.start(at === 'bar' ? nextMusicBar(now()) : now());
+        node.src.start(at === 'now' ? now() : nextMusicBar(now(), at));
         return true;
       } catch (e) {
         // A Web Audio call threw: report it, free the voice, and resolve rather than reject.
@@ -256,7 +256,7 @@ export function createPlayer(opts) {
    * queued (before unlock or while hidden), or unavailable. Never rejects.
    * @param {BedBus} bus
    * @param {string | null} id
-   * @param {{ fadeSec?: number, slot?: string, gainDb?: number, at?: 'now' | 'bar', sync?: boolean }} [o] `slot` (ambience only) names an independent bed; `gainDb` (-60..12) sets the bed's level, ramped if the same bed is requested again; `at: 'bar'` (music) starts the crossfade on the next bar line of the music now playing; `sync` (music) starts the new loop at the phase the old one is at, when both have the same tempo, so a key-compatible loop lands in step
+   * @param {{ fadeSec?: number, slot?: string, gainDb?: number, at?: 'now' | 'beat' | 'bar', sync?: boolean }} [o] `slot` (ambience only) names an independent bed; `gainDb` (-60..12) sets the bed's level, ramped if the same bed is requested again; `at: 'bar'` (or 'beat') starts the crossfade on the next bar line (beat) of the music now playing; `sync` (music) starts the new loop at the phase the old one is at, when both have the same tempo, so a key-compatible loop lands in step
    * @returns {Promise<boolean>}
    */
   function bed(bus, id, { fadeSec: requested = 2, slot, gainDb, at = 'now', sync = false } = {}) {
@@ -306,14 +306,20 @@ export function createPlayer(opts) {
   }
 
   /**
-   * The next bar line of the music that is playing (or `at` itself when nothing with a tempo plays), never earlier than `earliest`.
-   * @param {number} earliest
+   * The next bar line (or beat) of the music that is playing, `earliest` itself when nothing with a tempo plays, never earlier than `earliest`.
+   * @param {number} earliest @param {'beat' | 'bar'} [unit]
    */
-  function nextMusicBar(earliest) {
+  function nextMusicBar(earliest, unit = 'bar') {
     const cur = beds.get('music');
     if (!cur || !cur.asset.bpm) return earliest;
-    return Math.max(earliest, nextBarTime(cur.origin, earliest, cur.asset.bpm, cur.asset.meter ?? 4, cur.asset.durationSec));
+    return Math.max(earliest, nextBarTime(cur.origin, earliest, cur.asset.bpm, unit === 'beat' ? 1 : cur.asset.meter ?? 4, cur.asset.durationSec));
   }
+
+  /** Linear gain that brings a state to the music's loudness (`stateTrimDb`, written by `beeps song export --layers`): fewer layers are quieter than the whole mix. @param {Asset} asset @param {string | null} state */
+  const stateGain = (asset, state) => {
+    const db = state ? asset.stateTrimDb?.[state] : undefined;
+    return typeof db === 'number' && Number.isFinite(db) ? 10 ** (Math.min(12, Math.max(-12, db)) / 20) : 1;
+  };
 
   /** @param {Asset} asset @returns {LayerFile[]} */
   const partsOf = asset => (asset.layers?.length ? asset.layers : [{ name: '', file: asset.file }]);
@@ -322,7 +328,7 @@ export function createPlayer(opts) {
    * Start a loaded bed's layers together, swap it in and fade the previous bed out. A Web Audio
    * failure partway is reported and torn down, leaving the previous bed playing.
    * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec @param {number} level linear bed level
-   * @param {{ at?: 'now' | 'bar', sync?: boolean }} [when]
+   * @param {{ at?: 'now' | 'beat' | 'bar', sync?: boolean }} [when]
    * @returns {boolean}
    */
   function startBed(key, id, asset, bufs, fadeSec, level, when = {}) {
@@ -335,7 +341,7 @@ export function createPlayer(opts) {
     try {
       const soonest = c.currentTime + 0.05;
       const previous = beds.get(key);
-      const t = when.at === 'bar' && previous ? nextMusicBar(soonest) : soonest; // one shared start: layers stay sample-aligned
+      const t = (when.at === 'bar' || when.at === 'beat') && previous ? nextMusicBar(soonest, when.at) : soonest; // one shared start: layers stay sample-aligned
       // Phase lock: the new loop begins where the old one would be at `t`, so beats and chords line up through the crossfade.
       const dur = asset.durationSec ?? 0;
       const offset = when.sync && previous && dur > 0 && asset.bpm && asset.bpm === previous.asset.bpm
@@ -352,7 +358,7 @@ export function createPlayer(opts) {
       partsOf(asset).forEach((p, i) => {
         const b = bufs[i];
         if (!b) return; // a missing layer file: only that layer is silent
-        const n = source(b, g, { loop: asset.loop !== false, level: !on || on.has(p.name) ? 1 : 0 });
+        const n = source(b, g, { loop: asset.loop !== false, level: !on ? 1 : on.has(p.name) ? stateGain(asset, state) : 0 });
         layers.set(p.name, n); // before start(): a throwing start must still be torn down
         n.src.start(t, offset);
       });
@@ -386,7 +392,7 @@ export function createPlayer(opts) {
    * Fade the current music's layers to a state, now or at the next bar line. If other music is
    * loading or queued, the state is kept for it instead.
    * @param {string} state
-   * @param {{ fadeSec?: number, at?: 'now' | 'bar' }} [o]
+   * @param {{ fadeSec?: number, at?: 'now' | 'beat' | 'bar' }} [o]
    */
   function setState(state, { fadeSec: requested = 1.5, at = 'now' } = {}) {
     const fadeSec = fade(requested);
@@ -400,9 +406,9 @@ export function createPlayer(opts) {
     const on = asset.states?.[state];
     if (!on) { warnOnce('E_UNKNOWN_STATE', `"${cur.id}" has no state "${state}"`, state); return false; }
     const t = ctx.currentTime;
-    const when = at === 'bar' && asset.bpm ? nextBarTime(cur.origin, t, asset.bpm, asset.meter ?? 4, asset.durationSec) : t;
+    const when = (at === 'bar' || at === 'beat') && asset.bpm ? nextBarTime(cur.origin, t, asset.bpm, at === 'beat' ? 1 : asset.meter ?? 4, asset.durationSec) : t;
     for (const [name, n] of cur.layers) {
-      const target = on.includes(name) ? 1 : 0;
+      const target = on.includes(name) ? stateGain(asset, state) : 0;
       hold(n.gain.gain, when, t, n.target); // the actual level at `when`, not the previous goal
       n.gain.gain.linearRampToValueAtTime(target, when + span(fadeSec));
       n.target = target;
@@ -522,7 +528,7 @@ export function createPlayer(opts) {
     for (const [key, b] of beds) if (key.startsWith('ambience:')) ambienceSlots[key.slice('ambience:'.length)] = { id: b.id };
     return {
       running: running(), voices: vm.size, levels: { ...levels }, ducks: { ...ducks },
-      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target])) } : null,
+      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target > 0 ? 1 : 0])) } : null,
       ambience: a ? { id: a.id } : null,
       ambienceSlots,
     };
@@ -530,7 +536,7 @@ export function createPlayer(opts) {
 
   return {
     unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect,
-    /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'bar', sync?: boolean }} [o] */
+    /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'beat' | 'bar', sync?: boolean }} [o] */
     music: (id, o) => bed('music', id, o),
     /**
      * Crossfade an ambience bed. Without `slot` it is the main ambience bed; with a slot name

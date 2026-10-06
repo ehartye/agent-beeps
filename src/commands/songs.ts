@@ -5,9 +5,14 @@ import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
 import { openProject, readJsonFile, type OpenProject } from '../project.ts';
 import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
+import { readFileSync } from 'node:fs';
+import { readWav } from '../audio/wav.ts';
+import { applyTrimAndClip, measureSong } from '../measure/song.ts';
+import { integrated, truePeakDb } from '../measure/loudness.ts';
+import { clippedSamples } from '../measure/envelope.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { renderSongExcerpt } from '../render/song-excerpt.ts';
-import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, reportedResidualDb } from '../render/layers.ts';
+import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, reportedResidualDb, stateSong, stateTrim } from '../render/layers.ts';
 import { lintSong } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
@@ -206,6 +211,42 @@ export function registerSongCommands(program: Command, io: Io) {
       io.emit({ ...report, ...(buried.length ? { warnings: buried } : {}) });
     });
 
+  song.command('states <ref>')
+    .description('adaptive songs: render the layers and judge every state as its own piece (level, trim, range, seam, brightness, register overlaps among only its tracks, lint)')
+    .action(async (ref: string) => {
+      const p = openProject(io.projectDir());
+      const s = loadSong(p, ref);
+      if (!s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`);
+      const instruments = resolveInstruments(p, s);
+      const { mix, layers } = await withHost(async host => {
+        const mix = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders });
+        return { mix, layers: await renderLayers(host, s, instruments, mix, { project: p.project, rendersDir: p.paths.renders }) };
+      });
+      const sections = mix.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end }));
+      const sr = readWav(readFileSync(mix.wavPath)).sampleRate;
+      const cache = new Map<string, Float32Array[]>();
+      const chans = (name: string) => { let c = cache.get(name); if (!c) { c = readChannels(layers[name].wavPath); cache.set(name, c); } return c; };
+      const states = Object.entries(s.adaptive.states).map(([state, names]) => {
+        let sum: Float32Array[] | undefined;
+        for (const n of names) sum = addChannels(sum, chans(n));
+        const t = stateTrim(sum ?? [], sr, p.project.musicLoudness);
+        const f = measureSong(sum ?? [], sr, sections, { loop: s.loop });
+        const delivered = applyTrimAndClip(sum ?? [], t.trimDb);
+        f.delivered = { integratedLufs: Math.round(integrated(delivered, sr).lufs * 100) / 100, truePeakDb: Math.round(truePeakDb(delivered, sr) * 100) / 100, clippedSamples: clippedSamples(delivered) };
+        const tracks = names.flatMap(n => s.adaptive!.layers[n]);
+        const lint = lintSong(stateSong(s, tracks), f, p.project, instruments);
+        return {
+          state, layers: names, tracks, rawLufs: t.lufs, trimDb: t.trimDb, playsAtLufs: f.delivered.integratedLufs,
+          loudnessRangeLu: f.loudnessRangeLu, centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, truePeakDb: f.delivered.truePeakDb,
+          ...(f.seamDb !== undefined ? { seamDb: f.seamDb } : {}),
+          sections: f.sections.map(x => ({ name: x.name, lufs: Math.round((x.lufs + t.trimDb) * 10) / 10, centroidHz: x.centroidHz })),
+          lint: { errors: lint.errors, warnings: lint.warnings, overlaps: lint.judgementChecks.find(c => c.rule === 'song-register-bands')?.data },
+        };
+      });
+      io.emit({ name: s.name, mixLufs: mix.features.delivered?.integratedLufs, states });
+      if (states.some(x => x.lint.errors.length)) process.exitCode = 1;
+    });
+
   song.command('lint <ref>')
     .description('render (or reuse) a song and check it against craft/music-rules.json')
     .action(async (ref: string) => {
@@ -238,7 +279,7 @@ export function registerSongCommands(program: Command, io: Io) {
       const dest = resolve(opts.wav);
       mkdirSync(dirname(dest), { recursive: true });
       copyFileSync(r.wavPath, dest);
-      let layerFiles: Record<string, string> | undefined, residual: number | undefined;
+      let layerFiles: Record<string, string> | undefined, residual: number | undefined, stateTrimDb: Record<string, number> | undefined, stateLufs: Record<string, number> | undefined;
       const warnings: string[] = [];
       if (rendered.layers) {
         layerFiles = Object.fromEntries(Object.entries(rendered.layers).map(([name, lr]) => { const f = layerWavPath(dest, name); copyFileSync(lr.wavPath, f); return [name, f]; }));
@@ -248,17 +289,29 @@ export function registerSongCommands(program: Command, io: Io) {
         residual = nullResidualDb(readChannels(r.wavPath), sum ?? []);
         // The layers must sum to the approved mix; far above the 16-bit floor means a layer diverged.
         if (residual > -60) warnings.push(`layers differ from the mix by ${Math.round(residual)} dB: a layer does not sum back to the approved mix`);
+        // A state plays only some layers, so it is quieter than the whole mix the trim was set on: measure each state's sum and
+        // record the gain that brings it to the music loudness (the player applies it), limited so the sum stays under -1.5 dBFS.
+        if (s.adaptive && layerFiles) {
+          stateTrimDb = {}; stateLufs = {};
+          const sr = readWav(readFileSync(r.wavPath)).sampleRate;
+          for (const [state, names] of Object.entries(s.adaptive.states)) {
+            let sum: Float32Array[] | undefined;
+            for (const n of names) sum = addChannels(sum, readChannels(layerFiles[n]));
+            const t = sum ? stateTrim(sum, sr, p.project.musicLoudness) : { lufs: -99, trimDb: 0 };
+            stateTrimDb[state] = t.trimDb; stateLufs[state] = t.lufs;
+          }
+        }
         const sounding = new Set(compileSong(s).events.map(e => e.track));
         for (const [name, tracks] of Object.entries(s.adaptive?.layers ?? {})) {
           if (!tracks.some(t => sounding.has(t))) warnings.push(`layer "${name}" is silent in every section`);
         }
       }
       const extra = layerFiles && s.adaptive
-        ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial }
+        ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial, ...(stateTrimDb ? { stateTrimDb } : {}) }
         : {};
       const manifest = opts.manifest ? writeExportManifest(dest, r, role, extra) : undefined;
       io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec,
-        ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity) } : {}),
+        ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity), ...(stateLufs ? { stateLufs, stateTrimDb } : {}) } : {}),
         ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 

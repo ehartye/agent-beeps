@@ -161,4 +161,15 @@ stripped-down song, so every note, chance roll (`?`) and noise seed comes from t
 random stream as the mix and lines up sample-for-sample when summed. `song render --only` uses the
 same filter, so a solo preview plays the mix's own notes, not a re-rolled solo performance.
 
-Play an adaptive song in a game with `beeps bundle` and `beeps player export` (README, "Game player").
+Every state plays only some of the layers, so it is quieter than the full mix the trim was set on. The export therefore measures the sum of each state's layers and writes
+`stateTrimDb` (state to dB, within ±12 and keeping the sum under -1.5 dBFS) and `stateLufs` into the sidecar; the player applies the trim to that state's layers, so every state plays at
+the project's music loudness.
+
+`beeps song states <name>` renders the layers and judges each state as its own piece: raw and delivered loudness, the trim, loudness range, seam, brightness, low end, the register
+overlaps among only that state's tracks, and its lint. Read it instead of the full-mix lint for an adaptive song: the full mix (every layer at once) is never heard.
+
+A score of several adaptive songs that must crossfade (biomes, times of day, fights) works best on one grid: the same bpm, a loop length that divides the others, one key.
+`beeps song compat <songs...>` plans it from the written notes: tempo relation, whether the loops can be phase-locked, the estimated key, and the pitch-class agreement per pair.
+The player then starts the new loop in the old one's phase (`music(id, { at: 'bar', sync: true })`; see game-player.md).
+
+Play an adaptive song in a game with `beeps bundle` and `beeps player export` (README, "Game player"), and ship it with `beeps compress` (game-player.md).

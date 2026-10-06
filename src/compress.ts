@@ -112,7 +112,7 @@ export interface FileCheck {
 }
 
 export interface CompressOptions {
-  kbps?: Partial<Record<'music' | 'ambience' | 'sfx', number>>;
+  kbps?: Partial<Record<'music' | 'ambience' | 'sfx' | 'mix', number>>;
   /** Fail (E_RENDER) instead of reporting when a file does not verify. Default true. */
   strict?: boolean;
 }
@@ -158,15 +158,18 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
   for (const name of sidecars) {
     const m = ExportManifestSchema.parse(JSON.parse(readFileSync(join(src, name), 'utf8')));
     const kbps = kbpsFor(m.role);
+    // An adaptive asset's own mix file is not what the player loads (it plays the layers): a preview, so it can be small.
+    const mixKbps = m.layers ? Math.min(kbps, opts.kbps?.mix ?? kbps) : kbps;
     const encode = (file: string): string => {
       const wav = join(src, file);
       const ogg = file.replace(/\.wav$/i, '.ogg');
-      encodeOpus(ffmpeg, wav, join(out, ogg), kbps);
+      const rate = file === m.file && m.layers ? mixKbps : kbps;
+      encodeOpus(ffmpeg, wav, join(out, ogg), rate);
       const source = readWav(readFileSync(wav));
       const decoded = decodeChannels(ffmpeg, join(out, ogg), source.channels.length, source.sampleRate);
       const bytes = statSync(join(out, ogg)).size;
       // Variants of an sfx are one-shots; layers and the mix of a loop are loops.
-      checks.push({ file: ogg, kbps, bytes, sourceBytes: statSync(wav).size, ...verify(source, decoded, m.loop, m.role) });
+      checks.push({ file: ogg, kbps: rate, bytes, sourceBytes: statSync(wav).size, ...verify(source, decoded, m.loop, m.role) });
       return ogg;
     };
     const files = new Set<string>([m.file, ...(m.variants ?? []).map(v => v.file), ...(m.layers ?? []).map(l => l.file)]);

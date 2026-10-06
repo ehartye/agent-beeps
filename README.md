@@ -67,6 +67,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
 | `compress <dir> <outDir>` | re-encode an exported bundle as Ogg Opus (about 30x smaller), verify frame counts, alignment and loop wraps, write `<outDir>/index.json`; needs ffmpeg (`ffmpeg-static` optional dependency, `BEEPS_FFMPEG`, or the PATH) |
 | `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step) |
+| `song states <song>` | adaptive songs: judge every state as its own piece (loudness, trim, range, seam, register overlaps among its tracks, lint) |
 | `song compat <songs...>` | plan crossfades between songs without rendering: tempo relation, phase-lock, estimated key, harmony agreement per pair |
 | `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 

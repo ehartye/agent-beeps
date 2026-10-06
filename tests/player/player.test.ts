@@ -10,6 +10,9 @@ const catalog = { assets: {
   step: { file: 'step.0.wav', loop: false, noRepeat: true, variants: [{ file: 'step.0.wav' }, { file: 'step.1.wav' }] },
   calm: { file: 'calm.wav', loop: true },
   storm: { file: 'storm.wav', loop: true },
+  trimmed: { file: 'trimmed.wav', loop: true, bpm: 120, meter: 4, durationSec: 16,
+    layers: [{ name: 'bed', file: 'trimmed.bed.wav' }, { name: 'pulse', file: 'trimmed.pulse.wav' }],
+    states: { calm: ['bed'], busy: ['bed', 'pulse'] }, initialState: 'calm', stateTrimDb: { calm: 6, busy: 0 } },
   alt: { file: 'alt.wav', loop: true, bpm: 120, meter: 4, durationSec: 16 },
   slow: { file: 'slow.wav', loop: true, bpm: 90, meter: 4, durationSec: 16 },
   sting: { file: 'sting.wav', loop: false, priority: 2 },
@@ -903,5 +906,36 @@ describe('music transitions on the beat, ducking, stingers on the bar', () => {
     player.duck('music', 6);
     expect(player.inspect().ducks.music).toBe(1);
     player.duck('nope' as never, -3);
+  });
+});
+
+describe('state loudness trim', () => {
+  it('plays a state at its trim and reports layers as on or off', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('trimmed');
+    const gains = () => sources(ctx).slice(-2).map(n => ((n.outputs[0] as FakeNode).gain as FakeParam).value);
+    expect(gains()[0]).toBeCloseTo(10 ** (6 / 20), 6);
+    expect(gains()[1]).toBe(0);
+    expect(player.inspect().music!.layers).toEqual({ bed: 1, pulse: 0 });
+    player.setState('busy');
+    const pulse = (sources(ctx).at(-1)!.outputs[0] as FakeNode).gain as FakeParam;
+    expect(pulse.events.at(-1)).toMatchObject({ kind: 'linear', value: 1 });
+    expect(player.inspect().music!.layers).toEqual({ bed: 1, pulse: 1 });
+  });
+});
+
+describe('beat quantisation', () => {
+  it('starts a crossfade and a sting on the next beat when asked', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number; // beat = 0.5 s at 120 bpm
+    ctx.currentTime = start + 0.7;
+    await player.music('alt', { at: 'beat', fadeSec: 1 });
+    expect(sources(ctx).at(-1)!.startedAt).toBeCloseTo(start + 1, 6);
+    ctx.currentTime = start + 3.2;
+    await player.play('sting', { at: 'beat' })!.ready;
+    expect(sources(ctx).at(-1)!.startedAt).toBeCloseTo(start + 3.5, 6);
   });
 });

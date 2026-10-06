@@ -41,9 +41,10 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .option('--music-kbps <n>', 'music and adaptive layers (default 56)', Number)
     .option('--ambience-kbps <n>', 'ambience beds (default 48)', Number)
     .option('--sfx-kbps <n>', 'sound effects (default 72)', Number)
+    .option('--mix-kbps <n>', "the full-mix file of an adaptive song, which the player does not load (it plays the layers); default: same as music", Number)
     .option('--no-strict', 'report a file that does not verify instead of failing')
-    .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; strict: boolean }) => {
-      const r = compressBundle(dir, outDir, { kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}) } });
+    .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; mixKbps?: number; strict: boolean }) => {
+      const r = compressBundle(dir, outDir, { kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}), ...(o.mixKbps ? { mix: o.mixKbps } : {}) } });
       io.emit({ ...r, checks: o.strict ? r.checks.filter(c => c.problems.length || c.wrap) : r.checks });
       if (r.problems.length && o.strict) process.exitCode = 1;
     });
