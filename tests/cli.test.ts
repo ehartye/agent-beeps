@@ -95,4 +95,21 @@ describe('beeps CLI', () => {
     expect(ex.status, ex.stderr).toBe(0);
     expect(readFileSync(join(dir, 'out', 'coin.wav')).subarray(0, 4).toString()).toBe('RIFF');
   });
+
+  it.skipIf(!hasChromium)('set create turns authored patches into an auditionable set', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify({ ...coin(), name: 'coin-b' }));
+    const r = beeps(dir, 'set', 'create', 'a.json', 'b.json', '--prompt', 'two coins');
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.out.candidates.map((c: { name: string }) => c.name)).toEqual(['coin-a', 'coin-b']);
+    expect(existsSync(r.out.sheet)).toBe(true);
+    const dup = beeps(dir, 'set', 'create', 'a.json', 'a.json');
+    expect(dup.status).toBe(1);
+    expect(dup.err.code).toBe('E_USAGE');
+    const open = beeps(dir, 'audition', 'open', '--set', r.out.set, '--flow', 'explore');
+    expect(open.status, open.stderr).toBe(0);
+    expect(open.out.url).toMatch(/\/s\//);
+    beeps(dir, 'audition', 'close', '--id', open.out.id);
+  });
 });

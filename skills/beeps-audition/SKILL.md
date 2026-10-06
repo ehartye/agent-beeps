@@ -12,6 +12,8 @@ Give every patch a meaningful name and a short `meta.description` explaining its
 The page displays both; generated seed/variant suffixes are omitted from the displayed name.
 Use `--flow compare` (the default) only for alternatives competing for the **same role**.
 Exploration needs no wait/refine loop; share its URL and let the owner listen.
+A kit you authored by hand has no set yet: `beeps set create a.json b.json ... --prompt "..."` renders the
+patches into one, then open it with `--flow explore`. (Songs and beds go to `beeps album open`.)
 
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`. The owner listens on a page served to
 the local network (`http://<this-host>:<port>/s/<id>?t=<token>`; port 47301 unless busy); they judge in

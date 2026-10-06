@@ -55,6 +55,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
 | `new`, `batch`, `list` | save patches; atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
+| `set create` | render patches you already authored into a candidate set (audition a hand-made kit with `--flow explore`) |
 | `mutate`, `crossover` | direction-steered variations; blend two patches |
 | `kit list/add/remove/check` | the project's shipped sounds and kit-level rules |
 | `predict`, `audition open/wait/round/status/list/close/stats` | the owner's listening loop |
