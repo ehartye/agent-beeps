@@ -36,7 +36,7 @@ const hash = s => {
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
  * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number }} Playing one source and its gain
- * @typedef {{ id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, state: string | null }} Bed
+ * @typedef {{ id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, origin: number, state: string | null }} Bed
  * @typedef {{ id: string | null, fadeSec: number, token: number, slot?: string, gainDb?: number }} Pending
  */
 
@@ -59,6 +59,8 @@ export function createPlayer(opts) {
   const vm = createVoiceManager({ budget: voices });
   /** @type {Record<LevelBus, number>} */
   const levels = { music: 1, ambience: 1, sfx: 1, master: 1 };
+  /** Temporary attenuation per bus (linear, 1 = none), applied on top of the level: dialogue ducks music without fighting an options-screen volume. @type {Record<LevelBus, number>} */
+  const ducks = { music: 1, ambience: 1, sfx: 1, master: 1 };
   const warned = new Set();
   /** @type {Map<string, { next(): number }>} */
   const pickers = new Map();
@@ -129,12 +131,12 @@ export function createPlayer(opts) {
     shaper.curve = clipperCurve();
     shaper.oversample = 'none';
     const m = c.createGain();
-    m.gain.value = levels.master;
+    m.gain.value = levels.master * ducks.master;
     m.connect(shaper);
     shaper.connect(c.destination);
     master = m;
     /** @param {'music' | 'ambience' | 'sfx'} b */
-    const bus = b => { const g = c.createGain(); g.gain.value = levels[b]; g.connect(m); return g; };
+    const bus = b => { const g = c.createGain(); g.gain.value = levels[b] * ducks[b]; g.connect(m); return g; };
     buses = { music: bus('music'), ambience: bus('ambience'), sfx: bus('sfx') };
     lifecycle = createLifecycle(c, { enabled, hidden });
   }
@@ -191,9 +193,9 @@ export function createPlayer(opts) {
   /**
    * Play a sound effect. Null when dropped (before unlock, hidden, unknown, voice budget, cooldown).
    * @param {string} id
-   * @param {{ pan?: number, gainDb?: number, cooldownSec?: number, cap?: number }} [o]
+   * @param {{ pan?: number, gainDb?: number, cooldownSec?: number, cap?: number, at?: 'now' | 'bar' }} [o] `at: 'bar'` starts it on the next bar line of the music playing (a stinger that lands in time); with no music it starts now
    */
-  function play(id, { pan = 0, gainDb = 0, cooldownSec, cap } = {}) {
+  function play(id, { pan = 0, gainDb = 0, cooldownSec, cap, at = 'now' } = {}) {
     if (!ctx || !running() || !buses) return null;
     const assets = loader.assets;
     if (!assets) { loader.retryCatalog(); return null; } // throttled: safe from a per-frame play()
@@ -235,7 +237,7 @@ export function createPlayer(opts) {
           if (live.get(grant.key) === node) { live.delete(grant.key); vm.release(grant.key); }
           try { node.src.disconnect(); node.gain.disconnect(); } catch { /* already disconnected */ }
         };
-        node.src.start(now());
+        node.src.start(at === 'bar' ? nextMusicBar(now()) : now());
         return true;
       } catch (e) {
         // A Web Audio call threw: report it, free the voice, and resolve rather than reject.
@@ -254,10 +256,10 @@ export function createPlayer(opts) {
    * queued (before unlock or while hidden), or unavailable. Never rejects.
    * @param {BedBus} bus
    * @param {string | null} id
-   * @param {{ fadeSec?: number, slot?: string, gainDb?: number }} [o] `slot` (ambience only) names an independent bed; `gainDb` (-60..12) sets the bed's level, ramped if the same bed is requested again
+   * @param {{ fadeSec?: number, slot?: string, gainDb?: number, at?: 'now' | 'bar', sync?: boolean }} [o] `slot` (ambience only) names an independent bed; `gainDb` (-60..12) sets the bed's level, ramped if the same bed is requested again; `at: 'bar'` (music) starts the crossfade on the next bar line of the music now playing; `sync` (music) starts the new loop at the phase the old one is at, when both have the same tempo, so a key-compatible loop lands in step
    * @returns {Promise<boolean>}
    */
-  function bed(bus, id, { fadeSec: requested = 2, slot, gainDb } = {}) {
+  function bed(bus, id, { fadeSec: requested = 2, slot, gainDb, at = 'now', sync = false } = {}) {
     if (slot !== undefined && (bus !== 'ambience' || !SLOT_NAME.test(slot))) {
       report('E_USAGE', `bad ambience slot "${slot}": use 1-32 chars, lowercase letters, digits and dashes`, String(slot));
       return Promise.resolve(false);
@@ -298,9 +300,19 @@ export function createPlayer(opts) {
         if (bufs.every(b => !b)) return fail();
         // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
         if (!running()) { pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) }); return false; }
-        return startBed(key, id, asset, bufs, fadeSec, level ?? 1) || fail();
+        return startBed(key, id, asset, bufs, fadeSec, level ?? 1, bus === 'music' ? { at, sync } : {}) || fail();
       });
     }).catch(e => { report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
+  }
+
+  /**
+   * The next bar line of the music that is playing (or `at` itself when nothing with a tempo plays), never earlier than `earliest`.
+   * @param {number} earliest
+   */
+  function nextMusicBar(earliest) {
+    const cur = beds.get('music');
+    if (!cur || !cur.asset.bpm) return earliest;
+    return Math.max(earliest, nextBarTime(cur.origin, earliest, cur.asset.bpm, cur.asset.meter ?? 4, cur.asset.durationSec));
   }
 
   /** @param {Asset} asset @returns {LayerFile[]} */
@@ -310,9 +322,10 @@ export function createPlayer(opts) {
    * Start a loaded bed's layers together, swap it in and fade the previous bed out. A Web Audio
    * failure partway is reported and torn down, leaving the previous bed playing.
    * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec @param {number} level linear bed level
+   * @param {{ at?: 'now' | 'bar', sync?: boolean }} [when]
    * @returns {boolean}
    */
-  function startBed(key, id, asset, bufs, fadeSec, level) {
+  function startBed(key, id, asset, bufs, fadeSec, level, when = {}) {
     const bus = busOf(key);
     const c = /** @type {AudioContext} */ (ctx);
     /** @type {Map<string, Playing>} */
@@ -320,7 +333,13 @@ export function createPlayer(opts) {
     /** @type {GainNode | null} */
     let group = null;
     try {
-      const t = c.currentTime + 0.05; // one shared start: layers stay sample-aligned
+      const soonest = c.currentTime + 0.05;
+      const previous = beds.get(key);
+      const t = when.at === 'bar' && previous ? nextMusicBar(soonest) : soonest; // one shared start: layers stay sample-aligned
+      // Phase lock: the new loop begins where the old one would be at `t`, so beats and chords line up through the crossfade.
+      const dur = asset.durationSec ?? 0;
+      const offset = when.sync && previous && dur > 0 && asset.bpm && asset.bpm === previous.asset.bpm
+        ? (((t - previous.origin) % dur) + dur) % dur : 0;
       const g = c.createGain();
       group = g;
       g.gain.value = 0;
@@ -335,11 +354,10 @@ export function createPlayer(opts) {
         if (!b) return; // a missing layer file: only that layer is silent
         const n = source(b, g, { loop: asset.loop !== false, level: !on || on.has(p.name) ? 1 : 0 });
         layers.set(p.name, n); // before start(): a throwing start must still be torn down
-        n.src.start(t);
+        n.src.start(t, offset);
       });
-      const previous = beds.get(key);
       /** @type {Bed} */
-      const started = { id, asset, group: g, level, layers, startTime: t, state };
+      const started = { id, asset, group: g, level, layers, startTime: t, origin: t - offset, state };
       beds.set(key, started);
       // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
       // out), free the whole bed's graph, and forget the bed if it is still the current one.
@@ -382,7 +400,7 @@ export function createPlayer(opts) {
     const on = asset.states?.[state];
     if (!on) { warnOnce('E_UNKNOWN_STATE', `"${cur.id}" has no state "${state}"`, state); return false; }
     const t = ctx.currentTime;
-    const when = at === 'bar' && asset.bpm ? nextBarTime(cur.startTime, t, asset.bpm, asset.meter ?? 4, asset.durationSec) : t;
+    const when = at === 'bar' && asset.bpm ? nextBarTime(cur.origin, t, asset.bpm, asset.meter ?? 4, asset.durationSec) : t;
     for (const [name, n] of cur.layers) {
       const target = on.includes(name) ? 1 : 0;
       hold(n.gain.gain, when, t, n.target); // the actual level at `when`, not the previous goal
@@ -393,11 +411,32 @@ export function createPlayer(opts) {
     return true;
   }
 
+  /** @param {LevelBus} bus @param {number} [sec] */
+  function applyBus(bus, sec) {
+    if (!ctx || !master || !buses) return;
+    ramp(bus === 'master' ? master.gain : buses[bus].gain, levels[bus] * ducks[bus], sec ?? RAMP, now());
+  }
+
   /** @param {LevelBus} bus @param {number} value */
   function setLevel(bus, value) {
     if (!Object.hasOwn(levels, bus) || !Number.isFinite(value)) return; // untyped callers too
     levels[bus] = Math.min(1, Math.max(0, value));
-    if (ctx && master && buses) ramp(bus === 'master' ? master.gain : buses[bus].gain, levels[bus], RAMP, now());
+    applyBus(bus);
+  }
+
+  /**
+   * Temporarily turn a bus down by `gainDb` (0 releases it) over `fadeSec`, on top of its level: dialogue and menus duck the
+   * music and ambience, and the player's own volume setting (`setLevel`) is untouched. Asking again replaces the duck.
+   * @param {LevelBus | LevelBus[]} bus @param {number} gainDb negative dB (clamped to -60..0)
+   * @param {{ fadeSec?: number }} [o]
+   */
+  function duck(bus, gainDb, { fadeSec } = {}) {
+    if (!Number.isFinite(gainDb)) return;
+    for (const b of Array.isArray(bus) ? bus : [bus]) {
+      if (!Object.hasOwn(ducks, b)) continue;
+      ducks[b] = 10 ** (Math.min(0, Math.max(-60, gainDb)) / 20);
+      applyBus(b, fadeSec);
+    }
   }
 
   /** @param {number} [fadeSec] */
@@ -482,16 +521,16 @@ export function createPlayer(opts) {
     const ambienceSlots = {};
     for (const [key, b] of beds) if (key.startsWith('ambience:')) ambienceSlots[key.slice('ambience:'.length)] = { id: b.id };
     return {
-      running: running(), voices: vm.size, levels: { ...levels },
-      music: m ? { id: m.id, state: m.state, layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target])) } : null,
+      running: running(), voices: vm.size, levels: { ...levels }, ducks: { ...ducks },
+      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target])) } : null,
       ambience: a ? { id: a.id } : null,
       ambienceSlots,
     };
   }
 
   return {
-    unlock, play, setState, setLevel, setEnabled, setHidden, stopAll, retry, inspect,
-    /** @param {string | null} id @param {{ fadeSec?: number }} [o] */
+    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect,
+    /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'bar', sync?: boolean }} [o] */
     music: (id, o) => bed('music', id, o),
     /**
      * Crossfade an ambience bed. Without `slot` it is the main ambience bed; with a slot name

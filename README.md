@@ -65,6 +65,9 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
 | `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
+| `compress <dir> <outDir>` | re-encode an exported bundle as Ogg Opus (about 30x smaller), verify frame counts, alignment and loop wraps, write `<outDir>/index.json`; needs ffmpeg (`ffmpeg-static` optional dependency, `BEEPS_FFMPEG`, or the PATH) |
+| `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step) |
+| `song compat <songs...>` | plan crossfades between songs without rendering: tempo relation, phase-lock, estimated key, harmony agreement per pair |
 | `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and

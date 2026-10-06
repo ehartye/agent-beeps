@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { bundleDir } from '../bundle.ts';
+import { checkLoops, compressBundle } from '../compress.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { PLAYER_VERSION } from '../../runtime/player/version.js';
@@ -35,6 +36,24 @@ export function registerPlayerCommands(program: Command, io: Io) {
   program.command('bundle <dir>')
     .description('collect the export sidecars (*.wav.json) under a directory into <dir>/index.json, the catalog the game player loads')
     .action((dir: string) => io.emit(bundleDir(resolve(dir))));
+  program.command('compress <dir> <outDir>')
+    .description('re-encode an exported bundle (WAVs and *.wav.json sidecars) as Ogg Opus in <outDir>, verify frame counts, alignment and loop wraps, and write its index.json')
+    .option('--music-kbps <n>', 'music and adaptive layers (default 56)', Number)
+    .option('--ambience-kbps <n>', 'ambience beds (default 48)', Number)
+    .option('--sfx-kbps <n>', 'sound effects (default 72)', Number)
+    .option('--no-strict', 'report a file that does not verify instead of failing')
+    .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; strict: boolean }) => {
+      const r = compressBundle(dir, outDir, { kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}) } });
+      io.emit({ ...r, checks: o.strict ? r.checks.filter(c => c.problems.length || c.wrap) : r.checks });
+      if (r.problems.length && o.strict) process.exitCode = 1;
+    });
+  program.command('loopcheck <files...>')
+    .description('decode encoded audio (ogg, mp3, wav...) and report its frame count against the sidecar and how its loop wraps: click size and level step')
+    .action((files: string[]) => {
+      const r = checkLoops(files.map(f => resolve(f)));
+      io.emit({ files: r });
+      if (r.some(x => x.problems.length)) process.exitCode = 1;
+    });
   const player = program.command('player').description('the browser runtime games use to play exported audio');
   player.command('export <dir>')
     .description('vendor the player into <dir>/beeps-player/, replacing that folder (import beeps-player/player/player.js)')

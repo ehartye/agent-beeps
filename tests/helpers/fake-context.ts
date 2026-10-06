@@ -26,7 +26,7 @@ export class FakeNode {
     for (const [k, v] of Object.entries(params)) this[k] = new FakeParam(v);
   }
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
-  start(t = 0) { this.startedAt = t; }
+  start(t = 0, offset = 0) { this.startedAt = t; this.offset = offset; }
   stop(t = 0) { this.stoppedAt = t; }
   disconnect() { this.disconnected = true; }
 }

@@ -44,13 +44,23 @@ export interface PlayerOptions {
   seed?: number;
 }
 
-export interface PlayOptions { pan?: number; gainDb?: number; cooldownSec?: number; cap?: number }
+export interface PlayOptions {
+  pan?: number; gainDb?: number; cooldownSec?: number; cap?: number;
+  /** 'bar': start on the next bar line of the music that is playing (a stinger that lands in time). Default 'now'. */
+  at?: 'now' | 'bar';
+}
 export interface PlayHandle { id: string; file: string; ready: Promise<boolean>; stop(fadeSec?: number): void }
 
 export interface BedOptions {
   fadeSec?: number;
   /** Bed level in dB (-60..12), default 0. Asking again for the same bed with a new gainDb ramps it. */
   gainDb?: number;
+}
+export interface MusicOptions extends BedOptions {
+  /** 'bar': start the crossfade on the next bar line of the music now playing. Default 'now'. */
+  at?: 'now' | 'bar';
+  /** Start the new loop at the phase the old one has reached (same bpm only), so beats and chords stay in step through the crossfade. */
+  sync?: boolean;
 }
 export interface AmbienceOptions extends BedOptions {
   /** A named independent ambience bed (lowercase-dash, up to 8). Omitted: the main ambience bed. */
@@ -61,7 +71,9 @@ export interface PlayerSnapshot {
   running: boolean;
   voices: number;
   levels: Record<LevelBus, number>;
-  music: { id: string; state: string | null; layers: Record<string, number> } | null;
+  /** Temporary attenuation per bus, linear (1 = none); see `duck`. */
+  ducks: Record<LevelBus, number>;
+  music: { id: string; state: string | null; /** seconds into the loop; absent when the asset has no durationSec */ positionSec?: number; layers: Record<string, number> } | null;
   ambience: { id: string } | null;
   ambienceSlots: Record<string, { id: string }>;
 }
@@ -69,10 +81,12 @@ export interface PlayerSnapshot {
 export interface Player {
   unlock(): Promise<boolean>;
   play(id: string, o?: PlayOptions): PlayHandle | null;
-  music(id: string | null, o?: BedOptions): Promise<boolean>;
+  music(id: string | null, o?: MusicOptions): Promise<boolean>;
   ambience(id: string | null, o?: AmbienceOptions): Promise<boolean>;
   setState(state: string, o?: { fadeSec?: number; at?: 'now' | 'bar' }): boolean;
   setLevel(bus: LevelBus, value: number): void;
+  /** Turn a bus down by `gainDb` (0 releases) over `fadeSec`, on top of its `setLevel` level. Dialogue and menus duck music and ambience with it. */
+  duck(bus: LevelBus | LevelBus[], gainDb: number, o?: { fadeSec?: number }): void;
   setEnabled(enabled: boolean): void;
   setHidden(hidden: boolean): void;
   stopAll(fadeSec?: number): void;

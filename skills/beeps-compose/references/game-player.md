@@ -59,6 +59,13 @@ createPlayer({
   fades just that slot. `gainDb` (-60..12, default 0) sets a bed's level relative to the ambience bus,
   because every bed is exported at the same loudness: set the weather bed under the base bed here.
   Asking for the same bed again with a new `gainDb` ramps it over `fadeSec` without restarting.
+- **`music(id, { fadeSec, at: 'bar', sync: true })`** — `at: 'bar'` starts the crossfade on the next bar line of the music
+  playing (never mid-bar). `sync: true` starts the new loop at the phase the old one has reached when both have the same
+  `bpm`, so beats and chords stay in step through the fade; plan loops of one tempo, key and a loop length that divides the
+  others (`beeps song compat`). `inspect().music.positionSec` reads the position.
+- **`play(id, { at: 'bar' })`** — a stinger that starts on the next bar line of the music playing (now when none plays).
+- **`duck(bus | bus[], gainDb, { fadeSec })`** — turn a bus down on top of its `setLevel` volume and release it with `0`: dialogue and
+  menus duck the music and ambience while the player's own volume setting is untouched. `inspect().ducks` shows them.
 - **`setState(state, { fadeSec, at: 'now' | 'bar' })`** — fades the current music's adaptive layers to
   a named state (`asset.states[state]`). `at: 'bar'` waits for the asset's next bar line (needs
   `bpm`); default is immediate. With no music playing, or other music still loading, the state is
@@ -111,3 +118,14 @@ Every bus feeds one master `WaveShaper` (`clipperCurve()`, `engine/fx.js`) befor
 passes signal through unchanged below its -1.5 dBFS knee and only gently rounds peaks above it — it
 is a safety net for stacked voices, never a loudness effect, so levels are never suddenly clamped or
 pumped by ordinary play.
+
+## Shipping small: `beeps compress`
+
+Exports are WAV (10-15 MB per music loop). For a hosted web build run `beeps compress <wavDir> <outDir>`: every file becomes
+Ogg Opus (music 56 kbps, ambience 48, sfx 72; override with `--music-kbps` etc.), sidecars become `*.ogg.json` with an `encoding`
+block, and `<outDir>/index.json` is the catalog the player loads (the player decodes any format the browser does). The command
+decodes every encoded file again and fails when the frame count changed, the decode does not line up with the source (music: 8 dB
+or more; noise beds and sfx: loudness envelope correlation 0.8), or a loop's wrap now ticks (`seamExcessDb`: the energy of the
+5 ms around the wrap against the loudest 5 ms elsewhere; +6 dB and 3 dB above the source fails). `beeps loopcheck <files>` runs
+the frame and wrap checks on any encoded file. Opus decodes to the exact frame count and loops gaplessly in Chromium and Firefox;
+Safari is unmeasured. Needs ffmpeg with libopus (the optional `ffmpeg-static` dependency, `BEEPS_FFMPEG`, or the PATH).

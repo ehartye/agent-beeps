@@ -19,6 +19,7 @@ import type { Patch } from '../schema/patch.ts';
 import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '../album.ts';
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
+import { planScore } from '../compat.ts';
 import { exportRole, writeExportManifest } from '../export-manifest.ts';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
@@ -117,6 +118,16 @@ export function registerSongCommands(program: Command, io: Io) {
     .action((refs: string[]) => {
       const p = openProject(io.projectDir());
       io.emit({ songs: refs.map(r => { const s = loadSong(p, r); return songOutline(s, resolveInstruments(p, s)); }) });
+    });
+
+  song.command('compat <refs...>')
+    .description('plan crossfades between songs without rendering: tempo, loop length, estimated key, and per pair the tempo relation, phase-lock and harmony agreement')
+    .option('--worst <n>', 'print only the n weakest pairs', int)
+    .action((refs: string[], opts: { worst?: number }) => {
+      const p = openProject(io.projectDir());
+      const plan = planScore(refs.map(r => loadSong(p, r)));
+      if (opts.worst) plan.pairs = plan.pairs.sort((a, b) => a.harmony - b.harmony).slice(0, opts.worst);
+      io.emit(plan);
     });
 
   song.command('render <refs...>')

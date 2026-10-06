@@ -10,6 +10,9 @@ const catalog = { assets: {
   step: { file: 'step.0.wav', loop: false, noRepeat: true, variants: [{ file: 'step.0.wav' }, { file: 'step.1.wav' }] },
   calm: { file: 'calm.wav', loop: true },
   storm: { file: 'storm.wav', loop: true },
+  alt: { file: 'alt.wav', loop: true, bpm: 120, meter: 4, durationSec: 16 },
+  slow: { file: 'slow.wav', loop: true, bpm: 90, meter: 4, durationSec: 16 },
+  sting: { file: 'sting.wav', loop: false, priority: 2 },
   theme: { file: 'theme.wav', loop: true, bpm: 120, meter: 4, durationSec: 16,
     layers: [{ name: 'bed', file: 'theme.bed.wav' }, { name: 'pulse', file: 'theme.pulse.wav' }, { name: 'threat', file: 'theme.threat.wav' }],
     states: { calm: ['bed'], explore: ['bed', 'pulse'], danger: ['bed', 'pulse', 'threat'] }, initialState: 'explore' },
@@ -809,5 +812,96 @@ describe('context ownership and stale pending state', () => {
     up = true;
     expect(await player.music('theme')).toBe(true);
     expect(player.inspect().music).toMatchObject({ id: 'theme', state: 'explore' });
+  });
+});
+
+describe('music transitions on the beat, ducking, stingers on the bar', () => {
+  it('starts a music crossfade on the next bar line of the music playing', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number; // bar = 2 s at 120 bpm
+    ctx.currentTime = start + 0.5;
+    await player.music('alt', { fadeSec: 1, at: 'bar' });
+    const alt = sources(ctx).at(-1)!;
+    expect(alt.startedAt).toBeCloseTo(start + 2, 6);
+    expect(alt.offset).toBe(0);
+  });
+
+  it('phase-locks a same-tempo loop with sync, and ignores sync when tempos differ', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number;
+    ctx.currentTime = start + 4.5;
+    await player.music('alt', { at: 'bar', sync: true });
+    const alt = sources(ctx).at(-1)!;
+    expect(alt.startedAt).toBeCloseTo(start + 6, 6);
+    expect(alt.offset).toBeCloseTo(6, 6); // 6 s into a 16 s loop, like the old bed
+    expect(player.inspect().music!.positionSec).toBeCloseTo(0.5 * 0 + ((ctx.currentTime - start) % 16) - 0, 6);
+    ctx.currentTime = start + 7;
+    await player.music('slow', { at: 'bar', sync: true });
+    expect(sources(ctx).at(-1)!.offset).toBe(0);
+  });
+
+  it('keeps the bar grid anchored to the phase-locked origin on the next change', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number;
+    ctx.currentTime = start + 1;
+    await player.music('alt', { at: 'bar', sync: true }); // starts at start + 2, offset 2
+    ctx.currentTime = start + 3.2;
+    await player.music('theme', { at: 'bar', sync: true });
+    expect(sources(ctx).at(-1)!.startedAt).toBeCloseTo(start + 4, 6);
+  });
+
+  it('plays a sting on the next bar line when asked', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.music('theme');
+    const start = sources(ctx)[0].startedAt as number;
+    ctx.currentTime = start + 0.5;
+    const h = player.play('sting', { at: 'bar' })!;
+    await h.ready;
+    expect(sources(ctx).at(-1)!.startedAt).toBeCloseTo(start + 2, 6);
+    const now = player.play('sting', { cooldownSec: 0 })!;
+    await now.ready;
+    expect(sources(ctx).at(-1)!.startedAt).toBe(ctx.currentTime);
+  });
+
+  it('a sting with no music playing starts now', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    ctx.currentTime = 3;
+    await player.play('sting', { at: 'bar' })!.ready;
+    expect(sources(ctx).at(-1)!.startedAt).toBe(3);
+  });
+
+  it('ducks a bus on top of its level without touching setLevel, and releases', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    player.setLevel('music', 0.5);
+    player.duck('music', -6, { fadeSec: 0.2 });
+    const musicBus = ctx.nodes('gain')[1]; // master, music, ambience, sfx
+    const last = (musicBus.gain as FakeParam).events.at(-1)!;
+    expect(last.value).toBeCloseTo(0.5 * 10 ** (-6 / 20), 6);
+    expect(player.inspect().levels.music).toBe(0.5);
+    expect(player.inspect().ducks.music).toBeCloseTo(10 ** (-6 / 20), 6);
+    player.duck(['music', 'ambience'], 0);
+    expect((musicBus.gain as FakeParam).events.at(-1)!.value).toBeCloseTo(0.5, 6);
+    player.setLevel('music', 1);
+    player.duck('music', -12);
+    player.setLevel('music', 0.8);
+    expect((musicBus.gain as FakeParam).events.at(-1)!.value).toBeCloseTo(0.8 * 10 ** (-12 / 20), 6);
+  });
+
+  it('ignores a non-finite duck and clamps a boost to no duck', async () => {
+    const { player } = setup();
+    await player.unlock();
+    player.duck('music', NaN);
+    player.duck('music', 6);
+    expect(player.inspect().ducks.music).toBe(1);
+    player.duck('nope' as never, -3);
   });
 });
