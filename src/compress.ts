@@ -36,6 +36,19 @@ function run(ffmpeg: string, args: string[]) {
   return r.stdout;
 }
 
+export type CompressFormat = 'opus' | 'mp3';
+/** Delivery formats: Ogg Opus is the small default; MP3 is the fallback for browsers with no Ogg Opus decoder (Safari before it landed). LAME writes its gapless header, so loops keep their length. */
+export const FORMATS: Record<CompressFormat, { ext: string; codec: 'opus' | 'mp3'; container: 'ogg' | 'mp3'; defaultKbps: Record<'music' | 'ambience' | 'sfx', number> }> = {
+  opus: { ext: 'ogg', codec: 'opus', container: 'ogg', defaultKbps: DEFAULT_KBPS },
+  mp3: { ext: 'mp3', codec: 'mp3', container: 'mp3', defaultKbps: { music: 80, ambience: 64, sfx: 96 } },
+};
+
+export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number): void {
+  mkdirSync(dirname(out), { recursive: true });
+  // CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
+  run(ffmpeg, ['-y', '-i', wav, '-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000', '-fflags', '+bitexact', '-flags:a', '+bitexact', out]);
+}
+
 export function encodeOpus(ffmpeg: string, wav: string, out: string, kbps: number): void {
   mkdirSync(dirname(out), { recursive: true });
   // -vbr on keeps quiet passages cheap; -application audio is the music mode; bitexact keeps the bytes reproducible.
@@ -115,6 +128,8 @@ export interface CompressOptions {
   kbps?: Partial<Record<'music' | 'ambience' | 'sfx' | 'mix', number>>;
   /** Fail (E_RENDER) instead of reporting when a file does not verify. Default true. */
   strict?: boolean;
+  /** Output codec and container. Default 'opus' (Ogg Opus). */
+  format?: CompressFormat;
 }
 
 /** A frame count that differs, a decode that does not line up with the source, or a loop that now clicks. */
@@ -150,7 +165,8 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
   const src = resolve(srcDir), out = resolve(outDir);
   if (src === out) throw new BeepsError('E_USAGE', 'the output directory must differ from the source directory');
   mkdirSync(out, { recursive: true });
-  const kbpsFor = (role: ExportManifest['role']) => opts.kbps?.[role] ?? DEFAULT_KBPS[role];
+  const fmt = FORMATS[opts.format ?? 'opus'];
+  const kbpsFor = (role: ExportManifest['role']) => opts.kbps?.[role] ?? fmt.defaultKbps[role];
   const checks: FileCheck[] = [];
   const assets: { id: string; role: string; bytes: number }[] = [];
   const sidecars = sidecarsOf(src);
@@ -162,9 +178,9 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
     const mixKbps = m.layers ? Math.min(kbps, opts.kbps?.mix ?? kbps) : kbps;
     const encode = (file: string): string => {
       const wav = join(src, file);
-      const ogg = file.replace(/\.wav$/i, '.ogg');
+      const ogg = file.replace(/\.wav$/i, `.${fmt.ext}`);
       const rate = file === m.file && m.layers ? mixKbps : kbps;
-      encodeOpus(ffmpeg, wav, join(out, ogg), rate);
+      (fmt.codec === 'mp3' ? encodeMp3 : encodeOpus)(ffmpeg, wav, join(out, ogg), rate);
       const source = readWav(readFileSync(wav));
       const decoded = decodeChannels(ffmpeg, join(out, ogg), source.channels.length, source.sampleRate);
       const bytes = statSync(join(out, ogg)).size;
@@ -178,7 +194,7 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
       ...m, file: renamed.get(m.file)!,
       ...(m.variants ? { variants: m.variants.map(v => ({ ...v, file: renamed.get(v.file)! })) } : {}),
       ...(m.layers ? { layers: m.layers.map(l => ({ ...l, file: renamed.get(l.file)! })) } : {}),
-      encoding: { codec: 'opus', container: 'ogg', kbps },
+      encoding: { codec: fmt.codec, container: fmt.container, kbps } as ExportManifest['encoding'],
     };
     writeFileSync(join(out, `${basename(next.file)}.json`), JSON.stringify(ExportManifestSchema.parse(next), null, 2) + '\n');
     assets.push({ id: m.id, role: m.role, bytes: [...renamed.values()].reduce((s, f) => s + statSync(join(out, f)).size, 0) });

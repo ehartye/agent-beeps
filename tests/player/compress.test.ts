@@ -58,6 +58,20 @@ describe.skipIf(!hasFfmpeg)('beeps compress', () => {
     expect(checkLoops([join(out, 'theme.ogg')])[0].problems).toEqual([]);
   });
 
+  it('encodes gapless MP3 as an alternative format: same ids and frame counts, .mp3 files, mp3 encoding in the sidecar', () => {
+    const src = mkdtempSync(join(tmpdir(), 'beeps-mp3-src-')), out = mkdtempSync(join(tmpdir(), 'beeps-mp3-out-'));
+    const loop = loopChannels(4);
+    writeFileSync(join(src, 'theme.wav'), writeWav(loop, SR));
+    writeFileSync(join(src, 'theme.wav.json'), JSON.stringify(sidecar('theme', 'theme.wav', 4, { bpm: 60, meter: 4 })));
+    const r = compressBundle(src, out, { format: 'mp3' });
+    expect(r.problems).toEqual([]);
+    expect(r.checks.every(c => c.frameDelta === 0)).toBe(true);
+    expect(r.checks[0].wrap!.seamExcessDb).toBeLessThan(6);
+    const index = JSON.parse(readFileSync(join(out, 'index.json'), 'utf8'));
+    expect(index.assets.theme).toMatchObject({ file: 'theme.mp3', encoding: { codec: 'mp3', container: 'mp3', kbps: 80 } });
+    expect(existsSync(join(out, 'theme.mp3.json'))).toBe(true);
+  });
+
   it('refuses an output directory equal to the source', () => {
     const d = mkdtempSync(join(tmpdir(), 'beeps-compress-same-'));
     writeFileSync(join(d, 'a.wav.json'), '{}');
