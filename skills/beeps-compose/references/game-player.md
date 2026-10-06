@@ -49,10 +49,14 @@ createPlayer({
   important voice to steal, or while the sound's own cooldown hasn't elapsed. `ready` is
   `Promise<boolean>` (true once actually sounding); it never rejects, even if the file fails to load
   or the Web Audio call throws — those report through `onError` instead.
-- **`music(id | null, { fadeSec })`** / **`ambience(id | null, { fadeSec })`** → `Promise<boolean>`:
+- **`music(id | null, { fadeSec })`** / **`ambience(id | null, { fadeSec, slot })`** → `Promise<boolean>`:
   crossfades that bed to a new looping asset (or fades it out on `null`). Resolves once it plays,
   `false` if superseded by a later call, queued (before unlock or while hidden), or unavailable.
   Never rejects.
+  `ambience` takes an optional `slot` (lowercase-dash name, up to 8 slots): each slot is an
+  independent bed that crossfades alone, so a game layers a base bed, a weather bed and a biome
+  undertone instead of baking every combination. No `slot` is the main bed; `ambience(null, { slot })`
+  fades just that slot.
 - **`setState(state, { fadeSec, at: 'now' | 'bar' })`** — fades the current music's adaptive layers to
   a named state (`asset.states[state]`). `at: 'bar'` waits for the asset's next bar line (needs
   `bpm`); default is immediate. With no music playing, or other music still loading, the state is
@@ -76,7 +80,7 @@ instance cap (`cap`) replaces its own oldest instance first, before touching the
 ```js
 { running, voices, levels: { music, ambience, sfx, master },
   music: { id, state, layers: { <name>: 0 | 1, ... } } | null,
-  ambience: { id } | null }
+  ambience: { id } | null, ambienceSlots: { <slot>: { id } } }
 ```
 
 ## Error codes (`onError`)
@@ -92,6 +96,7 @@ from the CLI's `ErrorCode`s (`E_SCHEMA`, `E_USAGE`, ...), which never reach a ga
 | `E_LOAD` | one audio file failed to fetch or decode (`id` is the file path); tried twice, then silent until `retry()` |
 | `E_PLAYBACK` | a Web Audio call threw while starting or running a sound |
 | `E_CONTEXT` | the `AudioContext` could not be built, resumed or suspended |
+| `E_USAGE` | `ambience()` was given an invalid slot name, or more than 8 slots (`id` is the slot) |
 | `E_NOT_ADAPTIVE` | `setState()` was called on music with no `layers` |
 | `E_UNKNOWN_STATE` | `setState()` named a state the asset does not declare (`id` is the state name) |
 

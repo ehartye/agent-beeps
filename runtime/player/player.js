@@ -13,6 +13,11 @@ import { RAMP, fade, hold, ramp, span } from './params.js';
 export { PLAYER_VERSION } from './version.js';
 /** @type {readonly ['music', 'ambience']} */
 const BEDS = ['music', 'ambience'];
+/** A bed key is a bus ('music', 'ambience') or an extra ambience slot ('ambience:weather'). */
+const SLOT_NAME = /^[a-z][a-z0-9-]{0,31}$/;
+const MAX_SLOTS = 8;
+/** @param {string} key @returns {BedBus} */
+const busOf = key => /** @type {BedBus} */ (key === 'music' ? 'music' : 'ambience');
 /** Stable FNV-1a hash, so each sound gets its own variant pattern from one player seed. @param {string} s */
 const hash = s => {
   let h = 2166136261;
@@ -59,11 +64,16 @@ export function createPlayer(opts) {
   const pickers = new Map();
   /** @type {Map<number, Playing>} */
   const live = new Map();
-  /** @type {Record<BedBus, Bed | null>} */
-  const beds = { music: null, ambience: null };
-  /** @type {Record<BedBus, Pending | undefined>} */
-  const pending = { music: undefined, ambience: undefined };
-  const tokens = { music: 0, ambience: 0 };
+  /** Beds by key: 'music', 'ambience' (the main ambience slot) and 'ambience:<slot>'. @type {Map<string, Bed>} */
+  const beds = new Map();
+  /** @type {Map<string, Pending>} */
+  const pending = new Map();
+  /** @type {Map<string, number>} */
+  const tokens = new Map();
+  /** @param {string} key */
+  const tokenOf = key => tokens.get(key) ?? 0;
+  /** @param {string} key */
+  const bump = key => { const t = tokenOf(key) + 1; tokens.set(key, t); return t; };
   /** The music id being loaded right now, so setState can aim at it rather than the old bed. @type {string | null} */
   let loadingMusic = null;
   /** @type {string | null} */
@@ -244,37 +254,47 @@ export function createPlayer(opts) {
    * queued (before unlock or while hidden), or unavailable. Never rejects.
    * @param {BedBus} bus
    * @param {string | null} id
-   * @param {{ fadeSec?: number }} [o]
+   * @param {{ fadeSec?: number, slot?: string }} [o] `slot` (ambience only) names an independent bed
    * @returns {Promise<boolean>}
    */
-  function bed(bus, id, { fadeSec: requested = 2 } = {}) {
+  function bed(bus, id, { fadeSec: requested = 2, slot } = {}) {
+    if (slot !== undefined && (bus !== 'ambience' || !SLOT_NAME.test(slot))) {
+      report('E_USAGE', `bad ambience slot "${slot}": use 1-32 chars, lowercase letters, digits and dashes`, String(slot));
+      return Promise.resolve(false);
+    }
+    const key = slot === undefined || slot === 'main' ? bus : `${bus}:${slot}`;
+    if (key !== bus && !beds.has(key) && !pending.has(key)
+      && new Set([...beds.keys(), ...pending.keys()].filter(k => k.startsWith('ambience:'))).size >= MAX_SLOTS) {
+      report('E_USAGE', `more than ${MAX_SLOTS} ambience slots`, slot);
+      return Promise.resolve(false);
+    }
     const fadeSec = fade(requested);
-    const token = ++tokens[bus];
+    const token = bump(key);
     if (!running()) {
-      pending[bus] = { id, fadeSec, token };
+      pending.set(key, { id, fadeSec, token });
       if (bus === 'music') loadingMusic = null; // any load in flight is now superseded
       return Promise.resolve(false);
     }
-    pending[bus] = undefined; // a direct request supersedes anything queued
-    const cur = beds[bus];
+    pending.delete(key); // a direct request supersedes anything queued
+    const cur = beds.get(key) ?? null;
     if (bus === 'music') loadingMusic = cur && cur.id === id ? null : id;
     if (cur && cur.id === id) return Promise.resolve(true);
-    if (id === null) { if (cur) stopBed(cur, fadeSec); beds[bus] = null; return Promise.resolve(true); }
+    if (id === null) { if (cur) stopBed(cur, fadeSec); beds.delete(key); return Promise.resolve(true); }
     /** @param {boolean} ok */
-    const done = ok => { if (bus === 'music' && token === tokens.music) loadingMusic = null; return ok; };
+    const done = ok => { if (bus === 'music' && token === tokenOf('music')) loadingMusic = null; return ok; };
     // The latest music request could not play: a state kept for it must not leak onto later music.
-    const fail = () => { if (bus === 'music' && token === tokens.music) pendingState = null; return false; };
+    const fail = () => { if (bus === 'music' && token === tokenOf('music')) pendingState = null; return false; };
     return loader.catalog().then(assets => {
-      if (token !== tokens[bus]) return false;
+      if (token !== tokenOf(key)) return false;
       if (!assets) return fail();
       const asset = assets[id];
       if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return fail(); }
       return Promise.all(partsOf(asset).map(p => loader.load(p.file))).then(bufs => {
-        if (token !== tokens[bus]) return false;
+        if (token !== tokenOf(key)) return false;
         if (bufs.every(b => !b)) return fail();
         // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
-        if (!running()) { pending[bus] = { id, fadeSec, token }; return false; }
-        return startBed(bus, id, asset, bufs, fadeSec) || fail();
+        if (!running()) { pending.set(key, { id, fadeSec, token }); return false; }
+        return startBed(key, id, asset, bufs, fadeSec) || fail();
       });
     }).catch(e => { report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
   }
@@ -285,10 +305,11 @@ export function createPlayer(opts) {
   /**
    * Start a loaded bed's layers together, swap it in and fade the previous bed out. A Web Audio
    * failure partway is reported and torn down, leaving the previous bed playing.
-   * @param {BedBus} bus @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec
+   * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec
    * @returns {boolean}
    */
-  function startBed(bus, id, asset, bufs, fadeSec) {
+  function startBed(key, id, asset, bufs, fadeSec) {
+    const bus = busOf(key);
     const c = /** @type {AudioContext} */ (ctx);
     /** @type {Map<string, Playing>} */
     const layers = new Map();
@@ -312,17 +333,17 @@ export function createPlayer(opts) {
         layers.set(p.name, n); // before start(): a throwing start must still be torn down
         n.src.start(t);
       });
-      const previous = beds[bus];
+      const previous = beds.get(key);
       /** @type {Bed} */
       const started = { id, asset, group: g, layers, startTime: t, state };
-      beds[bus] = started;
+      beds.set(key, started);
       // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
       // out), free the whole bed's graph, and forget the bed if it is still the current one.
       let ended = 0;
       for (const n of layers.values()) {
         n.src.onended = () => {
           if (++ended < layers.size) return;
-          if (beds[bus] === started) beds[bus] = null;
+          if (beds.get(key) === started) beds.delete(key);
           discard(layers.values());
           try { g.disconnect(); } catch { /* already disconnected */ }
         };
@@ -332,7 +353,7 @@ export function createPlayer(opts) {
       return true;
     } catch (e) {
       discard(layers.values());
-      if (beds[bus]?.layers === layers) beds[bus] = null; // it failed after the swap
+      if (beds.get(key)?.layers === layers) beds.delete(key); // it failed after the swap
       try { group?.disconnect(); } catch { /* already disconnected */ }
       report('E_PLAYBACK', text(e), id);
       return false;
@@ -347,8 +368,9 @@ export function createPlayer(opts) {
    */
   function setState(state, { fadeSec: requested = 1.5, at = 'now' } = {}) {
     const fadeSec = fade(requested);
-    const cur = beds.music;
-    const queued = pending.music && pending.music.token === tokens.music ? pending.music.id : null;
+    const cur = beds.get('music');
+    const pm = pending.get('music');
+    const queued = pm && pm.token === tokenOf('music') ? pm.id : null;
     const next = loadingMusic ?? queued;
     if (!cur || !ctx || (next !== null && next !== cur.id)) { pendingState = state; return false; }
     const { asset } = cur;
@@ -377,12 +399,12 @@ export function createPlayer(opts) {
   /** @param {number} [fadeSec] */
   function stopAll(fadeSec = RAMP) {
     fadeSec = fade(fadeSec);
-    for (const b of BEDS) {
-      tokens[b]++;
-      pending[b] = undefined;
-      const cur = beds[b];
+    for (const key of new Set([...BEDS, ...beds.keys(), ...pending.keys()])) {
+      bump(key);
+      pending.delete(key);
+      const cur = beds.get(key);
       if (cur && ctx) stopBed(cur, fadeSec);
-      beds[b] = null;
+      beds.delete(key);
     }
     pendingState = null;
     loadingMusic = null;
@@ -408,10 +430,12 @@ export function createPlayer(opts) {
 
   /** Start the beds requested while the context could not run (before unlock, or while hidden). */
   async function drainPending() {
-    for (const b of BEDS) {
-      const p = pending[b];
-      pending[b] = undefined;
-      if (p && p.token === tokens[b]) await bed(b, p.id, { fadeSec: p.fadeSec }); // else a newer request won
+    for (const key of [...pending.keys()]) {
+      const p = pending.get(key);
+      pending.delete(key);
+      if (!p || p.token !== tokenOf(key)) continue; // a newer request won
+      const slot = key.startsWith('ambience:') ? key.slice('ambience:'.length) : undefined;
+      await bed(busOf(key), p.id, { fadeSec: p.fadeSec, ...(slot !== undefined ? { slot } : {}) });
     }
   }
 
@@ -450,11 +474,15 @@ export function createPlayer(opts) {
 
   /** A snapshot for tests, debugging and game UI. */
   function inspect() {
-    const m = beds.music, a = beds.ambience;
+    const m = beds.get('music'), a = beds.get('ambience');
+    /** @type {Record<string, { id: string }>} */
+    const ambienceSlots = {};
+    for (const [key, b] of beds) if (key.startsWith('ambience:')) ambienceSlots[key.slice('ambience:'.length)] = { id: b.id };
     return {
       running: running(), voices: vm.size, levels: { ...levels },
       music: m ? { id: m.id, state: m.state, layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target])) } : null,
       ambience: a ? { id: a.id } : null,
+      ambienceSlots,
     };
   }
 
@@ -462,7 +490,11 @@ export function createPlayer(opts) {
     unlock, play, setState, setLevel, setEnabled, setHidden, stopAll, retry, inspect,
     /** @param {string | null} id @param {{ fadeSec?: number }} [o] */
     music: (id, o) => bed('music', id, o),
-    /** @param {string | null} id @param {{ fadeSec?: number }} [o] */
+    /**
+     * Crossfade an ambience bed. Without `slot` it is the main ambience bed; with a slot name
+     * (e.g. 'weather', 'biome') it is an independent bed layered with the others.
+     * @param {string | null} id @param {{ fadeSec?: number, slot?: string }} [o]
+     */
     ambience: (id, o) => bed('ambience', id, o),
   };
 }

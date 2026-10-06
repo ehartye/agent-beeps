@@ -250,6 +250,66 @@ describe('music and ambience beds', () => {
   });
 });
 
+describe('ambience slots', () => {
+  it('plays independent ambience beds in named slots and crossfades each slot alone', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.ambience('calm');
+    await player.ambience('storm', { slot: 'weather' });
+    expect(sources(ctx)).toHaveLength(2);
+    expect(sources(ctx).every(s => s.stoppedAt === undefined)).toBe(true);
+    expect(player.inspect().ambience).toMatchObject({ id: 'calm' });
+    expect(player.inspect().ambienceSlots).toMatchObject({ weather: { id: 'storm' } });
+    await player.ambience('calm', { slot: 'weather' });
+    expect(sources(ctx)[1].stoppedAt).toBeDefined();
+    expect(sources(ctx)[0].stoppedAt).toBeUndefined();
+    expect(player.inspect().ambienceSlots).toMatchObject({ weather: { id: 'calm' } });
+  });
+
+  it('fades one slot out with null and leaves the others', async () => {
+    const { ctx, player } = setup();
+    await player.unlock();
+    await player.ambience('calm');
+    await player.ambience('storm', { slot: 'weather' });
+    expect(await player.ambience(null, { slot: 'weather' })).toBe(true);
+    expect(sources(ctx)[1].stoppedAt).toBeDefined();
+    expect(player.inspect().ambienceSlots).toEqual({});
+    expect(player.inspect().ambience).toMatchObject({ id: 'calm' });
+  });
+
+  it('queues slot beds before unlock and starts them all on unlock', async () => {
+    const { ctx, player } = setup();
+    await player.ambience('calm');
+    await player.ambience('storm', { slot: 'weather' });
+    await player.unlock();
+    expect(sources(ctx)).toHaveLength(2);
+    expect(Object.keys(player.inspect().ambienceSlots)).toEqual(['weather']);
+  });
+
+  it('a newer request in a slot supersedes only that slot, and stopAll clears every slot', async () => {
+    const { ctx, player, gates } = setup({}, { gated: ['calm.wav'] });
+    await player.unlock();
+    await player.ambience('storm');
+    const first = player.ambience('calm', { slot: 'under' });
+    await settle();
+    await player.ambience('storm', { slot: 'under' });
+    gates.forEach(g => g.open());
+    expect(await first).toBe(false);
+    expect(player.inspect().ambienceSlots).toMatchObject({ under: { id: 'storm' } });
+    player.stopAll();
+    expect(player.inspect().ambience).toBeNull();
+    expect(player.inspect().ambienceSlots).toEqual({});
+    expect(sources(ctx).every(s => s.stoppedAt !== undefined)).toBe(true);
+  });
+
+  it('rejects a slot name that is not lowercase-dash and reports it', async () => {
+    const { player, errors } = setup();
+    await player.unlock();
+    expect(await player.ambience('calm', { slot: 'Bad Slot' })).toBe(false);
+    expect(errors).toContainEqual(expect.objectContaining({ code: 'E_USAGE' }));
+  });
+});
+
 describe('adaptive layers', () => {
   it('starts every layer together, looping, in the initial state', async () => {
     const { ctx, player } = setup();
