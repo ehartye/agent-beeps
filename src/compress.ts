@@ -43,6 +43,9 @@ export const FORMATS: Record<CompressFormat, { ext: string; codec: 'opus' | 'mp3
   mp3: { ext: 'mp3', codec: 'mp3', container: 'mp3', defaultKbps: { music: 80, ambience: 64, sfx: 96 } },
 };
 
+/** One MPEG frame (1152 samples): a short one-shot MP3 may decode up to this many frames longer (a silent tail from the final frame's padding). Loops stay exact. */
+export const MP3_ONESHOT_TOLERANCE = 1152;
+
 export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number): void {
   mkdirSync(dirname(out), { recursive: true });
   // CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
@@ -133,11 +136,11 @@ export interface CompressOptions {
 }
 
 /** A frame count that differs, a decode that does not line up with the source, or a loop that now clicks. */
-export function verify(source: { channels: Float32Array[]; sampleRate: number }, decoded: Float32Array[], loop: boolean, role: ExportManifest['role']): Omit<FileCheck, 'file' | 'kbps' | 'bytes' | 'sourceBytes'> {
+export function verify(source: { channels: Float32Array[]; sampleRate: number }, decoded: Float32Array[], loop: boolean, role: ExportManifest['role'], tolerance = 0): Omit<FileCheck, 'file' | 'kbps' | 'bytes' | 'sourceBytes'> {
   const want = source.channels[0].length, frames = decoded[0].length;
   const snr = alignmentSnrDb(source.channels, decoded);
   const problems: string[] = [];
-  if (frames !== want) problems.push(`decoded ${frames} frames, source has ${want}: the codec added or trimmed ${frames - want}`);
+  if (Math.abs(frames - want) > tolerance) problems.push(`decoded ${frames} frames, source has ${want}: the codec added or trimmed ${frames - want}`);
   // Tonal material (music) keeps its waveform through the codec: a one-frame (960 sample) slip drops the match far below 6 dB.
   // Noise beds and sfx are re-synthesised, so only their loudness over time can line up.
   const envelope = envelopeCorrelation(source.channels, decoded, source.sampleRate);
@@ -185,7 +188,7 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
       const decoded = decodeChannels(ffmpeg, join(out, ogg), source.channels.length, source.sampleRate);
       const bytes = statSync(join(out, ogg)).size;
       // Variants of an sfx are one-shots; layers and the mix of a loop are loops.
-      checks.push({ file: ogg, kbps: rate, bytes, sourceBytes: statSync(wav).size, ...verify(source, decoded, m.loop, m.role) });
+      checks.push({ file: ogg, kbps: rate, bytes, sourceBytes: statSync(wav).size, ...verify(source, decoded, m.loop, m.role, fmt.codec === 'mp3' && !m.loop ? MP3_ONESHOT_TOLERANCE : 0) });
       return ogg;
     };
     const files = new Set<string>([m.file, ...(m.variants ?? []).map(v => v.file), ...(m.layers ?? []).map(l => l.file)]);
