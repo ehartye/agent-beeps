@@ -49,7 +49,8 @@ export const MP3_ONESHOT_TOLERANCE = 1152;
 export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number): void {
   mkdirSync(dirname(out), { recursive: true });
   // CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
-  run(ffmpeg, ['-y', '-i', wav, '-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000', '-fflags', '+bitexact', '-flags:a', '+bitexact', out]);
+  // No `+bitexact`: it drops that delay from the header, and Firefox then decodes 1610 frames long (measured; Chromium reads it from the frames and is unaffected).
+  run(ffmpeg, ['-y', '-i', wav, '-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000', out]);
 }
 
 export function encodeOpus(ffmpeg: string, wav: string, out: string, kbps: number): void {
