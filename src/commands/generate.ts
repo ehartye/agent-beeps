@@ -1,5 +1,5 @@
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
@@ -11,7 +11,9 @@ import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipelin
 import { lintKit, lintPatch, loadRules } from '../lint.ts';
 import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
-import { globalTasteDir, globalVerdictsFile, readVerdicts } from '../taste/verdicts.ts';
+import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
+import { appendVerdicts, globalTasteDir, globalVerdictsFile, readVerdicts } from '../taste/verdicts.ts';
+import { featureVector, type Features } from '../measure/index.ts';
 import { summarize } from '../taste/summary.ts';
 import { predictionStats } from '../audition/session.ts';
 import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } from '../sets.ts';
@@ -173,6 +175,38 @@ export function registerGenerateCommands(program: Command, io: Io) {
       writeFileSync(join(dir, 'model.json'), JSON.stringify(model, null, 2) + '\n');
       writeFileSync(join(dir, 'summary.md'), summary.markdown);
       io.emit({ model: join(dir, 'model.json'), summary: join(dir, 'summary.md'), verdicts: model.n });
+    });
+  taste.command('import <file>')
+    .description('log the thumbs from a listening page (a game\'s "click through every sound" export) as taste verdicts: liked beats disliked within a family')
+    .option('--patches <dir>', 'folder of the rated patches, <name>.json each (default: the file\'s patchDir, looked for here and in every parent folder)')
+    .option('--dry-run', 'say what would be logged and log nothing')
+    .action(async (file: string, opts: { patches?: string; dryRun?: boolean }) => {
+      const p = openProject(io.projectDir());
+      let fb;
+      try { fb = FeedbackSchema.parse(JSON.parse(readFileSync(file, 'utf8'))); }
+      catch (e) { throw new BeepsError('E_SCHEMA', `${file} is not a listening-page feedback file: ${(e as Error).message}`, { hint: 'expected { "schema": "...audition-feedback@1", "items": [{ "name", "rating": "up"|"down" }] }' }); }
+      const dirs: string[] = [];
+      if (opts.patches) dirs.push(resolve(opts.patches));
+      else if (fb.patchDir) {
+        if (isAbsolute(fb.patchDir)) dirs.push(fb.patchDir);
+        else for (let d = resolve(process.cwd()); ; d = dirname(d)) { dirs.push(join(d, fb.patchDir)); if (dirname(d) === d) break; }
+      }
+      const rated = fb.items.filter(i => i.rating === 'up' || i.rating === 'down');
+      const found: { name: string; path: string; rating: 'up' | 'down' }[] = [], missing: string[] = [];
+      for (const i of rated) {
+        const dir = dirs.find(d => existsSync(join(d, `${i.name}.json`)));
+        if (dir) found.push({ name: i.name, path: join(dir, `${i.name}.json`), rating: i.rating as 'up' | 'down' }); else missing.push(i.name);
+      }
+      if (!found.length) throw new BeepsError('E_NOT_FOUND', 'none of the rated sounds has a patch file', { hint: `pass --patches <dir>; looked in ${dirs.join(', ') || 'nowhere (no patchDir in the file)'}; not found: ${missing.join(', ')}` });
+      const outs = await withHost(host => renderAndMeasure(host, found.map(f => ({ patch: loadPatch(p, f.path) })), { project: p.project, rendersDir: p.paths.renders }));
+      const sounds: RatedSound[] = [];
+      outs.forEach((o, i) => { if (o.ok) sounds.push({ name: found[i].name, family: o.patch.family, raw: featureVector(o.features as unknown as Features), rating: found[i].rating }); else missing.push(found[i].name); });
+      const session = `import-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
+      const { rows, unpaired } = verdictsFromFeedback(sounds, { project: p.paths.root, session, at: new Date().toISOString() });
+      if (!opts.dryRun) appendVerdicts([join(p.paths.taste, 'verdicts.jsonl'), globalVerdictsFile()], rows);
+      io.emit({ imported: !opts.dryRun, session, rated: sounds.length, verdicts: rows.length, implied: rows.filter(r => r.kind === 'implied').length, bothBad: rows.filter(r => r.kind === 'bothBad').length,
+        unpaired, notFound: missing, levelVotes: fb.items.filter(i => i.level && i.level !== 'ok').map(i => ({ name: i.name, level: i.level })), notes: fb.items.filter(i => i.note).length,
+        next: rows.length ? 'beeps taste fit' : 'rate at least one sound down (or one up and one down in the same family) to give the model something to learn' });
     });
   taste.command('stats')
     .description('agent and model prediction hit rates')

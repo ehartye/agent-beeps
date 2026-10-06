@@ -30,6 +30,23 @@ Apply `strong` preferences when you write or pick candidates. Treat `weak` as a 
 
 `beeps taste fit` writes `model.json` and a readable `summary.md` next to the log.
 
+## Feed it from a game's own listening page
+
+A game can ship a page where the owner clicks through every sound it makes and gives thumbs, level
+votes and notes (Fallow Valley's `tools/build-audition.mjs`). It exports
+`{ "schema": "<game>/audition-feedback@1", "patchDir": "asset-src/audio/sfx", "items": [{ "name", "rating": "up"|"down"|null, "level", "note" }] }`.
+Run, in the beeps project folder:
+
+```text
+beeps taste import feedback.json [--patches <dir of <name>.json patches>] [--dry-run]
+```
+
+Each rated patch is rendered and measured, then paired like a lineup: within a family every liked
+sound beats every disliked one (`implied`, weight 1/3); a disliked sound with nothing liked beside
+it is a `bothBad` row. Likes with nothing to compare against, sounds with no patch file and the
+level votes are reported, not logged. Level votes and notes are about the mix, not the sound: apply
+them to the game's mix table yourself. Run `beeps taste fit` afterwards.
+
 ## Predict and be scored
 
 `beeps generate` already ranks by this model, and every audition records the model's own sealed
