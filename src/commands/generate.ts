@@ -7,14 +7,14 @@ import { loadArchetypes } from '../archetypes.ts';
 import { generate } from '../generate.ts';
 import { crossover, DIRECTIONS, mutate } from '../mutate.ts';
 import { loadPatch, openProject } from '../project.ts';
-import { renderAndMeasure } from '../render/pipeline.ts';
+import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { lintKit, lintPatch, loadRules } from '../lint.ts';
 import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { globalTasteDir, globalVerdictsFile, readVerdicts } from '../taste/verdicts.ts';
 import { summarize } from '../taste/summary.ts';
 import { predictionStats } from '../audition/session.ts';
-import type { CandidateSet } from '../sets.ts';
+import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } from '../sets.ts';
 import { int, withHost } from './shared.ts';
 
 const setJson = (s: CandidateSet) => ({
@@ -70,6 +70,34 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const file = join(p.paths.patches, `${child.name}.json`);
       writeFileSync(file, JSON.stringify(child, null, 2) + '\n');
       io.emit({ saved: file, name: child.name });
+    });
+
+  const setCmd = program.command('set').description('candidate sets: create one from patches you already authored');
+  setCmd.command('create <refs...>')
+    .description('render existing patches (names or .json paths) into a candidate set, so a hand-authored kit can be auditioned (use --flow explore)')
+    .option('--prompt <text>', 'what the sounds are for, shown to the owner')
+    .option('--name <slug>', 'set id prefix', 'kit')
+    .action(async (refs: string[], opts: { prompt?: string; name: string }) => {
+      const p = openProject(io.projectDir());
+      const patches = refs.map(r => loadPatch(p, r));
+      const names = patches.map(x => x.name);
+      const dup = names.find((n, i) => names.indexOf(n) !== i);
+      if (dup) throw new BeepsError('E_USAGE', `patch name "${dup}" appears twice`, { hint: 'candidate names must be unique within a set' });
+      const set = await withHost(async host => {
+        const out = await renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders });
+        const failed = out.find(o => !o.ok);
+        if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
+        const rendered = out.filter((o): o is Extract<typeof o, { ok: true }> => o.ok) as Rendered[];
+        const id = newId(opts.name);
+        const sheet = join(setDir(p, id), 'sheet.png');
+        mkdirSync(setDir(p, id), { recursive: true });
+        await contactSheet(host, rendered, rendered.map((r, i) => `${i + 1} · ${r.patch.name}`), sheet);
+        return writeSet(p, {
+          id, archetype: null, family: rendered[0]?.patch.family ?? 'mixed', prompt: opts.prompt ?? null, parent: null,
+          createdAt: new Date().toISOString(), sheet, candidates: rendered.map((r, i) => candidateFromRendered(r, i + 1)),
+        }, rendered.map(r => r.patch));
+      });
+      io.emit({ ...setJson(set), next: `beeps audition open --set ${set.id} --flow explore --prompt "..."` });
     });
 
   program.command('lint <refs...>')
