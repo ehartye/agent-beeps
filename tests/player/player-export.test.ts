@@ -87,5 +87,6 @@ function walkImportGraph(entry: string, root: string): Set<string> {
 it('PLAYER_FILES is exactly the import graph reachable from runtime/player/player.js (drift guard)', () => {
   const entry = join(RUNTIME_DIR, 'player', 'player.js');
   const graph = walkImportGraph(entry, RUNTIME_DIR);
-  expect(graph).toEqual(new Set(PLAYER_FILES));
+  // player.d.ts is the one shipped file that no module imports: it types player.js for TypeScript games.
+  expect(new Set([...graph, 'player/player.d.ts'])).toEqual(new Set(PLAYER_FILES));
 });
