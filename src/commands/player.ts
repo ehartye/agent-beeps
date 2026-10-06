@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { bundleDir } from '../bundle.ts';
+import { BeepsError } from '../errors.ts';
 import { checkLoops, compressBundle } from '../compress.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
@@ -42,9 +43,11 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .option('--ambience-kbps <n>', 'ambience beds (default 48)', Number)
     .option('--sfx-kbps <n>', 'sound effects (default 72)', Number)
     .option('--mix-kbps <n>', "the full-mix file of an adaptive song, which the player does not load (it plays the layers); default: same as music", Number)
+    .option('--format <opus|mp3>', 'output format: opus (Ogg Opus, default) or mp3 (the fallback for browsers with no Ogg Opus decoder; default kbps 80/64/96)', 'opus')
     .option('--no-strict', 'report a file that does not verify instead of failing')
-    .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; mixKbps?: number; strict: boolean }) => {
-      const r = compressBundle(dir, outDir, { kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}), ...(o.mixKbps ? { mix: o.mixKbps } : {}) } });
+    .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; mixKbps?: number; format: string; strict: boolean }) => {
+      if (o.format !== 'opus' && o.format !== 'mp3') throw new BeepsError('E_USAGE', `--format must be opus or mp3, not ${o.format}`);
+      const r = compressBundle(dir, outDir, { format: o.format, kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}), ...(o.mixKbps ? { mix: o.mixKbps } : {}) } });
       io.emit({ ...r, checks: o.strict ? r.checks.filter(c => c.problems.length || c.wrap) : r.checks });
       if (r.problems.length && o.strict) process.exitCode = 1;
     });
