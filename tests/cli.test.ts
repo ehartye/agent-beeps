@@ -96,6 +96,19 @@ describe('beeps CLI', () => {
     expect(readFileSync(join(dir, 'out', 'coin.wav')).subarray(0, 4).toString()).toBe('RIFF');
   });
 
+  it.skipIf(!hasChromium)('lint --brief lists only patches with findings, names the clean ones and states each judgement rule once', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify({ ...coin(), name: 'coin-b', layers: [{ ...coin().layers[0], amp: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 } }] }));
+    const full = beeps(dir, 'lint', 'a.json', 'b.json');
+    const brief = beeps(dir, 'lint', 'a.json', 'b.json', '--brief');
+    expect(brief.out.reports.map((r: { name: string }) => r.name)).toEqual(full.out.reports.filter((r: { errors: unknown[]; warnings: unknown[] }) => r.errors.length || r.warnings.length).map((r: { name: string }) => r.name));
+    expect(brief.out.reports.every((r: Record<string, unknown>) => !('judgement' in r))).toBe(true);
+    expect([...brief.out.clean, ...brief.out.reports.map((r: { name: string }) => r.name)].sort()).toEqual(['coin-a', 'coin-b']);
+    expect(new Set(brief.out.judgement.map((j: { rule: string }) => j.rule)).size).toBe(brief.out.judgement.length);
+    expect(brief.status).toBe(full.status);
+  });
+
   it.skipIf(!hasChromium)('set create turns authored patches into an auditionable set', () => {
     const dir = project();
     writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));

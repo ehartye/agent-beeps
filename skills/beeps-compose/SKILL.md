@@ -39,7 +39,8 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   where you expect, nothing rings past the energy length you intended, pitch moves the right way,
   noise sits in the band you meant.
 - `beeps measure <name>` - every feature. `beeps lint <name...>` - cited craft rules; fix every
-  error, justify every warning.
+  error, justify every warning. Linting a whole batch? Add `--brief`: only patches with findings, the clean
+  ones by name, and each judgement rule once.
 - `beeps export <name> --wav public/audio/<name>.wav --manifest` writes a WAV plus a sidecar; add
   `--variants` to export every declared variant for no-repeat playback. For a web game, export every
   SFX and song into that one folder, then `beeps bundle public/audio` (writes `index.json`) and

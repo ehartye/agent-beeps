@@ -102,13 +102,18 @@ export function registerGenerateCommands(program: Command, io: Io) {
 
   program.command('lint <refs...>')
     .description('check patches against the cited craft rules (renders them to measure)')
-    .action(async (refs: string[]) => {
+    .option('--brief', 'for many patches: list only those with errors or warnings, name the clean ones, and give the judgement rules once')
+    .action(async (refs: string[], opts: { brief?: boolean }) => {
       const p = openProject(io.projectDir());
       const out = await withHost(host => renderAndMeasure(host, refs.map(r => ({ patch: loadPatch(p, r) })), { project: p.project, rendersDir: p.paths.renders }));
       const text = new Map(loadRules().map(r => [r.id, r.statement]));
       const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
       const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project)) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
-      io.emit({ reports });
+      if (opts.brief) {
+        const found = reports.filter(r => r.errors.length || r.warnings.length);
+        const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
+        io.emit({ reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules });
+      } else io.emit({ reports });
       if (reports.some(r => r.errors.length)) process.exitCode = 1;
     });
 
