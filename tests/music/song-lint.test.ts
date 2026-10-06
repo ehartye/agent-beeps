@@ -41,6 +41,13 @@ describe('song lint', () => {
     expect(ids(flat)).toContain('song-loudness-range');
   });
 
+  it('does not call an ambience bed thin for lacking low end, but still flags a boomy one', () => {
+    const bed = song({ loop: true, tags: ['ambience'] });
+    expect(ids(lintSong(bed, good({ lowShare: 0.005 }), project))).not.toContain('song-low-end');
+    expect(ids(lintSong(bed, good({ lowShare: 0.7 }), project))).toContain('song-low-end');
+    expect(ids(lintSong(song({ loop: true }), good({ lowShare: 0.005 }), project))).toContain('song-low-end');
+  });
+
   it('points at patterns that fall below E1', () => {
     const s = song({ patterns: { 'pad-a': { bars: 2, bass: { progression: 'a', octave: 0 } }, 'hat-a': { bars: 1, steps: 'x' } } });
     expect(lintSong(s, good(), project).warnings).toContainEqual(expect.objectContaining({ rule: 'song-register', pointer: '/patterns/pad-a' }));

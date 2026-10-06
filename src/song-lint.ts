@@ -47,7 +47,8 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   }
   const low = range('song-low-end');
   if (f.lowShare > low.max) c.add('song-low-end', `${fmt(100 * f.lowShare, 0)}% of energy is below 120 Hz: bass or kick masks the mix`);
-  else if (f.lowShare < low.min) c.add('song-low-end', `only ${fmt(100 * f.lowShare, 1)}% of energy below 120 Hz: thin`);
+  // An ambience bed (tag "ambience") sits under music and sound effects on purpose: wind and rain have no bass to be thin about.
+  else if (f.lowShare < low.min && !song.tags.includes('ambience')) c.add('song-low-end', `only ${fmt(100 * f.lowShare, 1)}% of energy below 120 Hz: thin`);
 
   const reg = range('song-register');
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));

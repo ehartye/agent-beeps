@@ -130,7 +130,7 @@
     },
     {
       "id": "song-low-end",
-      "statement": "Energy below 120 Hz is at most 40% of the song's spectrum, and at least 2%.",
+      "statement": "Energy below 120 Hz is at most 40% of the song's spectrum, and at least 2% (the minimum does not apply to songs tagged ambience).",
       "value": {
         "max": 0.4,
         "min": 0.02
