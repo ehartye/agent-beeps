@@ -149,6 +149,8 @@ usually runs `beeps sync <patchDir>`, `beeps kit add` per sound, `beeps lint`, `
   `{"error":{code,...}}` on stderr.
 - **Seeds**: `export` uses `--seed`, else the seed an audition ship recorded in the kit, else 1. `kit add`
   records no seed, so pass `--seed` explicitly when the build must not depend on audition history.
+  Renders are bit-exact for a seed (since 0.8.0, on one Chromium build): exporting an unchanged patch
+  twice gives the same samples, so a diff of committed WAVs means an input or the toolchain changed.
 
 ## Sound engine
 

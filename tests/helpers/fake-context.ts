@@ -28,7 +28,10 @@ export class FakeNode {
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
   start(t = 0, offset = 0) { this.startedAt = t; this.offset = offset; }
   stop(t = 0) { this.stoppedAt = t; }
-  disconnect() { this.disconnected = true; }
+  disconnect(target?: FakeNode | FakeParam) {
+    if (target) this.outputs = this.outputs.filter(o => o !== target);
+    else this.disconnected = true;
+  }
 }
 
 export class FakeContext {
@@ -58,6 +61,12 @@ export class FakeContext {
   createIIRFilter(feedforward: number[], feedback: number[]) { const n = this.make('iir'); n.feedforward = feedforward; n.feedback = feedback; return n; }
   createChannelMerger() { return this.make('merger'); }
   nodes(kind: string) { return this.created.filter(n => n.kind === kind); }
+  /** The most connections any one node input or AudioParam receives (Chromium sums 3+ in a per-run order). */
+  maxFanIn() {
+    const n = new Map<object, number>();
+    for (const node of this.created) for (const o of node.outputs) n.set(o, (n.get(o) ?? 0) + 1);
+    return Math.max(0, ...n.values());
+  }
   count(kind: string) { return this.nodes(kind).length; }
   /** Every scheduled automation value of a kind, across all params of all nodes. */
   rampTargets(kind: string) {

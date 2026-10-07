@@ -35,8 +35,9 @@ describe('song render key', () => {
     // The formula full renders used before solo-by-filter existed.
     expect(songRenderKey(s, instruments, { target })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION }));
     expect(songRenderKey(s, instruments, { target, fixedTrim: -3 })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, fixedTrim: -3 }));
-    // Recorded before solo-by-filter existed; a change here re-renders every approved song.
-    expect(songRenderKey(s, instruments, { target })).toBe('e8159013aad6f83fc8f318f7f965ea57c8bb8109f83822713ba47b15b6fa357e');
+    // A change here re-renders every approved song. Recorded before solo-by-filter existed (engine 1:
+    // e8159013...357e); re-recorded for engine 2, whose fixed-order sums make renders bit-exact.
+    expect(songRenderKey(s, instruments, { target })).toBe('84acee7d13b1dee4cdde21e249d78da147ba90bc98dc99d340e9384ff6a1c219');
   });
 
   it('treats an empty track list as no filter', () => {
