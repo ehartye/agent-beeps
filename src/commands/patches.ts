@@ -4,7 +4,7 @@ import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
 import { applyBatch } from '../batch.ts';
-import { initProject, listPatches, loadPatch, openProject, parseOrThrow, readJsonFile, savePatch } from '../project.ts';
+import { initProject, listPatches, loadPatch, openProject, parseOrThrow, readJsonFile, savePatch, syncPatches } from '../project.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { sha256 } from '../hash.ts';
 import { readKit } from '../kit.ts';
@@ -34,12 +34,19 @@ export function registerPatchCommands(program: Command, io: Io) {
     });
 
   program.command('new <file>')
-    .description('validate a patch JSON file and save it to .agent-beeps/patches/<name>.json')
+    .description('validate a patch JSON file and save it to .agent-beeps/patches/<name>.json (to mirror a whole directory of committed patches, use sync)')
     .option('--force', 'replace an existing patch of the same name')
     .action((file: string, opts: { force?: boolean }) => {
       const p = openProject(io.projectDir());
       const patch = parseOrThrow(readJsonFile(file), file);
       io.emit({ saved: savePatch(p, patch, { force: !!opts.force }), name: patch.name });
+    });
+
+  program.command('sync <dir>')
+    .description('mirror a directory of patch .json files (e.g. the ones your repo commits) into .agent-beeps/patches/: adds new names, replaces changed ones, validates every file before writing any; kit add, kit check and lint then take the names')
+    .option('--dry-run', 'report what would be added or updated without writing')
+    .action((dir: string, opts: { dryRun?: boolean }) => {
+      io.emit(syncPatches(openProject(io.projectDir()), dir, { dryRun: !!opts.dryRun }));
     });
 
   program.command('batch <opsFile>')

@@ -31,6 +31,14 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   reports `operationIndex` and a JSON pointer).
 - Variations of one sound: `beeps mutate <name> --toward darker,shorter --count 4`; blend two with
   `beeps crossover <a> <b> --name <new> --t 0.5`.
+- Repo keeps its patches in a folder (e.g. `audio/patches/*.json`)? `beeps sync audio/patches` mirrors
+  it into the project (adds new, replaces changed, validates all first); rerun it after every edit
+  instead of `beeps new --force` per file. `beeps build` reads recipe paths directly and needs no sync.
+- Variants of a repeating sound: if they differ only in pitch, gain or seed, declare `variation` in
+  one patch (the player picks variants with no-repeat). If they need different layers or sources,
+  author 3+ sibling patches in one family named `<stem>-<n>` (or sharing `meta.variantOf`); lint
+  counts siblings it finds in the project or on the same command line for `variation-on-repeating`,
+  and the game picks among them.
 
 ## Render, measure, look
 

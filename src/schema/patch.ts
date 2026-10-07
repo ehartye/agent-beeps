@@ -123,6 +123,8 @@ export const PatchSchema = z.strictObject({
     priority: z.number().int().min(1).max(5).default(3),
     intent: z.enum(['click', 'oneshot', 'bed']).default('oneshot'),
     description: z.string().optional(),
+    /** Hand-made variants authored as separate patches: siblings share this value (and the family). Names like <stem>-<n> group without it. */
+    variantOf: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes').optional(),
   }).optional(),
 });
 

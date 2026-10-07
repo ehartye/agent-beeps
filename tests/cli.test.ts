@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromiumAvailable } from '../src/render/host.ts';
@@ -56,6 +56,63 @@ describe('beeps CLI', () => {
     expect(beeps(dir, 'new', 'coin.json').err.code).toBe('E_CONFLICT');
     expect(beeps(dir, 'new', 'coin.json', '--force').status).toBe(0);
     expect(beeps(dir, 'list').out.patches[0].name).toBe('coin');
+  });
+
+  it('sync imports a directory of patches, updates changed ones, and leaves unchanged ones alone', () => {
+    const dir = project();
+    const src = join(dir, 'patches');
+    mkdirSync(src);
+    writeFileSync(join(src, 'coin.json'), JSON.stringify(coin()));
+    writeFileSync(join(src, 'coin-2.json'), JSON.stringify({ ...coin(), name: 'coin-2' }));
+    writeFileSync(join(src, 'notes.txt'), 'not a patch');
+    const first = beeps(dir, 'sync', 'patches');
+    expect(first.status, first.stderr).toBe(0);
+    expect(first.out).toMatchObject({ added: ['coin', 'coin-2'], updated: [], unchanged: [] });
+    expect(beeps(dir, 'list').out.patches.map((x: { name: string }) => x.name).sort()).toEqual(['coin', 'coin-2']);
+    writeFileSync(join(src, 'coin.json'), JSON.stringify({ ...coin(), duration: 0.25 }));
+    const second = beeps(dir, 'sync', 'patches');
+    expect(second.out).toMatchObject({ added: [], updated: ['coin'], unchanged: ['coin-2'] });
+    expect(JSON.parse(readFileSync(join(dir, '.agent-beeps', 'patches', 'coin.json'), 'utf8')).duration).toBe(0.25);
+    // `new` still refuses to overwrite; sync is the way to mirror a committed directory.
+    expect(beeps(dir, 'new', join('patches', 'coin.json')).err.code).toBe('E_CONFLICT');
+  });
+
+  it('sync validates every file before writing any, and refuses two files with one patch name', () => {
+    const dir = project();
+    const src = join(dir, 'patches');
+    mkdirSync(src);
+    writeFileSync(join(src, 'a.json'), JSON.stringify(coin()));
+    const bad: any = { ...coin(), name: 'bad' };
+    bad.layers[0].amp.attack = -1;
+    writeFileSync(join(src, 'b.json'), JSON.stringify(bad));
+    const r = beeps(dir, 'sync', 'patches');
+    expect(r.status).toBe(1);
+    expect(r.err).toMatchObject({ code: 'E_SCHEMA', pointer: '/layers/0/amp/attack' });
+    expect(r.err.message).toMatch(/b\.json/);
+    expect(beeps(dir, 'list').out.patches).toHaveLength(0);
+    writeFileSync(join(src, 'b.json'), JSON.stringify(coin()));
+    expect(beeps(dir, 'sync', 'patches').err.code).toBe('E_CONFLICT');
+    expect(beeps(dir, 'sync', 'missing-dir').err.code).toBe('E_NOT_FOUND');
+    writeFileSync(join(src, 'b.json'), JSON.stringify({ ...coin(), name: 'coin-b' }));
+    const dry = beeps(dir, 'sync', 'patches', '--dry-run');
+    expect(dry.out).toMatchObject({ dryRun: true, added: ['coin', 'coin-b'] });
+    expect(beeps(dir, 'list').out.patches).toHaveLength(0);
+  });
+
+  it.skipIf(!hasChromium)('lint accepts a repeating patch whose variants are sibling patches', () => {
+    const dir = project();
+    const src = join(dir, 'patches');
+    mkdirSync(src);
+    for (const n of [0, 1, 2]) writeFileSync(join(src, `coin-${n}.json`), JSON.stringify({ ...coin(), name: `coin-${n}`, tags: ['repeating'], duration: 0.2 + n * 0.02 }));
+    writeFileSync(join(dir, 'lone.json'), JSON.stringify({ ...coin(), name: 'lone', tags: ['repeating'] }));
+    // Siblings linted together, siblings found in the project, and a lone repeating patch that still needs variation.
+    const together = beeps(dir, 'lint', ...[0, 1, 2].map(n => join('patches', `coin-${n}.json`)), 'lone.json');
+    const rules = (name: string) => together.out.reports.find((r: { name: string }) => r.name === name).errors.map((e: { rule: string }) => e.rule);
+    expect(rules('coin-0')).not.toContain('variation-on-repeating');
+    expect(rules('lone')).toContain('variation-on-repeating');
+    expect(beeps(dir, 'sync', 'patches').status).toBe(0);
+    const alone = beeps(dir, 'lint', 'coin-1');
+    expect(alone.out.reports[0].errors.map((e: { rule: string }) => e.rule)).not.toContain('variation-on-repeating');
   });
 
   it('dry-runs a batch and reports the failing operationIndex without writing', () => {

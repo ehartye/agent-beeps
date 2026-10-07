@@ -23,7 +23,9 @@
 - `duration`: note-off time in seconds; each layer releases after it.
 - `layers`: 1-8. `fx`: optional `delay {time, feedback<=0.9, sendDb}` and `reverb {preset: small|room|hall|cave|space, sendDb}`.
 - `variation`: `pitchCents`, `gainDb`, `variants` (1-16), `noRepeat`, `weights` (relative play odds per variant).
-- `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed.
+- `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed, `description`, and `variantOf`
+  (hand-made variants authored as separate patches share it; `<stem>-<n>` names in one family group
+  without it).
 
 ## Sources (`layers[].source`)
 

@@ -36,7 +36,8 @@ judgement are listed on every run: apply them yourself, never skip them silently
 ## Repetition and fatigue
 
 Anything heard often (steps, blips, coins, hits) gets `variation` - 3+ variants or 20+ cents - with
-`noRepeat`. Use `weights` to make a distinctive variant rarer. Audition it with the ×75 button.
+`noRepeat`, or 3+ hand-made sibling patches (`<stem>-<n>` names or one `meta.variantOf`) when the
+variants need different structure. Use `weights` to make a distinctive variant rarer. Audition it with the ×75 button.
 
 ## A kit is a system
 

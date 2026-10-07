@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { lintKit, lintPatch, loadRules, type KitMember } from '../src/lint.ts';
+import { lintKit, lintPatch, loadRules, variantSiblings, type KitMember } from '../src/lint.ts';
 import type { Features } from '../src/measure/index.ts';
 import { defaultProject } from '../src/schema/project.ts';
 import { targetFor } from '../src/render/pipeline.ts';
@@ -124,6 +124,15 @@ describe('lintPatch', () => {
     expect(rulesOf(lintPatch(p, features(p), project).errors)).not.toContain('variation-on-repeating');
   });
 
+  it('accepts sibling patches as the variants of a repeating patch', () => {
+    const p = coin();
+    p.tags = ['repeating'];
+    const ok = lintPatch(p, features(p), project, undefined, { siblings: ['coin-1', 'coin-2'] });
+    expect(rulesOf(ok.errors)).not.toContain('variation-on-repeating');
+    const short = lintPatch(p, features(p), project, undefined, { siblings: ['coin-1'] });
+    expect(short.errors).toContainEqual(expect.objectContaining({ rule: 'variation-on-repeating', message: expect.stringMatching(/1 sibling patch.*variantOf/) }));
+  });
+
   it('always lists the patch judgement rules', () => {
     const p = coin();
     const judgement = loadRules().filter(r => r.check === 'judgement' && r.appliesTo === 'patch').map(r => r.id);
@@ -223,5 +232,28 @@ describe('craft/rules.json', () => {
     for (const f of readdirSync(dir)) {
       expect(readFileSync(join(dir, f), 'utf8'), f).not.toMatch(/\[\[|wiki-master/);
     }
+  });
+});
+
+describe('variantSiblings', () => {
+  const named = (name: string, family: string, meta?: Record<string, unknown>) => patch({ ...coin(), name, family, ...(meta ? { meta } : {}) });
+
+  it('groups <stem>-<n> names within one family', () => {
+    const s = variantSiblings([named('explosion-0', 'explosion'), named('explosion-1', 'explosion'), named('explosion-2', 'explosion'), named('explosion-3', 'explosion')]);
+    expect(s.get('explosion-0')).toEqual(['explosion-1', 'explosion-2', 'explosion-3']);
+  });
+
+  it('groups by meta.variantOf whatever the names, and keeps families apart', () => {
+    const s = variantSiblings([
+      named('boom-near', 'explosion', { variantOf: 'boom' }), named('boom-far', 'explosion', { variantOf: 'boom' }),
+      named('coin-1', 'coin'), named('coin-2', 'pickup'), named('ui-click-2', 'ui-click'),
+    ]);
+    expect(s.get('boom-near')).toEqual(['boom-far']);
+    expect(s.get('coin-1')).toEqual([]);
+    expect(s.get('ui-click-2')).toEqual([]);
+  });
+
+  it('counts a patch once when it appears twice', () => {
+    expect(variantSiblings([named('hit-1', 'hit'), named('hit-1', 'hit'), named('hit-2', 'hit')]).get('hit-1')).toEqual(['hit-2']);
   });
 });
