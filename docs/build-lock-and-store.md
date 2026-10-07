@@ -180,7 +180,7 @@ decoding:
   padding imply the sidecar's frame count (a one-shot may decode up to one MPEG frame longer).
 - **WAV**: header frame count.
 
-`--decode` adds the existing `compress` checks on loops (frame count, wrap tick, level step), which need
+`--decode` decodes every loop file and checks its frame count against the sidecar (a failure) and its wrap tick and level step (warnings: measured without the source WAV they also flag music that is quiet at its end); it needs
 ffmpeg. Exit 1 lists each problem as `{ asset, file, problem }`.
 
 ## Catalog and player: exact length

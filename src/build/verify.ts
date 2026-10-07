@@ -113,7 +113,12 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
   if (existsSync(out)) for (const f of listFlat(out)) if (f !== 'index.json' && !tracked.has(f) && /\.(ogg|mp3|wav|json)$/.test(f)) warnings.push(`${f} is not in the lock`);
   if (o.decode && loops.length) {
     const present = [...new Set(loops)].filter(f => existsSync(join(out, f)) && !/\.json$/.test(f));
-    for (const r of checkLoops(present.map(f => join(out, f)))) for (const pr of r.problems) problems.push({ file: relative(out, r.file).split(sep).join('/'), problem: pr });
+    // Only a length that differs from the sidecar is a failure here: the build already compared every decode with its source WAV, and a wrap
+    // tick or level step measured without the source also flags music that is simply quiet at its end, so those are warnings.
+    for (const r of checkLoops(present.map(f => join(out, f)))) {
+      const file = relative(out, r.file).split(sep).join('/');
+      for (const pr of r.problems) (/frames, sidecar says/.test(pr) ? problems.push({ file, problem: pr }) : warnings.push(`${file}: ${pr}`));
+    }
   }
   return { ok: problems.length === 0, lock: typeof o.lock === 'string' ? o.lock : '(in memory)', out, assets: Object.keys(lock.assets).length, files, checkedStatic, problems, warnings };
 }
