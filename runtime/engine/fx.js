@@ -81,6 +81,18 @@ export function buildDelay(ctx, { time, feedback }) {
   return { input, output: delay };
 }
 
+/** Corner of the opt-in DC blocker (Hz): far below any audible thump, so it removes offset, not weight. */
+export const DC_BLOCK_HZ = 10;
+
+/**
+ * One-pole DC blocker y[n] = x[n] - x[n-1] + R y[n-1] (J. O. Smith, Introduction to Digital Filters: DC blocker).
+ * @param {BaseAudioContext} ctx
+ */
+export function buildDcBlocker(ctx) {
+  const r = 1 - (2 * Math.PI * DC_BLOCK_HZ) / ctx.sampleRate;
+  return ctx.createIIRFilter([1, -1], [1, -r]);
+}
+
 const KNEE = 10 ** (-1.5 / 20); // untouched below -1.5 dBFS (the loudness trim keeps peaks under -1.7 dBTP)
 const CEILING = 10 ** (-1 / 20); // asymptote at -1 dBFS
 

@@ -55,6 +55,7 @@ export class FakeContext {
   createConvolver() { return this.make('convolver'); }
   createDynamicsCompressor() { return this.make('compressor', { threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25 }); }
   createDelay() { return this.make('delay', { delayTime: 0 }); }
+  createIIRFilter(feedforward: number[], feedback: number[]) { const n = this.make('iir'); n.feedforward = feedforward; n.feedback = feedback; return n; }
   createChannelMerger() { return this.make('merger'); }
   nodes(kind: string) { return this.created.filter(n => n.kind === kind); }
   count(kind: string) { return this.nodes(kind).length; }

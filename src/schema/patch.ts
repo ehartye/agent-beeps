@@ -110,6 +110,8 @@ export const PatchSchema = z.strictObject({
   fx: z.strictObject({
     delay: z.strictObject({ time: z.number().positive().max(2), feedback: z.number().min(0).max(0.9), sendDb: z.number().min(-60).max(0) }).optional(),
     reverb: z.strictObject({ preset: z.enum(REVERB_PRESET_NAMES), sendDb: z.number().min(-60).max(0) }).optional(),
+    /** Opt-in DC blocker (one pole, about 10 Hz) on the layer mix, before the effects. Absent: the graph is exactly as before. */
+    dcBlock: z.boolean().optional(),
   }).optional(),
   variation: z.strictObject({
     pitchCents: z.number().min(0).max(1200).default(0),

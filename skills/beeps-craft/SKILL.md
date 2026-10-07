@@ -28,6 +28,13 @@ judgement are listed on every run: apply them yourself, never skip them silently
   impacts fuller). Very spiky sounds are trimmed only until their true peak reaches -1.5 dBTP and sit
   below target on purpose (`peakLimited`).
 - A gain value is not a loudness: a narrow bandpass passes a sliver of its source. Measure.
+- Short, spiky sounds (a boom whose thump sets both the peak and the loudness) are often
+  `peakLimited` (`render` and `measure` show it): the trim already stopped at the peak ceiling, so
+  lowering the loudest layer can make the whole sound quieter. Lower the crest instead (a longer
+  body, a softer spike), or accept the level.
+- `no-dc` (an error): low sine or triangle thumps and lowpassed brown or pink noise leave DC. Fixes
+  that work: a 45-50 Hz highpass on the thump, `bandpass` instead of `lowpass` on noise bodies, the
+  thump at gainDb -4 to -5, or `fx.dcBlock: true` (a 10 Hz DC blocker on the layer mix).
 - Declare attacks of 4 ms or more (a linear 4 ms attack measures about 3 ms from 10 % to 90 %)
   unless the layer is quiet or the sound is meant to click (`meta.intent: "click"`).
 - Pitched layers snap to the project scale (major pentatonic by default) so simultaneous sounds
