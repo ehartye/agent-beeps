@@ -73,6 +73,10 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   Engines that are not web games use the WAVs and sidecars directly. Full API, error codes and the
   required `visibilitychange` wiring: `references/game-player.md`.
 
+Writing a build script that calls beeps (Windows `.cmd` shim, exit codes, seeds)? README, "Calling
+beeps from your own build script": run `node <npm root -g>/agent-beeps/scripts/beeps.mjs` with an
+args array and no shell.
+
 ## Never
 
 - Put a loudness literal in a patch: levels are trimmed to the project target (-18 LUFS by default,

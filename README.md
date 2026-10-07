@@ -127,6 +127,29 @@ what changed, a store keeps every asset by input hash, and CI runs a vendored `f
 rendering. Mechanism, lock schema and failure modes: [`docs/build-lock-and-store.md`](docs/build-lock-and-store.md);
 the recipe an agent follows: the `beeps-ship` skill.
 
+### Calling beeps from your own build script
+
+A game repo that keeps its patches in a folder and drives beeps from a script (instead of `beeps build`)
+usually runs `beeps sync <patchDir>`, `beeps kit add` per sound, `beeps lint`, `beeps kit check` and
+`beeps export ... --seed 1` in turn. Three things to know:
+
+- **Windows**: `beeps` on the PATH is an npm `.cmd` shim, so `spawnSync('beeps', args)` fails without
+  `shell: true`, and `shell: true` with an args array prints Node's DEP0190 warning (arguments are not
+  escaped). Run the CLI's own script with Node instead: no shell, no quoting, same on every OS.
+  ```js
+  import { spawnSync } from 'node:child_process';
+  import { join } from 'node:path';
+  const root = spawnSync('npm root -g', { shell: true, encoding: 'utf8' }).stdout.trim(); // a fixed string: no DEP0190
+  const BEEPS_JS = join(root, 'agent-beeps', 'scripts', 'beeps.mjs');
+  const beeps = (...args) => spawnSync(process.execPath, [BEEPS_JS, ...args], { encoding: 'utf8', maxBuffer: 64 << 20 });
+  ```
+- **Exit codes**: every command prints its JSON on stdout. `lint` exits 1 only when a patch has an
+  error (a warning alone exits 0), so a gate that also wants warnings reads `errors` and `warnings`
+  from the JSON; `notes` lines are informational. Usage errors exit 2, other failures 1, with
+  `{"error":{code,...}}` on stderr.
+- **Seeds**: `export` uses `--seed`, else the seed an audition ship recorded in the kit, else 1. `kit add`
+  records no seed, so pass `--seed` explicitly when the build must not depend on audition history.
+
 ## Sound engine
 
 Seven source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`
