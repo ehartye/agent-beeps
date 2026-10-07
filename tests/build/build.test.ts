@@ -187,6 +187,16 @@ describe.skipIf(!ok)('beeps build', () => {
     expect(readLock(fx.path('audio.lock.json'))!.toolchain.songPipeline).toBe(5);
   }, 120000);
 
+  it('rebuilds only the role whose bitrate was changed, without the toolchain guard', async () => {
+    const fx = cloneFixture(base);
+    const r = await runBuild(fx.cfg({ kbps: { sfx: 60 } }));
+    expect(r.built.sort()).toEqual(['blip', 'coin']);
+    const lock = readLock(fx.path('audio.lock.json'))!;
+    expect(lock.delivery.kbps).toMatchObject({ sfx: 60, music: 44 });
+    expect(lock.assets.theme).toEqual(baseLock().assets.theme);
+    expect((await runBuild(fx.cfg({ kbps: { sfx: 60 } }), { check: true })).ok).toBe(true);
+  }, 120000);
+
   it('rejects a recipe whose patch name differs from its id', async () => {
     const fx = cloneFixture(base);
     fx.write('recipes.json', { ...fx.read('recipes.json'), coin: { source: 'sfx/blip.json', role: 'sfx' } });

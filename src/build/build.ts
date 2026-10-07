@@ -221,7 +221,9 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
 
   // 2. What is left has to be rendered. A toolchain or encoder change re-renders whatever the store lacks: say so first.
   const toBuild = [...todo.values()].filter(pl => !removed.includes(pl.recipe.id));
-  if (toBuild.length && drift.length && lock && !o.allowToolchainChange && !o.all) {
+  // Only the toolchain and the encoder build are guarded: a bitrate, preset or format change is a deliberate edit of beeps.build.json.
+  const risky = drift.filter(d => d.startsWith('toolchain.') || /^delivery\.encoder\.(ffmpeg|libavcodec):/.test(d));
+  if (toBuild.length && risky.length && lock && !o.allowToolchainChange && !o.all) {
     throw new BeepsError('E_TOOLCHAIN', `the toolchain or encoder differs from the lock's, so ${toBuild.length} asset(s) are stale and would be re-rendered or re-encoded:\n  ${drift.slice(0, 8).join('\n  ')}`, {
       hint: 'pull them from the store (--pull --store ...), or pass --allow-toolchain-change to rebuild on purpose', details: { drift },
     });
