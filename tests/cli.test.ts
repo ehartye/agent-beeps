@@ -166,6 +166,18 @@ describe('beeps CLI', () => {
     expect(brief.status).toBe(full.status);
   });
 
+  it.skipIf(!hasChromium)('lint notes that kit-level rules run only in kit check, and render says whether the trim was peak-limited', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify({ ...coin(), name: 'coin-b' }));
+    const both = beeps(dir, 'lint', 'a.json', 'b.json');
+    expect(both.out.notes).toEqual([expect.objectContaining({ rule: 'kit-rules', message: expect.stringMatching(/family "coin" has 2 patches.*beeps kit check/) })]);
+    expect(beeps(dir, 'lint', 'a.json', 'b.json', '--brief').out.notes).toEqual(both.out.notes);
+    expect(beeps(dir, 'lint', 'a.json').out).not.toHaveProperty('notes');
+    const r = beeps(dir, 'render', 'a.json');
+    expect(typeof r.out.renders[0].features.peakLimited).toBe('boolean');
+  });
+
   it.skipIf(!hasChromium)('set create turns authored patches into an auditionable set', () => {
     const dir = project();
     writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));

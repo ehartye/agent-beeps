@@ -107,6 +107,49 @@ function declaredFrequencies(patch: Patch): { hz: number; pointer: string }[] {
   return out;
 }
 
+/** Layers that typically leave DC: brown or pink noise not high- or band-passed, and pitched layers reaching below 120 Hz with no highpass. */
+function dcSuspects(patch: Patch): number[] {
+  const out: number[] = [];
+  patch.layers.forEach((layer, i) => {
+    const src = layer.source, ft = layer.filter?.type;
+    if (src.type === 'noise') { if (src.color !== 'white' && ft !== 'highpass' && ft !== 'bandpass') out.push(i); return; }
+    if (!('pitch' in src) || src.type === 'modal' || ft === 'highpass' || ft === 'bandpass') return;
+    const lowest = Math.min(noteToHz(src.pitch), ...(layer.pitchEnv ?? []).map(p => noteToHz(p.to)));
+    if (lowest < 120) out.push(i);
+  });
+  return out;
+}
+
+/** Kit-level rules that lint (one patch at a time) cannot run. */
+export const KIT_RULES = ['family-consistency', 'masking-risk', 'key-consistency', 'one-no', 'priority-levels'] as const;
+
+/** An informational line in lint output: never an error or a warning, never changes the exit code. */
+export interface Note { rule: string; message: string; name?: string }
+
+/**
+ * When a linted patch belongs to a set (it is in the kit, or other patches share its family), say that the set's rules
+ * run only in `beeps kit check`, so an author checks them while drafting rather than at the end.
+ */
+export function kitRuleNotes(linted: Patch[], projectPatches: Patch[], kitNames: string[]): Note[] {
+  const kit = new Set(kitNames);
+  const all = new Map<string, Patch>();
+  for (const p of [...projectPatches, ...linted]) all.set(p.name, p);
+  const inKit = linted.filter(p => kit.has(p.name)).map(p => p.name);
+  const families = new Map<string, string[]>();
+  for (const p of linted) {
+    const others = [...all.values()].filter(o => o.family === p.family && o.name !== p.name).map(o => o.name);
+    if (others.length) families.set(p.family, [...new Set([...(families.get(p.family) ?? []), ...others, p.name])].sort());
+  }
+  if (!inKit.length && !families.size) return [];
+  const toAdd = [...new Set([...families.values()].flat())].filter(n => !kit.has(n)).sort();
+  const parts = [
+    ...(inKit.length ? [`${inKit.join(', ')} ${inKit.length === 1 ? 'is' : 'are'} in the kit`] : []),
+    ...[...families].map(([f, names]) => `family "${f}" has ${names.length} patches (${names.join(', ')})`),
+  ];
+  const next = toAdd.length ? `run beeps kit add <name> for each of ${toAdd.join(', ')}, then beeps kit check` : 'run beeps kit check';
+  return [{ rule: 'kit-rules', message: `kit-level rules (${KIT_RULES.join(', ')}) run only in beeps kit check, not in lint: ${parts.join('; ')}. While authoring the set, ${next}.` }];
+}
+
 function tailCeiling(table: Record<string, number>, family: string): number {
   if (family in table) return table[family];
   if (family.startsWith('ui-') && 'ui-*' in table) return table['ui-*'];
@@ -152,7 +195,12 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
   if (d.clippedSamples > c.num('no-clipping')) c.add('no-clipping', `delivered sound has ${d.clippedSamples} clipped samples`);
 
   const dc = c.num('no-dc');
-  if (Math.abs(features.dcOffset) >= dc) c.add('no-dc', `DC offset ${features.dcOffset} is at or above ${dc} of full scale`);
+  if (Math.abs(features.dcOffset) >= dc) {
+    const suspects = dcSuspects(patch);
+    const fixes = ['a highpass at 45-50 Hz (resonanceDb 0) on a low sine, triangle or FM thump', 'bandpass instead of lowpass on brown or pink noise bodies', 'the thump at gainDb -4 to -5',
+      ...(patch.fx?.dcBlock ? [] : ['or fx.dcBlock: true (a 10 Hz DC blocker on the layer mix)'])];
+    c.add('no-dc', `DC offset ${features.dcOffset} is at or above ${dc} of full scale${suspects.length ? ` (likely layers: ${suspects.join(', ')})` : ''}; fixes that work: ${fixes.join('; ')}`, suspects.length ? `/layers/${suspects[0]}` : undefined);
+  }
 
   if (intent !== 'click') {
     const floor = c.num('attack-floor');

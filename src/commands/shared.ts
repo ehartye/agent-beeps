@@ -17,6 +17,8 @@ export function summary(r: Rendered) {
       centroidHz: f.centroidHz, sharpness: f.sharpness, roughness: f.roughness, flatness: f.flatness,
       pitchHz: f.pitchStrength >= 0.7 ? f.pitchHz : null, pitchDirection: f.pitchDirection,
       loudnessLufs: f.delivered.momentaryMaxLufs, truePeakDb: f.delivered.truePeakDb,
+      // true: the trim stopped at the true-peak ceiling, so the sound sits below its loudness target and lowering its loudest layer may make it quieter.
+      peakLimited: f.delivered.peakLimited === true,
     },
   };
 }

@@ -125,7 +125,8 @@ the recipe an agent follows: the `beeps-ship` skill.
 
 Seven source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`
 resonators, Poisson `grains`, the 808 `metal` voice), per-layer pitch/amp/filter envelopes, LFO,
-drive and pan, a generated-impulse reverb and a delay, and a transparent safety clipper. Pitched
+drive and pan, a generated-impulse reverb and a delay, an opt-in DC blocker (`fx.dcBlock`), and a
+transparent safety clipper. Pitched
 sources snap to the project scale. The engine is plain browser JavaScript
 (`runtime/engine/patch.js`): games can import it and call
 `buildPatch(audioContext, patch, { trimDb, variant, seed })`.

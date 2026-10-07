@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { lintKit, lintPatch, loadRules, variantSiblings, type KitMember } from '../src/lint.ts';
+import { kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings, type KitMember } from '../src/lint.ts';
 import type { Features } from '../src/measure/index.ts';
 import { defaultProject } from '../src/schema/project.ts';
 import { targetFor } from '../src/render/pipeline.ts';
@@ -133,6 +133,27 @@ describe('lintPatch', () => {
     expect(short.errors).toContainEqual(expect.objectContaining({ rule: 'variation-on-repeating', message: expect.stringMatching(/1 sibling patch.*variantOf/) }));
   });
 
+  it('names the fixes that work for DC, and the layers likely to carry it', () => {
+    const boom = patch({
+      schema: 'beeps/patch@1', name: 'boom', family: 'explosion', duration: 0.45,
+      layers: [
+        { source: { type: 'osc', wave: 'sine', pitch: 'G2' }, pitchEnv: [{ at: 0.22, to: 'G1' }], amp: { attack: 0.004, decay: 0.22 } },
+        { source: { type: 'noise', color: 'brown' }, amp: { attack: 0.004, decay: 0.3 }, filter: { type: 'lowpass', cutoff: 900, resonanceDb: 0 } },
+        { source: { type: 'noise', color: 'white' }, amp: { attack: 0.004, decay: 0.05 }, filter: { type: 'highpass', cutoff: 1500, resonanceDb: 0 } },
+        { source: { type: 'osc', wave: 'sine', pitch: 'C2' }, amp: { attack: 0.004, decay: 0.2 }, filter: { type: 'highpass', cutoff: 45, resonanceDb: 0 } },
+      ],
+    });
+    const f = lintPatch(boom, features(boom, { dcOffset: 0.004 }), project).errors.find(e => e.rule === 'no-dc');
+    expect(f?.message).toMatch(/highpass at 45-50 Hz/);
+    expect(f?.message).toMatch(/bandpass instead of lowpass/);
+    expect(f?.message).toMatch(/gainDb -4 to -5/);
+    expect(f?.message).toMatch(/fx\.dcBlock/);
+    expect(f?.message).toMatch(/likely layers: 0, 1\b/);
+    expect(f?.pointer).toBe('/layers/0');
+    const blocked = patch({ ...boom, fx: { dcBlock: true } });
+    expect(lintPatch(blocked, features(blocked, { dcOffset: 0.004 }), project).errors.find(e => e.rule === 'no-dc')?.message).not.toMatch(/fx\.dcBlock: true/);
+  });
+
   it('always lists the patch judgement rules', () => {
     const p = coin();
     const judgement = loadRules().filter(r => r.check === 'judgement' && r.appliesTo === 'patch').map(r => r.id);
@@ -255,5 +276,25 @@ describe('variantSiblings', () => {
 
   it('counts a patch once when it appears twice', () => {
     expect(variantSiblings([named('hit-1', 'hit'), named('hit-1', 'hit'), named('hit-2', 'hit')]).get('hit-1')).toEqual(['hit-2']);
+  });
+});
+
+describe('kitRuleNotes', () => {
+  const named = (name: string, family: string) => patch({ ...coin(), name, family });
+
+  it('says kit-level rules run only in kit check when a linted patch is in the kit or has family members', () => {
+    const notes = kitRuleNotes([named('explosion-2', 'explosion')], [named('explosion-1', 'explosion'), named('pickup', 'pickup')], ['pickup']);
+    expect(notes).toHaveLength(1);
+    expect(notes[0].rule).toBe('kit-rules');
+    expect(notes[0].message).toMatch(/family-consistency.*masking-risk.*key-consistency.*one-no/s);
+    expect(notes[0].message).toMatch(/beeps kit add <name> for each of explosion-1, explosion-2,/);
+    expect(notes[0].message).toMatch(/beeps kit check/);
+    const inKit = kitRuleNotes([named('pickup', 'pickup')], [], ['pickup']);
+    expect(inKit[0].message).toMatch(/pickup is in the kit/);
+    expect(inKit[0].message).not.toMatch(/kit add/);
+  });
+
+  it('says nothing for a lone patch outside the kit', () => {
+    expect(kitRuleNotes([named('coin', 'coin')], [named('pickup', 'pickup')], [])).toEqual([]);
   });
 });

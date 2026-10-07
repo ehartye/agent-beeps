@@ -48,7 +48,12 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   noise sits in the band you meant.
 - `beeps measure <name>` - every feature. `beeps lint <name...>` - cited craft rules; fix every
   error, justify every warning. Linting a whole batch? Add `--brief`: only patches with findings, the clean
-  ones by name, and each judgement rule once.
+  ones by name, and each judgement rule once. lint exits 1 only for errors (warnings exit 0) and
+  always prints its JSON on stdout; `notes` lines are informational.
+- Authoring a set (several sounds of one family, or a game's kit)? Kit-level rules (family-consistency,
+  masking-risk, key-consistency, one-no, priority-levels) run only in `beeps kit check`, never in lint
+  (lint's `notes` says so). `beeps kit add <name>` each sound as you draft it and rerun
+  `beeps kit check` after every change, not at the end.
 - `beeps export <name> --wav public/audio/<name>.wav --manifest` writes a WAV plus a sidecar; add
   `--variants` to export every declared variant for no-repeat playback. For a web game, export every
   SFX and song into that one folder, then `beeps bundle public/audio` (writes `index.json`) and

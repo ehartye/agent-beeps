@@ -32,6 +32,23 @@ describe.skipIf(!(await chromiumAvailable()))('Chromium offline render', () => {
     expect(peak(a.authored[0])).toBeGreaterThan(0.1);
   });
 
+  it('fx.dcBlock removes the DC a swept sine thump and a lowpassed brown noise leave, at the same loudness; dcBlock false changes nothing', async () => {
+    const boom = (fx?: Record<string, unknown>) => patch({
+      schema: 'beeps/patch@1', name: 'dc-boom', family: 'explosion', duration: 0.45, ...(fx ? { fx } : {}),
+      layers: [
+        { source: { type: 'osc', wave: 'sine', pitch: 'G2' }, pitchEnv: [{ at: 0, to: 'G2' }, { at: 0.22, to: 'G1', curve: 'exp' }], amp: { attack: 0.004, decay: 0.22, sustain: 0, release: 0.08 } },
+        { source: { type: 'noise', color: 'brown' }, amp: { attack: 0.004, decay: 0.3, sustain: 0, release: 0.1 }, filter: { type: 'lowpass', cutoff: 900, resonanceDb: 0 }, gainDb: -2 },
+      ],
+    });
+    const dc = (x: Float32Array) => Math.abs(x.reduce((s, v) => s + v, 0) / x.length);
+    const [plain, off, blocked] = (await host.render([boom(), boom({ dcBlock: false }), boom({ dcBlock: true })].map(p => ({ patch: p, opts: { seed: 1 } })))).map(ok);
+    expect(dc(plain.authored[0])).toBeGreaterThan(0.001);
+    expect(dc(blocked.authored[0])).toBeLessThan(0.0002);
+    expect(Math.abs(momentaryMax(blocked.authored, 48000) - momentaryMax(plain.authored, 48000))).toBeLessThan(0.5);
+    expect(off.delivered[0].length).toBe(plain.delivered[0].length);
+    for (let i = 0; i < plain.delivered[0].length; i += 1) expect(Math.abs(off.delivered[0][i] - plain.delivered[0][i])).toBeLessThan(1e-6);
+  });
+
   it('band-limits oscillators: a 6 kHz sawtooth peaks near 0.74, not 1', async () => {
     const [saw] = (await host.render([{ patch: tone('sawtooth', 6000), opts: { seed: 1 } }])).map(ok);
     const p = peak(saw.authored[0]);

@@ -1,7 +1,7 @@
 // The one entry point: patch JSON → Web Audio graph on any BaseAudioContext.
 // Games, the audition page and the offline renderer all call this, so what is measured is what plays.
 import { buildLayer } from './layer.js';
-import { buildDelay, buildLimiter, buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
+import { buildDcBlocker, buildDelay, buildLimiter, buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
 import { variantPatch } from './variation.js';
 
 export { ENGINE_VERSION } from './version.js';
@@ -39,13 +39,15 @@ export function buildPatch(ctx, patch, opts = {}) {
   const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true } = opts;
   const p = variantPatch(patch, variant, seed);
 
-  const dry = ctx.createGain();
+  const mix = ctx.createGain();
   const authored = ctx.createGain();
+  // fx.dcBlock (opt-in) puts a DC blocker between the layer mix and everything after it. Without it the graph is unchanged.
+  const dry = p.fx?.dcBlock ? mix.connect(buildDcBlocker(ctx)) : mix;
   dry.connect(authored);
 
   let end = when;
   p.layers.forEach((layer, i) => {
-    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out: dry });
+    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out: mix });
     end = Math.max(end, r.end);
   });
 

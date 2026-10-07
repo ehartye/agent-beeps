@@ -14,6 +14,26 @@ const build = (p: ReturnType<typeof coin>, opts: Record<string, unknown> = {}) =
 };
 
 describe('buildPatch', () => {
+  it('adds no DC blocker unless fx.dcBlock is set: the layer mix feeds the authored bus directly, as before', () => {
+    const { f } = build(coin());
+    expect(f.count('iir')).toBe(0);
+    const off = build(patch({ ...coin(), fx: { dcBlock: false } })).f;
+    expect(off.created.map(n => n.kind)).toEqual(f.created.map(n => n.kind));
+  });
+
+  it('fx.dcBlock puts one ~10 Hz one-pole DC blocker between the layer mix and the effects', () => {
+    const { f } = build(patch({ ...coin(), fx: { dcBlock: true, reverb: { preset: 'small', sendDb: -20 } } }));
+    const [iir] = f.nodes('iir');
+    expect(f.count('iir')).toBe(1);
+    expect(iir.feedforward).toEqual([1, -1]);
+    expect(iir.feedback[0]).toBe(1);
+    expect(-iir.feedback[1]).toBeCloseTo(1 - (2 * Math.PI * 10) / 48000, 9);
+    // The blocker feeds both the dry path and the reverb send.
+    expect(iir.outputs.length).toBe(2);
+    const mix = f.created.find(n => n.kind === 'gain' && n.outputs.includes(iir));
+    expect(mix?.outputs).toEqual([iir]);
+  });
+
   it('ends after the duration plus the release', () => {
     const { g } = build(coin());
     expect(g.end).toBeCloseTo(0.3 + 0.05, 5);

@@ -9,7 +9,7 @@ import { crossover, DIRECTIONS, mutate } from '../mutate.ts';
 import { loadPatch, openProject, parseOrThrow, readJsonFile, type OpenProject } from '../project.ts';
 import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
-import { lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
+import { kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
 import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
@@ -30,15 +30,20 @@ const setJson = (s: CandidateSet) => ({
   next: `look at ${s.sheet}, then: beeps predict --set ${s.id} --pick <n> --shortlist <a,b> --why "..." and beeps audition open --set ${s.id}`,
 });
 
-/** Sibling variants of each patch among the project's own patches and the ones being checked (these win on a name clash). */
-function siblingsOf(p: OpenProject, checked: Patch[]): Map<string, string[]> {
-  const byName = new Map<string, Patch>();
-  if (existsSync(p.paths.patches)) {
-    for (const f of readdirSync(p.paths.patches).filter(f => f.endsWith('.json'))) {
-      try { const x = parseOrThrow(readJsonFile(join(p.paths.patches, f)), f); byName.set(x.name, x); } catch { /* an invalid file is not a sibling */ }
-    }
+/** The project's own valid patches (an invalid file is skipped: it is nobody's sibling or family member). */
+function projectPatches(p: OpenProject): Patch[] {
+  if (!existsSync(p.paths.patches)) return [];
+  const out: Patch[] = [];
+  for (const f of readdirSync(p.paths.patches).filter(f => f.endsWith('.json'))) {
+    try { out.push(parseOrThrow(readJsonFile(join(p.paths.patches, f)), f)); } catch { /* skipped */ }
   }
-  for (const x of checked) byName.set(x.name, x);
+  return out;
+}
+
+/** Sibling variants of each patch among the project's own patches and the ones being checked (these win on a name clash). */
+function siblingsOf(p: OpenProject, checked: Patch[], own = projectPatches(p)): Map<string, string[]> {
+  const byName = new Map<string, Patch>();
+  for (const x of [...own, ...checked]) byName.set(x.name, x);
   return variantSiblings([...byName.values()]);
 }
 
@@ -116,12 +121,15 @@ export function registerGenerateCommands(program: Command, io: Io) {
     });
 
   program.command('lint <refs...>')
-    .description('check patches against the cited craft rules (renders them to measure)')
+    .description('check patches against the cited craft rules (renders them to measure); exits 1 only when a patch has errors, warnings exit 0; notes (e.g. "kit-level rules run only in kit check") are informational')
     .option('--brief', 'for many patches: list only those with errors or warnings, name the clean ones, and give the judgement rules once')
     .action(async (refs: string[], opts: { brief?: boolean }) => {
       const p = openProject(io.projectDir());
       const patches = refs.map(r => loadPatch(p, r));
-      const siblings = siblingsOf(p, patches);
+      const own = projectPatches(p);
+      const siblings = siblingsOf(p, patches, own);
+      // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
+      const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
       const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
       const text = new Map(loadRules().map(r => [r.id, r.statement]));
       const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
@@ -129,8 +137,8 @@ export function registerGenerateCommands(program: Command, io: Io) {
       if (opts.brief) {
         const found = reports.filter(r => r.errors.length || r.warnings.length);
         const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-        io.emit({ reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules });
-      } else io.emit({ reports });
+        io.emit({ reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) });
+      } else io.emit({ reports, ...(notes.length ? { notes } : {}) });
       if (reports.some(r => r.errors.length)) process.exitCode = 1;
     });
 
