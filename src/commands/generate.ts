@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
@@ -6,9 +6,10 @@ import { BeepsError } from '../errors.ts';
 import { loadArchetypes } from '../archetypes.ts';
 import { generate } from '../generate.ts';
 import { crossover, DIRECTIONS, mutate } from '../mutate.ts';
-import { loadPatch, openProject } from '../project.ts';
+import { loadPatch, openProject, parseOrThrow, readJsonFile, type OpenProject } from '../project.ts';
+import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
-import { lintKit, lintPatch, loadRules } from '../lint.ts';
+import { lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
 import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
@@ -28,6 +29,18 @@ const setJson = (s: CandidateSet) => ({
   }),
   next: `look at ${s.sheet}, then: beeps predict --set ${s.id} --pick <n> --shortlist <a,b> --why "..." and beeps audition open --set ${s.id}`,
 });
+
+/** Sibling variants of each patch among the project's own patches and the ones being checked (these win on a name clash). */
+function siblingsOf(p: OpenProject, checked: Patch[]): Map<string, string[]> {
+  const byName = new Map<string, Patch>();
+  if (existsSync(p.paths.patches)) {
+    for (const f of readdirSync(p.paths.patches).filter(f => f.endsWith('.json'))) {
+      try { const x = parseOrThrow(readJsonFile(join(p.paths.patches, f)), f); byName.set(x.name, x); } catch { /* an invalid file is not a sibling */ }
+    }
+  }
+  for (const x of checked) byName.set(x.name, x);
+  return variantSiblings([...byName.values()]);
+}
 
 export function registerGenerateCommands(program: Command, io: Io) {
   program.command('archetypes')
@@ -107,10 +120,12 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--brief', 'for many patches: list only those with errors or warnings, name the clean ones, and give the judgement rules once')
     .action(async (refs: string[], opts: { brief?: boolean }) => {
       const p = openProject(io.projectDir());
-      const out = await withHost(host => renderAndMeasure(host, refs.map(r => ({ patch: loadPatch(p, r) })), { project: p.project, rendersDir: p.paths.renders }));
+      const patches = refs.map(r => loadPatch(p, r));
+      const siblings = siblingsOf(p, patches);
+      const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
       const text = new Map(loadRules().map(r => [r.id, r.statement]));
       const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-      const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project)) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+      const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
       if (opts.brief) {
         const found = reports.filter(r => r.errors.length || r.warnings.length);
         const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
@@ -146,7 +161,8 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const patches = k.sounds.map(s => loadPatch(p, s.name));
       const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
       const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority }] : []));
-      io.emit({ kit: lintKit(members, p.project), sounds: members.map(m => ({ name: m.patch.name, ...lintPatch(m.patch, m.features, p.project) })) });
+      const siblings = siblingsOf(p, patches);
+      io.emit({ kit: lintKit(members, p.project), sounds: members.map(m => ({ name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }) })) });
     });
 
   const taste = program.command('taste').description('the learned taste profile: show, fit, stats');

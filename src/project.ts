@@ -1,5 +1,5 @@
 // The project store: .agent-beeps/ inside the repo being scored.
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
@@ -92,8 +92,44 @@ export function savePatch(p: OpenProject, patch: Patch, { force = false } = {}):
   const file = join(p.paths.patches, `${patch.name}.json`);
   if (existsSync(file) && !force) throw new BeepsError('E_CONFLICT', `patch "${patch.name}" already exists`, { hint: 'pass --force to replace it' });
   mkdirSync(p.paths.patches, { recursive: true });
-  writeFileSync(file, JSON.stringify(patch, null, 2) + '\n');
+  writeFileSync(file, patchText(patch));
   return file;
+}
+
+const patchText = (patch: Patch) => JSON.stringify(patch, null, 2) + '\n';
+
+export interface SyncReport { from: string; dryRun: boolean; added: string[]; updated: string[]; unchanged: string[] }
+
+/**
+ * Mirror a directory of patch files (a repo's committed patches) into .agent-beeps/patches/: new names are added, changed ones
+ * replaced, identical ones left alone. Every file is validated before any is written, so a bad file changes nothing.
+ * Patches in the project that the directory does not hold are kept.
+ */
+export function syncPatches(p: OpenProject, dir: string, { dryRun = false } = {}): SyncReport {
+  const from = resolve(dir);
+  if (!existsSync(from) || !statSync(from).isDirectory()) throw new BeepsError('E_NOT_FOUND', `no directory ${from}`, { hint: 'pass the directory that holds your patch .json files' });
+  const files = readdirSync(from).filter(f => f.toLowerCase().endsWith('.json')).sort();
+  if (!files.length) throw new BeepsError('E_NOT_FOUND', `${from} holds no .json patch files`);
+  const parsed = files.map(f => ({ file: join(from, f), patch: parseOrThrow(readJsonFile(join(from, f)), join(from, f)) }));
+  const seen = new Map<string, string>();
+  for (const { file, patch } of parsed) {
+    const other = seen.get(patch.name);
+    if (other) throw new BeepsError('E_CONFLICT', `${other} and ${file} are both patch "${patch.name}"`, { hint: 'give every patch a unique name' });
+    seen.set(patch.name, file);
+  }
+  const report: SyncReport = { from, dryRun, added: [], updated: [], unchanged: [] };
+  for (const { patch } of parsed) {
+    const target = join(p.paths.patches, `${patch.name}.json`);
+    const text = patchText(patch);
+    const was = existsSync(target) ? readFileSync(target, 'utf8') : undefined;
+    (was === undefined ? report.added : was === text ? report.unchanged : report.updated).push(patch.name);
+    if (!dryRun && was !== text) {
+      mkdirSync(p.paths.patches, { recursive: true });
+      writeFileSync(target, text);
+    }
+  }
+  for (const k of ['added', 'updated', 'unchanged'] as const) report[k].sort();
+  return report;
 }
 
 export function listPatches(p: OpenProject): Patch[] {

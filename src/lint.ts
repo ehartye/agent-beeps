@@ -113,7 +113,34 @@ function tailCeiling(table: Record<string, number>, family: string): number {
   return table.default;
 }
 
-export function lintPatch(patch: Patch, features: Features, project: Project, rules = loadRules()): LintReport {
+/** What a patch's lint can know about the other patches around it. */
+export interface PatchContext {
+  /** Names of the patch's sibling variants (see variantSiblings). */
+  siblings?: string[];
+}
+
+/** The sibling group of a patch: meta.variantOf, else the stem of a `<stem>-<n>` name; always within one family. */
+export function siblingKey(patch: Patch): string | undefined {
+  const stem = patch.meta?.variantOf ?? /^(.+)-\d+$/.exec(patch.name)?.[1];
+  return stem === undefined ? undefined : `${patch.family}/${stem}`;
+}
+
+/** For every patch name, the other patches in its sibling group (hand-made variants authored as separate patches). */
+export function variantSiblings(patches: Patch[]): Map<string, string[]> {
+  const groups = new Map<string, Set<string>>();
+  for (const p of patches) {
+    const k = siblingKey(p);
+    if (k !== undefined) groups.set(k, (groups.get(k) ?? new Set()).add(p.name));
+  }
+  const out = new Map<string, string[]>();
+  for (const p of patches) {
+    const k = siblingKey(p);
+    out.set(p.name, k === undefined ? [] : [...groups.get(k)!].filter(n => n !== p.name).sort());
+  }
+  return out;
+}
+
+export function lintPatch(patch: Patch, features: Features, project: Project, rules = loadRules(), context: PatchContext = {}): LintReport {
   const c = new Collector(rules);
   const d = features.delivered;
   const intent = patch.meta?.intent ?? 'oneshot';
@@ -170,8 +197,10 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
     const minVariants = c.num('variation-on-repeating');
     const minCents = c.param<number>('variation-on-repeating', 'minPitchCents');
     const v = patch.variation;
-    if (!v || (v.variants < minVariants && v.pitchCents < minCents)) {
-      c.add('variation-on-repeating', `patch is tagged "repeating" but declares ${v?.variants ?? 1} variant(s) and ${v?.pitchCents ?? 0} cents of pitch spread; declare variants >= ${minVariants} or pitchCents >= ${minCents}`, '/variation');
+    const siblings = context.siblings?.length ?? 0;
+    // Hand-made variants authored as separate patches count: the patch and its siblings are the permutations.
+    if ((!v || (v.variants < minVariants && v.pitchCents < minCents)) && 1 + siblings < minVariants) {
+      c.add('variation-on-repeating', `patch is tagged "repeating" but declares ${v?.variants ?? 1} variant(s) and ${v?.pitchCents ?? 0} cents of pitch spread, and has ${siblings} sibling patch(es); declare variants >= ${minVariants} or pitchCents >= ${minCents}, or author ${minVariants}+ sibling patches in one family (names <stem>-<n>, or the same meta.variantOf)`, '/variation');
     }
   }
 

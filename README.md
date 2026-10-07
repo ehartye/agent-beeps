@@ -53,7 +53,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `capabilities` | schema, source types, archetypes, directions, error codes |
 | `init` | create `.agent-beeps/` (scale, loudness target) |
 | `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
-| `new`, `batch`, `list` | save patches; atomic create/set/remove/delete with `--dry-run` |
+| `new`, `sync`, `batch`, `list` | save patches; mirror a directory of committed patch files into the project (`sync <dir>`, validates all first); atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
 | `set create` | render patches you already authored into a candidate set (audition a hand-made kit with `--flow explore`) |
 | `mutate`, `crossover` | direction-steered variations; blend two patches |

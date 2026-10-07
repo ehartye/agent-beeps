@@ -49,6 +49,8 @@ export function registerCapabilities(program: Command, io: Io) {
           'Patches never carry a loudness literal: the renderer trims every sound to the project loudness target.',
           'lowpass/highpass take resonanceDb (Chromium treats their Q as dB); bandpass/notch/peaking take q.',
           'Pitched sources snap to the project scale when scale.snap is true.',
+          'A repo that commits its patch files: beeps sync <dir> mirrors them into the project, then lint, kit add and kit check take the names.',
+          'Hand-made variants authored as separate patches (names <stem>-<n> in one family, or a shared meta.variantOf) count toward variation-on-repeating.',
           'Every render writes a look.png (waveform, spectrogram, features): look at it; you cannot hear.',
         ],
         example: EXAMPLE,
