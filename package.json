@@ -1,6 +1,6 @@
 {
   "name": "agent-beeps",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "Procedural sound composer for coding agents: Web Audio patches rendered in Chromium, measured, linted, auditioned by the owner, and ranked by a learned taste model",

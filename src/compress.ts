@@ -9,6 +9,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { readWav } from './audio/wav.ts';
 import { bundleDir } from './bundle.ts';
+import { encoderLead } from './audio/container.ts';
 import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
 
 /** Bitrates by role. Music is sparse synth and pads, ambience is noise (the costly kind for a codec), sfx is short. */
@@ -46,17 +47,36 @@ export const FORMATS: Record<CompressFormat, { ext: string; codec: 'opus' | 'mp3
 /** One MPEG frame (1152 samples): a short one-shot MP3 may decode up to this many frames longer (a silent tail from the final frame's padding). Loops stay exact. */
 export const MP3_ONESHOT_TOLERANCE = 1152;
 
+/**
+ * The encoder arguments between input and output. `beeps build` hashes them, so changing a flag here re-encodes every asset.
+ * MP3: CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
+ * No `+bitexact`: it drops that delay from the header, and Firefox then decodes 1610 frames long (measured; Chromium reads it from the frames and is unaffected).
+ * Opus: -vbr on keeps quiet passages cheap; -application audio is the music mode; bitexact keeps the bytes reproducible.
+ */
+export function encoderArgs(codec: CompressFormat, kbps: number): string[] {
+  return codec === 'mp3'
+    ? ['-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000']
+    : ['-map_metadata', '-1', '-c:a', 'libopus', '-b:a', `${kbps}k`, '-vbr', 'on', '-application', 'audio', '-ar', '48000', '-fflags', '+bitexact', '-flags:a', '+bitexact'];
+}
+
 export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number): void {
   mkdirSync(dirname(out), { recursive: true });
-  // CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
-  // No `+bitexact`: it drops that delay from the header, and Firefox then decodes 1610 frames long (measured; Chromium reads it from the frames and is unaffected).
-  run(ffmpeg, ['-y', '-i', wav, '-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000', out]);
+  run(ffmpeg, ['-y', '-i', wav, ...encoderArgs('mp3', kbps), out]);
 }
 
 export function encodeOpus(ffmpeg: string, wav: string, out: string, kbps: number): void {
   mkdirSync(dirname(out), { recursive: true });
-  // -vbr on keeps quiet passages cheap; -application audio is the music mode; bitexact keeps the bytes reproducible.
-  run(ffmpeg, ['-y', '-i', wav, '-map_metadata', '-1', '-c:a', 'libopus', '-b:a', `${kbps}k`, '-vbr', 'on', '-application', 'audio', '-ar', '48000', '-fflags', '+bitexact', '-flags:a', '+bitexact', out]);
+  run(ffmpeg, ['-y', '-i', wav, ...encoderArgs('opus', kbps), out]);
+}
+
+/** The ffmpeg build that encodes: its version line and libavcodec version (libopus and LAME are statically linked, so the build identifies them). */
+export function ffmpegFingerprint(ffmpeg: string): { ffmpeg: string; libavcodec: string } {
+  const r = spawnSync(ffmpeg, ['-hide_banner', '-version'], { encoding: 'utf8' });
+  if (r.status !== 0) throw new BeepsError('E_NOT_FOUND', `cannot run ${ffmpeg} -version`);
+  const lines = r.stdout.split(/\r?\n/);
+  const version = lines[0].match(/^ffmpeg version (\S+)/)?.[1] ?? lines[0].trim();
+  const avcodec = lines.find(l => l.startsWith('libavcodec'))?.replace(/\s+/g, '').replace(/\/.*/, '') ?? 'unknown';
+  return { ffmpeg: version, libavcodec: avcodec };
 }
 
 /** Decode any container ffmpeg reads to float32 channels at the file's own rate. */
@@ -194,11 +214,13 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
     };
     const files = new Set<string>([m.file, ...(m.variants ?? []).map(v => v.file), ...(m.layers ?? []).map(l => l.file)]);
     const renamed = new Map([...files].map(f => [f, encode(f)]));
+    // The decoder's lead-in as the file's own headers state it (Opus pre-skip, MP3 encoder delay): a player can check or compensate for it.
+    const lead = encoderLead(join(out, renamed.get(m.file)!));
     const next: ExportManifest = {
       ...m, file: renamed.get(m.file)!,
       ...(m.variants ? { variants: m.variants.map(v => ({ ...v, file: renamed.get(v.file)! })) } : {}),
       ...(m.layers ? { layers: m.layers.map(l => ({ ...l, file: renamed.get(l.file)! })) } : {}),
-      encoding: { codec: fmt.codec, container: fmt.container, kbps } as ExportManifest['encoding'],
+      encoding: { codec: fmt.codec, container: fmt.container, kbps, ...(lead !== undefined ? { lead } : {}) } as ExportManifest['encoding'],
     };
     writeFileSync(join(out, `${basename(next.file)}.json`), JSON.stringify(ExportManifestSchema.parse(next), null, 2) + '\n');
     assets.push({ id: m.id, role: m.role, bytes: [...renamed.values()].reduce((s, f) => s + statSync(join(out, f)).size, 0) });

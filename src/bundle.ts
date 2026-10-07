@@ -61,7 +61,8 @@ function assetPath(dir: string, rel: string, field: string, raw: string): string
   return joined;
 }
 
-export function bundleDir(dir: string): { index: string; assets: string[] } {
+/** The catalog bundleDir would write for `dir`, without writing it. */
+export function catalogText(dir: string): { index: string; text: string; assets: string[] } {
   const index = join(dir, 'index.json');
   if (existsSync(index)) {
     let previous: unknown;
@@ -103,6 +104,14 @@ export function bundleDir(dir: string): { index: string; assets: string[] } {
     assets.set(m.id, { ...m, file, ...(variants ? { variants } : {}), ...(layers ? { layers } : {}) });
     from.set(m.id, rel);
   }
-  writeFileSync(index, JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n');
-  return { index, assets: [...assets.keys()] };
+  const text = JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n';
+  return { index, text, assets: [...assets.keys()] };
+}
+
+export function bundleDir(dir: string, { skipUnchanged = false }: { skipUnchanged?: boolean } = {}): { index: string; assets: string[]; written: boolean } {
+  const { index, text, assets } = catalogText(dir);
+  // `skipUnchanged` (beeps build): a catalog that is already byte-identical is not rewritten, so its mtime and any watcher stay quiet.
+  if (skipUnchanged && existsSync(index) && readFileSync(index, 'utf8') === text) return { index, assets, written: false };
+  writeFileSync(index, text);
+  return { index, assets, written: true };
 }

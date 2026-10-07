@@ -38,6 +38,10 @@ export const PEAK_CEILING_DB = -1.7;
 /** Bump when trimming or measurement changes, so cached renders are redone. */
 export const PIPELINE_VERSION = 2;
 
+/** The cache key of one patch render, computable without a browser (`beeps build` hashes it). */
+export const patchRenderKey = (patch: Patch, project: Project, seed: number, variant: number): string =>
+  renderKey(patch, { seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION });
+
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
 export const targetFor = (patch: Patch, project: Project) => project.targetLoudness + (FAMILY_OFFSETS[patch.family] ?? 0);
@@ -46,7 +50,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   const scale = project.scale;
   const keyed = items.map(i => {
     const seed = i.seed ?? 1, variant = i.variant ?? 0;
-    const key = renderKey(i.patch, { seed, variant, scale, target: targetFor(i.patch, project), pipeline: PIPELINE_VERSION });
+    const key = patchRenderKey(i.patch, project, seed, variant);
     return { ...i, seed, variant, key, dir: join(rendersDir, key) };
   });
   const out: RenderOutcome[] = new Array(items.length);

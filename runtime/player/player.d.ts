@@ -19,6 +19,8 @@ export interface Asset {
   bpm?: number;
   meter?: number;
   durationSec?: number;
+  /** Exact length in sample frames; a loop whose decoded buffer is longer ends here, and a different length is reported as W_LOOP_LENGTH. */
+  frames?: number;
   layers?: LayerFile[];
   states?: Record<string, string[]>;
   initialState?: string;
