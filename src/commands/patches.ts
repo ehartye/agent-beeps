@@ -105,15 +105,25 @@ export function registerPatchCommands(program: Command, io: Io) {
     });
 
   program.command('export <ref>')
-    .description('write the loudness-trimmed WAV of a patch (kit sounds default to the seed the owner auditioned)')
+    .description('write the loudness-trimmed WAV of a patch: stereo, full render length, unless --channels 1 or --trim-tail. Seed: --seed, else the seed recorded in the kit (only an audition ship records one; kit add does not), else 1')
     .requiredOption('--wav <path>', 'output WAV path')
     .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .option('--variant <n>', 'variant index', int, 0)
     .option('--variants [n]', 'export variants 0..n-1 (default: every declared variant) as <wav-stem>.<i>.wav; the sidecar lists them')
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: sfx (default), music or ambience; requires --manifest')
-    .action(async function (this: Command, ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string }) {
+    .option('--channels <n>', 'output channels: 2 (default, as rendered) or 1 (identical channels keep their samples exactly; channels that differ are averaged)', int)
+    .option('--trim-tail <dBFS>', 'drop the end after the last sample at or above this level (e.g. -60), with a 10 ms fade over the kept quiet samples; trims long effect tails. Default: off', parseFloat)
+    .action(async function (this: Command, ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string; channels?: number; trimTail?: number }) {
       const role = exportRole(opts.role, opts.manifest, 'sfx');
+      if (opts.channels !== undefined && opts.channels !== 1 && opts.channels !== 2) throw new BeepsError('E_USAGE', '--channels takes 1 or 2');
+      if (opts.trimTail !== undefined && !(opts.trimTail < 0 && opts.trimTail >= -120)) throw new BeepsError('E_USAGE', '--trim-tail takes a level in dBFS from -120 to just below 0, e.g. -60');
+      const post = { ...(opts.channels === 1 ? { channels: 1 as const } : {}), ...(opts.trimTail !== undefined ? { trimTailDb: opts.trimTail } : {}) };
+      const postJson = (r?: { channels: number; identicalChannels?: boolean; trimmedTailSec?: number }): { channels?: number; trimmedTailSec?: number } => {
+        if (!r) return {};
+        if (r.identicalChannels === false) warnings.push('the rendered channels differ (the stereo reverb, or a panned layer): --channels 1 averaged them, so the reverb sits about 3 dB lower and the sidecar loudness is the stereo measurement');
+        return { channels: r.channels, ...(r.trimmedTailSec !== undefined ? { trimmedTailSec: r.trimmedTailSec } : {}) };
+      };
       const p = openProject(io.projectDir());
       const patch = loadPatch(p, ref);
       const kitEntry = readKit(p.paths.root).sounds.find(s => s.name === ref);
@@ -130,12 +140,14 @@ export function registerPatchCommands(program: Command, io: Io) {
         const declared = patch.variation?.variants ?? 1;
         if (n > declared) warnings.push(`--variants ${n} exceeds the patch's declared ${declared} variant(s)`);
         const dest = resolve(opts.wav);
-        const { first, wavs, manifest } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest }));
-        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
+        const { first, wavs, manifest, posts } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest, post }));
+        const postOut = posts.map(postJson);
+        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}) });
         return;
       }
       const dest = resolve(opts.wav);
-      const { rendered: o, manifest } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest }));
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
+      const { rendered: o, manifest, post: done } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest, post }));
+      const extra = postJson(done);
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 }

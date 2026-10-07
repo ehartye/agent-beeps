@@ -150,6 +150,20 @@ export function kitRuleNotes(linted: Patch[], projectPatches: Patch[], kitNames:
   return [{ rule: 'kit-rules', message: `kit-level rules (${KIT_RULES.join(', ')}) run only in beeps kit check, not in lint: ${parts.join('; ')}. While authoring the set, ${next}.` }];
 }
 
+/** A render this much longer than its audible part (within 40 dB of peak) is mostly near-silent effect tail. */
+export const EFFECT_TAIL_NOTE_SEC = 0.2;
+
+/**
+ * tail-ceiling measures to 60 dB below peak, so a quiet reverb or delay tail passes it while the exported WAV still carries
+ * it. Say how much of the render is that tail and how to drop it at export.
+ */
+export function effectTailNotes(patch: Patch, features: Features): Note[] {
+  if (!patch.fx?.reverb && !patch.fx?.delay) return [];
+  const quiet = Math.round((features.durationSec - features.energyLengthSec) * 1000) / 1000;
+  if (!(quiet >= EFFECT_TAIL_NOTE_SEC)) return [];
+  return [{ rule: 'effect-tail', name: patch.name, message: `${quiet} s of the ${features.durationSec} s render is more than 40 dB below peak (a ${patch.fx.reverb ? 'reverb' : 'delay'} tail); tail-ceiling (to -60 dB below peak) can pass it while the WAV still carries it. beeps export --trim-tail -60 drops what is below -60 dBFS; a shorter or quieter send shortens it at the source` }];
+}
+
 function tailCeiling(table: Record<string, number>, family: string): number {
   if (family in table) return table[family];
   if (family.startsWith('ui-') && 'ui-*' in table) return table['ui-*'];
@@ -229,7 +243,7 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
   const table = c.rule('tail-ceiling').value;
   if (table && typeof table === 'object') {
     const max = tailCeiling(table, patch.family);
-    if (features.tailSec > max) c.add('tail-ceiling', `tail ${features.tailSec} s exceeds the ${max} s ceiling for family "${patch.family}"`);
+    if (features.tailSec > max) c.add('tail-ceiling', `tail ${features.tailSec} s exceeds the ${max} s ceiling for family "${patch.family}" (${features.energyLengthSec} s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end`);
   }
 
   const sharp = c.num('sharpness-warn');

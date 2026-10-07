@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings, type KitMember } from '../src/lint.ts';
+import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings, type KitMember } from '../src/lint.ts';
 import type { Features } from '../src/measure/index.ts';
 import { defaultProject } from '../src/schema/project.ts';
 import { targetFor } from '../src/render/pipeline.ts';
@@ -296,5 +296,27 @@ describe('kitRuleNotes', () => {
 
   it('says nothing for a lone patch outside the kit', () => {
     expect(kitRuleNotes([named('coin', 'coin')], [named('pickup', 'pickup')], [])).toEqual([]);
+  });
+});
+
+describe('effectTailNotes', () => {
+  const verb = () => patch({ ...coin(), name: 'pickup', family: 'pickup', fx: { reverb: { preset: 'small', sendDb: -22 } } });
+
+  it('notes a long quiet effect tail that tail-ceiling lets through, and how to trim it', () => {
+    const p = verb();
+    const notes = effectTailNotes(p, features(p, { durationSec: 0.735, energyLengthSec: 0.25, tailSec: 0.6 }));
+    expect(notes).toEqual([expect.objectContaining({ rule: 'effect-tail', name: 'pickup', message: expect.stringMatching(/0\.485 s of the 0\.735 s render.*--trim-tail -60/) })]);
+  });
+
+  it('says nothing without an effect or when the tail is short', () => {
+    const p = verb();
+    expect(effectTailNotes(coin(), features(coin(), { durationSec: 0.735, energyLengthSec: 0.25 }))).toEqual([]);
+    expect(effectTailNotes(p, features(p, { durationSec: 0.4, energyLengthSec: 0.3 }))).toEqual([]);
+  });
+
+  it('tail-ceiling names the audible length beside the -60 dB tail', () => {
+    const p = verb();
+    const w = lintPatch(p, features(p, { tailSec: 1.5, energyLengthSec: 0.3 }), project).warnings.find(x => x.rule === 'tail-ceiling');
+    expect(w?.message).toMatch(/tail 1\.5 s exceeds the 0\.8 s ceiling.*0\.3 s within 40 dB of peak.*--trim-tail/);
   });
 });

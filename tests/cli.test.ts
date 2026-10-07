@@ -178,6 +178,39 @@ describe('beeps CLI', () => {
     expect(typeof r.out.renders[0].features.peakLimited).toBe('boolean');
   });
 
+  it.skipIf(!hasChromium)('export --channels 1 and --trim-tail write a mono, shorter WAV and sidecar; the default export is the render itself', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'verb.json'), JSON.stringify({ ...coin(), name: 'verb', fx: { reverb: { preset: 'small', sendDb: -22 } } }));
+    expect(beeps(dir, 'new', 'verb.json').status).toBe(0);
+    const plain = beeps(dir, 'export', 'verb', '--wav', 'out/plain.wav', '--manifest');
+    expect(plain.status, plain.stderr).toBe(0);
+    expect(plain.out).not.toHaveProperty('channels');
+    expect(readFileSync(join(dir, 'out', 'plain.wav'))).toEqual(readFileSync(plain.out.renderedWav));
+    const header = (f: string) => { const b = readFileSync(join(dir, 'out', f)); return { channels: b.readUInt16LE(22), frames: b.readUInt32LE(40) / b.readUInt16LE(32) }; };
+    const stereo = header('plain.wav');
+    expect(stereo.channels).toBe(2);
+
+    const mono = beeps(dir, 'export', 'verb', '--wav', 'out/mono.wav', '--manifest', '--channels', '1');
+    expect(mono.status, mono.stderr).toBe(0);
+    expect(mono.out.channels).toBe(1);
+    expect(header('mono.wav')).toEqual({ channels: 1, frames: stereo.frames });
+    expect(JSON.parse(readFileSync(join(dir, 'out', 'mono.wav.json'), 'utf8')).channels).toBe(1);
+
+    const trimmed = beeps(dir, 'export', 'verb', '--wav', 'out/trim.wav', '--manifest', '--channels', '1', '--trim-tail', '-60');
+    expect(trimmed.status, trimmed.stderr).toBe(0);
+    expect(trimmed.out.trimmedTailSec).toBeGreaterThan(0);
+    const t = header('trim.wav');
+    expect(t.frames).toBeLessThan(stereo.frames);
+    const side = JSON.parse(readFileSync(join(dir, 'out', 'trim.wav.json'), 'utf8'));
+    expect(side.frames).toBe(t.frames);
+    expect(side.durationSec).toBeCloseTo(t.frames / 48000, 6);
+
+    expect(beeps(dir, 'export', 'verb', '--wav', 'out/x.wav', '--channels', '3').err.code).toBe('E_USAGE');
+    expect(beeps(dir, 'export', 'verb', '--wav', 'out/x.wav', '--trim-tail', '6').err.code).toBe('E_USAGE');
+    const lint = beeps(dir, 'lint', 'verb');
+    expect(lint.out.notes?.map((n: { rule: string }) => n.rule)).toContain('effect-tail');
+  });
+
   it.skipIf(!hasChromium)('set create turns authored patches into an auditionable set', () => {
     const dir = project();
     writeFileSync(join(dir, 'a.json'), JSON.stringify({ ...coin(), name: 'coin-a' }));
