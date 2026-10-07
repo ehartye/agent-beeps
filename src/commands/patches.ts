@@ -9,7 +9,8 @@ import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipelin
 import { sha256 } from '../hash.ts';
 import { readKit } from '../kit.ts';
 import { int, outcomeJson, summary, withHost } from './shared.ts';
-import { exportRole, writeExportManifest } from '../export-manifest.ts';
+import { exportRole } from '../export-manifest.ts';
+import { exportPatchOne, exportPatchVariants } from '../export-assets.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
   program.command('init')
@@ -121,24 +122,13 @@ export function registerPatchCommands(program: Command, io: Io) {
         if (!Number.isInteger(n) || n < 1 || n > 16) throw new BeepsError('E_USAGE', '--variants takes a count from 1 to 16');
         const declared = patch.variation?.variants ?? 1;
         if (n > declared) warnings.push(`--variants ${n} exceeds the patch's declared ${declared} variant(s)`);
-        const outs = await withHost(host => renderAndMeasure(host, Array.from({ length: n }, (_, variant) => ({ patch, seed, variant })), { project: p.project, rendersDir: p.paths.renders }));
-        const ok = outs.map(o => { if (!o.ok) throw new BeepsError('E_RENDER', o.error); return o; });
-        const dest = resolve(opts.wav), stem = dest.replace(/\.wav$/i, '');
-        mkdirSync(dirname(dest), { recursive: true });
-        const wavs = ok.map((o, i) => { const f = `${stem}.${i}.wav`; copyFileSync(o.wavPath, f); return f; });
-        const weights = patch.variation?.weights;
-        const manifest = opts.manifest
-          ? writeExportManifest(wavs[0], ok[0], role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true }, `${dest}.json`)
-          : undefined;
-        io.emit({ ...summary(ok[0]), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
+        const dest = resolve(opts.wav);
+        const { first, wavs, manifest } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest }));
+        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
         return;
       }
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
-      if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       const dest = resolve(opts.wav);
-      mkdirSync(dirname(dest), { recursive: true });
-      copyFileSync(o.wavPath, dest);
-      const manifest = opts.manifest ? writeExportManifest(dest, o, role) : undefined;
+      const { rendered: o, manifest } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest }));
       io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
 }

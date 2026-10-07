@@ -8,5 +8,5 @@
     "types": ["node"]
   },
   "include": ["src", "tests", "runtime"],
-  "exclude": ["runtime/audition"]
+  "exclude": ["runtime/audition", "runtime/ci"]
 }

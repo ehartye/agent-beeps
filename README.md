@@ -69,6 +69,10 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step) |
 | `song states <song>` | adaptive songs: judge every state as its own piece (loudness, trim, range, seam, register overlaps among its tracks, lint) |
 | `song compat <songs...>` | plan crossfades between songs without rendering: tempo relation, phase-lock, estimated key, harmony agreement per pair |
+| `build` | incremental audio build from `beeps.build.json`: render, export, compress and bundle only assets whose input hash differs from the committed `audio.lock.json` (or whose outputs are missing or modified); `--check` renders nothing and exits 1 listing what is stale; `--only`, `--all`, `--target web-universal` (default), `web-mp3` or `wav-master`, `--pull` / `--push` with `--store dir:<path>` or `release:<owner/repo>`, `--adopt`, `--allow-toolchain-change` ([docs](docs/build-lock-and-store.md)) |
+| `verify [dir or lock]` | outputs against the lock (sha256), the catalog, and Opus/MP3 container headers (length, tag, encoder id); `--decode` adds the loop checks |
+| `store push/pull/status` | the content-addressed audio store (one tar per asset, named by input hash, immutable): a `dir:` directory or GitHub `release:` assets |
+| `ci export <dir>` | vendor a zero-dependency `fetch.mjs`: `node fetch.mjs` materialises the audio from the store by hash and verifies it against the lock, no beeps, Chromium or ffmpeg |
 | `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
@@ -109,6 +113,14 @@ automatic, and the master never hard-limits below its -1.5 dBFS knee. `player.re
 after failed loads (e.g. on a sound toggle). Full API and error codes:
 `skills/beeps-compose/references/game-player.md`.
 
+## Shipping audio
+
+For an app with many recipes, `beeps build` replaces hand-written export loops: a `beeps.build.json`
+names the recipes, the output folder and a committed `audio.lock.json`; a build renders and encodes only
+what changed, a store keeps every asset by input hash, and CI runs a vendored `fetch.mjs` instead of
+rendering. Mechanism, lock schema and failure modes: [`docs/build-lock-and-store.md`](docs/build-lock-and-store.md);
+the recipe an agent follows: the `beeps-ship` skill.
+
 ## Sound engine
 
 Seven source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`
@@ -140,7 +152,7 @@ Setup installs the runtime and Chromium into `~/.agent-beeps/releases/<version-h
 (`AGENT_BEEPS_HOME` moves it) and every skill runs that release through
 `scripts/run-managed.js`. Rerun setup after each plugin update.
 
-Skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`, `beeps-music`.
+Skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`, `beeps-music`, `beeps-ship`.
 
 ## Requirements
 
@@ -159,4 +171,4 @@ node scripts/beeps.mjs capabilities
 claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals in evals/
 ```
 
-Specs and plans are in `docs/superpowers/`.
+Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`.

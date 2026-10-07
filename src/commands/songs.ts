@@ -25,7 +25,8 @@ import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
 import { planScore } from '../compat.ts';
-import { exportRole, writeExportManifest } from '../export-manifest.ts';
+import { exportRole } from '../export-manifest.ts';
+import { exportSongAssets } from '../export-assets.ts';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -269,47 +270,8 @@ export function registerSongCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
       if (opts.layers && !s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`, { hint: 'add adaptive.layers, adaptive.states and adaptive.initial (see references/song-format.md)' });
-      const instruments = resolveInstruments(p, s);
-      const rendered = await withHost(async host => {
-        const r = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders });
-        const layers = opts.layers ? await renderLayers(host, s, instruments, r, { project: p.project, rendersDir: p.paths.renders }) : undefined;
-        return { r, layers };
-      });
-      const { r } = rendered;
       const dest = resolve(opts.wav);
-      mkdirSync(dirname(dest), { recursive: true });
-      copyFileSync(r.wavPath, dest);
-      let layerFiles: Record<string, string> | undefined, residual: number | undefined, stateTrimDb: Record<string, number> | undefined, stateLufs: Record<string, number> | undefined;
-      const warnings: string[] = [];
-      if (rendered.layers) {
-        layerFiles = Object.fromEntries(Object.entries(rendered.layers).map(([name, lr]) => { const f = layerWavPath(dest, name); copyFileSync(lr.wavPath, f); return [name, f]; }));
-        // Sum one layer at a time, so only the running sum and one layer are ever in memory.
-        let sum: Float32Array[] | undefined;
-        for (const lr of Object.values(rendered.layers)) sum = addChannels(sum, readChannels(lr.wavPath));
-        residual = nullResidualDb(readChannels(r.wavPath), sum ?? []);
-        // The layers must sum to the approved mix; far above the 16-bit floor means a layer diverged.
-        if (residual > -60) warnings.push(`layers differ from the mix by ${Math.round(residual)} dB: a layer does not sum back to the approved mix`);
-        // A state plays only some layers, so it is quieter than the whole mix the trim was set on: measure each state's sum and
-        // record the gain that brings it to the music loudness (the player applies it), limited so the sum stays under -1.5 dBFS.
-        if (s.adaptive && layerFiles) {
-          stateTrimDb = {}; stateLufs = {};
-          const sr = readWav(readFileSync(r.wavPath)).sampleRate;
-          for (const [state, names] of Object.entries(s.adaptive.states)) {
-            let sum: Float32Array[] | undefined;
-            for (const n of names) sum = addChannels(sum, readChannels(layerFiles[n]));
-            const t = sum ? stateTrim(sum, sr, p.project.musicLoudness) : { lufs: -99, trimDb: 0 };
-            stateTrimDb[state] = t.trimDb; stateLufs[state] = t.lufs;
-          }
-        }
-        const sounding = new Set(compileSong(s).events.map(e => e.track));
-        for (const [name, tracks] of Object.entries(s.adaptive?.layers ?? {})) {
-          if (!tracks.some(t => sounding.has(t))) warnings.push(`layer "${name}" is silent in every section`);
-        }
-      }
-      const extra = layerFiles && s.adaptive
-        ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial, ...(stateTrimDb ? { stateTrimDb } : {}) }
-        : {};
-      const manifest = opts.manifest ? writeExportManifest(dest, r, role, extra) : undefined;
+      const { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings } = await withHost(host => exportSongAssets(host, p, s, { dest, role, manifest: !!opts.manifest, layers: !!opts.layers }));
       io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec,
         ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity), ...(stateLufs ? { stateLufs, stateTrimDb } : {}) } : {}),
         ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });

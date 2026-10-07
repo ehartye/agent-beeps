@@ -14,7 +14,10 @@ export const ExportManifestSchema = z.strictObject({
   schema: z.literal('beeps/audio-asset@1'),
   id: z.string().min(1), label: z.string().min(1), description: z.string(),
   role: Role, file: z.string().min(1), loop: z.boolean(),
-  durationSec: z.number().positive(), sampleRate: z.number().int().positive(), channels: z.number().int().positive(),
+  durationSec: z.number().positive(),
+  /** The exact length in sample frames (durationSec x sampleRate as an integer), so a player can check a decoder's length and end a loop where the audio ends. */
+  frames: z.number().int().positive().optional(),
+  sampleRate: z.number().int().positive(), channels: z.number().int().positive(),
   renderKey: z.string().min(1),
   loudness: z.strictObject({ metric: z.enum(['momentary-max', 'integrated']), lufs: z.number() }),
   truePeakDb: z.number(), normalizationAlreadyApplied: z.literal(true),
@@ -31,9 +34,15 @@ export const ExportManifestSchema = z.strictObject({
   /** Per state: the gain (dB) that brings the sum of that state's layers to the project's music loudness; the player applies it. */
   stateTrimDb: z.record(z.string(), z.number()).optional(),
   /** Present when the files were re-encoded after export (`beeps compress`); durationSec and the sample rate still describe the decoded audio. */
-  encoding: z.union([z.strictObject({ codec: z.literal('opus'), container: z.literal('ogg'), kbps: z.number().positive() }), z.strictObject({ codec: z.literal('mp3'), container: z.literal('mp3'), kbps: z.number().positive() })]).optional(),
+  encoding: z.union([z.strictObject({ codec: z.literal('opus'), container: z.literal('ogg'), kbps: z.number().positive(), lead: z.number().int().min(0).optional() }), z.strictObject({ codec: z.literal('mp3'), container: z.literal('mp3'), kbps: z.number().positive(), lead: z.number().int().min(0).optional() })]).optional(),
 });
 export type ExportManifest = z.infer<typeof ExportManifestSchema>;
+
+/**
+ * Bump when the export step changes what lands in a deliverable for the same renders: the layer sum, the per-state trims, the
+ * sidecar fields, the variant file naming. Part of every `beeps build` input hash.
+ */
+export const EXPORT_PIPELINE_VERSION = 1;
 
 export function exportRole(role: string | undefined, manifest: boolean | undefined, fallback: ExportRole): ExportRole {
   if (role !== undefined && !manifest) throw new BeepsError('E_USAGE', '--role requires --manifest');
@@ -59,7 +68,7 @@ export function writeExportManifest(wav: string, rendered: Rendered | RenderedSo
     schema: 'beeps/audio-asset@1', id, label: song?.title?.trim() || name.charAt(0).toUpperCase() + name.slice(1),
     description: song ? song.description ?? '' : (rendered as Rendered).patch.meta?.description ?? '',
     role, file: basename(wav), loop: song?.loop ?? false,
-    durationSec: header.readUInt32LE(40) / header.readUInt16LE(32) / sampleRate, sampleRate, channels,
+    durationSec: header.readUInt32LE(40) / header.readUInt16LE(32) / sampleRate, frames: header.readUInt32LE(40) / header.readUInt16LE(32), sampleRate, channels,
     renderKey: rendered.key,
     loudness: 'song' in rendered
       ? { metric: 'integrated', lufs: rendered.features.delivered?.integratedLufs }

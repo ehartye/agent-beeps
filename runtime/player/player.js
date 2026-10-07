@@ -31,7 +31,7 @@ const hash = s => {
  * @typedef {{ file: string, weight?: number }} VariantFile
  * @typedef {{ name: string, file: string }} LayerFile
  * @typedef {{ file: string, loop?: boolean, priority?: number, cooldownSec?: number, cap?: number,
- *   variants?: VariantFile[], noRepeat?: boolean, bpm?: number, meter?: number, durationSec?: number,
+ *   variants?: VariantFile[], noRepeat?: boolean, bpm?: number, meter?: number, durationSec?: number, frames?: number,
  *   layers?: LayerFile[], states?: Record<string, string[]>, initialState?: string, stateTrimDb?: Record<string, number> }} Asset
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
@@ -141,12 +141,20 @@ export function createPlayer(opts) {
     lifecycle = createLifecycle(c, { enabled, hidden });
   }
 
-  /** @param {AudioBuffer} buffer @param {AudioNode} out @param {{ loop?: boolean, gainDb?: number, pan?: number, level?: number }} o @returns {Playing} */
-  function source(buffer, out, { loop = false, gainDb = 0, pan = 0, level } = {}) {
+  /**
+   * `frames` is the asset's exact length from its catalog entry. A loop whose decoded buffer is longer (a decoder left frames after the audio)
+   * ends where the audio ends; any length that differs is reported once (a decoder that trims or pads is a gap or a click at the loop).
+   * @param {AudioBuffer} buffer @param {AudioNode} out @param {{ loop?: boolean, gainDb?: number, pan?: number, level?: number, frames?: number, id?: string }} o @returns {Playing}
+   */
+  function source(buffer, out, { loop = false, gainDb = 0, pan = 0, level, frames, id = '' } = {}) {
     const c = /** @type {AudioContext} */ (ctx);
     const src = c.createBufferSource();
     src.buffer = buffer;
     src.loop = loop;
+    if (loop && frames && buffer.length !== frames) {
+      if (buffer.length > frames) src.loopEnd = frames / buffer.sampleRate;
+      warnOnce('W_LOOP_LENGTH', `"${id}" decoded to ${buffer.length} frames, the catalog says ${frames}${buffer.length > frames ? ': the loop ends at the catalog length' : ': the decoder trimmed audio, so the loop will click'}`, id);
+    }
     const gain = c.createGain();
     const target = level ?? 10 ** (gainDb / 20);
     gain.gain.value = target;
@@ -358,7 +366,7 @@ export function createPlayer(opts) {
       partsOf(asset).forEach((p, i) => {
         const b = bufs[i];
         if (!b) return; // a missing layer file: only that layer is silent
-        const n = source(b, g, { loop: asset.loop !== false, level: !on ? 1 : on.has(p.name) ? stateGain(asset, state) : 0 });
+        const n = source(b, g, { loop: asset.loop !== false, level: !on ? 1 : on.has(p.name) ? stateGain(asset, state) : 0, frames: asset.frames, id });
         layers.set(p.name, n); // before start(): a throwing start must still be torn down
         n.src.start(t, offset);
       });
