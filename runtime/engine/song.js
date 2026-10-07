@@ -5,6 +5,7 @@ import { buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
 import { patchLength } from './patch.js';
 import { compileSong } from './sequence.js';
 import { hzToMidi, noteToHz } from './notes.js';
+import { sumInto, voicePool } from './sum.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('../../src/schema/song.ts').Song} Song */
@@ -107,6 +108,13 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   const c = compileSong(song);
   const master = ctx.createGain();
   master.connect(destination);
+  // Every many-to-one meeting point is summed in a fixed order (see sum.js), or renders are not bit-exact.
+  /** @type {AudioNode[]} */
+  const toMaster = [];
+  /** @type {AudioNode[]} */
+  const toReverb = [];
+  /** @type {AudioNode[]} */
+  const toDelay = [];
 
   /** @type {GainNode | undefined} */
   let reverbIn;
@@ -114,7 +122,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     reverbIn = ctx.createGain();
     const ret = ctx.createGain();
     ret.gain.value = db(song.master.reverb.returnDb);
-    reverbIn.connect(buildReverb(ctx, song.master.reverb.preset)).connect(ret).connect(master);
+    toMaster.push(reverbIn.connect(buildReverb(ctx, song.master.reverb.preset)).connect(ret));
   }
   /** @type {GainNode | undefined} */
   let delayIn;
@@ -132,11 +140,12 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     const ret = ctx.createGain();
     ret.gain.value = db(d.returnDb);
     delayIn.connect(line).connect(tone).connect(fb).connect(line);
-    tone.connect(ret).connect(master);
-    if (reverbIn) ret.connect(reverbIn);
+    tone.connect(ret);
+    toMaster.push(ret);
+    if (reverbIn) toReverb.push(ret);
   }
 
-  /** @type {Record<string, { input: GainNode, root: number | null }>} */
+  /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, root: number | null }>} */
   const buses = {};
   for (const [name, t] of Object.entries(song.tracks)) {
     const p = instruments[name];
@@ -193,16 +202,19 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     }
     const level = ctx.createGain();
     automate(level.gain, db(t.gainDb), m => (m.gainDb === undefined ? undefined : db(m.gainDb)));
-    node.connect(level).connect(master);
+    toMaster.push(node.connect(level));
     for (const [kind, input] of /** @type {const} */ ([['reverb', reverbIn], ['delay', delayIn]])) {
       const base = t.sends[kind];
       if (!input || (base === undefined && !points.some(m => m.sends?.[kind] !== undefined))) continue;
       const send = ctx.createGain();
       automate(send.gain, base === undefined ? 0 : db(base), m => (m.sends?.[kind] === undefined ? undefined : db(m.sends[kind])));
-      level.connect(send).connect(input);
+      (kind === 'reverb' ? toReverb : toDelay).push(level.connect(send));
     }
-    buses[name] = { input, root: t.root ? hzToMidi(noteToHz(t.root)) : instrumentRoot(p) };
+    buses[name] = { input, pool: voicePool(ctx, input), root: t.root ? hzToMidi(noteToHz(t.root)) : instrumentRoot(p) };
   }
+  sumInto(ctx, toMaster, master);
+  if (reverbIn) sumInto(ctx, toReverb, reverbIn);
+  if (delayIn) sumInto(ctx, toDelay, delayIn);
 
   /** @type {Map<string, Patch>} */
   const voices = new Map();
@@ -225,14 +237,24 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }
     const out = ctx.createGain();
     out.gain.value = e.vel;
+    /** @type {AudioNode} */
+    let note = out;
     if (e.pan) {
       const pan = ctx.createStereoPanner();
       pan.pan.value = e.pan;
-      out.connect(pan).connect(bus.input);
-    } else out.connect(bus.input);
+      note = out.connect(pan);
+    }
     const at = when + e.time;
     const seed = song.seed * 101 + (i % SEED_POOL);
-    p.layers.forEach((layer, li) => buildLayer(ctx, layer, { when: at, duration: /** @type {Patch} */ (p).duration, seed: seed + li * 7919, out }));
+    let end = at;
+    const layerOuts = p.layers.map((layer, li) => {
+      const lo = ctx.createGain();
+      end = Math.max(end, buildLayer(ctx, layer, { when: at, duration: /** @type {Patch} */ (p).duration, seed: seed + li * 7919, out: lo }).end);
+      return lo;
+    });
+    sumInto(ctx, layerOuts, out);
+    // buildLayer stops sources 10 ms after `end`; the amp is already at zero then, so `end` is when the note falls silent.
+    note.connect(bus.pool.slot(at, end));
   };
   if (!lazy) advance(Infinity);
   return { end: when + c.length + songTail(song, instruments), length: c.length, sections: c.sections, advance, done: () => cursor >= c.events.length };

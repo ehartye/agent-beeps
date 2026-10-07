@@ -59,7 +59,9 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   full render length by default; `--channels 1` halves a sound whose channels are identical (no pan,
   no reverb) without changing a sample, and `--trim-tail -60` drops a near-silent effect end (lint's
   `effect-tail` note says when). The seed is `--seed`, else the one an audition ship recorded in
-  the kit (`kit add` records none), else 1: pass `--seed` in build scripts. For a web game, export every
+  the kit (`kit add` records none), else 1: pass `--seed` in build scripts. A seed renders
+  bit-exactly (same samples every run on one Chromium build), so re-exporting an unchanged patch
+  reproduces its WAV; a difference means the patch, seed, project or toolchain changed. For a web game, export every
   SFX and song into that one folder, then `beeps bundle public/audio` (writes `index.json`) and
   `beeps player export src/vendor` (vendors `src/vendor/beeps-player/`):
   ```js

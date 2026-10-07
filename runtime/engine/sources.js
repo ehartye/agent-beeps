@@ -1,5 +1,6 @@
 // Sound sources: each patch source type becomes a small group of Web Audio nodes.
 import { mulberry32, noiseSamples } from './rng.js';
+import { sumInto } from './sum.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Source} Source */
 /**
@@ -63,6 +64,9 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
   const detune = [];
   /** @type {((t: number) => void)[]} */
   const onStart = [];
+  /** Signals summed into `mix` in this order (never connected to it directly: see sum.js). */
+  /** @type {AudioNode[]} */
+  const parts = [];
 
   if (src.type === 'osc') {
     const voices = src.unison?.voices ?? 1;
@@ -75,14 +79,14 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       o.detune.value = voices === 1 ? 0 : -spread / 2 + (spread * i) / (voices - 1);
       const g = ctx.createGain();
       g.gain.value = 1 / voices;
-      o.connect(g).connect(mix);
+      parts.push(o.connect(g));
       nodes.push(o); pitch.push({ param: o.frequency, ratio: 1 }); detune.push(o.detune);
     }
   } else if (src.type === 'noise') {
     const s = ctx.createBufferSource();
     s.buffer = noiseBuffer(ctx, src.color, seed);
     s.loop = true;
-    s.connect(mix);
+    parts.push(s);
     nodes.push(s);
   } else if (src.type === 'fm') {
     const ops = src.operators.map(op => {
@@ -92,13 +96,16 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       nodes.push(o); pitch.push({ param: o.frequency, ratio: op.ratio }); detune.push(o.detune);
       return o;
     });
+    /** @type {AudioNode[][]} modulators per operator, summed into its frequency in algorithm order */
+    const mods = ops.map(() => []);
     for (const [from, to] of src.algorithm) {
       if (from >= ops.length || to >= ops.length || from === to) continue;
       const depth = ctx.createGain();
       depth.gain.value = src.operators[from].index * pitchHz * src.operators[to].ratio;
-      ops[from].connect(depth).connect(ops[to].frequency);
+      mods[to].push(ops[from].connect(depth));
     }
-    ops[0].connect(mix);
+    mods.forEach((m, i) => sumInto(ctx, m, ops[i].frequency));
+    parts.push(ops[0]);
   } else if (src.type === 'additive') {
     const total = src.partials.reduce((a, [, g]) => a + db(g), 0) || 1;
     for (const [ratio, gainDb, decay] of src.partials) {
@@ -107,7 +114,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       o.frequency.value = pitchHz * ratio;
       const g = ctx.createGain();
       g.gain.value = 0;
-      o.connect(g).connect(mix);
+      parts.push(o.connect(g));
       nodes.push(o); pitch.push({ param: o.frequency, ratio }); detune.push(o.detune);
       // Each partial decays on its own clock: that independence is what makes additive sound physical.
       onStart.push(t => {
@@ -131,7 +138,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       const g = ctx.createGain();
       // A bandpass passes a sliver of an impulse; scale by Q so modes ring at a usable level.
       g.gain.value = db(gainDb) * q * 4;
-      exciter.connect(bp).connect(g).connect(mix);
+      parts.push(exciter.connect(bp).connect(g));
       pitch.push({ param: bp.frequency, ratio });
     }
   } else if (src.type === 'grains') {
@@ -160,27 +167,29 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     bp.type = 'bandpass';
     bp.frequency.value = src.center;
     bp.Q.value = src.q;
-    s.connect(bp).connect(mix);
+    parts.push(s.connect(bp));
     nodes.push(s);
   } else if (src.type === 'metal') {
     const sum = ctx.createGain();
     sum.gain.value = 1 / METAL_RATIOS.length;
-    for (const r of METAL_RATIOS) {
+    const squares = METAL_RATIOS.map(r => {
       const o = ctx.createOscillator();
       o.type = 'square';
       o.frequency.value = src.base * r;
-      o.connect(sum);
       nodes.push(o); detune.push(o.detune);
-    }
+      return o;
+    });
+    sumInto(ctx, squares, sum);
     for (const band of src.bands) {
       const bp = ctx.createBiquadFilter();
       bp.type = 'bandpass';
       bp.frequency.value = band;
       bp.Q.value = 1.5;
-      sum.connect(bp).connect(mix);
+      parts.push(sum.connect(bp));
     }
   }
 
+  sumInto(ctx, parts, mix);
   return {
     output: mix,
     pitch,

@@ -3,6 +3,7 @@
 import { buildLayer } from './layer.js';
 import { buildDcBlocker, buildDelay, buildLimiter, buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
 import { variantPatch } from './variation.js';
+import { sumInto } from './sum.js';
 
 export { ENGINE_VERSION } from './version.js';
 
@@ -43,19 +44,24 @@ export function buildPatch(ctx, patch, opts = {}) {
   const authored = ctx.createGain();
   // fx.dcBlock (opt-in) puts a DC blocker between the layer mix and everything after it. Without it the graph is unchanged.
   const dry = p.fx?.dcBlock ? mix.connect(buildDcBlocker(ctx)) : mix;
-  dry.connect(authored);
+  /** Everything that reaches the authored tap, summed in a fixed order (see sum.js). */
+  const toAuthored = [dry];
 
   let end = when;
-  p.layers.forEach((layer, i) => {
-    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out: mix });
+  // Each layer gets its own output; they are summed into the mix in layer order.
+  const layerOuts = p.layers.map((layer, i) => {
+    const out = ctx.createGain();
+    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out });
     end = Math.max(end, r.end);
+    return out;
   });
+  sumInto(ctx, layerOuts, mix);
 
   let tail = 0;
   if (p.fx?.reverb) {
     const send = ctx.createGain();
     send.gain.value = db(p.fx.reverb.sendDb);
-    dry.connect(send).connect(buildReverb(ctx, p.fx.reverb.preset)).connect(authored);
+    toAuthored.push(dry.connect(send).connect(buildReverb(ctx, p.fx.reverb.preset)));
     const preset = REVERB_PRESETS[p.fx.reverb.preset];
     tail = Math.max(tail, preset.decay + preset.preDelay);
   }
@@ -64,9 +70,11 @@ export function buildPatch(ctx, patch, opts = {}) {
     send.gain.value = db(p.fx.delay.sendDb);
     const d = buildDelay(ctx, p.fx.delay);
     dry.connect(send).connect(d.input);
-    d.output.connect(authored);
+    toAuthored.push(d.output);
     tail = Math.max(tail, delayTail(p.fx.delay));
   }
+
+  sumInto(ctx, toAuthored, authored);
 
   const trim = ctx.createGain();
   trim.gain.value = db(trimDb);

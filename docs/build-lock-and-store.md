@@ -10,10 +10,15 @@ together is the `beeps-ship` skill; this page is the mechanism.
 
 Two measured facts shape the design:
 
-- **Song renders are not bit-exact.** Rendering one song four times from empty caches gave four WAVs
-  that differ in 33 to 50 of 786,516 samples, by one 16-bit step (sfx renders were identical). So an
-  input that already has an output is **never rendered again**: a re-render changes the shipped bytes
-  for nothing. The lock records output hashes, not just input hashes.
+- **Renders are bit-exact for a seed on one Chromium build, since engine 2 (agent-beeps 0.8.0).** Before
+  that they were not: one song rendered four times from empty caches gave four WAVs that differ in 33 to
+  50 of 786,516 samples, and a sound with three or more layers, or a `metal`, unison, `additive`,
+  `modal` or multi-modulator `fm` source, or both reverb and delay, differed in 0 to 8 samples per render,
+  all by one 16-bit step. Chromium sums the connections into one node input in an order that changes
+  between runs (float addition of three or more terms depends on order); engine 2 sums every such point
+  through a fixed chain of two-input gains (`runtime/engine/sum.js`). An input that already has an output
+  is still **never rendered again**: another Chromium build can round differently, and a re-render costs
+  time for nothing. The lock records output hashes, not just input hashes.
 - **Encoding is deterministic.** The same WAV through the same ffmpeg build gives the same Opus bytes.
   So everything after the render (export, encode, bundle, lock) can be repeated and compared byte for
   byte, and a rebuild from the render cache reproduces the lock exactly.
@@ -201,7 +206,7 @@ measurement shows a leading offset yet).
 | Tool version bump (engine, pipeline, Chromium, ffmpeg) | Every hash changes. `beeps build` stops with `E_TOOLCHAIN` listing the drift instead of silently re-rendering everything; pass `--allow-toolchain-change`, or `--pull` assets someone already built. Renders come from the render cache when it is warm, so a Chromium-only bump is minutes of encoding, not a render. |
 | ffmpeg drift | The encoder fingerprint is in every hash, so another ffmpeg makes every asset stale (same guard). Use the ffmpeg the lock names, or accept the change on purpose. |
 | Partial rebuild (killed, disk full) | Finished assets are committed; an interrupted asset keeps its old files and old lock entry (still valid). Its new files are installed one by one, so a crash in that window leaves that asset mismatching the lock: the next build sees `output modified` and redoes it from the render cache. `beeps verify` reports it. |
-| Non-bit-exact render | A re-render of an unchanged input is never done. After deleting the render cache, an asset rebuilt from scratch is equivalent to, not identical with, the earlier one. |
+| Re-render of an unchanged input | Never done. On the same Chromium build a re-render reproduces the bytes (engine 2); after a Chromium change an asset rebuilt from scratch can differ by float rounding: equivalent, not identical. |
 | Poisoned or corrupt store entry | Rejected by sha256 against the lock; nothing written. |
 | Recipe removed | Its outputs and lock entry are deleted (not with `--only`). |
 

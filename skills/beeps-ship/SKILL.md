@@ -9,8 +9,9 @@ when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio 
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`. Mechanism, schema and failure modes:
 `docs/build-lock-and-store.md` (read it before changing the setup; this skill is the recipe).
 
-The rule: **an input that already has an output is never rendered again.** Song renders are not
-bit-exact between runs, so a re-render changes shipped bytes for nothing. The author renders once, the
+The rule: **an input that already has an output is never rendered again.** Renders are bit-exact for
+a seed on one Chromium build (engine 2), but another Chromium build can round differently, so a
+re-render costs time and can change shipped bytes for nothing. The author renders once, the
 lock records what was made, everyone else fetches by hash.
 
 ## 1. Describe the project
