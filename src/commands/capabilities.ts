@@ -49,6 +49,7 @@ export function registerCapabilities(program: Command, io: Io) {
           'Patches never carry a loudness literal: the renderer trims every sound to the project loudness target.',
           'lowpass/highpass take resonanceDb (Chromium treats their Q as dB); bandpass/notch/peaking take q.',
           'Pitched sources snap to the project scale when scale.snap is true.',
+          'export is stereo at full render length by default; --channels 1 (identical channels keep their samples) and --trim-tail <dBFS> (e.g. -60, drops a near-silent effect tail) are opt-in.',
           'no-dc: a 45-50 Hz highpass on a low thump, bandpass instead of lowpass on brown/pink noise, or fx.dcBlock: true (opt-in 10 Hz DC blocker; off by default).',
           'render, look and export summaries carry features.peakLimited: the trim stopped at the true-peak ceiling, so the sound sits below its loudness target.',
           'Kit-level rules (family-consistency, masking-risk, key-consistency, one-no, priority-levels) run only in kit check; lint adds a notes line when a linted patch is in the kit or has family members.',

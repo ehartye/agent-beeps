@@ -9,7 +9,7 @@ import { crossover, DIRECTIONS, mutate } from '../mutate.ts';
 import { loadPatch, openProject, parseOrThrow, readJsonFile, type OpenProject } from '../project.ts';
 import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
-import { kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
+import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
 import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
@@ -131,6 +131,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
       const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
       const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
+      for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
       const text = new Map(loadRules().map(r => [r.id, r.statement]));
       const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
       const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));

@@ -78,6 +78,12 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.
 
+`beeps export <patch>` writes the render's own stereo WAV. `--channels 1` writes one channel (identical
+channels keep their samples exactly; channels that differ, from the stereo reverb or a panned layer, are averaged and the
+command warns), and `--trim-tail <dBFS>` (e.g. `-60`) cuts the near-silent end after the last sample at
+that level, with a 10 ms fade over the kept quiet samples; both default off, and the sidecar's
+`channels`, `frames` and `durationSec` describe the written file. `beeps build` does not apply them yet.
+
 For game integration, add `--manifest` to `beeps export <patch> --wav audio/cue.wav` or
 `beeps song export <song> --wav audio/theme.wav`. It writes an adjacent `<wav>.json` with the
 asset's label, description, relative WAV filename, loop flag, exact duration, sample rate,

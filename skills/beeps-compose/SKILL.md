@@ -55,7 +55,11 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
   (lint's `notes` says so). `beeps kit add <name>` each sound as you draft it and rerun
   `beeps kit check` after every change, not at the end.
 - `beeps export <name> --wav public/audio/<name>.wav --manifest` writes a WAV plus a sidecar; add
-  `--variants` to export every declared variant for no-repeat playback. For a web game, export every
+  `--variants` to export every declared variant for no-repeat playback. Exports are stereo and the
+  full render length by default; `--channels 1` halves a sound whose channels are identical (no pan,
+  no reverb) without changing a sample, and `--trim-tail -60` drops a near-silent effect end (lint's
+  `effect-tail` note says when). The seed is `--seed`, else the one an audition ship recorded in
+  the kit (`kit add` records none), else 1: pass `--seed` in build scripts. For a web game, export every
   SFX and song into that one folder, then `beeps bundle public/audio` (writes `index.json`) and
   `beeps player export src/vendor` (vendors `src/vendor/beeps-player/`):
   ```js
