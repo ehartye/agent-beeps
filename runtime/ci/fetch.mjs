@@ -65,10 +65,10 @@ function openStore(spec) {
   if (!m) fail(`unknown store "${spec}"`);
   const [, repo, base = 'audio-store'] = m;
   const headers = (extra = {}) => ({ accept: 'application/vnd.github+json', 'user-agent': 'agent-beeps-fetch', ...(token ? { authorization: `Bearer ${token}` } : {}), ...extra });
-  let index; // name -> asset, over the release chain tag, tag-1, tag-2, ...
-  const load = async () => {
-    if (index) return index;
-    index = new Map();
+  let loading; // one shared load: the first call starts it and every concurrent get() awaits the same promise
+  const load = () => (loading ??= loadIndex());
+  const loadIndex = async () => {
+    const index = new Map(); // name -> asset, over the release chain tag, tag-1, tag-2, ...
     for (let n = 0; ; n++) {
       const tag = n === 0 ? base : `${base}-${n}`;
       const r = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, { headers: headers() });

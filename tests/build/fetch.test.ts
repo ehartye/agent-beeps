@@ -2,7 +2,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import { chromiumAvailable } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
@@ -22,6 +24,53 @@ describe('fetch.mjs source', () => {
     expect(specs.length).toBeGreaterThan(2);
     for (const s of specs) expect(s, s).toMatch(/^node:/);
     expect(src).not.toMatch(/require\(|import\(/);
+  });
+});
+
+describe('fetch.mjs against a release store (mocked GitHub)', () => {
+  // Regression: the release index loads lazily, and the parallel workers all asked for it before the first load finished, so every
+  // asset after the first looked "not in the store". A preload replaces fetch with a slow in-memory GitHub; no network, no ffmpeg.
+  it('downloads every asset when the workers start together', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-fetch-release-'));
+    const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+    const tar = (name: string, data: Buffer) => {
+      const h = Buffer.alloc(512);
+      h.write(name, 0); h.write('0000644\0', 100); h.write('0000000\0', 108); h.write('0000000\0', 116);
+      h.write(data.length.toString(8).padStart(11, '0') + '\0', 124); h.write('00000000000\0', 136); h.write('        ', 148); h.write('0', 156); h.write('ustar\0', 257);
+      let sum = 0; for (const b of h) sum += b;
+      h.write(sum.toString(8).padStart(6, '0') + '\0 ', 148);
+      return Buffer.concat([h, data, Buffer.alloc((512 - (data.length % 512)) % 512), Buffer.alloc(1024)]);
+    };
+    const assets: Record<string, unknown> = {};
+    const tars: Record<string, string> = {};
+    for (let n = 0; n < 8; n++) {
+      const data = Buffer.from(`asset-${n}`);
+      const hash = sha(Buffer.from(`in${n}`));
+      assets[`a${n}`] = { inputHash: `sha256:${hash}`, outputs: [{ file: `a${n}.ogg`, bytes: data.length, sha256: sha(data) }], role: 'sfx', source: `a${n}.json` };
+      tars[`${hash}.tar`] = tar(`a${n}.ogg`, data).toString('base64');
+    }
+    mkdirSync(join(dir, 'tools'), { recursive: true });
+    cpSync(join(import.meta.dirname, '..', '..', 'runtime', 'ci', 'fetch.mjs'), join(dir, 'tools', 'fetch.mjs'));
+    writeFileSync(join(dir, 'lock.json'), JSON.stringify({ schema: 'beeps/build-lock@1', assets }));
+    writeFileSync(join(dir, 'mock.mjs'), `
+      const tars = ${JSON.stringify(tars)};
+      const names = Object.keys(tars);
+      const delay = () => new Promise((r) => setTimeout(r, 30));
+      const json = (o) => new Response(JSON.stringify(o), { status: 200 });
+      globalThis.fetch = async (url) => {
+        await delay();
+        const u = String(url);
+        if (u.endsWith('/releases/tags/audio-store')) return json({ id: 7 });
+        if (u.includes('/releases/tags/')) return new Response('{}', { status: 404 });
+        if (u.includes('/releases/7/assets?')) return json(names.map((name, i) => ({ id: i + 1, name })));
+        const m = u.match(/releases\\/assets\\/(\\d+)$/);
+        if (m) return new Response(Buffer.from(tars[names[Number(m[1]) - 1]], 'base64'), { status: 200 });
+        return new Response('{}', { status: 500 });
+      };`);
+    const r = spawnSync(process.execPath, ['--import', pathToFileURL(join(dir, 'mock.mjs')).href, 'tools/fetch.mjs', '--lock', 'lock.json', '--out', 'out', '--store', 'release:o/r'], { cwd: dir, encoding: 'utf8', windowsHide: true, env: { ...process.env, GITHUB_TOKEN: 't' } });
+    const json = JSON.parse(r.stdout.trim().split('\n').pop()!);
+    expect(json, r.stderr).toMatchObject({ assets: 8, fetched: 8, missing: [] });
+    expect(readdirSync(join(dir, 'out')).filter(n => n.endsWith('.ogg'))).toHaveLength(8);
   });
 });
 
