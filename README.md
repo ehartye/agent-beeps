@@ -171,6 +171,28 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.7.0
+
+Fixes for friction found building a game's audio (#24 to #27). Defaults are unchanged: existing patches render
+exactly as before, and engine, pipeline and export versions are not bumped, so render caches and `beeps build`
+locks stay valid.
+
+- `beeps sync <dir>` mirrors a folder of committed patch files into the project (adds, replaces changed,
+  validates all first, `--dry-run`). `new` is unchanged.
+- `variation-on-repeating` counts hand-made sibling patches (`<stem>-<n>` names in one family, or a shared new
+  optional `meta.variantOf`), found in the project or on the command line.
+- `package.json` approves `ffmpeg-static@5.3.0`'s install script (`allowScripts`), so npm 11 no longer warns.
+- `no-dc` names the fixes that work and the likely layers (new pointer `/layers/<i>`); new opt-in
+  `fx.dcBlock: true` adds a 10 Hz DC blocker on the layer mix.
+- `render`, `look` and `export` summaries carry `features.peakLimited`.
+- `lint` output gains an optional top-level `notes` array (informational; never changes the exit code):
+  `kit-rules` when a patch is in the kit or has family members (kit-level rules run only in `kit check`), and
+  `effect-tail` when reverb or delay leaves 0.2 s or more of near-silence.
+- `tail-ceiling` and `no-dc` messages are longer (rule ids and severities unchanged).
+- `export --channels 1` (mono; identical channels keep their samples) and `export --trim-tail <dBFS>`
+  (cuts a near-silent end); both off by default.
+- Docs: calling beeps from a script on Windows, lint exit codes, the export seed rule.
+
 ## Install / Claude Code plugin
 
 ```text
