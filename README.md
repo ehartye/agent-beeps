@@ -173,6 +173,21 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.8.0
+
+Renders are now bit-exact for a seed (#29). Before, any sound where three or more signals meet in one node
+(three or more layers; `metal`, unison, `additive`, `modal` or multi-modulator `fm` sources; reverb plus delay;
+every song) could come out 1 LSB different in a few samples from one render to the next, because Chromium sums
+the connections into a node in an order that changes between runs. The engine now sums each of those points
+through a fixed chain of two-input gains, and song notes through a pool of voice slots.
+
+- `ENGINE_VERSION` is 2, so every render key changes: render caches re-render once, export sidecars and
+  manifests carry new `renderKey`s, and `beeps build` stops with `E_TOOLCHAIN` until you pass
+  `--allow-toolchain-change` (or `--pull` assets someone already built).
+- Existing patches can differ from their 0.7.0 renders by rounding only: 1 LSB in a handful of samples, loudness
+  and true peak unchanged to 0.001 dB. Re-exporting is optional; committing the new files once makes later
+  re-exports reproduce them byte for byte on the same Chromium build.
+
 ## What changed in 0.7.0
 
 Fixes for friction found building a game's audio (#24 to #27). Defaults are unchanged: existing patches render
