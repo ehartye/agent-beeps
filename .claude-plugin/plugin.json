@@ -1,6 +1,6 @@
 {
   "name": "agent-beeps",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Procedural sound and music composer for coding agents: game SFX, UI sounds and loopable game music as Web Audio patches and songs, rendered in Chromium, measured (loudness, sharpness, roughness, pitch, loudness arc), linted against cited craft rules, auditioned by the owner on a LAN page, and ranked by a taste model learned from every choice.",
   "author": {
     "name": "ehartye"
