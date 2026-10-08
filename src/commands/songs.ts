@@ -98,6 +98,9 @@ export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?:
   return out;
 }
 
+/** A part this far under the mix's peak (dB) is inaudible; nearer, it is an accent however quiet its integrated level. */
+const STEM_PEAK_AUDIBLE_DB = 12;
+
 export function registerSongCommands(program: Command, io: Io) {
   program.command('instruments')
     .description('list the bundled instrument patches songs can play by name')
@@ -204,14 +207,19 @@ export function registerSongCommands(program: Command, io: Io) {
           if (dest) copyFileSync(stems[i].wavPath, dest);
           return {
             track: t, loudnessLufs: f.delivered?.integratedLufs, vsMixLu: Math.round(((f.delivered?.integratedLufs ?? -99) - mixLufs) * 10) / 10,
+            // A short percussive part (a hat) sits far under the mix by integrated level and is still heard: its peak says so.
+            peakVsMixDb: Math.round((f.samplePeakDb - mix.features.samplePeakDb) * 10) / 10, crestDb: f.crestDb,
             centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth,
             sections: f.sections.map(x => ({ name: x.name, lufs: x.lufs })), wav: dest ?? stems[i].wavPath, look: stems[i].lookPath,
           };
         }).sort((a, b) => (b.loudnessLufs ?? -99) - (a.loudnessLufs ?? -99)),
       };
       // A part far under the mix is felt, not heard; one within a few LU of it is carrying the song.
-      const buried = report.stems.filter(x => x.vsMixLu < -18).map(x => `${x.track} sits ${-x.vsMixLu} LU under the mix: likely inaudible; raise its gainDb or drop it`);
-      io.emit({ ...report, ...(buried.length ? { warnings: buried } : {}) });
+      // Integrated level undersells a sparse, peaky part, so a stem is only flagged when its peak is also well under the mix's peak.
+      const quiet = report.stems.filter(x => x.vsMixLu < -18);
+      const buried = quiet.filter(x => x.peakVsMixDb < -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} sits ${-x.vsMixLu} LU under the mix and its peak ${-x.peakVsMixDb} dB under: likely inaudible; raise its gainDb or drop it`);
+      const accents = quiet.filter(x => x.peakVsMixDb >= -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} is ${-x.vsMixLu} LU under the mix by integrated level but its peak is within ${Math.max(0, -x.peakVsMixDb)} dB of the mix's (crest ${x.crestDb} dB): short and peaky, so it is heard as an accent; do not chase it with gain`);
+      io.emit({ ...report, ...(buried.length ? { warnings: buried } : {}), ...(accents.length ? { notes: accents } : {}) });
     });
 
   song.command('states <ref>')
@@ -267,14 +275,16 @@ export function registerSongCommands(program: Command, io: Io) {
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: music (default), ambience or sfx; requires --manifest')
     .option('--layers', 'adaptive songs: also write each layer as <wav-stem>.<layer>.wav (loop-folded, at the mix trim) and list them in the sidecar')
-    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean }) => {
+    .option('--trim-tail <dBFS>', 'non-loop songs: drop the end after the last sample at or above this level (e.g. -60), with a 10 ms fade; an opening that renders its whole reverb tail ends where it is audible. Default: off', parseFloat)
+    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean; trimTail?: number }) => {
+      if (opts.trimTail !== undefined && !(opts.trimTail < 0 && opts.trimTail >= -120)) throw new BeepsError('E_USAGE', '--trim-tail takes a level in dBFS from -120 to just below 0, e.g. -60');
       const role = exportRole(opts.role, opts.manifest, 'music');
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
       if (opts.layers && !s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`, { hint: 'add adaptive.layers, adaptive.states and adaptive.initial (see references/song-format.md)' });
       const dest = resolve(opts.wav);
-      const { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings } = await withHost(host => exportSongAssets(host, p, s, { dest, role, manifest: !!opts.manifest, layers: !!opts.layers }));
-      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec,
+      const { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings, post } = await withHost(host => exportSongAssets(host, p, s, { dest, role, manifest: !!opts.manifest, layers: !!opts.layers, ...(opts.trimTail !== undefined ? { trimTailDb: opts.trimTail } : {}) }));
+      io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec, ...(post?.trimmedTailSec !== undefined ? { trimmedTailSec: post.trimmedTailSec } : {}),
         ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity), ...(stateLufs ? { stateLufs, stateTrimDb } : {}) } : {}),
         ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
     });
