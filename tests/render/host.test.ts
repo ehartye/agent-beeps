@@ -49,6 +49,20 @@ describe.skipIf(!(await chromiumAvailable()))('Chromium offline render', () => {
     for (let i = 0; i < plain.delivered[0].length; i += 1) expect(Math.abs(off.delivered[0][i] - plain.delivered[0][i])).toBeLessThan(1e-6);
   });
 
+  it('a layer highpass takes the DC off a short low sine and a lowpassed noise burst, keeping the lowpass; absent, renders are unchanged', async () => {
+    const burst = (extra: Record<string, unknown> = {}) => patch({
+      schema: 'beeps/patch@1', name: 'dc-thud', family: 'foley', duration: 0.2,
+      layers: [
+        { source: { type: 'osc', wave: 'sine', pitch: 70 }, amp: { attack: 0.004, decay: 0.09, sustain: 0, release: 0.02 }, ...extra },
+        { source: { type: 'noise', color: 'brown' }, amp: { attack: 0.004, decay: 0.09, sustain: 0, release: 0.02 }, filter: { type: 'lowpass', cutoff: 400, resonanceDb: 0 }, ...extra },
+      ],
+    });
+    const dc = (x: Float32Array) => Math.abs(x.reduce((s, v) => s + v, 0) / x.length);
+    const [plain, hp] = (await host.render([burst(), burst({ highpass: 40 })].map(p => ({ patch: p, opts: { seed: 1 } })))).map(ok);
+    expect(dc(plain.authored[0])).toBeGreaterThan(0.001);
+    expect(dc(hp.authored[0])).toBeLessThan(0.001);
+  });
+
   it('band-limits oscillators: a 6 kHz sawtooth peaks near 0.74, not 1', async () => {
     const [saw] = (await host.render([{ patch: tone('sawtooth', 6000), opts: { seed: 1 } }])).map(ok);
     const p = peak(saw.authored[0]);

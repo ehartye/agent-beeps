@@ -37,7 +37,10 @@ judgement are listed on every run: apply them yourself, never skip them silently
   body, a softer spike), or accept the level.
 - `no-dc` (an error): low sine or triangle thumps and lowpassed brown or pink noise leave DC. Fixes
   that work: a 45-50 Hz highpass on the thump, `bandpass` instead of `lowpass` on noise bodies, the
-  thump at gainDb -4 to -5, or `fx.dcBlock: true` (a 10 Hz DC blocker on the layer mix).
+  thump at gainDb -4 to -5, or `fx.dcBlock: true` (a 10 Hz DC blocker on the layer mix). A short
+  low burst (a 70 Hz sine decaying in 90 ms, lowpassed noise) has a nonzero mean by construction
+  and needs its lowpass too: set the layer's `highpass` (40 Hz), a second filter after the
+  envelope; lint names it per layer.
 - Declare attacks of 4 ms or more (a linear 4 ms attack measures about 3 ms from 10 % to 90 %)
   unless the layer is quiet or the sound is meant to click (`meta.intent: "click"`).
 - Pitched layers snap to the project scale (major pentatonic by default) so simultaneous sounds

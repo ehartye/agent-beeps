@@ -14,6 +14,16 @@ describe('patch@1', () => {
     expect(r.patch.layers[0].gainDb).toBe(0);
   });
 
+  it('layer highpass is optional with no default, so an existing patch keeps its parsed form (and render key)', () => {
+    const r = parsePatch(coin());
+    expect(r.ok && JSON.stringify(r.patch)).not.toContain('highpass');
+    const hp: any = coin();
+    hp.layers[0].highpass = 40;
+    expect(parsePatch(hp).ok).toBe(true);
+    hp.layers[0].highpass = 5;
+    expect(parsePatch(hp).ok).toBe(false);
+  });
+
   it('points at q on a lowpass and hints resonanceDb', () => {
     const bad: any = coin();
     bad.layers[0].filter = { type: 'lowpass', cutoff: 2000, q: 3 };

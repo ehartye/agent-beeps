@@ -107,17 +107,27 @@ function declaredFrequencies(patch: Patch): { hz: number; pointer: string }[] {
   return out;
 }
 
-/** Layers that typically leave DC: brown or pink noise not high- or band-passed, and pitched layers reaching below 120 Hz with no highpass. */
+/** Layers that typically leave DC: brown, pink or lowpassed-below-500-Hz noise not high- or band-passed, and pitched layers reaching below 120 Hz with no highpass. A layer's own `highpass` clears it. */
 function dcSuspects(patch: Patch): number[] {
   const out: number[] = [];
   patch.layers.forEach((layer, i) => {
     const src = layer.source, ft = layer.filter?.type;
-    if (src.type === 'noise') { if (src.color !== 'white' && ft !== 'highpass' && ft !== 'bandpass') out.push(i); return; }
+    if (layer.highpass !== undefined) return;
+    // White noise lowpassed low is as DC-prone as brown: a short burst of it is a few slow lumps with a nonzero mean.
+    if (src.type === 'noise') { if ((src.color !== 'white' || (ft === 'lowpass' && layer.filter!.cutoff < 500)) && ft !== 'highpass' && ft !== 'bandpass') out.push(i); return; }
     if (!('pitch' in src) || src.type === 'modal' || ft === 'highpass' || ft === 'bandpass') return;
     const lowest = Math.min(noteToHz(src.pitch), ...(layer.pitchEnv ?? []).map(p => noteToHz(p.to)));
     if (lowest < 120) out.push(i);
   });
   return out;
+}
+
+/** A layer highpass that clears a layer's DC without thinning it: a fifth to a quarter of its lowest content, in 20-60 Hz. */
+function dcHighpass(layer: Patch['layers'][number]): number {
+  const src = layer.source;
+  if (!('pitch' in src)) return 40;
+  const lowest = Math.min(noteToHz(src.pitch), ...(layer.pitchEnv ?? []).map(p => noteToHz(p.to)));
+  return Math.round(Math.max(20, Math.min(60, lowest * 0.6)));
 }
 
 /** Kit-level rules that lint (one patch at a time) cannot run. */
@@ -211,8 +221,11 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
   const dc = c.num('no-dc');
   if (Math.abs(features.dcOffset) >= dc) {
     const suspects = dcSuspects(patch);
-    const fixes = ['a highpass at 45-50 Hz (resonanceDb 0) on a low sine, triangle or FM thump', 'bandpass instead of lowpass on brown or pink noise bodies', 'the thump at gainDb -4 to -5',
-      ...(patch.fx?.dcBlock ? [] : ['or fx.dcBlock: true (a 10 Hz DC blocker on the layer mix)'])];
+    // A short low burst is a few slow lumps whose mean is not zero by construction; a filter on the layer cannot be both lowpass and highpass, so name the layer-level highpass.
+    const fixes = [...suspects.slice(0, 3).map(i => `set /layers/${i}/highpass to ${dcHighpass(patch.layers[i])} (a second filter after the envelope; keeps the layer's lowpass)`),
+      ...(suspects.length ? [] : ['add "highpass": 40 to the layer that holds the lows']),
+      'a highpass at 45-50 Hz (resonanceDb 0) as the layer filter on a low sine, triangle or FM thump with no lowpass', 'bandpass instead of lowpass on brown or pink noise bodies', 'the thump at gainDb -4 to -5',
+      ...(patch.fx?.dcBlock ? [] : ['or fx.dcBlock: true (a 10 Hz DC blocker on the whole layer mix)'])];
     c.add('no-dc', `DC offset ${features.dcOffset} is at or above ${dc} of full scale${suspects.length ? ` (likely layers: ${suspects.join(', ')})` : ''}; fixes that work: ${fixes.join('; ')}`, suspects.length ? `/layers/${suspects[0]}` : undefined);
   }
 

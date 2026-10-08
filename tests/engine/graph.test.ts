@@ -34,6 +34,19 @@ describe('buildPatch', () => {
     expect(mix?.outputs).toEqual([iir]);
   });
 
+  it('a layer highpass adds one highpass biquad after the amp envelope; absent, the graph is as before', () => {
+    const base = coin();
+    const plain = build(base).f;
+    const withHp = build(patch({ ...base, layers: base.layers.map((l, i) => (i === 0 ? { ...l, highpass: 40 } : l)) })).f;
+    expect(withHp.count('biquad')).toBe(plain.count('biquad') + 1);
+    const hp = withHp.nodes('biquad').find(n => n.type === 'highpass' && n.frequency.value === 40)!;
+    expect(hp.Q.value).toBe(0);
+    // Fed by the amp envelope gain, which the source/filter feed.
+    const feeder = withHp.created.find(n => n.outputs.includes(hp))!;
+    expect(feeder.kind).toBe('gain');
+    expect(plain.count('biquad')).toBe(build(patch({ ...base, layers: base.layers.map(l => ({ ...l })) })).f.count('biquad'));
+  });
+
   it('ends after the duration plus the release', () => {
     const { g } = build(coin());
     expect(g.end).toBeCloseTo(0.3 + 0.05, 5);
