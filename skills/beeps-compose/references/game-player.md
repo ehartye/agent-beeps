@@ -175,4 +175,8 @@ tends to smooth a seam, MP3 reproduces it). Song lint warns `song-loop-boundary-
 `decodeAudioData` at 48000 and 44100 Hz and report the frame delta and start lead against the source (exit 1 on a delta; an engine
 with no install or no Web Audio is reported as unavailable, never as a pass; `--require-engines` makes that a failure; install
 engines with `node scripts/setup.js --browsers firefox,webkit`). Opus decodes to the exact frame count and loops gaplessly in Chromium and Firefox;
-Safari is unmeasured. Needs ffmpeg with libopus (the optional `ffmpeg-static` dependency, `BEEPS_FFMPEG`, or the PATH).
+Safari is unmeasured: `beeps player selftest --serve` writes and serves a page that decodes a known loop in each delivered
+format on whatever device opens it and prints a copyable frame delta and lead (0 and 0 is gapless); it needs a real iPhone or Mac
+Safari to say anything about Safari. Encodes keep the project's 48 kHz: MP3 follows the source WAV's own rate so the file matches its
+sidecar, Ogg Opus is always 48 kHz and `compress` fails a source at another rate, and `beeps verify` fails a file whose encoded rate
+differs from its sidecar (a browser resamples it and keeps about 50 extra frames). Needs ffmpeg with libopus (the optional `ffmpeg-static` dependency, `BEEPS_FFMPEG`, or the PATH).

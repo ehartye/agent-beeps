@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeWav } from '../../src/audio/wav.ts';
+import { parseMp3 } from '../../src/audio/container.ts';
 import { alignmentSnrDb, checkLoops, compressBundle, findFfmpeg, wrapReport } from '../../src/compress.ts';
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
@@ -52,6 +53,29 @@ describe.skipIf(!hasFfmpeg)('loopcheck seam metrics', () => {
     const [same] = checkLoops([join(src, 'theme.wav')]);
     expect(same.warnings).toBeUndefined();
     expect(same.seam!.boundaryStepDb).toBeLessThan(10);
+  });
+});
+
+describe.skipIf(!hasFfmpeg)('compress sample rates', () => {
+  const rate = 44100;
+  const setup = () => {
+    const src = mkdtempSync(join(tmpdir(), 'beeps-rate-src-')), out = mkdtempSync(join(tmpdir(), 'beeps-rate-out-'));
+    const n = rate * 2, tone = Float32Array.from({ length: n }, (_, i) => 0.25 * Math.sin(2 * Math.PI * 440 * i / rate));
+    writeFileSync(join(src, 'a.wav'), writeWav([tone, tone], rate));
+    writeFileSync(join(src, 'a.wav.json'), JSON.stringify({ ...sidecar('a', 'a.wav', 2), sampleRate: rate, loop: false }));
+    return { src, out };
+  };
+  it('mp3 keeps the source rate, so the sidecar and the file agree', () => {
+    const { src, out } = setup();
+    const r = compressBundle(src, out, { format: 'mp3' });
+    expect(r.checks[0].problems).toEqual([]);
+    expect(JSON.parse(readFileSync(join(out, 'a.mp3.json'), 'utf8')).sampleRate).toBe(rate);
+    expect(parseMp3(readFileSync(join(out, 'a.mp3')))).toMatchObject({ sampleRate: rate });
+  });
+  it('opus cannot, so a 44.1 kHz source is reported rather than silently resampled', () => {
+    const { src, out } = setup();
+    const r = compressBundle(src, out, { format: 'opus' });
+    expect(r.problems[0].problems.join()).toMatch(/always 48000 Hz but the source is 44100 Hz/);
   });
 });
 

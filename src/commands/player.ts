@@ -7,7 +7,9 @@ import { bundleDir } from '../bundle.ts';
 import { BeepsError } from '../errors.ts';
 import { checkLoops, compressBundle } from '../compress.ts';
 import { engineCheck, parseEngines } from '../engine-check.ts';
-import { RUNTIME_DIR } from '../render/host.ts';
+import { networkInterfaces } from 'node:os';
+import { RUNTIME_DIR, serveStatic } from '../render/host.ts';
+import { parseSelftestFormats, writeSelftest } from '../selftest.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { PLAYER_VERSION } from '../../runtime/player/version.js';
 
@@ -66,6 +68,20 @@ export function registerPlayerCommands(program: Command, io: Io) {
       if (r.some(x => x.problems.length) || engineFailed) process.exitCode = 1;
     });
   const player = program.command('player').description('the browser runtime games use to play exported audio');
+  player.command('selftest [dir]')
+    .description('write a static self-test page (beeps-selftest/) that decodes a known loop in the delivered formats through the vendored player and prints frame delta and lead per audio-context rate, with a copyable result: open it on a real iPhone or Safari')
+    .option('--formats <list>', 'encodes to include, besides the WAV control: opus, mp3', 'opus,mp3')
+    .option('--serve', 'also serve the page on the LAN until interrupted, and print the URLs')
+    .option('--port <n>', 'port for --serve (default: any free port)', Number)
+    .action(async (dir: string | undefined, o: { formats: string; serve?: boolean; port?: number }) => {
+      const r = writeSelftest(dir ?? '.', parseSelftestFormats(o.formats));
+      if (!o.serve) { io.emit({ ...r, hint: 'serve the folder over HTTP (or add --serve) and open index.html in the browser to test; iOS needs HTTP(S), not file://' }); return; }
+      const site = await serveStatic(r.root, { host: '0.0.0.0', port: o.port ?? 0 });
+      const urls = Object.values(networkInterfaces()).flat().filter(a => a && a.family === 'IPv4' && !a.internal).map(a => `http://${a!.address}:${site.port}/`);
+      io.emit({ ...r, serving: { port: site.port, urls: urls.length ? urls : [site.url + '/'] }, hint: 'open a URL on the phone or Mac Safari, tap Run, tap Copy result; Ctrl-C stops the server' });
+      await new Promise<void>(res => { process.once('SIGINT', () => res()); process.once('SIGTERM', () => res()); });
+      site.server.close();
+    });
   player.command('export <dir>')
     .description('vendor the player into <dir>/beeps-player/, replacing that folder (import beeps-player/player/player.js)')
     .action((dir: string) => io.emit(exportPlayer(dir)));

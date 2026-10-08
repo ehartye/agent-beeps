@@ -32,6 +32,16 @@ describe.skipIf(!ffmpeg)('static container checks', () => {
     expect(staticCheck(f, { channels: 1 }).problems[0]).toMatch(/2 channels, sidecar says 1/);
   });
 
+  it('flags an encode whose sample rate differs from the sidecar (a browser resamples it and keeps about 50 extra frames)', () => {
+    const f = join(dir, 'rate.mp3');
+    encodeMp3(ffmpeg!, wav, f, 80, 44100);
+    expect(staticCheck(f, { channels: 2, sampleRate: 48000 }).problems.join()).toMatch(/encoded at 44100 Hz, sidecar says 48000 Hz/);
+    expect(staticCheck(f, { channels: 2, sampleRate: 44100 }).problems).toEqual([]);
+    expect(staticCheck(join(dir, 'a.ogg'), { sampleRate: 44100 }).problems.join()).toMatch(/Opus always decodes at 48000 Hz/);
+    expect(staticCheck(wav, { sampleRate: 44100 }).problems.join()).toMatch(/WAV is 48000 Hz, sidecar says 44100 Hz/);
+    expect(staticCheck(wav, { sampleRate: 48000 }).problems).toEqual([]);
+  });
+
   it('flags a truncated Opus file and a file that is not Opus', () => {
     const f = join(dir, 'cut.ogg');
     writeFileSync(f, readFileSync(join(dir, 'a.ogg')));
