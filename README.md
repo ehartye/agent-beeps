@@ -179,6 +179,30 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.10.0
+
+Songs now render reproducibly (#45). Before, one song with one input hash could render several ways (Fallow Valley's
+`mus-desert`: five distinct mixes in eight renders, differing by up to 0.08 of full scale). Chromium's garbage collector
+ran mid-render, since songs are built while the context is suspended, and disposed nodes the render still needed (a modal
+drum's resonators, a delay's feedback loop), while bus filters lost their state when the channel count flipped.
+Offline renders now keep their nodes alive and pin each bus's channel count.
+
+- `SONG_PIPELINE_VERSION` is 6 (`ENGINE_VERSION` stays 2). Song render keys change; sound effects keep their render keys,
+  and a song-pipeline bump no longer changes a sound effect's lock hash after this one release re-keys them.
+  `beeps build` stops with `E_TOOLCHAIN` until you pass `--allow-toolchain-change` or `--adopt`.
+- Hash impact, measured on 28 Fallow Valley songs: all 28 now render identically over four renders, two of them with a
+  collection forced every 50 ms. The old engine gave 3 to 8 variants per song in eight renders on a loaded machine; the new
+  render equals the old most frequent one for 23 of 28 songs and some old variant for 27 of 28. A locked song may therefore
+  hold a variant other than the canonical one.
+- Migration: `beeps build --adopt` re-keys the lock to the new toolchain with no rendering, keeping the locked files. To
+  move songs to the canonical render: `beeps build --only <song ids> --all --allow-toolchain-change --verify-determinism`,
+  commit the lock, `--push`. Files change only for songs that held another variant.
+- `--verify-determinism` on `build`, `song render` and `song export` renders each song twice and fails with
+  `E_NONDETERMINISTIC` when the two differ. Reproducible means bit-identical on one machine and Chromium build; see
+  `docs/build-lock-and-store.md`.
+- `loopcheck --engines` reports the lead as `n/a` when no source WAV is beside the file; `BEEPS_FFMPEG` errors say it must
+  be the path of the executable.
+
 ## What changed in 0.9.0
 
 Additive tools from the Fallow Valley friction ledger and the delivery backlog (#31 to #43). No engine or pipeline
