@@ -23,6 +23,7 @@ absolute path. Commands below write `beeps` for `node "<plugin-root>/scripts/run
    few minutes (dependencies and the Chromium download). Stop on failure and show the error; never
    install into the plugin cache.
 3. Check again and require `ok: true`. Report `cliVersion` and `runtimeRoot`.
+3b. Optional, for cross-browser delivery checks (`beeps loopcheck --engines`): `node "<plugin-root>/scripts/setup.js" --json --browsers firefox,webkit`.
 4. Smoke test: `beeps capabilities --no-schema` lists source types, archetypes and error codes.
 
 ## Where things live

@@ -127,5 +127,8 @@ block, and `<outDir>/index.json` is the catalog the player loads (the player dec
 decodes every encoded file again and fails when the frame count changed, the decode does not line up with the source (music: 8 dB
 or more; noise beds and sfx: loudness envelope correlation 0.8), or a loop's wrap now ticks (`seamExcessDb`: the energy of the
 5 ms around the wrap against the loudest 5 ms elsewhere; +6 dB and 3 dB above the source fails). `beeps loopcheck <files>` runs
-the frame and wrap checks on any encoded file. Opus decodes to the exact frame count and loops gaplessly in Chromium and Firefox;
+the frame and wrap checks on any encoded file; add `--engines chromium,firefox,webkit` to decode it in real browsers with
+`decodeAudioData` at 48000 and 44100 Hz and report the frame delta and start lead against the source (exit 1 on a delta; an engine
+with no install or no Web Audio is reported as unavailable, never as a pass; `--require-engines` makes that a failure; install
+engines with `node scripts/setup.js --browsers firefox,webkit`). Opus decodes to the exact frame count and loops gaplessly in Chromium and Firefox;
 Safari is unmeasured. Needs ffmpeg with libopus (the optional `ffmpeg-static` dependency, `BEEPS_FFMPEG`, or the PATH).

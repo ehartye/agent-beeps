@@ -6,6 +6,7 @@ import type { Io } from '../cli.ts';
 import { bundleDir } from '../bundle.ts';
 import { BeepsError } from '../errors.ts';
 import { checkLoops, compressBundle } from '../compress.ts';
+import { engineCheck, parseEngines } from '../engine-check.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { PLAYER_VERSION } from '../../runtime/player/version.js';
@@ -52,11 +53,17 @@ export function registerPlayerCommands(program: Command, io: Io) {
       if (r.problems.length && o.strict) process.exitCode = 1;
     });
   program.command('loopcheck <files...>')
-    .description('decode encoded audio (ogg, mp3, wav...) and report its frame count against the sidecar and how its loop wraps: click size and level step')
-    .action((files: string[]) => {
+    .description('decode encoded audio (ogg, mp3, wav...) and report its frame count against the sidecar and how its loop wraps: click size and level step; --engines also decodes it in real browsers')
+    .option('--engines <list>', 'also decode each file with OfflineAudioContext.decodeAudioData in these Playwright engines (chromium,firefox,webkit) at 48000 and 44100 Hz and report frame delta and start lead against the source')
+    .option('--source <path>', 'the source WAV, or a directory of them, for the lead (default: <name>.wav beside the file, else the file as ffmpeg decodes it)')
+    .option('--require-engines', 'exit non-zero when a requested engine is not installed or has no Web Audio, instead of reporting it as skipped')
+    .action(async (files: string[], o: { engines?: string; source?: string; requireEngines?: boolean }) => {
+      const engines = o.engines ? parseEngines(o.engines) : undefined;
       const r = checkLoops(files.map(f => resolve(f)));
-      io.emit({ files: r });
-      if (r.some(x => x.problems.length)) process.exitCode = 1;
+      const engineReports = engines ? await engineCheck(files.map(f => resolve(f)), engines, { source: o.source ? resolve(o.source) : undefined }) : undefined;
+      io.emit({ files: r, ...(engineReports ? { engines: engineReports } : {}) });
+      const engineFailed = engineReports?.some(e => e.status === 'error' || (o.requireEngines && e.status !== 'ok') || e.files.some(f => f.results.some(x => x.problems.length)));
+      if (r.some(x => x.problems.length) || engineFailed) process.exitCode = 1;
     });
   const player = program.command('player').description('the browser runtime games use to play exported audio');
   player.command('export <dir>')

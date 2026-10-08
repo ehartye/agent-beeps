@@ -111,6 +111,13 @@ export function installBrowser(root) {
   execFileSync(process.execPath, [join(root, 'node_modules', 'playwright', 'cli.js'), 'install', 'chromium'], { cwd: root, windowsHide: true, stdio: ['ignore', 2, 2] });
 }
 
+/** Extra Playwright engines (firefox, webkit) for `beeps loopcheck --engines`. Chromium is always installed by setup. */
+export function installExtraBrowsers(root, names) {
+  const bad = names.filter(n => !['chromium', 'firefox', 'webkit'].includes(n));
+  if (bad.length) throw new Error(`--browsers takes chromium, firefox or webkit, not ${bad.join(',')}`);
+  execFileSync(process.execPath, [join(root, 'node_modules', 'playwright', 'cli.js'), 'install', ...names], { cwd: root, windowsHide: true, stdio: ['ignore', 2, 2] });
+}
+
 /** Exercise the runtime rather than only checking that directories exist: imports and the browser. */
 export function checkDependencies(root) {
   const major = Number(process.versions.node.split('.')[0]);
