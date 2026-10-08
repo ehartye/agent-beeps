@@ -1,0 +1,127 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-growl",
+  "family": "creature",
+  "description": "Low growl: buzzy glottal pulses with heavy jitter and fast tremolo through low formants",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-growl",
+    "family": "creature",
+    "archetype": "creature-growl",
+    "tags": [],
+    "duration": 0.7,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 90,
+          "formants": [
+            [
+              450,
+              6,
+              0
+            ],
+            [
+              900,
+              6,
+              -3
+            ],
+            [
+              1800,
+              5,
+              -10
+            ]
+          ],
+          "tilt": 0.9,
+          "jitterCents": 40,
+          "tremolo": {
+            "rate": 40,
+            "depth": 0.6
+          },
+          "breath": 0.1
+        },
+        "amp": {
+          "attack": 0.06,
+          "decay": 0.5,
+          "sustain": 0.4,
+          "release": 0.15
+        },
+        "pitchEnv": [
+          {
+            "at": 0.6,
+            "to": 70,
+            "curve": "exp"
+          }
+        ]
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 65,
+      "max": 140,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.65,
+      "max": 1,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 350,
+      "max": 600,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 700,
+      "max": 1200,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 1500,
+      "max": 2300,
+      "scale": "log"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 20,
+      "max": 60,
+      "scale": "lin"
+    },
+    "/layers/0/source/tremolo/rate": {
+      "min": 25,
+      "max": 70,
+      "scale": "lin"
+    },
+    "/layers/0/source/tremolo/depth": {
+      "min": 0.4,
+      "max": 0.85,
+      "scale": "lin"
+    },
+    "/layers/0/source/tilt": {
+      "min": 0.7,
+      "max": 1.3,
+      "scale": "lin"
+    },
+    "/layers/0/source/breath": {
+      "min": 0,
+      "max": 0.25,
+      "scale": "lin"
+    },
+    "/layers/0/amp/attack": {
+      "min": 0.04,
+      "max": 0.1,
+      "scale": "lin"
+    }
+  }
+}

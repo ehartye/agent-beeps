@@ -52,7 +52,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 |---|---|
 | `capabilities` | schema, source types, archetypes, directions, error codes |
 | `init` | create `.agent-beeps/` (scale, loudness target) |
-| `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
+| `archetypes`, `generate` | 26 archetypes (18 SFX, 8 creature voices); diverse lint-clean candidate sets |
 | `family` | one template patch + a table (JSON/CSV/`--row`) -> N validated patches: `{{param}}` placeholders, `/pointer` columns, seeded `a..b` ranges and `--jitter`, `--lint`, `--set`, `--out`, `--dry-run` |
 | `new`, `sync`, `batch`, `list` | save patches; mirror a directory of committed patch files into the project (`sync <dir>`, validates all first); atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |

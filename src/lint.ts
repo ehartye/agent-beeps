@@ -112,6 +112,7 @@ function dcSuspects(patch: Patch): number[] {
   const out: number[] = [];
   patch.layers.forEach((layer, i) => {
     const src = layer.source, ft = layer.filter?.type;
+    if (src.type === 'voice') return; // every output is a bandpass: no DC
     if (src.type === 'noise') { if (src.color !== 'white' && ft !== 'highpass' && ft !== 'bandpass') out.push(i); return; }
     if (!('pitch' in src) || src.type === 'modal' || ft === 'highpass' || ft === 'bandpass') return;
     const lowest = Math.min(noteToHz(src.pitch), ...(layer.pitchEnv ?? []).map(p => noteToHz(p.to)));

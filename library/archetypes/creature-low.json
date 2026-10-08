@@ -1,0 +1,121 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-low",
+  "family": "creature",
+  "description": "Low call, a moo or a big beast: soft glottal slope, slow vibrato, deep rounded formants",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-low",
+    "family": "creature",
+    "archetype": "creature-low",
+    "tags": [],
+    "duration": 1.0,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 130,
+          "formants": [
+            [
+              450,
+              10,
+              0
+            ],
+            [
+              800,
+              8,
+              -3
+            ],
+            [
+              2200,
+              5,
+              -18
+            ]
+          ],
+          "tilt": 2,
+          "jitterCents": 6,
+          "vibrato": {
+            "rate": 4,
+            "cents": 15
+          }
+        },
+        "amp": {
+          "attack": 0.12,
+          "decay": 0.7,
+          "sustain": 0.3,
+          "release": 0.2
+        },
+        "pitchEnv": [
+          {
+            "at": 0.9,
+            "to": 100,
+            "curve": "exp"
+          }
+        ]
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 80,
+      "max": 200,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.6,
+      "max": 1,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 350,
+      "max": 600,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 650,
+      "max": 1000,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 1800,
+      "max": 2600,
+      "scale": "log"
+    },
+    "/layers/0/source/tilt": {
+      "min": 1.6,
+      "max": 2.6,
+      "scale": "lin"
+    },
+    "/layers/0/source/vibrato/rate": {
+      "min": 2.5,
+      "max": 6,
+      "scale": "lin"
+    },
+    "/layers/0/source/vibrato/cents": {
+      "min": 5,
+      "max": 30,
+      "scale": "lin"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 0,
+      "max": 15,
+      "scale": "lin"
+    },
+    "/layers/0/amp/attack": {
+      "min": 0.08,
+      "max": 0.2,
+      "scale": "lin"
+    }
+  }
+}

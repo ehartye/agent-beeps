@@ -1,0 +1,99 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-huff",
+  "family": "creature",
+  "description": "Huff or snuffle: mostly breath noise through loose formants, a faint voiced core",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-huff",
+    "family": "creature",
+    "archetype": "creature-huff",
+    "tags": [],
+    "duration": 0.25,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 150,
+          "formants": [
+            [
+              600,
+              3,
+              0
+            ],
+            [
+              1500,
+              3,
+              -4
+            ],
+            [
+              3000,
+              2,
+              -10
+            ]
+          ],
+          "tilt": 1.5,
+          "breath": 0.85
+        },
+        "amp": {
+          "attack": 0.03,
+          "decay": 0.18,
+          "sustain": 0,
+          "release": 0.06
+        }
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 100,
+      "max": 260,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 450,
+      "max": 900,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 1200,
+      "max": 2000,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 2600,
+      "max": 3800,
+      "scale": "log"
+    },
+    "/layers/0/source/breath": {
+      "min": 0.7,
+      "max": 1,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/1": {
+      "min": 2,
+      "max": 5,
+      "scale": "lin"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.12,
+      "max": 0.25,
+      "scale": "log"
+    },
+    "/layers/0/amp/attack": {
+      "min": 0.02,
+      "max": 0.06,
+      "scale": "lin"
+    }
+  }
+}
