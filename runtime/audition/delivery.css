@@ -1,0 +1,45 @@
+.howto { max-width: 70ch; color: var(--ink-soft); margin: 14px 0; }
+.device { margin: 8px 0 20px; }
+.device h2, #revealed h2 { font: 800 15px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; margin: 0 0 8px; }
+.facts { font: 400 12px/1.5 var(--mono); color: var(--ink-soft); }
+.facts table, #revealed table { border-collapse: collapse; width: 100%; max-width: 760px; }
+.facts td, .facts th, #revealed td, #revealed th { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--groove); vertical-align: top; }
+#revealed td.num, #revealed th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bad { color: var(--love); font-weight: 600; }
+.good { color: var(--ok); font-weight: 600; }
+
+.card { background: var(--panel); border-radius: var(--radius); padding: 14px 16px; margin: 0 0 16px; box-shadow: var(--pad-shadow); }
+.card h3 { font: 800 22px/1 var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+.card .role { font: 400 11px/1 var(--mono); color: var(--ink-soft); margin-left: 8px; }
+.card .xport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 12px 0; }
+.card .strip { position: relative; flex: 1 1 200px; min-width: 160px; height: 36px; background: var(--groove); border-radius: 8px; cursor: pointer; overflow: hidden; touch-action: none; }
+.card .strip .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--signal); opacity: .35; }
+.card .strip .head { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--signal); left: 0; }
+.card .time { font: 400 12px/1 var(--mono); color: var(--ink-soft); min-width: 5.5em; }
+.card .load { font: 400 12px/1 var(--mono); color: var(--ink-soft); }
+.letters { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
+.letter { position: relative; min-width: 64px; min-height: 56px; border: 0; border-radius: 12px; background: var(--pad); box-shadow: var(--pad-shadow); font: 800 26px/1 var(--display); }
+.letter[aria-pressed="true"] { outline: 3px solid var(--signal); }
+.letter[aria-current="true"] { background: var(--signal); color: #fff; }
+.letter .tag { position: absolute; right: 6px; bottom: 4px; font: 600 11px/1 var(--mono); }
+.letter .tag.w { left: 6px; right: auto; color: var(--love); }
+.letter[disabled] { opacity: .45; }
+.rate { border-top: 1px solid var(--groove); padding-top: 10px; }
+.rate .scale { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.rate .scale button { min-width: 52px; min-height: 44px; border: 0; border-radius: 10px; background: var(--pad); box-shadow: var(--pad-shadow); font: 600 15px/1.1 var(--text); }
+.rate .scale button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.rate .scale small { display: block; font: 400 10px/1 var(--mono); opacity: .7; }
+.rate input[type=text] { width: 100%; max-width: 480px; min-height: 40px; font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--groove); background: var(--pad); color: var(--ink); }
+.rate label.worse { display: inline-flex; gap: 8px; align-items: center; min-height: 44px; }
+.rate:disabled, fieldset.rate[disabled] { opacity: .55; }
+fieldset.rate { border: 0; border-top: 1px solid var(--groove); margin: 0; padding: 10px 0 0; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 10px; }
+#revealed { margin: 24px 0; }
+#revealed h2 { margin-top: 20px; }
+.deckkey { border: 0; width: 56px; height: 56px; border-radius: 12px; background: var(--ink); color: var(--body); box-shadow: var(--pad-shadow); font-size: 20px; }
+.deckkey:active { transform: translateY(3px); box-shadow: none; }
+.saved { font: 400 11px/1.4 var(--mono); color: var(--ok); min-height: 1.4em; }
+.album-note { margin-top: 20px; display: grid; gap: 6px; }
+.album-note label { font: 600 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+.album-note textarea { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--groove); background: var(--pad); color: var(--ink); width: 100%; max-width: 640px; }
+.toggle:disabled { opacity: .45; cursor: not-allowed; }

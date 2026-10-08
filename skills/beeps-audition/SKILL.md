@@ -70,6 +70,26 @@ trim. `beeps audition status --id <id>` shows the reveal: your pick, the taste m
 miss. Tell the owner in one line whether you called it, then wire the sound in (export a WAV or
 play the patch through the engine) and run `beeps kit check`.
 
+## Delivery formats (does the compressed file still sound right?)
+
+`audition` and `album` play lossless WAV, so they cannot show what MP3 or Opus costs. Before choosing a
+format or bitrate for a game, put the owner in front of the real encodes, blind, on their phone:
+
+```text
+beeps audition formats <bundle-dir | a.wav b.wav | --set <id> | --album <id>> [--presets wav,mp3-64,mp3-v5,opus-32,opus-48,anchor] [--catalog music=3600,sfx=400]
+beeps audition formats-status --id <delivery>      (after the owner taps Reveal)
+beeps taste import .agent-beeps/delivery/<delivery>/results.json
+```
+
+Needs ffmpeg like `beeps compress`. Give the owner `url` or an `ipUrls` entry (phones). They rate every
+lettered version 1-5 and flag any that sound worse; one letter is the untouched WAV, one a 3.5 kHz
+low-pass anchor. `formats-status` reports per role the smallest preset within half a point of the
+original, whether the anchor screened the listening (an anchor rated above the original means the
+ratings are unreliable), the device decode report, and real byte totals (`--catalog` projects them to
+the whole library). Import logs one delivery preference per role and preset; it never changes the
+sound taste model. No prediction is sealed for this mode (there is no lineup to call). Do not flip a
+build default on one session: take the suggestion per role, then check the Safari row in the device report.
+
 ## Done bar
 
 The owner shipped a sound (or closed the audition), you reported the reveal honestly, and the kit

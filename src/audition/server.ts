@@ -14,12 +14,13 @@ import { setCandidatePatch } from '../sets.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { beepsHome } from '../taste/verdicts.ts';
 import { nextDuel } from '../taste/select.ts';
+import { appendDeliveryEvent, byteTotals, foldResults, readDelivery, readDeliveryEvents, trackFile } from './delivery.ts';
 import { ALBUM_TAGS, appendAlbumEvent, foldAlbum, listAlbums, readAlbum } from '../album.ts';
 import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readReveal, readSession, tasteVectors, type SessionState } from './session.ts';
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 4;
+export const SERVER_API = 5;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -190,6 +191,7 @@ export class AuditionServer {
     if (path === '/' || path === '/index.html') return this.file(res, join(RUNTIME_DIR, 'audition', 'queue.html'));
     if (/^\/s\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'index.html'));
     if (/^\/a\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'album.html'));
+    if (/^\/d\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'delivery.html'));
     if (path.startsWith('/runtime/')) {
       const file = normalize(join(RUNTIME_DIR, path.slice('/runtime/'.length)));
       if (!file.startsWith(normalize(RUNTIME_DIR) + sep)) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not found' } });
@@ -225,6 +227,8 @@ export class AuditionServer {
       out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       return json(res, 200, { albums: out });
     }
+    const dm = /^\/api\/delivery\/([a-z0-9-]+)(?:\/(event|reveal|results|audio)(?:\/(i\d+)\/([A-Z]))?)?$/.exec(path);
+    if (dm) return this.deliveryRoute(req, res, dm[1], dm[2], dm[3], dm[4]);
     const am = /^\/api\/album\/([a-z0-9-]+)(?:\/(event|wav|look)(?:\/(\d+))?)?$/.exec(path);
     if (am) return this.albumRoute(req, res, am[1], am[2], am[3]);
     const m = /^\/api\/session\/([a-z0-9-]+)(?:\/(event|reveal|look)(?:\/(\d+))?)?$/.exec(path);
@@ -252,6 +256,53 @@ export class AuditionServer {
         this.opts.onRefine(p, id, r.state).catch(e => console.error(JSON.stringify({ error: { code: 'E_SERVER', message: `auto-refine failed: ${(e as Error).message}` } })));
       }
       return json(res, 200, { event: r.event, stage: r.state.stage, verdicts: r.verdicts });
+    }
+    return json(res, 405, { error: { code: 'E_SERVER', message: 'method not allowed' } });
+  }
+
+  findDelivery(id: string): OpenProject {
+    if (!/^[a-z0-9-]+$/.test(id)) throw new BeepsError('E_NOT_FOUND', 'invalid delivery id');
+    for (const root of this.knownProjects()) {
+      if (existsSync(join(root, '.agent-beeps', 'delivery', id, 'delivery.json'))) return openProject(root);
+    }
+    throw new BeepsError('E_NOT_FOUND', `no delivery audition ${id} in registered projects`);
+  }
+
+  /**
+   * Delivery-format audition. The page data never names a preset: blind letters map to files by URL only, and the key (preset per
+   * letter, sizes, totals) is served by /reveal once the owner has revealed.
+   */
+  private async deliveryRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, item?: string, letter?: string) {
+    const p = this.findDelivery(id);
+    const d = readDelivery(p, id);
+    const events = readDeliveryEvents(p, id);
+    const results = () => foldResults(d, events);
+    if (!action && req.method === 'GET') {
+      return json(res, 200, {
+        id: d.id, title: d.title, createdAt: d.createdAt, revealed: results().revealed,
+        items: d.items.map(it => ({
+          id: it.id, name: it.name, role: it.role, loop: it.loop, durationSec: it.durationSec, frames: it.frames, sampleRate: it.sampleRate,
+          tracks: it.tracks.map(t => { const pr = d.presets.find(x => x.id === t.preset)!; return { letter: t.letter, family: pr.family, url: `/api/delivery/${id}/audio/${it.id}/${t.letter}` }; }),
+        })),
+        ratings: results().rows.filter(r => r.rating !== null || r.worse || r.note).map(r => ({ item: r.item, letter: r.letter, rating: r.rating, worse: r.worse, note: r.note })),
+        notes: results().notes,
+      });
+    }
+    if (action === 'audio' && req.method === 'GET' && item && letter) {
+      const t = trackFile(p, d, item, letter);
+      if (!t || !existsSync(t.file)) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'no such file' } });
+      return this.ranged(req, res, t.file, t.mime);
+    }
+    if (action === 'reveal' && req.method === 'GET') {
+      const r = results();
+      if (!r.revealed) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not revealed yet' } });
+      return json(res, 200, { key: d.items.flatMap(it => it.tracks.map(t => ({ item: it.id, letter: t.letter, preset: t.preset, label: d.presets.find(x => x.id === t.preset)!.label, bytes: t.bytes }))), totals: byteTotals(d), summary: r.summary });
+    }
+    if (action === 'results' && req.method === 'GET') return results().revealed ? json(res, 200, results()) : json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not revealed yet' } });
+    if (action === 'event' && req.method === 'POST') {
+      const body = await readBody(req);
+      const ev = appendDeliveryEvent(p, id, body);
+      return json(res, 200, { event: { seq: ev.seq, type: ev.type }, revealed: ev.type === 'reveal' || results().revealed });
     }
     return json(res, 405, { error: { code: 'E_SERVER', message: 'method not allowed' } });
   }
@@ -288,10 +339,10 @@ export class AuditionServer {
   }
 
   /** Byte-range file responses, so the page can seek inside a multi-minute WAV. */
-  private ranged(req: IncomingMessage, res: ServerResponse, file: string) {
+  private ranged(req: IncomingMessage, res: ServerResponse, file: string, mime = 'audio/wav') {
     const size = statSync(file).size;
     const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ''));
-    const head = { 'content-type': 'audio/wav', 'accept-ranges': 'bytes', 'cache-control': 'no-store' };
+    const head = { 'content-type': mime, 'accept-ranges': 'bytes', 'cache-control': 'no-store' };
     if (!range || (!range[1] && !range[2])) {
       res.writeHead(200, { ...head, 'content-length': size });
       createReadStream(file).pipe(res);
@@ -348,6 +399,14 @@ export const albumUrl = (info: Pick<ServerInfo, 'url' | 'token'>, id: string) =>
 export function sessionIpUrl(info: Pick<ServerInfo, 'port' | 'token' | 'host'>, id: string): string | null {
   const ip = info.host === '127.0.0.1' ? null : lanAddress();
   return ip ? `http://${ip}:${info.port}/s/${id}?t=${info.token}` : null;
+}
+
+export const deliveryUrl = (info: Pick<ServerInfo, 'url' | 'token'>, id: string) => `${info.url}/d/${id}?t=${info.token}`;
+
+/** The delivery audition link by every reachable address, LAN first (then Tailscale). */
+export function deliveryIpUrls(info: Pick<ServerInfo, 'port' | 'token' | 'host'>, id: string): { url: string; via: string }[] {
+  if (info.host === '127.0.0.1') return [];
+  return rankAddresses().map(a => ({ url: `http://${a.address}:${info.port}/d/${id}?t=${info.token}`, via: a.label }));
 }
 
 /** The album link by every reachable address, LAN first (then Tailscale, for off-network devices). */

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
@@ -10,8 +10,9 @@ import {
   appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
-import { AuditionServer, DEFAULT_PORT, SERVER_API, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
+import { AuditionServer, DEFAULT_PORT, SERVER_API, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
 import { readKit } from '../kit.ts';
+import { byteTotals, createDelivery, foldResults, listDeliveries, readDelivery, readDeliveryEvents, resolvePresets, sourceFromFile, sourcesFromAlbum, sourcesFromDir, sourcesFromSet, type Role, type Source } from '../audition/delivery.ts';
 import { int } from './shared.ts';
 
 const BIN = join(import.meta.dirname, '..', '..', 'scripts', 'beeps.mjs');
@@ -125,6 +126,50 @@ export function registerAuditionCommands(program: Command, io: Io) {
         next: session.flow === 'explore' ? 'give the owner the url to explore the labeled sounds; no winner or comparative feedback is requested' : session.mode === 'live'
           ? `give the owner the url, then run beeps audition wait --id ${session.id} (in the background) and answer each event`
           : `give the owner the url and end your turn. Later: beeps audition status --id ${session.id}; once shipped, the patch is in .agent-beeps/patches/ and the kit - export it (beeps export <name> --wav <path>) or play it with the engine` });
+    });
+
+  audition.command('formats [sources...]')
+    .description('blind-audition compressed delivery formats: encode WAV masters (a bundle directory, WAV files, --set or --album) through the compress presets next to a hidden lossless reference and a low-pass anchor, and serve the rating page')
+    .option('--set <id>', 'add the rendered candidates of a set (sfx)')
+    .option('--album <id>', 'add the ready tracks of an album (music)')
+    .option('--role <role>', 'music, ambience or sfx for every item (default: from sidecars, else music for 20 s and longer, else sfx)')
+    .option('--presets <list>', 'comma-separated: wav, mp3-64, mp3-96, mp3-128, mp3-v5, mp3-v2, opus-32, opus-48, opus-64, opus-96, anchor (default: wav,mp3-64,mp3-96,mp3-v5,opus-32,opus-48,opus-64,anchor)')
+    .option('--no-anchor', 'leave out the low-pass anchor')
+    .option('--catalog <list>', 'seconds of audio per role in the whole library, e.g. music=3600,sfx=400, to project total bytes per preset')
+    .option('--title <text>', 'shown to the owner')
+    .option('--no-serve', 'encode and write the session only; do not start the server')
+    .action(async (sources: string[], opts: { set?: string; album?: string; role?: string; presets?: string; anchor: boolean; catalog?: string; title?: string; serve: boolean }) => {
+      const p = openProject(io.projectDir());
+      if (opts.role && !['music', 'ambience', 'sfx'].includes(opts.role)) throw new BeepsError('E_USAGE', `--role must be music, ambience or sfx, not ${opts.role}`);
+      const role = opts.role as Role | undefined;
+      const items: Source[] = [];
+      for (const s of sources) items.push(...(existsSync(s) && statSync(s).isDirectory() ? sourcesFromDir(s, role) : [sourceFromFile(s, role)]));
+      if (opts.set) items.push(...sourcesFromSet(p, opts.set, role));
+      if (opts.album) items.push(...sourcesFromAlbum(p, opts.album, role));
+      if (!items.length) throw new BeepsError('E_USAGE', 'name a bundle directory, WAV files, --set or --album');
+      const catalog = opts.catalog ? Object.fromEntries(opts.catalog.split(',').map(kv => { const [k, v] = kv.split('='); if (!['music', 'ambience', 'sfx'].includes(k) || !(Number(v) >= 0)) throw new BeepsError('E_USAGE', `--catalog wants role=seconds pairs (music, ambience, sfx), not "${kv}"`); return [k, Number(v)]; })) : undefined;
+      const presets = resolvePresets(opts.presets?.split(',').map(x => x.trim()).filter(Boolean), { anchor: opts.anchor });
+      const d = createDelivery(p, items, presets, { title: opts.title, catalog, log: s => console.error(s) });
+      const dir = join(p.paths.dir, 'delivery', d.id);
+      const out: Record<string, unknown> = { id: d.id, items: d.items.length, presets: d.presets.map(x => x.id), roles: [...new Set(d.items.map(i => i.role))], totals: byteTotals(d).map(t => ({ preset: t.preset, bytes: t.bytes, bytesPerSec: t.bytesPerSec, ...(t.projectedBytes !== undefined ? { projectedBytes: t.projectedBytes } : {}) })), dir, encoder: d.encoder };
+      if (opts.serve) {
+        const info = await ensureServer();
+        registerProject(p.paths.root);
+        Object.assign(out, { url: deliveryUrl(info, d.id), ipUrls: deliveryIpUrls(info, d.id) });
+      }
+      out.next = `give the owner the url (a phone uses an ipUrl); they rate each lettered version, then tap Reveal. Then: beeps audition formats-status --id ${d.id}, and beeps taste import ${join(dir, 'results.json')} to log the preference per role`;
+      io.emit(out);
+    });
+
+  audition.command('formats-status')
+    .description('ratings so far for a delivery-format audition: per role, each preset against the hidden reference, listener screening and the smallest acceptable preset (no --id: list them)')
+    .option('--id <delivery>', 'delivery audition id')
+    .action((opts: { id?: string }) => {
+      const p = openProject(io.projectDir());
+      if (!opts.id) { io.emit({ deliveries: listDeliveries(p) }); return; }
+      const d = readDelivery(p, opts.id);
+      const r = foldResults(d, readDeliveryEvents(p, opts.id));
+      io.emit({ id: d.id, revealed: r.revealed, rated: r.rows.filter(x => x.rating !== null).length, of: r.rows.length, summary: r.summary, totals: r.totals, device: r.device, notes: r.notes, results: join(p.paths.dir, 'delivery', d.id, 'results.json') });
     });
 
   audition.command('wait')

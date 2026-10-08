@@ -60,8 +60,9 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `mutate`, `crossover` | direction-steered variations; blend two patches |
 | `kit list/add/remove/check` | the project's shipped sounds and kit-level rules |
 | `predict`, `audition open/wait/round/status/list/close/stats` | the owner's listening loop |
+| `audition formats <bundle\|wav...>`, `audition formats-status` | blind-audition delivery formats: encodes the sounds through the compress presets (MP3 CBR/VBR, Ogg Opus) beside a hidden lossless reference and a low-pass anchor, serves a lettered rating page with a device decode check, writes `results.json`, and projects catalog bytes per preset ([guide](docs/delivery-format-audition.md)) |
 | `serve` | the LAN audition server (idempotent; `--stop`) |
-| `taste show/fit/stats` | the learned taste profile and prediction hit rates |
+| `taste show/fit/stats/import` | the learned taste profile and prediction hit rates; `import` logs a game page's thumbs, or a delivery-format audition's `results.json` as delivery preferences (kept apart from the sound model) |
 | `instruments` | bundled instrument patches songs can name |
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |

@@ -18,6 +18,7 @@ import { featureVector, type Features } from '../measure/index.ts';
 import { summarize } from '../taste/summary.ts';
 import { predictionStats } from '../audition/session.ts';
 import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } from '../sets.ts';
+import { DeliveryResultsHead, deliveryPrefsFile, foldResults, globalDeliveryPrefsFile, importPreferences, preferencesFromResults, readDelivery, readDeliveryEvents, readDeliveryPrefs, summarizePreferences } from '../audition/delivery.ts';
 import { int, withHost } from './shared.ts';
 
 export const setJson = (s: CandidateSet) => ({
@@ -198,7 +199,8 @@ export function registerGenerateCommands(program: Command, io: Io) {
       let root: string | undefined;
       try { root = openProject(io.projectDir()).paths.root; } catch { root = undefined; }
       const { model, global, project, summary } = fitNow(root);
-      io.emit({ verdicts: { global: global.rows.length, project: project.rows.length, malformed: global.malformed + project.malformed }, projectLayer: !!model.projectLayer, preferences: summary.preferences, summary: summary.markdown });
+      const delivery = summarizePreferences([...readDeliveryPrefs(globalDeliveryPrefsFile()), ...(root ? readDeliveryPrefs(join(root, '.agent-beeps', 'taste', 'delivery.jsonl')) : [])]);
+      io.emit({ verdicts: { global: global.rows.length, project: project.rows.length, malformed: global.malformed + project.malformed }, projectLayer: !!model.projectLayer, preferences: summary.preferences, summary: summary.markdown, ...(delivery.length ? { delivery } : {}) });
     });
   taste.command('fit')
     .description('refit from the verdict logs and write model.json and summary.md')
@@ -218,8 +220,19 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--dry-run', 'say what would be logged and log nothing')
     .action(async (file: string, opts: { patches?: string; dryRun?: boolean }) => {
       const p = openProject(io.projectDir());
+      let raw: unknown;
+      try { raw = JSON.parse(readFileSync(file, 'utf8')); } catch (e) { throw new BeepsError('E_SCHEMA', `${file} is not JSON: ${(e as Error).message}`); }
+      // A delivery-format audition's results.json: logged as delivery preferences, apart from the verdicts the taste model fits.
+      if (DeliveryResultsHead.safeParse(raw).success) {
+        const r = raw as { id: string }, d = readDelivery(p, r.id);
+        const rows = preferencesFromResults(foldResults(d, readDeliveryEvents(p, r.id)), d);
+        if (!rows.length) throw new BeepsError('E_NOT_FOUND', 'no rated codec presets in these results', { hint: 'rate at least one lettered version on the page first' });
+        const fresh = opts.dryRun ? true : importPreferences(p, rows);
+        io.emit({ imported: !opts.dryRun && fresh, alreadyImported: !fresh, session: r.id, kind: 'delivery', preferences: rows.length, roles: [...new Set(rows.map(x => x.role))], reliable: rows[0].reliable, next: 'beeps taste show lists delivery preferences; they do not change the sound taste model' });
+        return;
+      }
       let fb;
-      try { fb = FeedbackSchema.parse(JSON.parse(readFileSync(file, 'utf8'))); }
+      try { fb = FeedbackSchema.parse(raw); }
       catch (e) { throw new BeepsError('E_SCHEMA', `${file} is not a listening-page feedback file: ${(e as Error).message}`, { hint: 'expected { "schema": "...audition-feedback@1", "items": [{ "name", "rating": "up"|"down" }] }' }); }
       const dirs: string[] = [];
       if (opts.patches) dirs.push(resolve(opts.patches));

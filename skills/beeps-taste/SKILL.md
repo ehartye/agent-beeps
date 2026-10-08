@@ -47,6 +47,10 @@ it is a `bothBad` row. Likes with nothing to compare against, sounds with no pat
 level votes are reported, not logged. Level votes and notes are about the mix, not the sound: apply
 them to the game's mix table yourself. Run `beeps taste fit` afterwards.
 
+`beeps taste import <results.json>` also takes a delivery-format audition (see beeps-audition): it
+logs per-role codec preferences (mean rating against the hidden original) to `delivery.jsonl`, once
+per session. `beeps taste show` lists them under `delivery`; `taste fit` ignores them.
+
 ## Predict and be scored
 
 `beeps generate` already ranks by this model, and every audition records the model's own sealed
