@@ -20,7 +20,10 @@ export const DEFAULT_KBPS = { music: 56, ambience: 48, sfx: 72 } as const;
 export function findFfmpeg(): string {
   const env = process.env.BEEPS_FFMPEG;
   if (env) {
-    if (!existsSync(env)) throw new BeepsError('E_NOT_FOUND', `BEEPS_FFMPEG points at ${env}, which does not exist`);
+    // A path to the executable, never a command name (the PATH is not searched) and never its directory.
+    const hint = 'BEEPS_FFMPEG must be the path of the ffmpeg executable (e.g. /usr/bin/ffmpeg or C:/tools/ffmpeg.exe), not a command name or a directory; unset it to use ffmpeg-static or the PATH';
+    if (!existsSync(env)) throw new BeepsError('E_NOT_FOUND', `BEEPS_FFMPEG points at ${env}, which does not exist`, { hint });
+    if (statSync(env).isDirectory()) throw new BeepsError('E_NOT_FOUND', `BEEPS_FFMPEG points at ${env}, which is a directory`, { hint });
     return env;
   }
   try {

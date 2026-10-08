@@ -1,6 +1,6 @@
 // tests/player/engine-check.test.ts
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -61,6 +61,15 @@ describe.skipIf(!hasFfmpeg || !hasChromium)('engineCheck', () => {
     for (const f of r.files) for (const x of f.results) { expect(x.problems).toEqual([]); expect(Math.abs(x.frameDelta)).toBeLessThanOrEqual(x.sampleRate === SR ? 0 : 1); }
     expect(r.files[0].results.map(x => x.sampleRate)).toEqual([48000, 44100]);
     expect(r.files[0].results[1].wantFrames).toBe(88200);
+    // The source WAV sits beside them, so the lead is measured: and it is exactly zero.
+    for (const f of r.files) for (const x of f.results) { expect(x.lead).toBe(0); expect(x.leadNote).toBeUndefined(); }
+  }, 120000);
+
+  it('reports the lead as n/a, not a number, when no source WAV sits beside the file', async () => {
+    const lone = join(mkdtempSync(join(tmpdir(), 'beeps-lone-')), 'theme.ogg');
+    copyFileSync(ogg, lone);
+    const [r] = await engineCheck([lone], ['chromium']);
+    for (const x of r.files[0].results) { expect(x.lead).toBeUndefined(); expect(x.leadNote).toMatch(/^n\/a/); expect(x.problems).toEqual([]); }
   }, 120000);
 
   it('flags an MP3 with no Xing/Info tag as extra frames and a lead', async () => {

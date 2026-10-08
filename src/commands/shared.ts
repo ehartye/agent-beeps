@@ -1,9 +1,10 @@
-import { openRenderHost, type RenderHost } from '../render/host.ts';
+import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import type { Rendered, RenderOutcome } from '../render/pipeline.ts';
 
-export async function withHost<T>(fn: (host: RenderHost) => Promise<T>): Promise<T> {
+/** `verifyDeterminism`: every song render is done twice and compared (E_NONDETERMINISTIC on a difference). */
+export async function withHost<T>(fn: (host: RenderHost) => Promise<T>, { verifyDeterminism = false } = {}): Promise<T> {
   const host = await openRenderHost();
-  try { return await fn(host); } finally { await host.close(); }
+  try { return await fn(verifyDeterminism ? verifyingDeterminism(host) : host); } finally { await host.close(); }
 }
 
 /** The features an agent reads first; the full set lives in the render's meta.json. */

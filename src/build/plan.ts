@@ -5,7 +5,7 @@
 //             options, the engine version, the sample rate, the pipeline version and the loudness targets, so editing an instrument
 //             changes exactly the songs that resolve it. An adaptive song's layers are renders of the same song, so its mix key covers them.
 //   export    id, role, kind, seed, variants, layers: what the export step does with the renders
-//   toolchain engine, pipeline, song pipeline, export pipeline, Chromium and Playwright versions
+//   toolchain engine, pipeline, song pipeline (songs only: a patch does not depend on it), export pipeline, Chromium and Playwright versions
 //   delivery  format, the bitrate of this asset's role, encoder flags, ffmpeg build (WAV: just the format)
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { canonicalJson, sha256 } from '../hash.ts';
@@ -33,6 +33,9 @@ export interface Encoder { ffmpeg: string; libavcodec: string }
 
 const h12 = (hex: string) => hex.slice(0, 12);
 
+/** What a patch asset depends on: a song-pipeline bump must not make every sound effect stale. */
+const withoutSongPipeline = ({ songPipeline: _songs, ...rest }: Toolchain): Omit<Toolchain, 'songPipeline'> => rest;
+
 export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, toolchain: Toolchain, encoder: Encoder | undefined): Planned {
   let renders: string[], variants = 1, layers = false, seconds: number;
   if (recipe.kind === 'patch') {
@@ -54,7 +57,7 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     delivery: sha256(canonicalJson(deliveryPart)),
     export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers })),
     renders: sha256(canonicalJson(renders)),
-    toolchain: sha256(canonicalJson(toolchain)),
+    toolchain: sha256(canonicalJson(recipe.kind === 'patch' ? withoutSongPipeline(toolchain) : toolchain)),
   };
   const bytes = delivery.format === 'wav' ? seconds * 48000 * 4 : (seconds * rate(recipe.role) * 1000) / 8;
   return {

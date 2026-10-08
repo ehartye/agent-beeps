@@ -84,7 +84,7 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
  * Render songs across up to `jobs` headless browsers (each OfflineAudioContext runs on its own thread).
  * `only`: play just these tracks' notes out of each full song (see renderSong).
  */
-export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?: string[]): Promise<RenderedSong[]> {
+export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?: string[], verifyDeterminism = false): Promise<RenderedSong[]> {
   const instruments = songs.map(s => resolveInstruments(p, s));
   const out: RenderedSong[] = new Array(songs.length);
   let next = 0;
@@ -93,7 +93,7 @@ export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?:
       const i = next++;
       out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders, ...(only?.length ? { only } : {}) });
     }
-  });
+  }, { verifyDeterminism });
   await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, songs.length)) }, worker));
   return out;
 }
@@ -146,7 +146,8 @@ export function registerSongCommands(program: Command, io: Io) {
     .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', int, 3)
     .option('--only <tracks>', 'comma-separated tracks to keep (solo); the rest are muted')
     .option('--sections <names>', 'excerpt these sections from the full render, preserving mix context and level')
-    .action(async (refs: string[], opts: { jobs: number; only?: string; sections?: string }) => {
+    .option('--verify-determinism', 'render each song twice and fail (E_NONDETERMINISTIC) when the two differ in any sample; doubles the render time')
+    .action(async (refs: string[], opts: { jobs: number; only?: string; sections?: string; verifyDeterminism?: boolean }) => {
       const p = openProject(io.projectDir());
       const list = (x?: string) => x?.split(',').map(v => v.trim()).filter(Boolean);
       const selected = list(opts.sections);
@@ -165,7 +166,7 @@ export function registerSongCommands(program: Command, io: Io) {
       // A solo renders the full song with only these tracks' notes, so it plays the mix's chance
       // hits, arp orders and noise; it keeps its own (solo-normalized) level. Sections excerpt it as before.
       const renders = only?.length ? loaded.map((s, i) => ({ ...s, loop: false, title: songs[i].title })) : loaded;
-      const out = (await renderMany(p, renders, opts.jobs, only)).map((r, i) => (only?.length ? { ...r, song: songs[i] } : r));
+      const out = (await renderMany(p, renders, opts.jobs, only, opts.verifyDeterminism)).map((r, i) => (only?.length ? { ...r, song: songs[i] } : r));
       const previews = selected ? await withHost(async host => {
         const results: RenderedSong[] = [];
         for (const r of out) results.push(await renderSongExcerpt(host, r, selected));
@@ -275,15 +276,16 @@ export function registerSongCommands(program: Command, io: Io) {
     .option('--manifest', 'write a portable <wav>.json sidecar for game integration')
     .option('--role <role>', 'manifest role: music (default), ambience or sfx; requires --manifest')
     .option('--layers', 'adaptive songs: also write each layer as <wav-stem>.<layer>.wav (loop-folded, at the mix trim) and list them in the sidecar')
+    .option('--verify-determinism', 'render the song (and each layer) twice and fail (E_NONDETERMINISTIC) when the two differ in any sample; doubles the render time')
     .option('--trim-tail <dBFS>', 'non-loop songs: drop the end after the last sample at or above this level (e.g. -60), with a 10 ms fade; an opening that renders its whole reverb tail ends where it is audible. Default: off', parseFloat)
-    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean; trimTail?: number }) => {
+    .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean; trimTail?: number; verifyDeterminism?: boolean }) => {
       if (opts.trimTail !== undefined && !(opts.trimTail < 0 && opts.trimTail >= -120)) throw new BeepsError('E_USAGE', '--trim-tail takes a level in dBFS from -120 to just below 0, e.g. -60');
       const role = exportRole(opts.role, opts.manifest, 'music');
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
       if (opts.layers && !s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`, { hint: 'add adaptive.layers, adaptive.states and adaptive.initial (see references/song-format.md)' });
       const dest = resolve(opts.wav);
-      const { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings, post } = await withHost(host => exportSongAssets(host, p, s, { dest, role, manifest: !!opts.manifest, layers: !!opts.layers, ...(opts.trimTail !== undefined ? { trimTailDb: opts.trimTail } : {}) }));
+      const { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings, post } = await withHost(host => exportSongAssets(host, p, s, { dest, role, manifest: !!opts.manifest, layers: !!opts.layers, ...(opts.trimTail !== undefined ? { trimTailDb: opts.trimTail } : {}) }), { verifyDeterminism: opts.verifyDeterminism });
       io.emit({ name: s.name, wav: dest, renderedWav: r.wavPath, loop: s.loop, durationSec: r.features.durationSec, ...(post?.trimmedTailSec !== undefined ? { trimmedTailSec: post.trimmedTailSec } : {}),
         ...(layerFiles ? { layers: layerFiles, nullResidualDb: reportedResidualDb(residual ?? -Infinity), ...(stateLufs ? { stateLufs, stateTrimDb } : {}) } : {}),
         ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });

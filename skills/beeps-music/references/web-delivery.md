@@ -51,7 +51,7 @@ beeps loopcheck out/*.ogg --engines chromium,firefox,webkit   # decode in real e
 beeps player selftest site --serve            # open on a real iPhone / Mac Safari, tap Run, copy the result
 ```
 
-`loopcheck --engines` exits 1 on a frame delta and prints the start lead; an engine that is not installed or has no Web Audio
+`loopcheck --engines` exits 1 on a frame delta and prints the start lead (against the source WAV beside the file or `--source`; without one the lead is `n/a`); an engine that is not installed or has no Web Audio
 (Playwright's Windows WebKit) is reported as unavailable, never as a pass. Install Firefox and WebKit with
 `node <plugin-root>/scripts/setup.js --browsers firefox,webkit`. Seam metrics (`seam` in loopcheck, `song-loop-boundary-step` in
 lint) show whether the codec made the wrap worse than the source. Safari itself is unverified until the self-test page has been run on

@@ -29,15 +29,16 @@ export function registerBuildCommands(program: Command, io: Io) {
     .option('--pull', 'fetch stale assets by input hash from the store before rendering anything')
     .option('--push', 'publish the assets this run built to the store')
     .option('--store <spec>', 'dir:<path> or release:<owner/repo>[@tag] (default: the config\'s, then $BEEPS_AUDIO_STORE)')
-    .option('--adopt', 'take over a lock written by another tool: verify its output hashes and re-key it, with no rendering')
+    .option('--adopt', 'take over a lock written by another tool, or by an older toolchain: verify its output hashes and re-key it, with no rendering (keeps the locked files)')
     .option('--allow-toolchain-change', 'rebuild even though the engine, pipeline, Chromium or ffmpeg differs from the lock (re-renders what the store lacks)')
+    .option('--verify-determinism', 'render every song twice and fail the asset (E_NONDETERMINISTIC) when the two renders differ in any sample; doubles song render time')
     .option('--jobs <n>', 'parallel render hosts (default: the config\'s, 3)', int)
-    .action(async (o: { config?: string; target?: string; only?: string[]; all?: boolean; check?: boolean; pull?: boolean; push?: boolean; store?: string; adopt?: boolean; allowToolchainChange?: boolean; jobs?: number }) => {
+    .action(async (o: { config?: string; target?: string; only?: string[]; all?: boolean; check?: boolean; pull?: boolean; push?: boolean; store?: string; adopt?: boolean; allowToolchainChange?: boolean; verifyDeterminism?: boolean; jobs?: number }) => {
       const cfg = cfgFor(o);
       if (o.target) cfg.target = o.target;
       const store = storeFor(cfg.store, o.store, cfg.dir);
       if ((o.pull || o.push) && !store) throw new BeepsError('E_USAGE', '--pull and --push need a store', { hint: '--store dir:<path> | release:<owner/repo>, or "store" in beeps.build.json' });
-      const report = await runBuild(cfg, { only: o.only, all: o.all, check: o.check, pull: o.pull, push: o.push, store, adopt: o.adopt, allowToolchainChange: o.allowToolchainChange, jobs: o.jobs, log: s => console.error(s) });
+      const report = await runBuild(cfg, { only: o.only, all: o.all, check: o.check, pull: o.pull, push: o.push, store, adopt: o.adopt, allowToolchainChange: o.allowToolchainChange, verifyDeterminism: o.verifyDeterminism, jobs: o.jobs, log: s => console.error(s) });
       io.emit(report);
       if (!report.ok) process.exitCode = 1;
     });

@@ -61,12 +61,39 @@ export interface RenderHost {
   /** `only`: play just these tracks' notes out of the full song, so every random draw matches the mix. */
   renderSong(song: Song, instruments: Record<string, Patch>, opts?: { only?: string[] }): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
   pullSong(id: number, frames: number): Promise<Float32Array[]>;
+  /** How two rendered songs (still in the page) differ in bits: samples that differ, the first (frame), the largest difference. */
+  songDiff(a: number, b: number): Promise<{ differing: number; first: number; maxAbs: number; frames: number }>;
   songLook(id: number, features: object, label: string): Promise<Buffer>;
   songPcmLook(channels: Float32Array[], features: object, label: string): Promise<Buffer>;
   freeSong(id: number): Promise<void>;
   page: import('playwright').Page;
   url: string;
   close(): Promise<void>;
+}
+
+/**
+ * The host, with every song render done twice in the same page and the two compared bit for bit: a song whose render is not
+ * reproducible fails with E_NONDETERMINISTIC naming the first sample, instead of quietly landing in a lock. Doubles the cost of a
+ * song render; sounds are not affected. A fresh browser can still differ (see docs/build-lock-and-store.md).
+ */
+export function verifyingDeterminism(host: RenderHost): RenderHost {
+  const renderSong: RenderHost['renderSong'] = async (song, instruments, opts) => {
+    const first = await host.renderSong(song, instruments, opts);
+    try {
+      const second = await host.renderSong(song, instruments, opts);
+      let diff;
+      try { diff = await host.songDiff(first.id, second.id); } finally { await host.freeSong(second.id); }
+      if (diff.differing) {
+        const what = opts?.only?.length ? `${song.name} (only ${opts.only.join(', ')})` : song.name;
+        throw new BeepsError('E_NONDETERMINISTIC', `${what}: two renders of the same inputs differ in ${diff.differing} samples, first at frame ${diff.first} (${(diff.first / first.sampleRate).toFixed(3)} s), by up to ${diff.maxAbs.toExponential(2)}`, {
+          hint: 'this song cannot be locked: the same inputs give different audio. Re-run it; if it keeps happening, report the song with this message (see docs/build-lock-and-store.md, "What reproducible means")',
+          details: { song: song.name, ...(opts?.only?.length ? { only: opts.only } : {}), differingSamples: diff.differing, firstFrame: diff.first, maxAbs: diff.maxAbs },
+        });
+      }
+    } catch (e) { await host.freeSong(first.id); throw e; }
+    return first;
+  };
+  return new Proxy(host, { get: (target, prop) => (prop === 'renderSong' ? renderSong : Reflect.get(target, prop)) });
 }
 
 export async function chromiumAvailable(): Promise<boolean> {
@@ -145,6 +172,7 @@ export async function openRenderHost(): Promise<RenderHost> {
       }
       return out;
     },
+    async songDiff(a, b) { return await page.evaluate(([x, y]) => (window as any).beepsSongDiff(x, y), [a, b] as const) as { differing: number; first: number; maxAbs: number; frames: number }; },
     async songLook(id, features, label) {
       const url = await page.evaluate(([i, f, l]) => (window as any).beepsSongLook(i, f, l), [id, features, label] as const) as string;
       return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');

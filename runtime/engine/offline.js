@@ -72,14 +72,14 @@ export async function renderSongOffline(song, instruments, { only } = {}) {
   const { length: formLength, sections } = compileSong(song);
   const total = Math.ceil((formLength + songTail(song, instruments)) * SAMPLE_RATE);
   const ctx = new OfflineAudioContext(2, total, SAMPLE_RATE);
-  const built = buildSong(ctx, song, instruments, { lazy: true, ...(only ? { only } : {}) });
+  const built = buildSong(ctx, song, instruments, { lazy: true, retain: true, ...(only ? { only } : {}) });
   // Build notes a window ahead of the render position, suspending at each window edge.
   const WINDOW = 2, AHEAD = 1;
   built.advance(WINDOW + AHEAD);
   const quantum = 128 / SAMPLE_RATE;
   for (let t = WINDOW; t < formLength; t += WINDOW) {
     const at = Math.round(t / quantum) * quantum;
-    ctx.suspend(at).then(() => { built.advance(at + WINDOW + AHEAD); ctx.resume(); });
+    ctx.suspend(at).then(() => { built.release(at); built.advance(at + WINDOW + AHEAD); ctx.resume(); });
   }
   const buf = await ctx.startRendering();
   let channels = [buf.getChannelData(0), buf.getChannelData(1)];
@@ -112,3 +112,24 @@ export function songChannels(id) {
 
 /** @param {number} id */
 export function freeSong(id) { songs.delete(id); }
+
+/**
+ * How two rendered songs differ in bits: the number of differing samples, the first one (frame index) and the
+ * largest difference. Compared in the page, so checking a render against another costs no transfer.
+ * @param {number} a @param {number} b
+ */
+export function songDiff(a, b) {
+  const x = songChannels(a), y = songChannels(b);
+  if (x[0].length !== y[0].length) return { differing: Math.max(x[0].length, y[0].length), first: Math.min(x[0].length, y[0].length), maxAbs: Infinity, frames: x[0].length };
+  let differing = 0, first = -1, maxAbs = 0;
+  for (let c = 0; c < x.length; c++) {
+    const u = new Uint32Array(x[c].buffer, x[c].byteOffset, x[c].length), v = new Uint32Array(y[c].buffer, y[c].byteOffset, y[c].length);
+    for (let i = 0; i < u.length; i++) {
+      if (u[i] === v[i]) continue;
+      differing++;
+      if (first < 0 || i < first) first = i;
+      maxAbs = Math.max(maxAbs, Math.abs(x[c][i] - y[c][i]));
+    }
+  }
+  return { differing, first, maxAbs, frames: x[0].length };
+}
