@@ -20,7 +20,7 @@ import { predictionStats } from '../audition/session.ts';
 import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } from '../sets.ts';
 import { int, withHost } from './shared.ts';
 
-const setJson = (s: CandidateSet) => ({
+export const setJson = (s: CandidateSet) => ({
   set: s.id, archetype: s.archetype, family: s.family, prompt: s.prompt, parent: s.parent, sheet: s.sheet,
   candidates: s.candidates.map(c => {
     const f = c.features as any;
@@ -45,6 +45,47 @@ function siblingsOf(p: OpenProject, checked: Patch[], own = projectPatches(p)): 
   const byName = new Map<string, Patch>();
   for (const x of [...own, ...checked]) byName.set(x.name, x);
   return variantSiblings([...byName.values()]);
+}
+
+/** Render patches into a candidate set (contact sheet included) so a hand-authored kit can be auditioned. */
+export async function createSet(p: OpenProject, patches: Patch[], opts: { prompt?: string; name: string }): Promise<CandidateSet> {
+  const names = patches.map(x => x.name);
+  const dup = names.find((n, i) => names.indexOf(n) !== i);
+  if (dup) throw new BeepsError('E_USAGE', `patch name "${dup}" appears twice`, { hint: 'candidate names must be unique within a set' });
+  return withHost(async host => {
+    const out = await renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders });
+    const failed = out.find(o => !o.ok);
+    if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
+    const rendered = out.filter((o): o is Extract<typeof o, { ok: true }> => o.ok) as Rendered[];
+    const id = newId(opts.name);
+    const sheet = join(setDir(p, id), 'sheet.png');
+    mkdirSync(setDir(p, id), { recursive: true });
+    await contactSheet(host, rendered, rendered.map((r, i) => `${i + 1} · ${r.patch.name}`), sheet);
+    return writeSet(p, {
+      id, archetype: null, family: rendered[0]?.patch.family ?? 'mixed', prompt: opts.prompt ?? null, parent: null,
+      createdAt: new Date().toISOString(), sheet, candidates: rendered.map((r, i) => candidateFromRendered(r, i + 1)),
+    }, rendered.map(r => r.patch));
+  });
+}
+
+/** Lint patches (names, files or in-memory): the JSON lint prints, and whether any patch has errors. */
+export async function lintPatches(p: OpenProject, patches: Patch[], brief: boolean): Promise<{ payload: Record<string, unknown>; failed: boolean }> {
+  const own = projectPatches(p);
+  const siblings = siblingsOf(p, patches, own);
+  // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
+  const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
+  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
+  for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
+  const text = new Map(loadRules().map(r => [r.id, r.statement]));
+  const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
+  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+  const failed = reports.some(r => r.errors.length);
+  if (brief) {
+    const found = reports.filter(r => r.errors.length || r.warnings.length);
+    const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
+    return { failed, payload: { reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) } };
+  }
+  return { failed, payload: { reports, ...(notes.length ? { notes } : {}) } };
 }
 
 export function registerGenerateCommands(program: Command, io: Io) {
@@ -99,24 +140,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--name <slug>', 'set id prefix', 'kit')
     .action(async (refs: string[], opts: { prompt?: string; name: string }) => {
       const p = openProject(io.projectDir());
-      const patches = refs.map(r => loadPatch(p, r));
-      const names = patches.map(x => x.name);
-      const dup = names.find((n, i) => names.indexOf(n) !== i);
-      if (dup) throw new BeepsError('E_USAGE', `patch name "${dup}" appears twice`, { hint: 'candidate names must be unique within a set' });
-      const set = await withHost(async host => {
-        const out = await renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders });
-        const failed = out.find(o => !o.ok);
-        if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
-        const rendered = out.filter((o): o is Extract<typeof o, { ok: true }> => o.ok) as Rendered[];
-        const id = newId(opts.name);
-        const sheet = join(setDir(p, id), 'sheet.png');
-        mkdirSync(setDir(p, id), { recursive: true });
-        await contactSheet(host, rendered, rendered.map((r, i) => `${i + 1} · ${r.patch.name}`), sheet);
-        return writeSet(p, {
-          id, archetype: null, family: rendered[0]?.patch.family ?? 'mixed', prompt: opts.prompt ?? null, parent: null,
-          createdAt: new Date().toISOString(), sheet, candidates: rendered.map((r, i) => candidateFromRendered(r, i + 1)),
-        }, rendered.map(r => r.patch));
-      });
+      const set = await createSet(p, refs.map(r => loadPatch(p, r)), opts);
       io.emit({ ...setJson(set), next: `beeps audition open --set ${set.id} --flow explore --prompt "..."` });
     });
 
@@ -125,22 +149,9 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--brief', 'for many patches: list only those with errors or warnings, name the clean ones, and give the judgement rules once')
     .action(async (refs: string[], opts: { brief?: boolean }) => {
       const p = openProject(io.projectDir());
-      const patches = refs.map(r => loadPatch(p, r));
-      const own = projectPatches(p);
-      const siblings = siblingsOf(p, patches, own);
-      // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
-      const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
-      const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
-      for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
-      const text = new Map(loadRules().map(r => [r.id, r.statement]));
-      const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-      const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
-      if (opts.brief) {
-        const found = reports.filter(r => r.errors.length || r.warnings.length);
-        const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-        io.emit({ reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) });
-      } else io.emit({ reports, ...(notes.length ? { notes } : {}) });
-      if (reports.some(r => r.errors.length)) process.exitCode = 1;
+      const { payload, failed } = await lintPatches(p, refs.map(r => loadPatch(p, r)), !!opts.brief);
+      io.emit(payload);
+      if (failed) process.exitCode = 1;
     });
 
   const kit = program.command('kit').description('the project sound kit: list, add, remove, check');
