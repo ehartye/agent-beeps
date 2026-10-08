@@ -179,6 +179,21 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.9.0
+
+Additive tools from the Fallow Valley friction ledger and the delivery backlog (#31 to #43). No engine or pipeline
+constant changed (`ENGINE_VERSION` 2, `PIPELINE_VERSION`, `SONG_PIPELINE_VERSION` and `EXPORT_PIPELINE_VERSION`
+unchanged), and every new field is optional, so existing patches and songs keep their render keys and bytes.
+
+- Songs: track `fixed` and `transpose`, and a `song-written-pitch` lint (#32).
+- Patches: opt-in `stereo` for `noise` and `grains` (#31); a `voice` source and eight `creature*` archetypes (#35);
+  a layer `highpass` and a precise `no-dc` fix (#38); project `familyOffsets` and `meta.loudnessOffsetDb` (#40).
+- Authoring: `beeps family`, N validated patches from a template and a param table (#34).
+- Player (player 4): `memoryBudgetBytes` with LRU eviction, `unload`, `prefetch`, `layerLoading: 'state'`, `memory()` (#37).
+- Delivery: `loopcheck --engines` (#33), seam metrics (#36), `player selftest` and encode-rate checks (#41),
+  `audition formats` for a blind A/B of delivery formats (#39), `song export --trim-tail` and crest-aware `song stems` (#43),
+  and the web delivery guide in the beeps-music skill (#42).
+
 ## What changed in 0.8.0
 
 Renders are now bit-exact for a seed (#29). Before, any sound where three or more signals meet in one node
