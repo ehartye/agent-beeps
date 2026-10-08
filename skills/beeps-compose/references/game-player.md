@@ -17,6 +17,9 @@ createPlayer({
   contextFactory: () => new AudioContext(), // or build one lazily instead
   fetcher: url => fetch(url),          // swap in a test double
   seed: 1,                             // seeds each sound's own variant picker
+  memoryBudgetBytes: 150e6,            // optional: cap decoded audio, evicting idle buffers (see "Memory")
+  layerLoading: 'state',               // optional: load only the layers an adaptive state plays
+  prefetchConcurrency: 1,              // background decodes at once for prefetch() (default 2, 1 on phones)
 });
 ```
 
@@ -74,6 +77,41 @@ createPlayer({
 - **`setLevel(bus, value)`** — `bus` is `'music' | 'ambience' | 'sfx' | 'master'`; `value` is clamped
   to 0..1 and ramped in.
 
+## Memory
+
+A decoded stereo 48 kHz buffer is about 23 MB per minute whatever the file format (a 68.6 s layer is 26.3 MB, a five-layer
+song 131.6 MB), and by default the player keeps every buffer it decodes for the session. On a phone that is the main risk;
+three options and three methods keep it bounded, and with none of them set the player behaves as before.
+
+- **`memoryBudgetBytes`** — when a load would take decoded audio over this, the least recently used buffers are evicted, and
+  load again on demand with no change for the caller. A buffer is never evicted while it is playing, scheduled, part of the
+  current music or ambience, or part of a crossfade that is still fading out (the old song stays until its last source has
+  ended). Because playing audio cannot be freed, the real peak can exceed the budget: that is reported once as
+  `W_MEMORY_BUDGET`, and the fix is a bigger budget or fewer simultaneous beds. The size is known before decoding from the
+  catalog's `frames` (else `durationSec`; assumed stereo), so room is made before the decode allocates.
+  Rule of thumb: the budget must cover the current song, the one fading out, and the one being prefetched.
+- **`layerLoading: 'state'`** — an adaptive song loads only the layers of its current state (the `initialState`, or the state
+  `setState` kept for it). `setState` returns `true` at once and starts the other layers when they have loaded, at the loop
+  phase the song has reached, fading in; a layer whose state is left is ended after its fade so its buffer can be evicted.
+  `inspect().music.layers` still lists every layer (1 when its state plays it, loaded or not). Until a layer has loaded it is
+  silent, so `prefetch([{ id, state }])` the states you are about to enter.
+- **`prefetchConcurrency`** — how many `prefetch()` loads run at once: 2, or 1 when the browser looks like a phone or tablet.
+- **`prefetch(ids)`** → `Promise<number>` (files decoded; never rejects): decode in the background so a later `music()` or
+  `play()` starts without waiting. Entries are an asset id or `{ id, state }` (the adaptive state likely to come next, with
+  `layerLoading: 'state'`). Background loads wait while any load the player needs is in flight, never run more than the cap,
+  are promoted if `music()` asks for the same file, and are skipped (counted in `memory().skippedPrefetch`) when they would not fit
+  the budget beside what is playing. Called before `unlock()` it queues until the context exists. Call it when the director
+  signals the next area or song.
+- **`unload(id)`** → bytes freed: drop an asset's decoded buffers (file, variants and layers) that nothing is playing; the
+  next `play()`/`music()` loads them again. Use it when leaving an area, if no budget is set.
+- **`memory()`** → `{ budgetBytes, decodedBytes, buffers, loading, pinnedBuffers, pinnedBytes, evictions, unloads, reloads, thrash, skippedPrefetch, peakBytes }`
+  for a debug overlay or telemetry. A buffer reloaded within 30 s of its eviction counts as `thrash` and reports
+  `W_MEMORY_THRASH` once per file: the budget is smaller than what the game switches between.
+
+A failed reload of an evicted file follows the usual rule (tried twice, reported as `E_LOAD`, then silent until `retry()`).
+The player does not stream loops through `MediaElementAudioSourceNode`: an element's own loop cuts the end and iOS can crackle when
+an element feeds Web Audio, so music stays decoded `AudioBufferSourceNode`s.
+
 ## Priority and voice stealing
 
 An asset's `priority` follows the FMOD convention also used by
@@ -108,6 +146,8 @@ from the CLI's `ErrorCode`s (`E_SCHEMA`, `E_USAGE`, ...), which never reach a ga
 | `E_USAGE` | `ambience()` was given an invalid slot name, or more than 8 slots (`id` is the slot) |
 | `E_NOT_ADAPTIVE` | `setState()` was called on music with no `layers` |
 | `E_UNKNOWN_STATE` | `setState()` named a state the asset does not declare (`id` is the state name) |
+| `W_MEMORY_BUDGET` | decoded audio is over `memoryBudgetBytes` and everything left is playing or about to; reported once until it fits again |
+| `W_MEMORY_THRASH` | a buffer was evicted and needed again within 30 s (`id` is the file); once per file until `retry()` |
 
 None of the player's public promises ever reject; failures always resolve (usually `false`/`null`)
 and report through `onError` instead, so a game never needs a `.catch()` on player calls.

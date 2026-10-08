@@ -35,8 +35,8 @@ const hash = s => {
  *   layers?: LayerFile[], states?: Record<string, string[]>, initialState?: string, stateTrimDb?: Record<string, number> }} Asset
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
- * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number }} Playing one source and its gain
- * @typedef {{ id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, origin: number, state: string | null }} Bed
+ * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number, release?: () => void }} Playing one source and its gain; `release` gives its buffer back to the loader when it ends
+ * @typedef {{ key: string, id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, origin: number, state: string | null, active: number, loading: Set<string> }} Bed
  * @typedef {{ id: string | null, fadeSec: number, token: number, slot?: string, gainDb?: number }} Pending
  */
 
@@ -51,10 +51,15 @@ const hash = s => {
  *   contextFactory?: () => AudioContext,
  *   fetcher?: (url: string) => Promise<FetchResponse>,
  *   seed?: number,
+ *   memoryBudgetBytes?: number,
+ *   layerLoading?: 'all' | 'state',
+ *   prefetchConcurrency?: number,
  * }} opts
  */
 export function createPlayer(opts) {
   const { catalog, voices = 8, defaults = {}, onError = () => {}, seed = 1 } = opts;
+  /** 'state': an adaptive song loads only the layers its current state plays and fetches the rest when a state needs them. Default 'all'. */
+  const stateLayers = opts.layerLoading === 'state';
   const contextFactory = opts.contextFactory ?? (() => opts.context ?? new AudioContext());
   const vm = createVoiceManager({ budget: voices });
   /** @type {Record<LevelBus, number>} */
@@ -108,6 +113,8 @@ export function createPlayer(opts) {
     report,
     now: () => ctx?.currentTime ?? 0,
     decode: data => /** @type {AudioContext} */ (ctx).decodeAudioData(data),
+    ...(opts.memoryBudgetBytes !== undefined ? { budgetBytes: opts.memoryBudgetBytes } : {}),
+    ...(opts.prefetchConcurrency !== undefined ? { prefetchConcurrency: opts.prefetchConcurrency } : {}),
   });
   // Wanted AND actually running. `enabled` is checked directly because disabling suspends only
   // after the stop fade; the context state because after setEnabled(true) without a gesture it is
@@ -175,6 +182,7 @@ export function createPlayer(opts) {
     for (const n of nodes) {
       try { n.src.stop(); } catch { /* never started */ }
       try { n.src.disconnect(); n.gain.disconnect(); } catch { /* already disconnected */ }
+      n.release?.(); // the buffer is free to evict again
     }
   }
 
@@ -233,17 +241,20 @@ export function createPlayer(opts) {
         if (v) stopPlaying(v, fade(fadeSec));
       },
     };
-    handle.ready = loader.load(file).then(buffer => {
-      if (!buffer || handle.stopped || !running() || !vm.has(grant.key)) { vm.release(grant.key); return false; }
+    const release = loader.hold(file); // a buffer that is playing or about to is never evicted
+    handle.ready = loader.load(file, { bytes: estimate(asset) }).then(buffer => {
+      if (!buffer || handle.stopped || !running() || !vm.has(grant.key)) { release(); vm.release(grant.key); return false; }
       /** @type {Playing | null} */
       let v = null;
       try {
         const node = source(buffer, sfx, { gainDb, pan });
+        node.release = release;
         v = node;
         live.set(grant.key, node);
         node.src.onended = () => {
           if (live.get(grant.key) === node) { live.delete(grant.key); vm.release(grant.key); }
           try { node.src.disconnect(); node.gain.disconnect(); } catch { /* already disconnected */ }
+          release();
         };
         node.src.start(at === 'now' ? now() : nextMusicBar(now(), at));
         return true;
@@ -252,6 +263,7 @@ export function createPlayer(opts) {
         if (live.get(grant.key) === v) live.delete(grant.key);
         vm.release(grant.key);
         if (v) discard([v]);
+        release();
         report('E_PLAYBACK', text(e), id);
         return false;
       }
@@ -298,19 +310,27 @@ export function createPlayer(opts) {
     const done = ok => { if (bus === 'music' && token === tokenOf('music')) loadingMusic = null; return ok; };
     // The latest music request could not play: a state kept for it must not leak onto later music.
     const fail = () => { if (bus === 'music' && token === tokenOf('music')) pendingState = null; return false; };
+    /** @type {(() => void)[]} */
+    let holds = [];
+    const releaseAll = () => { for (const h of holds) h(); };
     return loader.catalog().then(assets => {
       if (token !== tokenOf(key)) return false;
       if (!assets) return fail();
       const asset = assets[id];
       if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); return fail(); }
-      return Promise.all(partsOf(asset).map(p => loader.load(p.file))).then(bufs => {
-        if (token !== tokenOf(key)) return false;
-        if (bufs.every(b => !b)) return fail();
+      // Hold every file this start needs before loading it: a budget eviction between the decode and the start must not take it.
+      const parts = partsOf(asset);
+      const need = neededLayers(bus, asset);
+      const bytes = estimate(asset);
+      holds = parts.map(p => loader.hold(p.file));
+      return Promise.all(parts.map((p, i) => (need && !need.has(p.name) ? Promise.resolve(null) : loader.load(p.file, { bytes })))).then(bufs => {
+        if (token !== tokenOf(key)) { releaseAll(); return false; }
+        if (bufs.every(b => !b)) { releaseAll(); return fail(); }
         // Loaded while hidden (or suspended): queue it again so showing the tab starts it.
-        if (!running()) { pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) }); return false; }
-        return startBed(key, id, asset, bufs, fadeSec, level ?? 1, bus === 'music' ? { at, sync } : {}) || fail();
+        if (!running()) { releaseAll(); pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) }); return false; }
+        return startBed(key, id, asset, bufs, fadeSec, level ?? 1, bus === 'music' ? { at, sync } : {}, holds) || fail();
       });
-    }).catch(e => { report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
+    }).catch(e => { releaseAll(); report('E_PLAYBACK', text(e), id); return fail(); }).then(done);
   }
 
   /**
@@ -333,13 +353,89 @@ export function createPlayer(opts) {
   const partsOf = asset => (asset.layers?.length ? asset.layers : [{ name: '', file: asset.file }]);
 
   /**
+   * Decoded bytes of one of the asset's files, known before decoding from the catalog (`frames`, else `durationSec`; stereo, 32-bit
+   * float, at the context's rate). 0 when the catalog does not say: the loader then reserves nothing and counts the real size after the decode.
+   * @param {Asset} asset
+   */
+  const estimate = asset => {
+    const frames = asset.frames ?? (asset.durationSec ? Math.round(asset.durationSec * (ctx?.sampleRate ?? 48000)) : 0);
+    return frames > 0 ? frames * 2 * 4 : 0;
+  };
+
+  /** The state a bed starts in: a state kept for it by setState, else the asset's initial one. @param {BedBus} bus @param {Asset} asset */
+  const startState = (bus, asset) => {
+    if (!asset.layers?.length) return null;
+    const wanted = bus === 'music' && pendingState && asset.states?.[pendingState] ? pendingState : null;
+    return wanted ?? asset.initialState ?? null;
+  };
+
+  /** With layerLoading 'state': the layer names to load now (those the starting state plays), else null for all of them. @param {BedBus} bus @param {Asset} asset */
+  const neededLayers = (bus, asset) => {
+    const state = stateLayers ? startState(bus, asset) : null;
+    const on = state ? asset.states?.[state] : undefined;
+    return on ? new Set(on) : null;
+  };
+
+  /** Free a source's buffer for eviction once it has ended, and the bed when its last source has. @param {Bed} bed @param {Playing} n */
+  function wire(bed, n) {
+    bed.active++;
+    n.src.onended = () => {
+      discard([n]);
+      if (--bed.active > 0) return;
+      if (beds.get(bed.key) === bed) beds.delete(bed.key);
+      try { bed.group.disconnect(); } catch { /* already disconnected */ }
+    };
+  }
+
+  /**
+   * layerLoading 'state': start the layers `state` plays that this bed has not loaded yet, once they load, at the loop phase the others
+   * have reached and fading in. A state change or a new bed while one loads drops it quietly (the buffer stays cached).
+   * @param {Bed} cur @param {string} state @param {number} when @param {number} fadeSec
+   */
+  function ensureLayers(cur, state, when, fadeSec) {
+    const on = cur.asset.states?.[state];
+    if (!stateLayers || !on) return;
+    for (const p of partsOf(cur.asset)) {
+      if (!on.includes(p.name) || cur.layers.has(p.name) || cur.loading.has(p.name)) continue;
+      cur.loading.add(p.name);
+      const release = loader.hold(p.file);
+      void loader.load(p.file, { bytes: estimate(cur.asset) }).then(b => {
+        cur.loading.delete(p.name);
+        const wanted = cur.state !== null && !!cur.asset.states?.[cur.state]?.includes(p.name);
+        if (!b || !wanted || beds.get(cur.key) !== cur || cur.layers.has(p.name) || !running()) { release(); return; }
+        /** @type {Playing | null} */
+        let n = null;
+        try {
+          const t = Math.max(now() + 0.05, when);
+          const loop = cur.asset.loop !== false;
+          const len = cur.asset.durationSec && cur.asset.durationSec > 0 ? cur.asset.durationSec : (cur.asset.frames ?? b.length) / b.sampleRate;
+          const o = t - cur.origin;
+          n = source(b, cur.group, { loop, level: 0, frames: cur.asset.frames, id: cur.id });
+          n.release = release;
+          cur.layers.set(p.name, n);
+          n.src.start(t, loop ? ((o % len) + len) % len : Math.max(0, o));
+          wire(cur, n);
+          const target = stateGain(cur.asset, cur.state);
+          n.gain.gain.setValueAtTime(0, t);
+          n.gain.gain.linearRampToValueAtTime(target, t + span(fadeSec));
+          n.target = target;
+        } catch (e) {
+          if (n) { if (cur.layers.get(p.name) === n) cur.layers.delete(p.name); discard([n]); } else release();
+          report('E_PLAYBACK', text(e), cur.id);
+        }
+      });
+    }
+  }
+
+  /**
    * Start a loaded bed's layers together, swap it in and fade the previous bed out. A Web Audio
    * failure partway is reported and torn down, leaving the previous bed playing.
    * @param {string} key @param {string} id @param {Asset} asset @param {(AudioBuffer | null)[]} bufs @param {number} fadeSec @param {number} level linear bed level
    * @param {{ at?: 'now' | 'beat' | 'bar', sync?: boolean }} [when]
+   * @param {(() => void)[]} [holds] one loader hold per part: each goes to its source, to be released when that ends, or is released here
    * @returns {boolean}
    */
-  function startBed(key, id, asset, bufs, fadeSec, level, when = {}) {
+  function startBed(key, id, asset, bufs, fadeSec, level, when = {}, holds = []) {
     const bus = busOf(key);
     const c = /** @type {AudioContext} */ (ctx);
     /** @type {Map<string, Playing>} */
@@ -360,34 +456,29 @@ export function createPlayer(opts) {
       g.connect(/** @type {NonNullable<typeof buses>} */ (buses)[bus]);
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(level, t + span(fadeSec));
-      const wanted = bus === 'music' && pendingState && asset.states?.[pendingState] ? pendingState : null;
-      const state = asset.layers?.length ? wanted ?? asset.initialState ?? null : null;
+      const state = startState(bus, asset);
       const on = state ? new Set(asset.states?.[state] ?? []) : null;
       partsOf(asset).forEach((p, i) => {
         const b = bufs[i];
-        if (!b) return; // a missing layer file: only that layer is silent
+        // A missing layer file: only that layer is silent. With layerLoading 'state' a loaded layer the state does not play is not started (the state changed since the load).
+        if (!b || (stateLayers && on && !on.has(p.name))) { holds[i]?.(); return; }
         const n = source(b, g, { loop: asset.loop !== false, level: !on ? 1 : on.has(p.name) ? stateGain(asset, state) : 0, frames: asset.frames, id });
+        if (holds[i]) n.release = holds[i];
         layers.set(p.name, n); // before start(): a throwing start must still be torn down
         n.src.start(t, offset);
       });
       /** @type {Bed} */
-      const started = { id, asset, group: g, level, layers, startTime: t, origin: t - offset, state };
+      const started = { key, id, asset, group: g, level, layers, startTime: t, origin: t - offset, state, active: 0, loading: new Set() };
       beds.set(key, started);
       // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
       // out), free the whole bed's graph, and forget the bed if it is still the current one.
-      let ended = 0;
-      for (const n of layers.values()) {
-        n.src.onended = () => {
-          if (++ended < layers.size) return;
-          if (beds.get(key) === started) beds.delete(key);
-          discard(layers.values());
-          try { g.disconnect(); } catch { /* already disconnected */ }
-        };
-      }
+      for (const n of layers.values()) wire(started, n);
       if (bus === 'music') pendingState = null;
       if (previous) stopBed(previous, fadeSec, t); // fade out exactly as the new bed fades in
+      if (state) ensureLayers(started, state, t, 0.1); // layers the state needs that the load skipped
       return true;
     } catch (e) {
+      for (const h of holds) h(); // those not yet handed to a source
       discard(layers.values());
       if (beds.get(key)?.layers === layers) beds.delete(key); // it failed after the swap
       try { group?.disconnect(); } catch { /* already disconnected */ }
@@ -420,8 +511,14 @@ export function createPlayer(opts) {
       hold(n.gain.gain, when, t, n.target); // the actual level at `when`, not the previous goal
       n.gain.gain.linearRampToValueAtTime(target, when + span(fadeSec));
       n.target = target;
+      if (stateLayers && target === 0 && name) {
+        // Silent once faded: end the source so its buffer is free to evict. A later state that wants it loads it again.
+        try { n.src.stop(when + span(fadeSec) + 0.05); } catch { /* already stopped */ }
+        cur.layers.delete(name);
+      }
     }
     cur.state = state;
+    ensureLayers(cur, state, when, fadeSec);
     return true;
   }
 
@@ -482,6 +579,7 @@ export function createPlayer(opts) {
     await loader.catalog();
     if (!running()) return false;
     await drainPending();
+    if (waitingPrefetch.length) { const list = waitingPrefetch; waitingPrefetch = []; void runPrefetch(list).catch(e => report('E_PLAYBACK', text(e))); }
     return running();
   }
 
@@ -528,6 +626,17 @@ export function createPlayer(opts) {
     loader.reset();
   }
 
+  /** Each named layer as 1 (playing, or loading in for the state) or 0. @param {Bed} m @returns {Record<string, number>} */
+  function layersOf(m) {
+    const on = m.state ? m.asset.states?.[m.state] : undefined;
+    // Normally the layers that started; with layerLoading 'state' every layer the song has, since the others are not loaded.
+    const names = stateLayers ? partsOf(m.asset).map(p => p.name) : [...m.layers.keys()];
+    return Object.fromEntries(names.filter(Boolean).map(name => {
+      const n = m.layers.get(name);
+      return [name, n ? (n.target > 0 ? 1 : 0) : on?.includes(name) ? 1 : 0];
+    }));
+  }
+
   /** A snapshot for tests, debugging and game UI. */
   function inspect() {
     const m = beds.get('music'), a = beds.get('ambience');
@@ -536,14 +645,80 @@ export function createPlayer(opts) {
     for (const [key, b] of beds) if (key.startsWith('ambience:')) ambienceSlots[key.slice('ambience:'.length)] = { id: b.id };
     return {
       running: running(), voices: vm.size, levels: { ...levels }, ducks: { ...ducks },
-      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: Object.fromEntries([...m.layers].filter(([name]) => name).map(([name, n]) => [name, n.target > 0 ? 1 : 0])) } : null,
+      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: layersOf(m) } : null,
       ambience: a ? { id: a.id } : null,
       ambienceSlots,
     };
   }
 
+  /**
+   * The catalog files behind an asset id: its file, variants and layers. With a `state` (and layerLoading 'state') only that state's layers.
+   * @param {Asset} asset @param {string} [state]
+   */
+  function filesOf(asset, state) {
+    if (asset.layers?.length) {
+      const on = stateLayers ? asset.states?.[state ?? asset.initialState ?? ''] : undefined;
+      return asset.layers.filter(l => !on || on.includes(l.name)).map(l => l.file);
+    }
+    return [...new Set([asset.file, ...(asset.variants ?? []).map(v => v.file)])];
+  }
+
+  /** @type {{ id: string, state?: string }[]} prefetch() requests made before the context existed */
+  let waitingPrefetch = [];
+
+  /**
+   * @param {{ id: string, state?: string }[]} list
+   * @returns {Promise<number>}
+   */
+  async function runPrefetch(list) {
+    const assets = await loader.catalog();
+    if (!assets) return 0;
+    /** @type {Promise<AudioBuffer | null>[]} */
+    const loads = [];
+    for (const { id, state } of list) {
+      const asset = assets[id];
+      if (!asset) { warnOnce('E_UNKNOWN_ASSET', `no asset "${id}"`, id); continue; }
+      for (const file of filesOf(asset, state)) loads.push(loader.load(file, { bytes: estimate(asset), prefetch: true }));
+    }
+    return (await Promise.all(loads)).filter(Boolean).length;
+  }
+
+  /**
+   * Decode sounds in the background so a later play() or music() starts without waiting: the next song when the director signals it, the
+   * next area's sounds. Runs at most `prefetchConcurrency` at a time, only while nothing the player is waiting for is loading, and skips
+   * what would not fit the memory budget without evicting anything playing. Entries are `id` or `{ id, state }` (an adaptive song's likely
+   * next state, with layerLoading 'state'). Before unlock() it is queued until the context exists. Resolves how many files are decoded; never rejects.
+   * @param {(string | { id: string, state?: string })[]} ids
+   * @returns {Promise<number>}
+   */
+  function prefetch(ids) {
+    const list = (Array.isArray(ids) ? ids : []).map(x => (typeof x === 'string' ? { id: x } : x)).filter(x => x && typeof x.id === 'string');
+    if (!list.length) return Promise.resolve(0);
+    if (!ctx) { waitingPrefetch.push(...list); return Promise.resolve(0); }
+    return runPrefetch(list).catch(e => { report('E_PLAYBACK', text(e)); return 0; });
+  }
+
+  /**
+   * Free the decoded buffers of an asset (all its files and layers) so the memory can be reclaimed; the next play or music() loads them
+   * again. Anything playing, scheduled or in a crossfade is kept. Returns the bytes freed now.
+   * @param {string} id
+   */
+  function unload(id) {
+    const asset = loader.assets?.[id];
+    if (!asset) return 0;
+    let freed = 0;
+    for (const p of partsOf(asset)) freed += loader.unload(p.file);
+    for (const v of asset.variants ?? []) freed += loader.unload(v.file);
+    return freed;
+  }
+
+  /** Decoded-audio memory: bytes and buffers held, budget, evictions (by the budget) and unloads (by unload()), reloads that followed an eviction and how many of those thrashed. */
+  function memory() {
+    return loader.memory();
+  }
+
   return {
-    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect,
+    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect, prefetch, unload, memory,
     /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'beat' | 'bar', sync?: boolean }} [o] */
     music: (id, o) => bed('music', id, o),
     /**

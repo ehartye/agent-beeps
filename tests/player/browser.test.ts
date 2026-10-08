@@ -101,3 +101,32 @@ it.skipIf(!hasChromium)('the master clipper passes signals below its knee throug
   expect(pageErrors).toEqual([]);
   expect(maxDiff).toBeLessThan(1e-6);
 });
+
+it.skipIf(!hasChromium)('loads only the current state layers under a memory budget, and unloads, in Chromium', async () => {
+  const page = await browser!.newPage();
+  const pageErrors: string[] = [];
+  page.on('pageerror', e => pageErrors.push(e.message));
+  await page.goto(`${site!.url}/index.html`);
+  const result = await page.evaluate(async () => {
+    const dynImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<any>;
+    const { createPlayer } = await dynImport('/beeps-player/player/player.js');
+    const errors: unknown[] = [];
+    const player = createPlayer({ catalog: '/audio/index.json', memoryBudgetBytes: 8e6, layerLoading: 'state', onError: (e: unknown) => errors.push(e) });
+    await player.unlock();
+    await player.music('theme', { fadeSec: 0.1 });
+    const calm = player.memory();
+    player.setState('danger', { fadeSec: 0.1 });
+    for (let i = 0; i < 50 && player.memory().buffers < 3; i++) await new Promise(r => setTimeout(r, 50));
+    const danger = player.memory();
+    const layers = player.inspect().music.layers;
+    await player.music(null, { fadeSec: 0.05 });
+    await new Promise(r => setTimeout(r, 400));
+    return { calm, danger, layers, freed: player.unload('theme'), after: player.memory(), errors };
+  });
+  expect(pageErrors).toEqual([]);
+  expect(result.errors).toEqual([]);
+  expect(result.calm).toMatchObject({ buffers: 1, decodedBytes: 4 * 48000 * 2 * 4 });
+  expect(result.danger.buffers).toBe(3);
+  expect(result.layers).toEqual({ bed: 1, pulse: 1, threat: 1 });
+  expect(result.after.buffers).toBe(0);
+});
