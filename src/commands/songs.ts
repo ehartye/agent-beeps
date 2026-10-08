@@ -13,7 +13,7 @@ import { clippedSamples } from '../measure/envelope.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { renderSongExcerpt } from '../render/song-excerpt.ts';
 import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, reportedResidualDb, stateSong, stateTrim } from '../render/layers.ts';
-import { lintSong } from '../song-lint.ts';
+import { lintSong, soundingPitch } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
 import { parseChord, voiceLead } from '../../runtime/engine/chords.js';
@@ -54,6 +54,7 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
   const perTrack: Record<string, { notes: number; lo: number | null; hi: number | null }> = {};
   for (const t of Object.keys(song.tracks)) perTrack[t] = { notes: 0, lo: null, hi: null };
+  const sounding = soundingPitch(song, instruments);
   for (const e of c.events) {
     const t = perTrack[e.track];
     t.notes++;
@@ -72,7 +73,8 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
     tracks: Object.fromEntries(Object.entries(perTrack).map(([k, v]) => {
       const span = spans[k];
       const notes = v.lo === null || v.hi === null ? null : `${midiName(v.lo)}-${midiName(v.hi)}`;
-      const sounds = v.lo === null || v.hi === null || !span ? null : `${midiName(v.lo + span.low)}-${midiName(v.hi + span.high)}`;
+      const at = sounding[k] ?? ((m: number) => m);
+      const sounds = v.lo === null || v.hi === null || !span ? null : `${midiName(at(v.lo) + span.low)}-${midiName(at(v.hi) + span.high)}`;
       return [k, { notes: v.notes, range: notes, ...(sounds && sounds !== notes ? { sounds } : {}), ...(v.notes === 0 ? { silent: true } : {}) }];
     })),
   };

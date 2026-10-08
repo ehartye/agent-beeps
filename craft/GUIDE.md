@@ -145,6 +145,10 @@ every `beeps song render`. The judgement rules are yours to apply.
 - **Register and masking** (`song-register`, `song-register-bands`). Robjohns' order of fixes is
   arrangement first, level hierarchy second, EQ last and gently. Give each part its own register
   band, or leave it rhythmic gaps. Notes below E1 are almost always an octave slip.
+- **Written pitch** (`song-written-pitch`). A song retunes the whole instrument to each written
+  note, so a patch built far from the notes written for it no longer sounds as built (a 3300 Hz
+  chime written D4 plays at 293 Hz). Play it at its own pitch with the track's `fixed`, name the
+  note it sounds at with `root`, or shift it with `transpose`.
 - **Long-play fatigue** (`song-fatigue`). Composers of reused cues reduce dramatic melody so the
   cue survives repetition. Silence and slow fades in are the leading remedies. Keep exploration
   melodies understated, vary sections, and leave space.

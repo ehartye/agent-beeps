@@ -43,6 +43,23 @@ export function instrumentSpan(p) {
 }
 
 /**
+ * How a track retunes its instrument: the semitone shift for a written note (null: an unpitched
+ * note), from the instrument's own pitch. A note plays the instrument's pitched layers at the
+ * written note when `root` is unset (shift = note - root of the patch), `root` names the note the
+ * patch sounds at as written, `fixed` ignores the written note, and `transpose` adds semitones.
+ * @param {{ root?: string, fixed?: boolean, transpose?: number }} t
+ * @param {Patch} p
+ * @returns {((midi: number | null) => number) | null}  null for an instrument with no pitched layer
+ */
+export function trackShift(t, p) {
+  const inst = instrumentRoot(p);
+  if (inst === null) return null;
+  const ref = t.root ? hzToMidi(noteToHz(t.root)) : inst;
+  const tr = t.transpose ?? 0;
+  return midi => (midi === null ? 0 : t.fixed ? 0 : midi - ref) + tr;
+}
+
+/**
  * A copy of the patch shifted by `semitones`: sources and pitch envelopes move exactly; filter
  * cutoffs move by `keytrack` of the shift. `duration` (seconds) replaces the note-off time.
  * @param {Patch} p
@@ -145,7 +162,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     if (reverbIn) toReverb.push(ret);
   }
 
-  /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, root: number | null }>} */
+  /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, shift: ReturnType<typeof trackShift> }>} */
   const buses = {};
   for (const [name, t] of Object.entries(song.tracks)) {
     const p = instruments[name];
@@ -210,7 +227,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       automate(send.gain, base === undefined ? 0 : db(base), m => (m.sends?.[kind] === undefined ? undefined : db(m.sends[kind])));
       (kind === 'reverb' ? toReverb : toDelay).push(level.connect(send));
     }
-    buses[name] = { input, pool: voicePool(ctx, input), root: t.root ? hzToMidi(noteToHz(t.root)) : instrumentRoot(p) };
+    buses[name] = { input, pool: voicePool(ctx, input), shift: trackShift(t, p) };
   }
   sumInto(ctx, toMaster, master);
   if (reverbIn) sumInto(ctx, toReverb, reverbIn);
@@ -231,7 +248,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i) => {
     const bus = buses[e.track];
     const t = song.tracks[e.track];
-    const shift = e.midi !== null && bus.root !== null ? e.midi - bus.root : 0;
+    const shift = bus.shift ? bus.shift(e.midi) : 0;
     const key = `${e.track}:${shift.toFixed(3)}:${e.dur ?? 'patch'}`;
     let p = voices.get(key);
     if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }

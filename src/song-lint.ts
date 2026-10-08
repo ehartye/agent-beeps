@@ -5,10 +5,26 @@ import type { SongFeatures } from './measure/song.ts';
 import type { Song } from './schema/song.ts';
 import type { Project } from './schema/project.ts';
 import { compileSong } from '../runtime/engine/sequence.js';
-import { instrumentSpan } from '../runtime/engine/song.js';
+import { hzToMidi, noteToHz } from '../runtime/engine/notes.js';
+import { instrumentRoot, instrumentSpan, trackShift } from '../runtime/engine/song.js';
 import type { Patch } from './schema/patch.ts';
 
 export const MUSIC_RULES_PATH = join(RULES_PATH, '..', 'music-rules.json');
+
+/**
+ * Where each track's written notes actually sound (the pitch of the instrument's root layer): the
+ * note itself, unless the track sets `root`, `transpose` or `fixed`. Null for a track with an
+ * unpitched or unknown instrument.
+ */
+export function soundingPitch(song: Song, instruments: Record<string, Patch>): Record<string, (midi: number) => number> {
+  const out: Record<string, (midi: number) => number> = {};
+  for (const [name, t] of Object.entries(song.tracks)) {
+    const p = instruments[name], inst = p && instrumentRoot(p), shift = p && trackShift(t, p);
+    if (inst === null || inst === undefined || !shift) continue;
+    out[name] = t.root === undefined && t.transpose === undefined && !t.fixed ? m => m : m => inst + shift(m);
+  }
+  return out;
+}
 
 const fmt = (x: number, d = 1) => String(Math.round(x * 10 ** d) / 10 ** d);
 
@@ -53,19 +69,38 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   const reg = range('song-register');
   const spans = Object.fromEntries(Object.entries(instruments).map(([t, p]) => [t, instrumentSpan(p)]));
   const outside = new Map<string, { lo: number; hi: number; layer: boolean }>();
-  for (const e of compileSong(song).events) {
+  const sounding = soundingPitch(song, instruments);
+  const compiled = compileSong(song);
+  for (const e of compiled.events) {
     // An instrument with no pitched layer (null span) does not sound its trigger note.
     if (e.midi === null || spans[e.track] === null) continue;
     const span = spans[e.track];
-    const lo = e.midi + (span?.low ?? 0), hi = e.midi + (span?.high ?? 0);
+    const at = sounding[e.track]?.(e.midi) ?? e.midi;
+    const lo = at + (span?.low ?? 0), hi = at + (span?.high ?? 0);
     if (lo >= reg.lowestMidi && hi <= reg.highestMidi) continue;
     const o = outside.get(e.pattern) ?? { lo: Infinity, hi: -Infinity, layer: false };
-    outside.set(e.pattern, { lo: Math.min(o.lo, lo), hi: Math.max(o.hi, hi), layer: o.layer || (lo < reg.lowestMidi && lo !== e.midi) || (hi > reg.highestMidi && hi !== e.midi) });
+    outside.set(e.pattern, { lo: Math.min(o.lo, lo), hi: Math.max(o.hi, hi), layer: o.layer || (lo < reg.lowestMidi && lo !== at) || (hi > reg.highestMidi && hi !== at) });
   }
   for (const [pattern, o] of outside) {
     const hz = (m: number) => fmt(440 * 2 ** ((m - 69) / 12), 0);
     const why = o.layer ? " (an instrument layer sounds below or above the written note: see 'beeps instruments' spans)" : '';
     c.add('song-register', o.lo < reg.lowestMidi ? `pattern "${pattern}" reaches ${hz(o.lo)} Hz (below E1)${why}: raise its octave` : `pattern "${pattern}" reaches ${hz(o.hi)} Hz (above C8)${why}: lower its octave`, `/patterns/${pattern}`);
+  }
+
+  // A pitched instrument is retuned to each written note: far from its root, its filters, envelopes
+  // and layer balance (made for the root) stop matching the sound that plays.
+  const far = c.num('song-written-pitch');
+  for (const [track, t] of Object.entries(song.tracks)) {
+    const p = instruments[track], inst = p && instrumentRoot(p);
+    if (inst === null || inst === undefined || t.fixed) continue;
+    const ref = t.root !== undefined ? hzToMidi(noteToHz(t.root)) : inst, tr = t.transpose ?? 0;
+    const notes = compiled.events.filter(e => e.track === track && e.midi !== null).map(e => e.midi!);
+    // How far the engine retunes the patch from the root it was built at.
+    const worst = notes.map(m => m - ref + tr).reduce((a, b) => (Math.abs(b) > Math.abs(a) ? b : a), 0);
+    if (notes.length === 0 || Math.abs(worst) <= far) continue;
+    const lo = Math.min(...notes), hi = Math.max(...notes), written = lo === hi ? nn(lo) : `${nn(lo)}-${nn(hi)}`;
+    const hzOf = (m: number) => fmt(440 * 2 ** ((m - 69) / 12), 0);
+    c.add('song-written-pitch', `track "${track}" writes ${written} for an instrument rooted at ${nn(inst)} (${hzOf(inst)} Hz): the whole patch is retuned ${fmt(Math.abs(worst), 0)} semitones ${worst > 0 ? 'up' : 'down'} and sounds at ${hzOf(inst + worst)} Hz. To play it as built at ${nn(inst)}, set "fixed": true on the track; to keep following the notes, set "root": "${nn((lo + hi) / 2)}" (the note it should sound at as written) or write notes near ${nn(ref)}`, `/tracks/${track}`);
   }
 
   const played = new Set<string>(), usedTracks = new Set<string>();
@@ -78,7 +113,7 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   for (const p of Object.keys(song.patterns)) if (!played.has(p)) c.add('song-unused', `pattern "${p}" never plays`, `/patterns/${p}`);
   // Judgement rules come with their statements: a bare id is not a checklist. Listener fatigue is
   // about music heard for a long time, so a short one-shot (a jingle or sting) is out of its scope.
-  const bands = registerOverlaps(song, spans);
+  const bands = registerOverlaps(song, spans, sounding);
   const heardLong = song.loop || f.durationSec > c.param<number>('song-fatigue', 'appliesToLoopsOrAboveSec');
   const inScope = rules.filter(r => (r.id !== 'song-fatigue' || heardLong) && (r.id !== 'song-adaptive-states' || !!song.adaptive));
   return {
@@ -101,7 +136,7 @@ const nn = (m: number) => `${NAMES[((Math.round(m) % 12) + 12) % 12]}${Math.floo
  * can still sound tonal; that case is not detected. An absent span (instrument unknown) keeps the
  * written note as the pitch.
  */
-export function registerOverlaps(song: Song, spans: Record<string, { low: number; high: number } | null>) {
+export function registerOverlaps(song: Song, spans: Record<string, { low: number; high: number } | null>, sounding: Record<string, (midi: number) => number> = {}) {
   const c = compileSong(song);
   type Range = { lo: number; hi: number };
   const events = c.events.filter(e => e.midi !== null && e.dur !== null && e.dur > 0 && e.vel > 0 && spans[e.track] !== null);
@@ -131,7 +166,8 @@ export function registerOverlaps(song: Song, spans: Record<string, { low: number
     for (const id of active) {
       const e = events[id];
       const sp = spans[e.track];
-      const r = { lo: e.midi! + (sp?.low ?? 0), hi: e.midi! + (sp?.high ?? 0) };
+      const at = sounding[e.track]?.(e.midi!) ?? e.midi!;
+      const r = { lo: at + (sp?.low ?? 0), hi: at + (sp?.high ?? 0) };
       ranges.set(e.track, merge(ranges.get(e.track) ?? r, r));
     }
     const playing = tracks.filter(t => ranges.has(t));
