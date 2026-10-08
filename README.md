@@ -52,7 +52,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 |---|---|
 | `capabilities` | schema, source types, archetypes, directions, error codes |
 | `init` | create `.agent-beeps/` (scale, loudness target) |
-| `archetypes`, `generate` | 18 SFX archetypes; diverse lint-clean candidate sets |
+| `archetypes`, `generate` | 26 archetypes (18 SFX, 8 creature voices); diverse lint-clean candidate sets |
 | `family` | one template patch + a table (JSON/CSV/`--row`) -> N validated patches: `{{param}}` placeholders, `/pointer` columns, seeded `a..b` ranges and `--jitter`, `--lint`, `--set`, `--out`, `--dry-run` |
 | `new`, `sync`, `batch`, `list` | save patches; mirror a directory of committed patch files into the project (`sync <dir>`, validates all first); atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
@@ -67,7 +67,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
 | `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
 | `compress <dir> <outDir>` | re-encode an exported bundle as Ogg Opus (about 30x smaller) or, with `--format mp3`, as gapless MP3 for browsers without Ogg Opus, verify frame counts, alignment and loop wraps, write `<outDir>/index.json`; needs ffmpeg (`ffmpeg-static` optional dependency, `BEEPS_FFMPEG`, or the PATH) |
-| `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step); `--engines chromium,firefox,webkit` also decodes each file with `decodeAudioData` in those browsers at 48000 and 44100 Hz and reports frame delta and start lead against the source (non-zero exit on a delta; an engine that is not installed or has no Web Audio is reported, never passed) |
+| `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step, and seam metrics: boundary step and slope jump in dB against a typical sample step, last zero-crossing phase, with a warning when the delivered seam is 3 dB worse than the source's); `--engines chromium,firefox,webkit` also decodes each file with `decodeAudioData` in those browsers at 48000 and 44100 Hz and reports frame delta and start lead against the source (non-zero exit on a delta; an engine that is not installed or has no Web Audio is reported, never passed) |
 | `song states <song>` | adaptive songs: judge every state as its own piece (loudness, trim, range, seam, register overlaps among its tracks, lint) |
 | `song compat <songs...>` | plan crossfades between songs without rendering: tempo relation, phase-lock, estimated key, harmony agreement per pair |
 | `build` | incremental audio build from `beeps.build.json`: render, export, compress and bundle only assets whose input hash differs from the committed `audio.lock.json` (or whose outputs are missing or modified); `--check` renders nothing and exits 1 listing what is stale; `--only`, `--all`, `--target web-universal` (default), `web-mp3` or `wav-master`, `--pull` / `--push` with `--store dir:<path>` or `release:<owner/repo>`, `--adopt`, `--allow-toolchain-change` ([docs](docs/build-lock-and-store.md)) |

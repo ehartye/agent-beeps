@@ -79,14 +79,29 @@ const Grains = z.strictObject({
   rateEnd: z.number().min(0).max(10).optional(),
   stereo: Stereo.optional(),
 });
+const Voice = z.strictObject({
+  type: z.literal('voice'),
+  /** Fundamental (f0); a layer's pitchEnv draws the f0 contour. */
+  pitch: Pitch,
+  /** [centre Hz, q, gain dB]: 2-4 parallel bandpass resonances (the vocal tract). They stay put when the f0 moves. */
+  formants: z.array(z.tuple([z.number().positive().max(12000), z.number().positive().max(30), z.number().min(-40).max(12)])).min(2).max(4),
+  /** Glottal spectral slope: harmonic n has amplitude 1/n^tilt. Low is buzzy and raspy, high is soft and hooty. */
+  tilt: z.number().min(0.5).max(3).default(1.5),
+  /** Seeded random pitch wobble of the pulse train, in cents (about 50 Hz smoothed): roughness and age. */
+  jitterCents: z.number().min(0).max(100).default(0),
+  vibrato: z.strictObject({ rate: z.number().positive().max(40), cents: z.number().min(0).max(600) }).optional(),
+  tremolo: z.strictObject({ rate: z.number().positive().max(120), depth: z.number().min(0).max(1) }).optional(),
+  /** 0..1 mix of seeded breath noise through the same formants, in place of pulse energy. 1 is a whisper or hiss. */
+  breath: z.number().min(0).max(1).default(0),
+});
 const Metal = z.strictObject({
   type: z.literal('metal'),
   base: z.number().positive().max(2000).default(40),
   bands: z.tuple([z.number().positive().max(24000), z.number().positive().max(24000)]).default([3440, 7100]),
 });
 
-export const SOURCE_TYPES = ['osc', 'noise', 'fm', 'additive', 'modal', 'grains', 'metal'] as const;
-const Source = z.discriminatedUnion('type', [Osc, Noise, Fm, Additive, Modal, Grains, Metal]);
+export const SOURCE_TYPES = ['osc', 'noise', 'fm', 'additive', 'modal', 'grains', 'metal', 'voice'] as const;
+const Source = z.discriminatedUnion('type', [Osc, Noise, Fm, Additive, Modal, Grains, Metal, Voice]);
 
 const PitchPoint = z.strictObject({ at: z.number().min(0).max(10), to: Pitch, curve: z.enum(['linear', 'exp', 'step']).default('exp') });
 

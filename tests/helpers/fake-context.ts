@@ -28,6 +28,7 @@ export class FakeNode {
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
   start(t = 0, offset = 0) { this.startedAt = t; this.offset = offset; }
   stop(t = 0) { this.stoppedAt = t; }
+  setPeriodicWave(w: unknown) { this.wave = w; }
   disconnect(target?: FakeNode | FakeParam) {
     if (target) this.outputs = this.outputs.filter(o => o !== target);
     else this.disconnected = true;
@@ -53,6 +54,7 @@ export class FakeContext {
     const data = Array.from({ length: channels }, () => new Float32Array(length));
     return { numberOfChannels: channels, length, sampleRate, getChannelData: (c: number) => data[c] };
   }
+  createPeriodicWave(real: Float32Array, imag: Float32Array) { return { real, imag }; }
   createWaveShaper() { return this.make('shaper'); }
   createStereoPanner() { return this.make('panner', { pan: 0 }); }
   createConvolver() { return this.make('convolver'); }

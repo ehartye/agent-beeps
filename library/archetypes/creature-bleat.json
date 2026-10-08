@@ -1,0 +1,125 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-bleat",
+  "family": "creature",
+  "description": "Bleat: mid f0 with fast, deep vibrato and tremolo (the wobble) through bright nasal formants",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-bleat",
+    "family": "creature",
+    "archetype": "creature-bleat",
+    "tags": [],
+    "duration": 0.6,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 380,
+          "formants": [
+            [
+              900,
+              10,
+              0
+            ],
+            [
+              1700,
+              8,
+              -3
+            ],
+            [
+              2700,
+              6,
+              -10
+            ]
+          ],
+          "tilt": 1.3,
+          "jitterCents": 12,
+          "vibrato": {
+            "rate": 22,
+            "cents": 100
+          },
+          "tremolo": {
+            "rate": 22,
+            "depth": 0.4
+          }
+        },
+        "amp": {
+          "attack": 0.04,
+          "decay": 0.45,
+          "sustain": 0,
+          "release": 0.1
+        },
+        "pitchEnv": [
+          {
+            "at": 0.5,
+            "to": 300,
+            "curve": "exp"
+          }
+        ]
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 280,
+      "max": 520,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.6,
+      "max": 0.95,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 700,
+      "max": 1100,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 1400,
+      "max": 2000,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 2400,
+      "max": 3200,
+      "scale": "log"
+    },
+    "/layers/0/source/vibrato/rate": {
+      "min": 14,
+      "max": 30,
+      "scale": "lin"
+    },
+    "/layers/0/source/vibrato/cents": {
+      "min": 50,
+      "max": 180,
+      "scale": "lin"
+    },
+    "/layers/0/source/tremolo/rate": {
+      "min": 14,
+      "max": 30,
+      "scale": "lin"
+    },
+    "/layers/0/source/tremolo/depth": {
+      "min": 0.2,
+      "max": 0.6,
+      "scale": "lin"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 0,
+      "max": 25,
+      "scale": "lin"
+    }
+  }
+}

@@ -20,6 +20,10 @@ judgement are listed on every run: apply them yourself, never skip them silently
 - Cymbals, hats, robots, anvils: `metal` (six inharmonic squares, two bandpasses; the envelope makes
   the instrument: 50 ms hat, 300 ms+ cymbal).
 - Blips, coins, lasers, jumps, alarms: `osc` with pitch envelopes. FM for growl and bell-like bite.
+- Animal and creature voices (yip, growl, bleat, moo, cluck, huff, hiss): `voice` - glottal pulses
+  through 2-4 formant bandpasses. f0 contour from `pitchEnv`, size from the formants (small animal
+  high, big animal low), roughness from `jitterCents` and low `tilt`, bleat and rasp from fast
+  `vibrato`/`tremolo`, breath and hiss from `breath`. Start from `beeps generate creature`.
 - Whooshes, impacts, rumble: `noise` through swept filters; layer a low sine thump for weight.
 - Beds and ambiences that should feel wide (wind, rain, room tone): `stereo: true` on the `noise` or
   `grains` source decorrelates left from right with seeded noise. Mono noise measures width ~0 however

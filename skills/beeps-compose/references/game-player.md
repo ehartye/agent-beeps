@@ -127,7 +127,11 @@ block, and `<outDir>/index.json` is the catalog the player loads (the player dec
 decodes every encoded file again and fails when the frame count changed, the decode does not line up with the source (music: 8 dB
 or more; noise beds and sfx: loudness envelope correlation 0.8), or a loop's wrap now ticks (`seamExcessDb`: the energy of the
 5 ms around the wrap against the loudest 5 ms elsewhere; +6 dB and 3 dB above the source fails). `beeps loopcheck <files>` runs
-the frame and wrap checks on any encoded file; add `--engines chromium,firefox,webkit` to decode it in real browsers with
+the frame and wrap checks on any encoded file, plus seam metrics (`seam`: `boundaryStepDb`, the last-to-first sample step in dB against
+the file's typical sample step, where about 0 to 10 dB is clean and 20 or more ticks; `slopeJumpDb`; `lastZeroCrossingPhase`). With the
+source WAV beside the file (or `--source <wav|dir>`) the source's seam is reported too and a delivered seam more than 3 dB worse
+is a `warnings` entry, not a failure, since a loop may start on a transient by design (`beeps compress` reports the same per file; Opus
+tends to smooth a seam, MP3 reproduces it). Song lint warns `song-loop-boundary-step` above 24 dB; add `--engines chromium,firefox,webkit` to decode it in real browsers with
 `decodeAudioData` at 48000 and 44100 Hz and report the frame delta and start lead against the source (exit 1 on a delta; an engine
 with no install or no Web Audio is reported as unavailable, never as a pass; `--require-engines` makes that a failure; install
 engines with `node scripts/setup.js --browsers firefox,webkit`). Opus decodes to the exact frame count and loops gaplessly in Chromium and Firefox;

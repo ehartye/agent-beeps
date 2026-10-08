@@ -113,6 +113,7 @@ function dcSuspects(patch: Patch): number[] {
   patch.layers.forEach((layer, i) => {
     const src = layer.source, ft = layer.filter?.type;
     if (layer.highpass !== undefined) return;
+    if (src.type === 'voice') return; // every output is a bandpass: no DC
     // White noise lowpassed low is as DC-prone as brown: a short burst of it is a few slow lumps with a nonzero mean.
     if (src.type === 'noise') { if ((src.color !== 'white' || (ft === 'lowpass' && layer.filter!.cutoff < 500)) && ft !== 'highpass' && ft !== 'bandpass') out.push(i); return; }
     if (!('pitch' in src) || src.type === 'modal' || ft === 'highpass' || ft === 'bandpass') return;

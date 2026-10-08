@@ -10,7 +10,7 @@ import { chromiumAvailable, openRenderHost, type RenderHost } from '../src/rende
 import { renderAndMeasure, type Rendered } from '../src/render/pipeline.ts';
 import { noteToHz } from '../runtime/engine/notes.js';
 
-const NAMES = ['alarm', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'explosion', 'hit', 'jump', 'land', 'laser', 'no', 'pickup',
+const NAMES = ['alarm', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-yip', 'explosion', 'hit', 'jump', 'land', 'laser', 'no', 'pickup',
   'powerdown', 'powerup', 'ui-click', 'ui-hover', 'whoosh'];
 
 const all = loadArchetypes();
