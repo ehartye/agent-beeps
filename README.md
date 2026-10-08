@@ -76,6 +76,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `store push/pull/status` | the content-addressed audio store (one tar per asset, named by input hash, immutable): a `dir:` directory or GitHub `release:` assets |
 | `ci export <dir>` | vendor a zero-dependency `fetch.mjs`: `node fetch.mjs` materialises the audio from the store by hash and verifies it against the lock, no beeps, Chromium or ffmpeg |
 | `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
+| `player selftest [dir]` | write `<dir>/beeps-selftest/`: a static page that decodes a known 2 s loop (WAV control, Ogg Opus, MP3) through the vendored player's loader in a realtime and in 48000 and 44100 Hz offline contexts and prints frame delta and lead, with a copyable result; `--serve` serves it on the LAN to open on a real iPhone or Safari |
 
 Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
 exit non-zero.

@@ -11,7 +11,7 @@ import type { Scale } from '../schema/project.ts';
 
 export const RUNTIME_DIR = join(import.meta.dirname, '..', '..', 'runtime');
 
-const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
 
 export interface RenderOpts { seed?: number; variant?: number; trimDb?: number; scale?: Scale }
 export interface RenderItem { patch: Patch; opts: RenderOpts }

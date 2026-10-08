@@ -52,17 +52,19 @@ export const MP3_ONESHOT_TOLERANCE = 1152;
  * The encoder arguments between input and output. `beeps build` hashes them, so changing a flag here re-encodes every asset.
  * MP3: CBR with the Xing/LAME info frame (write_xing, on by default): the header carries encoder delay and padding so decoders trim them.
  * No `+bitexact`: it drops that delay from the header, and Firefox then decodes 1610 frames long (measured; Chromium reads it from the frames and is unaffected).
+ * `rate` is the sample rate of the encode and defaults to 48 kHz, the project rate: `compressBundle` passes the source WAV's own rate for MP3 so
+ * the file keeps the sidecar's `sampleRate` (a browser resamples any other rate to its context, which costs about 50 frames at the edges).
  * Opus: -vbr on keeps quiet passages cheap; -application audio is the music mode; bitexact keeps the bytes reproducible.
  */
-export function encoderArgs(codec: CompressFormat, kbps: number): string[] {
+export function encoderArgs(codec: CompressFormat, kbps: number, rate = 48000): string[] {
   return codec === 'mp3'
-    ? ['-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', '48000']
+    ? ['-map_metadata', '-1', '-c:a', 'libmp3lame', '-b:a', `${kbps}k`, '-write_xing', '1', '-id3v2_version', '0', '-ar', String(rate)]
     : ['-map_metadata', '-1', '-c:a', 'libopus', '-b:a', `${kbps}k`, '-vbr', 'on', '-application', 'audio', '-ar', '48000', '-fflags', '+bitexact', '-flags:a', '+bitexact'];
 }
 
-export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number): void {
+export function encodeMp3(ffmpeg: string, wav: string, out: string, kbps: number, rate = 48000): void {
   mkdirSync(dirname(out), { recursive: true });
-  run(ffmpeg, ['-y', '-i', wav, ...encoderArgs('mp3', kbps), out]);
+  run(ffmpeg, ['-y', '-i', wav, ...encoderArgs('mp3', kbps, rate), out]);
 }
 
 export function encodeOpus(ffmpeg: string, wav: string, out: string, kbps: number): void {
@@ -210,12 +212,17 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
       const wav = join(src, file);
       const ogg = file.replace(/\.wav$/i, `.${fmt.ext}`);
       const rate = file === m.file && m.layers ? mixKbps : kbps;
-      (fmt.codec === 'mp3' ? encodeMp3 : encodeOpus)(ffmpeg, wav, join(out, ogg), rate);
       const source = readWav(readFileSync(wav));
+      // MP3 keeps the source rate; Opus is always 48 kHz, so a source at another rate is resampled and no longer matches its sidecar.
+      if (fmt.codec === 'mp3') encodeMp3(ffmpeg, wav, join(out, ogg), rate, source.sampleRate);
+      else encodeOpus(ffmpeg, wav, join(out, ogg), rate);
       const decoded = decodeChannels(ffmpeg, join(out, ogg), source.channels.length, source.sampleRate);
       const bytes = statSync(join(out, ogg)).size;
       // Variants of an sfx are one-shots; layers and the mix of a loop are loops.
-      checks.push({ file: ogg, kbps: rate, bytes, sourceBytes: statSync(wav).size, ...verify(source, decoded, m.loop, m.role, fmt.codec === 'mp3' && !m.loop ? MP3_ONESHOT_TOLERANCE : 0) });
+      const check = verify(source, decoded, m.loop, m.role, fmt.codec === 'mp3' && !m.loop ? MP3_ONESHOT_TOLERANCE : 0);
+      if (fmt.codec === 'opus' && source.sampleRate !== 48000) check.problems.push(`Ogg Opus is always 48000 Hz but the source is ${source.sampleRate} Hz: the encode is resampled and the sidecar's sampleRate no longer matches (render at 48000 Hz, or use --format mp3)`);
+      if (m.sampleRate !== source.sampleRate) check.problems.push(`the sidecar says ${m.sampleRate} Hz but the source WAV is ${source.sampleRate} Hz`);
+      checks.push({ file: ogg, kbps: rate, bytes, sourceBytes: statSync(wav).size, ...check });
       return ogg;
     };
     const files = new Set<string>([m.file, ...(m.variants ?? []).map(v => v.file), ...(m.layers ?? []).map(l => l.file)]);

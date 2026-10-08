@@ -12,7 +12,7 @@ import { readLock, type Lock } from './lock.ts';
 export interface StaticInfo { format: 'opus' | 'mp3' | 'wav' | 'unknown'; frames?: number; channels?: number; sampleRate?: number; encoder?: string; delay?: number; padding?: number }
 export interface StaticResult { info: StaticInfo; problems: string[] }
 
-export interface Expect { frames?: number; channels?: number; loop?: boolean }
+export interface Expect { frames?: number; channels?: number; sampleRate?: number; loop?: boolean }
 
 /** Static checks of one file: container headers, encoder id, and (given `expect.frames`) the frame count the headers imply. */
 export function staticCheck(path: string, expect: Expect = {}): StaticResult {
@@ -27,6 +27,7 @@ export function staticCheck(path: string, expect: Expect = {}): StaticResult {
     if (!r.eos) problems.push('the last Ogg page is not marked end-of-stream (truncated file)');
     if (r.preskip <= 0) problems.push('OpusHead pre-skip is 0');
     if (expect.channels !== undefined && r.channels !== expect.channels) problems.push(`${r.channels} channels, sidecar says ${expect.channels}`);
+    if (expect.sampleRate !== undefined && expect.sampleRate !== 48000) problems.push(`Ogg Opus always decodes at 48000 Hz, sidecar says ${expect.sampleRate} Hz`);
     // Decoders trim the pre-skip and stop at the final granule position, so this is the length they return.
     if (expect.frames !== undefined && frames !== expect.frames) problems.push(`Opus granule position implies ${frames} frames, sidecar says ${expect.frames}`);
     return { info: { format: 'opus', frames, channels: r.channels, sampleRate: 48000 }, problems };
@@ -42,6 +43,7 @@ export function staticCheck(path: string, expect: Expect = {}): StaticResult {
     if (/^Lavf/.test(r.encoder ?? '')) problems.push(`encoder id "${r.encoder}": written with -fflags +bitexact, which Firefox does not honour the encoder delay for`);
     const frames = r.frames * r.samplesPerFrame - (r.delay ?? 0) - (r.padding ?? 0);
     if (expect.channels !== undefined && r.channels !== expect.channels) problems.push(`${r.channels} channels, sidecar says ${expect.channels}`);
+    if (expect.sampleRate !== undefined && r.sampleRate !== expect.sampleRate) problems.push(`encoded at ${r.sampleRate} Hz, sidecar says ${expect.sampleRate} Hz: a browser resamples it to its context rate and the decode keeps about 50 extra frames`);
     const tolerance = expect.loop ? 1 : MP3_ONESHOT_TOLERANCE;
     if (expect.frames !== undefined && Math.abs(frames - expect.frames) > tolerance) problems.push(`MP3 tag implies ${frames} frames, sidecar says ${expect.frames}`);
     return { info: { format: 'mp3', frames, channels: r.channels, sampleRate: r.sampleRate, encoder: r.encoder, delay: r.delay, padding: r.padding }, problems };
@@ -50,6 +52,7 @@ export function staticCheck(path: string, expect: Expect = {}): StaticResult {
     if (buf.length < 44 || buf.toString('latin1', 0, 4) !== 'RIFF') return { info: { format: 'unknown' }, problems: ['not a RIFF WAV'] };
     const channels = buf.readUInt16LE(22), bits = buf.readUInt16LE(34), sampleRate = buf.readUInt32LE(24), data = buf.readUInt32LE(40);
     const frames = Math.floor(data / (channels * (bits / 8)));
+    if (expect.sampleRate !== undefined && sampleRate !== expect.sampleRate) problems.push(`WAV is ${sampleRate} Hz, sidecar says ${expect.sampleRate} Hz`);
     if (data + 44 > buf.length) problems.push('WAV data chunk is longer than the file');
     if (expect.frames !== undefined && frames !== expect.frames) problems.push(`WAV has ${frames} frames, sidecar says ${expect.frames}`);
     return { info: { format: 'wav', frames, channels, sampleRate }, problems };
@@ -62,9 +65,9 @@ export function sidecarExpectations(rel: string, m: ExportManifest): Map<string,
   const dir = posix.dirname(rel), at = (f: string) => posix.join(dir, f);
   const frames = Math.round(m.durationSec * m.sampleRate);
   const out = new Map<string, Expect>();
-  out.set(at(m.file), { frames, channels: m.channels, loop: m.loop });
-  for (const l of m.layers ?? []) out.set(at(l.file), { frames, channels: m.channels, loop: m.loop });
-  for (const v of m.variants ?? []) if (!out.has(at(v.file))) out.set(at(v.file), { channels: m.channels, loop: m.loop });
+  out.set(at(m.file), { frames, channels: m.channels, sampleRate: m.sampleRate, loop: m.loop });
+  for (const l of m.layers ?? []) out.set(at(l.file), { frames, channels: m.channels, sampleRate: m.sampleRate, loop: m.loop });
+  for (const v of m.variants ?? []) if (!out.has(at(v.file))) out.set(at(v.file), { channels: m.channels, sampleRate: m.sampleRate, loop: m.loop });
   return out;
 }
 
