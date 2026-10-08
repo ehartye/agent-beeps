@@ -154,6 +154,22 @@ describe('lintPatch', () => {
     expect(lintPatch(blocked, features(blocked, { dcOffset: 0.004 }), project).errors.find(e => e.rule === 'no-dc')?.message).not.toMatch(/fx\.dcBlock: true/);
   });
 
+  it('names the layer highpass for a short low burst, and clears layers that have one', () => {
+    const burst = patch({
+      schema: 'beeps/patch@1', name: 'thud', family: 'foley', duration: 0.1,
+      layers: [
+        { source: { type: 'osc', wave: 'sine', pitch: 70 }, amp: { attack: 0.004, decay: 0.09 } },
+        { source: { type: 'noise', color: 'white' }, amp: { attack: 0.004, decay: 0.09 }, filter: { type: 'lowpass', cutoff: 300, resonanceDb: 0 } },
+      ],
+    });
+    const msg = (p: typeof burst) => lintPatch(p, features(p, { dcOffset: 0.004 }), project).errors.find(e => e.rule === 'no-dc')!.message;
+    expect(msg(burst)).toMatch(/likely layers: 0, 1\)/);
+    expect(msg(burst)).toMatch(/set \/layers\/0\/highpass to 42 /);
+    expect(msg(burst)).toMatch(/set \/layers\/1\/highpass to 40 /);
+    const fixed = patch({ ...burst, layers: burst.layers.map(l => ({ ...l, highpass: 40 })) });
+    expect(msg(fixed)).not.toMatch(/likely layers/);
+  });
+
   it('always lists the patch judgement rules', () => {
     const p = coin();
     const judgement = loadRules().filter(r => r.check === 'judgement' && r.appliesTo === 'patch').map(r => r.id);

@@ -68,6 +68,9 @@ Songs pitch-shift it; the formants do not move. New type: existing patches rende
 - `amp {attack, decay, sustain 0-1, release}`: linear attack, exponential decay toward sustain.
 - `filter`: `lowpass`/`highpass` take `cutoff` and `resonanceDb`; `bandpass`/`notch`/`peaking` take
   `cutoff`, `q` (and `gainDb` for peaking). Optional `env {to, time}` sweeps the cutoff.
+- `highpass` (Hz, 10-2000): an optional second filter after the amp envelope (resonance 0), so a
+  lowpassed layer can also lose its sub-audible content (`filter` is one filter per layer). It is
+  the `no-dc` fix for a short low sine or lowpassed noise burst; absent, the graph is unchanged.
 - `lfo {target: pitch|gain|cutoff, rate, depth}` (pitch depth in cents, cutoff in Hz, gain 0-1).
 - `drive` 0-1 soft saturation; `pan` -1..1.
 

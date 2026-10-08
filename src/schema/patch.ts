@@ -112,6 +112,8 @@ const Layer = z.strictObject({
   pitchEnv: z.array(PitchPoint).max(16).optional(),
   amp: Amp,
   filter: Filter.optional(),
+  /** Opt-in highpass (Hz, resonance 0) after the amp envelope, so a lowpassed layer can also lose its sub-audible content (one `filter` per layer). Absent: the graph is unchanged. */
+  highpass: z.number().min(10).max(2000).optional(),
   lfo: z.strictObject({ target: z.enum(['pitch', 'gain', 'cutoff']), rate: z.number().positive().max(200), depth: z.number().min(0) }).optional(),
   drive: z.number().min(0).max(1).optional(),
   pan: z.number().min(-1).max(1).optional(),

@@ -46,6 +46,16 @@ export interface PlayerOptions {
   contextFactory?: () => AudioContext;
   fetcher?: (url: string) => Promise<FetchResponse>;
   seed?: number;
+  /**
+   * Keep decoded audio under about this many bytes (a stereo 48 kHz minute is ~23 MB): when a load would go over, the least recently used
+   * buffers nothing is playing, scheduled or crossfading are evicted, and load again on demand. Default: no limit, nothing is evicted.
+   * Playing audio is never evicted, so the real peak can exceed it (reported once as W_MEMORY_BUDGET).
+   */
+  memoryBudgetBytes?: number;
+  /** 'state': an adaptive song loads only the layers its current state plays and the rest when a state needs them (fade in at the loop's phase). Default 'all'. */
+  layerLoading?: 'all' | 'state';
+  /** Background loads from `prefetch()` that run at once. Default 2, 1 on phones and tablets. */
+  prefetchConcurrency?: number;
 }
 
 export interface PlayOptions {
@@ -82,6 +92,35 @@ export interface PlayerSnapshot {
   ambienceSlots: Record<string, { id: string }>;
 }
 
+/** Decoded-audio memory (`player.memory()`). */
+export interface MemoryStats {
+  /** The `memoryBudgetBytes` option, or null. */
+  budgetBytes: number | null;
+  /** Bytes of decoded buffers held now (frames x channels x 4). */
+  decodedBytes: number;
+  buffers: number;
+  /** Loads in flight or queued. */
+  loading: number;
+  /** Buffers held by something playing or about to play, and their bytes: these are never evicted. */
+  pinnedBuffers: number;
+  pinnedBytes: number;
+  /** Buffers dropped by the budget. */
+  evictions: number;
+  /** Buffers dropped by `unload()`. */
+  unloads: number;
+  /** Evicted buffers that were loaded again. */
+  reloads: number;
+  /** Reloads within 30 s of the eviction (each file also reports W_MEMORY_THRASH once). */
+  thrash: number;
+  /** Prefetches skipped because they would not fit the budget. */
+  skippedPrefetch: number;
+  /** The most decoded bytes held at once. */
+  peakBytes: number;
+}
+
+/** A song id, or an id with the adaptive state likely to come next. */
+export type PrefetchItem = string | { id: string; state?: string };
+
 export interface Player {
   unlock(): Promise<boolean>;
   play(id: string, o?: PlayOptions): PlayHandle | null;
@@ -95,6 +134,11 @@ export interface Player {
   setHidden(hidden: boolean): void;
   stopAll(fadeSec?: number): void;
   retry(): void;
+  /** Decode these in the background (capped concurrency, never ahead of a load being waited for) so a later play/music starts at once. Resolves how many files are decoded; never rejects. Queued until `unlock()` if called before it. */
+  prefetch(ids: PrefetchItem[]): Promise<number>;
+  /** Drop an asset's decoded buffers (files, variants, layers) that nothing is playing; they load again on demand. Returns the bytes freed now. */
+  unload(id: string): number;
+  memory(): MemoryStats;
   inspect(): PlayerSnapshot;
 }
 

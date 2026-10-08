@@ -56,6 +56,7 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
   }
   if (song.loop) {
     if (f.seamDb !== undefined && f.seamDb > c.num('song-loop-seam')) c.add('song-loop-seam', `level steps ${fmt(f.seamDb)} dB at the loop point (last 1.5 s ${fmt(f.seamEndLufs ?? NaN)} LUFS, first 1.5 s ${fmt(f.seamStartLufs ?? NaN)} LUFS): ${(f.seamEndLufs ?? 0) > (f.seamStartLufs ?? 0) ? 'the ending is denser than the opening' : 'the opening is denser than the ending'}; match them`, '/form');
+    if (f.seam && f.seam.boundaryStepDb > c.num('song-loop-boundary-step')) c.add('song-loop-boundary-step', `the sample step across the loop point is ${fmt(f.seam.boundaryStepDb)} dB over a typical step (slope jump ${fmt(f.seam.slopeJumpDb)} dB): a tick on restart unless the loop starts on a transient by design`, '/form');
     const len = range('song-loop-length');
     const long = song.tags.some(t => c.param<string[]>('song-loop-length', 'longTags').includes(t));
     const min = long ? len.long : len.short;

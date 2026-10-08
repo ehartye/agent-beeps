@@ -108,6 +108,16 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
   amp.gain.linearRampToValueAtTime(0, end);
   node = node.connect(amp);
 
+  // Opt-in second filter, after the envelope: the envelope is what leaves a short low burst with a
+  // nonzero mean, so a lowpassed layer can also lose its sub-audible content (`filter` is one filter).
+  if (layer.highpass !== undefined) {
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = layer.highpass;
+    hp.Q.value = 0;
+    node = node.connect(hp);
+  }
+
   if (layer.lfo) {
     const lfo = ctx.createOscillator();
     lfo.frequency.value = layer.lfo.rate;

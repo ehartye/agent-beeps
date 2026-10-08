@@ -19,8 +19,8 @@ it('vendors the player with every module it imports and a version header', async
       for (const i of imports) expect(existsSync(i), `${f} imports ${i}`).toBe(true);
     }
     const player = readFileSync(r.entry, 'utf8');
-    expect(player.split('\n')[0]).toMatch(/^\/\/ Vendored by agent-beeps \d+\.\d+\.\d+ \(player 3, engine \d+\)/);
-    expect(JSON.parse(readFileSync(join(r.root, 'VERSION.json'), 'utf8'))).toMatchObject({ player: '3' });
+    expect(player.split('\n')[0]).toMatch(/^\/\/ Vendored by agent-beeps \d+\.\d+\.\d+ \(player 4, engine \d+\)/);
+    expect(JSON.parse(readFileSync(join(r.root, 'VERSION.json'), 'utf8'))).toMatchObject({ player: '4' });
     const mod = await import(pathToFileURL(r.entry).href);
     expect(typeof mod.createPlayer).toBe('function');
   } finally {

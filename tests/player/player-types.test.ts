@@ -9,6 +9,6 @@ it('player.d.ts lists exactly the methods createPlayer returns', () => {
   const player: Player = createPlayer({ catalog: { assets: {} }, contextFactory: () => asCtx(new FakeContext()) as AudioContext });
   const slot: AmbienceOptions = { slot: 'weather', gainDb: -6, fadeSec: 4 };
   void player.ambience(null, slot);
-  const declared = ['unlock', 'play', 'music', 'ambience', 'setState', 'setLevel', 'duck', 'setEnabled', 'setHidden', 'stopAll', 'retry', 'inspect'].sort();
+  const declared = ['unlock', 'play', 'music', 'ambience', 'setState', 'setLevel', 'duck', 'setEnabled', 'setHidden', 'stopAll', 'retry', 'prefetch', 'unload', 'memory', 'inspect'].sort();
   expect(Object.keys(player).sort()).toEqual(declared);
 });

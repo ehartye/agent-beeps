@@ -2,11 +2,9 @@
 // the frame count and the start alignment with the source. An engine that trims or keeps codec padding differently (Firefox on a
 // +bitexact MP3, an MP3 with no Xing/Info tag, Vorbis in WebM) shows here as a non-zero delta or lead, not as a surprise in a game.
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
 import { readWav } from './audio/wav.ts';
 import { BeepsError } from './errors.ts';
-import { decodeChannels, findFfmpeg, MP3_ONESHOT_TOLERANCE } from './compress.ts';
-import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
+import { decodeChannels, findFfmpeg, MP3_ONESHOT_TOLERANCE, referenceFor } from './compress.ts';
 
 export const ENGINES = ['chromium', 'firefox', 'webkit'] as const;
 export type Engine = typeof ENGINES[number];
@@ -47,14 +45,6 @@ export function startLead(want: Float32Array, got: Float32Array, maxLead = MAX_L
     if (score[k + maxLead] >= best * 0.98 && (!found || Math.abs(k) < Math.abs(bestK))) { bestK = k; found = true; }
   }
   return bestK;
-}
-
-/** The sidecar of a delivered file and its source WAV: named by `source` (a file, or a directory holding <stem>.wav), else <stem>.wav beside it. */
-export function referenceFor(file: string, opts: { source?: string } = {}): { sidecar?: ExportManifest; sourceWav?: string } {
-  const sidecar = existsSync(`${file}.json`) ? ExportManifestSchema.parse(JSON.parse(readFileSync(`${file}.json`, 'utf8'))) : undefined;
-  const name = basename(file).replace(/\.[^.]+$/, '');
-  const candidates = [opts.source && join(opts.source, `${name}.wav`), opts.source, join(dirname(file), `${name}.wav`)].filter((p): p is string => !!p);
-  return { sidecar, sourceWav: candidates.find(p => /\.wav$/i.test(p) && existsSync(p)) };
 }
 
 /** The in-page decode. Runs inside the browser: no imports, no closure. */
