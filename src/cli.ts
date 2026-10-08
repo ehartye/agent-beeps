@@ -7,6 +7,7 @@ import { registerPatchCommands } from './commands/patches.ts';
 import { registerCapabilities } from './commands/capabilities.ts';
 import { registerAuditionCommands } from './commands/audition.ts';
 import { registerGenerateCommands } from './commands/generate.ts';
+import { registerFamilyCommands } from './commands/family.ts';
 import { registerSongCommands } from './commands/songs.ts';
 import { registerPlayerCommands } from './commands/player.ts';
 import { registerBuildCommands } from './commands/build.ts';
@@ -27,6 +28,7 @@ export function buildProgram(io: Io): Command {
   registerCapabilities(program, io);
   registerPatchCommands(program, io);
   registerGenerateCommands(program, io);
+  registerFamilyCommands(program, io);
   registerAuditionCommands(program, io);
   registerSongCommands(program, io);
   registerPlayerCommands(program, io);

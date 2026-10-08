@@ -54,6 +54,7 @@ export function registerCapabilities(program: Command, io: Io) {
           'render, look and export summaries carry features.peakLimited: the trim stopped at the true-peak ceiling, so the sound sits below its loudness target.',
           'Kit-level rules (family-consistency, masking-risk, key-consistency, one-no, priority-levels) run only in kit check; lint adds a notes line when a linted patch is in the kit or has family members.',
           'A repo that commits its patch files: beeps sync <dir> mirrors them into the project, then lint, kit add and kit check take the names.',
+          'Many similar patches: beeps family <template.json> --table rows.csv fills {{param}} placeholders and /pointer columns per row, validates each, and can --lint, --out a folder, or hand off --set; see the beeps-compose family reference.',
           'Hand-made variants authored as separate patches (names <stem>-<n> in one family, or a shared meta.variantOf) count toward variation-on-repeating.',
           'Every render writes a look.png (waveform, spectrogram, features): look at it; you cannot hear.',
         ],

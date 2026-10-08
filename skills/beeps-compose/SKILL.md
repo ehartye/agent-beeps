@@ -29,6 +29,10 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
 - Nothing fits? Write a patch (`references/patch-format.md`) and `beeps new sound.json`, or edit one
   atomically with `beeps batch ops.json [--dry-run]` (ops: create, set, remove, delete; a failure
   reports `operationIndex` and a JSON pointer).
+- Many similar patches (12 footsteps, a gap-fill kit)? Don't hand-type JSON: write one template with
+  `{{param}}` placeholders and a table, then `beeps family step.json --table surfaces.csv --lint
+  [--out audio/patches] [--set steps] [--dry-run]`. Rows are validated per patch (E_SCHEMA names the
+  row and pointer), output is deterministic, `--lint` prints the brief summary. See `references/family.md`.
 - Variations of one sound: `beeps mutate <name> --toward darker,shorter --count 4`; blend two with
   `beeps crossover <a> <b> --name <new> --t 0.5`.
 - Repo keeps its patches in a folder (e.g. `audio/patches/*.json`)? `beeps sync audio/patches` mirrors
