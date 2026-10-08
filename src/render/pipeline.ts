@@ -44,7 +44,20 @@ export const patchRenderKey = (patch: Patch, project: Project, seed: number, var
 
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
-export const targetFor = (patch: Patch, project: Project) => project.targetLoudness + (FAMILY_OFFSETS[patch.family] ?? 0);
+/** The family's offset: the project's `familyOffsets` entry if it has one, else the stock table's, else 0. */
+const familyOffset = (family: string, project: Project) => project.familyOffsets?.[family] ?? FAMILY_OFFSETS[family] ?? 0;
+
+/**
+ * Where the patch's loudest moment is trimmed to: the project target, the family offset, and the patch's own
+ * `meta.loudnessOffsetDb`. With none of the opt-in offsets set this is exactly target + stock offset, so render keys do not move.
+ */
+export const targetFor = (patch: Patch, project: Project) => project.targetLoudness + familyOffset(patch.family, project) + (patch.meta?.loudnessOffsetDb ?? 0);
+
+/** LU the patch's target sits away from the stock family target through project `familyOffsets` or `meta.loudnessOffsetDb`; undefined when neither moves it. */
+export function customLoudnessOffset(patch: Patch, project: Project): number | undefined {
+  const d = Math.round((familyOffset(patch.family, project) - (FAMILY_OFFSETS[patch.family] ?? 0) + (patch.meta?.loudnessOffsetDb ?? 0)) * 100) / 100;
+  return d === 0 ? undefined : d;
+}
 
 export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], { project, rendersDir }: { project: Project; rendersDir: string }): Promise<RenderOutcome[]> {
   const scale = project.scale;

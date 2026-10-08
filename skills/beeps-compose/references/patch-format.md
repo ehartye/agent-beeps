@@ -25,7 +25,8 @@
   and `dcBlock: true` (a one-pole 10 Hz DC blocker on the layer mix, before the effects, for `no-dc`;
   off by default, and patches without it render exactly as before; songs ignore it).
 - `variation`: `pitchCents`, `gainDb`, `variants` (1-16), `noRepeat`, `weights` (relative play odds per variant).
-- `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed, `description`, and `variantOf`
+- `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed, `description`,
+  `loudnessOffsetDb` (-30..12 LU added to the family's offset for this patch alone; absent: none), and `variantOf`
   (hand-made variants authored as separate patches share it; `<stem>-<n>` names in one family group
   without it).
 

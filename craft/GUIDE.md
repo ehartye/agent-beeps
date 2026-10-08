@@ -36,7 +36,9 @@ Layer when one method cannot do both jobs. A `hit` is often a `noise` transient 
   balance is the audition's job.
 - **Why trimmed targets and family offsets?** The default target is −18 LUFS max-momentary. UI
   sits lower (ui-hover −8 LU, ui-click and blip −6, confirm and no −3) and impacts sit higher
-  (hit +1, explosion +2), so a mix has a built-in hierarchy before anyone touches a fader.
+  (hit +1, explosion +2), so a mix has a built-in hierarchy before anyone touches a fader. Families
+  outside the table (footstep, foley) sit at the full target; `familyOffsets` in the project file
+  and a patch's `meta.loudnessOffsetDb` move them, e.g. footsteps 6 LU under a pick strike.
 - **Ceilings.** The delivered sound stays at or below −1 dBTP true peak (`true-peak-ceiling`, EBU R
   128) and has no clipped samples (`no-clipping`) or DC offset (`no-dc`). The limiter is a safety
   net. If it works hard, the sound's crest is wrong.
