@@ -39,6 +39,10 @@ Give each part its own register band. The `octave` argument sets where a chord o
 bass at octave 2, pad chords at 4 (at 3 only for thin, filtered pads; `spread` drops the root one
 octave further), arps and bells at 4-5, lead at 4-5, sparkle at 6. Parts that share a band need
 rhythmic gaps between them.
+A song retunes the instrument to every written note, so one built at 3300 Hz and written `D4`
+sounds at 293 Hz. Set the track's `fixed: true` to play it at its own pitch, `root` to name the
+note it sounds at as written, or `transpose` to shift it; lint `song-written-pitch` flags notes more
+than an octave from the root (song-format reference).
 
 ## 3. Write, check, fix
 

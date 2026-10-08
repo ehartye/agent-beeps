@@ -34,6 +34,10 @@ const Track = z.strictObject({
   keytrack: z.number().min(0).max(1).default(0),
   /** The note the instrument patch sounds at as written (default: its first pitched layer). */
   root: Note.optional(),
+  /** Semitones added to every note this track plays (the instrument sounds this far above the written note). */
+  transpose: z.number().min(-48).max(48).optional().describe('semitones the instrument sounds above the written note (default 0)'),
+  /** true: the instrument always sounds at its own pitch (plus transpose); written notes only time the hits. */
+  fixed: z.boolean().optional().describe('true: play the instrument at its own pitch whatever note is written; the notes only time the hits'),
   /** Seeded timing (up to 12 ms) and velocity (up to ±20%) looseness. */
   humanize: z.number().min(0).max(1).default(0),
   /** Stereo spread for chords: voices fan out across ±spread. */

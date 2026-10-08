@@ -167,6 +167,22 @@
       ]
     },
     {
+      "id": "song-written-pitch",
+      "statement": "A pitched instrument is written within an octave of its own root; farther, it is retuned so far that it no longer sounds as built.",
+      "value": 12,
+      "unit": "semitones",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "A song plays an instrument by shifting every pitched layer, envelope and glide by the distance between the written note and the instrument's root. An instrument built at 3300 Hz and written D4 sounds at 293 Hz; a drone built at A2 and written D4 plays a fourth-plus-octave away, and two layers tuned a hair apart for beating no longer beat as designed. The one octave bound is this plugin's.",
+      "sources": [
+        {
+          "title": "agent-beeps friction ledger: songs play the instrument at the written note",
+          "url": "https://github.com/ehartye/agent-beeps"
+        }
+      ]
+    },
+    {
       "id": "song-unused",
       "statement": "Every track and pattern is played somewhere in the form.",
       "check": "auto",

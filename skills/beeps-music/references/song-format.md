@@ -56,6 +56,25 @@ means a layer an octave below the written note, which counts toward that part's 
 reaches (a pluck with an octave-up layer shows `sounds` an octave higher at the top): it is not a
 transposition.
 
+### Which pitch the instrument plays
+
+A song retunes the instrument to each written note: every pitched layer, pitch envelope and glide
+moves by (written note - the track's `root`), where `root` defaults to the patch's first pitched
+layer. So an instrument built at 3300 Hz and written `D4` sounds at 293 Hz, and a drone built at
+`A2` and written `D4` is retuned 17 semitones up (two such layers no longer beat as built). Three track fields control it, none
+changes a song that does not set them:
+
+- `"fixed": true` plays the instrument at its own pitch whatever is written (a 3300 Hz chime stays
+  3300 Hz; the notes only time the hits). Pair a drone with `fixed` to stop it detuning.
+- `"root": "D4"` says which written note the patch sounds at as built; write around it and the
+  instrument follows the notes from there.
+- `"transpose": -12` moves the track that many semitones from where it would sound. A pattern's
+  own `transpose` shifts that pattern only.
+
+`beeps song check` flags a track whose written notes sit more than an octave from the root it
+plays from (`song-written-pitch`), with these fixes. `range`/`sounds` follow `fixed`, `root` and
+`transpose`.
+
 ## Tracks
 
 | field | meaning |
@@ -66,6 +85,8 @@ transposition.
 | `sends.reverb`, `sends.delay` | send levels (dB) to the master reverb/delay |
 | `keytrack` | 0-1: how far instrument filter cutoffs follow the note |
 | `root` | the note the instrument patch sounds at as written (default: its first pitched layer) |
+| `transpose` | semitones (-48..48) the track sounds above the written note; default 0 |
+| `fixed` | `true`: the instrument always sounds at its own pitch (plus `transpose`); written notes only time the hits |
 | `humanize` | 0-1: seeded timing (to 12 ms) and velocity (to ±20%) looseness |
 | `spread` | 0-1: chord voices fan across the stereo field |
 | `swing` | this track's swing (overrides the song's) |
