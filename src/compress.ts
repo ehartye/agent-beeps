@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
+import { seamMetrics, seamWarning, type SeamMetrics } from './measure/seam.ts';
 import { BeepsError } from './errors.ts';
 import { readWav } from './audio/wav.ts';
 import { bundleDir } from './bundle.ts';
@@ -144,7 +145,9 @@ export interface FileCheck {
   file: string; kbps: number; bytes: number; sourceBytes: number;
   frames: number; wantFrames: number; frameDelta: number; snrDb: number; envelopeCorrelation: number;
   /** Loops only. */
-  wrap?: { seamExcessDb: number; sourceSeamExcessDb: number; levelStepDb: number; sourceLevelStepDb: number };
+  wrap?: { seamExcessDb: number; sourceSeamExcessDb: number; levelStepDb: number; sourceLevelStepDb: number; seam: SeamMetrics; sourceSeam: SeamMetrics };
+  /** Not failures: a loop may start on a transient by design. */
+  warnings?: string[];
   problems: string[];
 }
 
@@ -167,12 +170,15 @@ export function verify(source: { channels: Float32Array[]; sampleRate: number },
   const envelope = envelopeCorrelation(source.channels, decoded, source.sampleRate);
   if (role === 'music' ? snr < 8 : envelope < 0.8) problems.push(role === 'music' ? `decode lines up with the source at only ${snr.toFixed(1)} dB` : `decoded loudness over time follows the source at only ${envelope.toFixed(2)}`);
   let wrap: FileCheck['wrap'];
+  const warnings: string[] = [];
   if (loop) {
     const a = wrapReport(source.channels, source.sampleRate), b = wrapReport(decoded, source.sampleRate);
-    wrap = { seamExcessDb: round(b.seamExcessDb), sourceSeamExcessDb: round(a.seamExcessDb), levelStepDb: round(b.levelStepDb), sourceLevelStepDb: round(a.levelStepDb) };
+    wrap = { seamExcessDb: round(b.seamExcessDb), sourceSeamExcessDb: round(a.seamExcessDb), levelStepDb: round(b.levelStepDb), sourceLevelStepDb: round(a.levelStepDb), seam: seamMetrics(decoded), sourceSeam: seamMetrics(source.channels) };
+    const warn = seamWarning(wrap.sourceSeam, wrap.seam);
+    if (warn) warnings.push(warn);
     if (b.seamExcessDb > 6 && b.seamExcessDb > a.seamExcessDb + 3) problems.push(`the loop wrap ticks after encoding: ${b.seamExcessDb.toFixed(1)} dB over the loudest of the rest (source ${a.seamExcessDb.toFixed(1)} dB)`);
   }
-  return { frames, wantFrames: want, frameDelta: frames - want, snrDb: round(snr), envelopeCorrelation: round(envelope), ...(wrap ? { wrap } : {}), problems };
+  return { frames, wantFrames: want, frameDelta: frames - want, snrDb: round(snr), envelopeCorrelation: round(envelope), ...(wrap ? { wrap } : {}), ...(warnings.length ? { warnings } : {}), problems };
 }
 const round = (x: number) => Math.round(x * 100) / 100;
 
@@ -228,11 +234,20 @@ export function compressBundle(srcDir: string, outDir: string, opts: CompressOpt
   bundleDir(out);
   const total = checks.reduce((s, c) => s + c.bytes, 0), sourceTotal = checks.reduce((s, c) => s + c.sourceBytes, 0);
   const problems = checks.filter(c => c.problems.length).map(c => ({ file: c.file, problems: c.problems }));
-  return { out, ffmpeg, files: checks.length, bytes: total, sourceBytes: sourceTotal, assets, checks, problems };
+  const warnings = checks.filter(c => c.warnings?.length).map(c => ({ file: c.file, warnings: c.warnings! }));
+  return { out, ffmpeg, files: checks.length, bytes: total, sourceBytes: sourceTotal, assets, checks, problems, warnings };
+}
+
+/** The sidecar of a delivered file and its source WAV: named by `source` (a file, or a directory holding <stem>.wav), else <stem>.wav beside it. */
+export function referenceFor(file: string, opts: { source?: string } = {}): { sidecar?: ExportManifest; sourceWav?: string } {
+  const sidecar = existsSync(`${file}.json`) ? ExportManifestSchema.parse(JSON.parse(readFileSync(`${file}.json`, 'utf8'))) : undefined;
+  const name = basename(file).replace(/\.[^.]+$/, '');
+  const candidates = [opts.source && join(opts.source, `${name}.wav`), opts.source, join(dirname(file), `${name}.wav`)].filter((p): p is string => !!p);
+  return { sidecar, sourceWav: candidates.find(p => /\.wav$/i.test(p) && existsSync(p)) };
 }
 
 /** Check already-encoded files (any container ffmpeg decodes) against their sidecars: frame count and loop wrap. */
-export function checkLoops(paths: string[]) {
+export function checkLoops(paths: string[], { source }: { source?: string } = {}) {
   const ffmpeg = findFfmpeg();
   return paths.map(p => {
     const side = existsSync(`${p}.json`) ? ExportManifestSchema.parse(JSON.parse(readFileSync(`${p}.json`, 'utf8'))) : undefined;
@@ -245,6 +260,16 @@ export function checkLoops(paths: string[]) {
     if (want !== undefined && Math.abs(frames - want) > 1) problems.push(`${frames} frames, sidecar says ${want}`);
     if (w.seamExcessDb > 6) problems.push(`the wrap ticks: ${w.seamExcessDb.toFixed(1)} dB over the loudest 5 ms of the rest`);
     if (Math.abs(w.levelStepDb) > 3) problems.push(`the loop ends ${w.levelStepDb > 0 ? 'quieter' : 'louder'} than it starts by ${Math.abs(w.levelStepDb).toFixed(1)} dB`);
-    return { file: p, frames, ...(want !== undefined ? { wantFrames: want } : {}), seamExcessDb: round(w.seamExcessDb), levelStepDb: round(w.levelStepDb), problems };
+    const seam = seamMetrics(decoded), warnings: string[] = [];
+    const isLoop = side ? side.loop : true;
+    // With the source WAV beside it (or named by `source`), the delivered seam is compared with the source's.
+    const { sourceWav } = referenceFor(p, { source });
+    let sourceSeam: SeamMetrics | undefined;
+    if (sourceWav && isLoop) {
+      sourceSeam = seamMetrics(readWav(readFileSync(sourceWav)).channels);
+      const warn = seamWarning(sourceSeam, seam);
+      if (warn) warnings.push(warn);
+    }
+    return { file: p, frames, ...(want !== undefined ? { wantFrames: want } : {}), seamExcessDb: round(w.seamExcessDb), levelStepDb: round(w.levelStepDb), ...(isLoop ? { seam } : {}), ...(sourceSeam ? { sourceSeam } : {}), ...(warnings.length ? { warnings } : {}), problems };
   });
 }

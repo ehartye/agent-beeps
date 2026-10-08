@@ -102,6 +102,22 @@
       ]
     },
     {
+      "id": "song-loop-boundary-step",
+      "statement": "A loop song's last sample meets its first within 24 dB of the file's typical sample-to-sample step (a clean seam is about 0 to 10 dB; a tick is 30 dB or more). A loop that starts on a transient by design may exceed it.",
+      "value": 24,
+      "unit": "dB",
+      "check": "auto",
+      "severity": "warn",
+      "appliesTo": "song",
+      "rationale": "The 24 dB bound is this plugin's, set from synthetic ticks against clean periodic loops. It complements song-loop-seam, which compares levels over 1.5 s: a restart can click with matched levels. The delivered files are compared with the source by beeps loopcheck and beeps compress (3 dB worse warns).",
+      "sources": [
+        {
+          "title": "Web Audio API 1.1, AudioBufferSourceNode loop: a loop restarts from the buffer's last sample to its first with no crossfade",
+          "url": "https://www.w3.org/TR/webaudio-1.1/#AudioBufferSourceNode"
+        }
+      ]
+    },
+    {
       "id": "song-loop-length",
       "statement": "A loop song lasts at least 60 s when tagged exploration, ambient or level, and at least 20 s otherwise.",
       "value": {
