@@ -1,6 +1,6 @@
 // tests/player/compress.test.ts
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeWav } from '../../src/audio/wav.ts';
@@ -35,6 +35,23 @@ describe('wrapReport', () => {
     const a = loopChannels(1);
     expect(alignmentSnrDb(a, a)).toBeGreaterThan(100);
     expect(alignmentSnrDb(a, a.map(c => { const d = new Float32Array(c.length); d.set(c.subarray(0, c.length - 2000), 2000); return d; }))).toBeLessThan(6);
+  });
+});
+
+describe.skipIf(!hasFfmpeg)('loopcheck seam metrics', () => {
+  it('reports the delivered seam and warns when it is worse than the source by 3 dB', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-seam-')), src = join(dir, 'src');
+    mkdirSync(src);
+    const clean = loopChannels(2);
+    writeFileSync(join(src, 'theme.wav'), writeWav(clean, SR));
+    const ticked = clean.map(c => { const d = Float32Array.from(c); d[d.length - 1] = 0.9; return d; });
+    writeFileSync(join(dir, 'theme.wav'), writeWav(ticked, SR));
+    const [worse] = checkLoops([join(dir, 'theme.wav')], { source: src });
+    expect(worse.seam!.boundaryStepDb).toBeGreaterThan(worse.sourceSeam!.boundaryStepDb + 3);
+    expect(worse.warnings![0]).toMatch(/more than the source/);
+    const [same] = checkLoops([join(src, 'theme.wav')]);
+    expect(same.warnings).toBeUndefined();
+    expect(same.seam!.boundaryStepDb).toBeLessThan(10);
   });
 });
 

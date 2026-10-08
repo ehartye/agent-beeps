@@ -4,6 +4,7 @@
 import { fft, hann } from './fft.ts';
 import { integrated, samplePeakDb, toLufs, truePeakDb, weightedPower } from './loudness.ts';
 import { centroid, flatness, logBands, type Spectrum } from './spectral.ts';
+import { seamMetrics, type SeamMetrics } from './seam.ts';
 import { clipperCurve } from '../../runtime/engine/fx.js';
 
 export interface SongSection { name: string; start: number; end: number }
@@ -23,6 +24,8 @@ export interface SongFeatures {
   seamDb?: number;
   seamStartLufs?: number;
   seamEndLufs?: number;
+  /** Loop songs: how the last sample meets the first (boundary step and slope jump in dB against the file's typical step, last zero-crossing phase). */
+  seam?: SeamMetrics;
   delivered?: { integratedLufs: number; truePeakDb: number; clippedSamples: number; peakLimited?: boolean };
 }
 
@@ -121,6 +124,7 @@ export function measureSong(channels: Float32Array[], sr: number, sections: Song
     out.seamStartLufs = r(start, 1);
     out.seamEndLufs = r(end, 1);
     out.seamDb = r(Math.abs(end - start), 1);
+    out.seam = seamMetrics(channels);
   }
   return out;
 }

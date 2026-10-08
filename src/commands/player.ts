@@ -49,17 +49,17 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; mixKbps?: number; format: string; strict: boolean }) => {
       if (o.format !== 'opus' && o.format !== 'mp3') throw new BeepsError('E_USAGE', `--format must be opus or mp3, not ${o.format}`);
       const r = compressBundle(dir, outDir, { format: o.format, kbps: { ...(o.musicKbps ? { music: o.musicKbps } : {}), ...(o.ambienceKbps ? { ambience: o.ambienceKbps } : {}), ...(o.sfxKbps ? { sfx: o.sfxKbps } : {}), ...(o.mixKbps ? { mix: o.mixKbps } : {}) } });
-      io.emit({ ...r, checks: o.strict ? r.checks.filter(c => c.problems.length || c.wrap) : r.checks });
+      io.emit({ ...r, checks: o.strict ? r.checks.filter(c => c.problems.length || c.warnings?.length || c.wrap) : r.checks });
       if (r.problems.length && o.strict) process.exitCode = 1;
     });
   program.command('loopcheck <files...>')
-    .description('decode encoded audio (ogg, mp3, wav...) and report its frame count against the sidecar and how its loop wraps: click size and level step; --engines also decodes it in real browsers')
+    .description('decode encoded audio (ogg, mp3, wav...) and report its frame count against the sidecar and how its loop wraps: click size, level step and seam metrics; --engines also decodes it in real browsers')
     .option('--engines <list>', 'also decode each file with OfflineAudioContext.decodeAudioData in these Playwright engines (chromium,firefox,webkit) at 48000 and 44100 Hz and report frame delta and start lead against the source')
     .option('--source <path>', 'the source WAV, or a directory of them, for the lead (default: <name>.wav beside the file, else the file as ffmpeg decodes it)')
     .option('--require-engines', 'exit non-zero when a requested engine is not installed or has no Web Audio, instead of reporting it as skipped')
     .action(async (files: string[], o: { engines?: string; source?: string; requireEngines?: boolean }) => {
       const engines = o.engines ? parseEngines(o.engines) : undefined;
-      const r = checkLoops(files.map(f => resolve(f)));
+      const r = checkLoops(files.map(f => resolve(f)), { source: o.source ? resolve(o.source) : undefined });
       const engineReports = engines ? await engineCheck(files.map(f => resolve(f)), engines, { source: o.source ? resolve(o.source) : undefined }) : undefined;
       io.emit({ files: r, ...(engineReports ? { engines: engineReports } : {}) });
       const engineFailed = engineReports?.some(e => e.status === 'error' || (o.requireEngines && e.status !== 'ok') || e.files.some(f => f.results.some(x => x.problems.length)));
