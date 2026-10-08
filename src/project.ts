@@ -57,7 +57,7 @@ export function initProject(root: string, overrides: Partial<Pick<Project, 'targ
   if (!existsSync(paths.projectFile)) writeFileSync(paths.projectFile, JSON.stringify(project, null, 2) + '\n');
   if (!existsSync(paths.kit)) writeFileSync(paths.kit, JSON.stringify({ schema: 'beeps/kit@1', sounds: [] }, null, 2) + '\n');
   const ignore = join(paths.dir, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, 'renders/\ncache/\n');
+  if (!existsSync(ignore)) writeFileSync(ignore, 'renders/\ncache/\ndelivery/\n');
   return openProject(paths.root);
 }
 

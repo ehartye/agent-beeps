@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delivery formats · agent-beeps</title>
+  <link rel="stylesheet" href="/runtime/audition/style.css">
+  <link rel="stylesheet" href="/runtime/audition/delivery.css">
+</head>
+<body>
+  <main class="deck">
+    <header class="plate">
+      <div>
+        <div class="brand">agent-beeps · listening booth · delivery formats</div>
+        <h1 class="prompt" id="title">Loading</h1>
+      </div>
+      <div class="meta" id="meta"></div>
+    </header>
+
+    <p class="howto" id="howto">Each sound has lettered versions. Tap a letter to switch while it plays: it carries on from the same moment. Rate every letter from 1 (bad) to 5 (as good as the best), flag any that sound worse, then tap Reveal at the end. One of the letters is the untouched original, one is deliberately dull.</p>
+
+    <section class="device" aria-label="This device">
+      <h2>This device</h2>
+      <div id="device" class="facts">Checking what this device can decode</div>
+    </section>
+
+    <div id="items"></div>
+
+    <section class="album-note" id="finish">
+      <label for="overall">Anything else about these versions?</label>
+      <textarea id="overall" rows="3" placeholder="Where did you hear a difference, and where did you not?"></textarea>
+      <div class="row"><button class="toggle" id="reveal" disabled>Reveal which was which</button><span class="saved" id="status" aria-live="polite"></span></div>
+    </section>
+
+    <section id="revealed" hidden aria-label="Reveal"></section>
+  </main>
+  <script type="module" src="/runtime/audition/delivery.js"></script>
+</body>
+</html>
