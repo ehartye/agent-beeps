@@ -149,8 +149,13 @@ Songs never snap to the project scale: the notes you write are the notes that pl
 - `node <plugin-root>/scripts/format-song.mjs <song.json>` reformats a song to one line per
   progression, track, pattern and section (readable diffs; content unchanged).
 - `beeps song stems <name>` renders every track alone at the full mix's trim and prints each one's
-  level against the mix (`vsMixLu`), brightness, low-end share and per-section level. It flags parts
-  more than 18 LU under the mix (inaudible) and writes stem WAVs (`--out dir`) for layered playback.
+  level against the mix (`vsMixLu`), peak against the mix's (`peakVsMixDb`) and crest, brightness, low-end share and per-section
+  level. It flags parts more than 18 LU under the mix whose peak is also more than 12 dB under (inaudible); a short, peaky part
+  (a hat) that is far under by integrated level but near the mix's peak gets a `notes` entry instead, since it is heard as an
+  accent and chasing it with gain buries the rest. It writes stem WAVs (`--out dir`) for layered playback.
+- `beeps song export <name> --wav <path> --trim-tail -60` (non-loop songs, no `--layers`) drops the end after the last sample at or
+  above that level with a 10 ms fade, so an opening that renders its whole reverb tail ends where it is audible; the sidecar
+  length is the trimmed one and the result reports `trimmedTailSec`.
 
 ## Adaptive layers (for the game player)
 
