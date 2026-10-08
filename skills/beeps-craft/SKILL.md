@@ -34,6 +34,12 @@ judgement are listed on every run: apply them yourself, never skip them silently
 - Never set loudness in a patch. The renderer trims to the project target by family (UI quieter,
   impacts fuller). Very spiky sounds are trimmed only until their true peak reaches -1.5 dBTP and sit
   below target on purpose (`peakLimited`).
+- Families the stock table does not know (footstep, foley, rustle) land at the full target, as loud
+  as a strike. Set them under it in `.agent-beeps/project.json`:
+  `"familyOffsets": {"footstep": -6, "foley": -4}` (LU against `targetLoudness`; an entry replaces
+  the stock offset for that family), or give one patch `meta.loudnessOffsetDb`. Both default to
+  nothing, so existing renders keep their keys; a moved sound's export sidecar carries
+  `loudnessOffsetDb` (already in the samples).
 - A gain value is not a loudness: a narrow bandpass passes a sliver of its source. Measure.
 - Short, spiky sounds (a boom whose thump sets both the peak and the loudness) are often
   `peakLimited` (`render` and `measure` show it): the trim already stopped at the peak ceiling, so

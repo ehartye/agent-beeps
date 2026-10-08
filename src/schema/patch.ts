@@ -145,6 +145,8 @@ export const PatchSchema = z.strictObject({
     priority: z.number().int().min(1).max(5).default(3),
     intent: z.enum(['click', 'oneshot', 'bed']).default('oneshot'),
     description: z.string().optional(),
+    /** Loudness offset (LU) for this patch alone, added to its family's offset: a soft variant of a family that otherwise lands at the same level. Absent: no change. */
+    loudnessOffsetDb: z.number().min(-30).max(12).optional(),
     /** Hand-made variants authored as separate patches: siblings share this value (and the family). Names like <stem>-<n> group without it. */
     variantOf: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes').optional(),
   }).optional(),

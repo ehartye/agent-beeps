@@ -6,7 +6,7 @@ import { basename, dirname } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { readWav } from './audio/wav.ts';
 import { compileSong } from '../runtime/engine/sequence.js';
-import { renderAndMeasure } from './render/pipeline.ts';
+import { customLoudnessOffset, renderAndMeasure } from './render/pipeline.ts';
 import { renderSong } from './render/song-pipeline.ts';
 import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, stateTrim } from './render/layers.ts';
 import { resolveInstruments } from './music.ts';
@@ -31,6 +31,11 @@ function deliver(src: string, dest: string, post: ExportPost = {}): PostResult |
   return out;
 }
 
+const offsetExtra = (patch: Patch, p: OpenProject) => {
+  const loudnessOffsetDb = customLoudnessOffset(patch, p.project);
+  return loudnessOffsetDb === undefined ? {} : { loudnessOffsetDb };
+};
+
 /** Every variant 0..n-1 of a patch as `<stem>.<i>.wav`, and (with `manifest`) one sidecar `<dest>.json` listing them. */
 export async function exportPatchVariants(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; n: number; role: ExportRole; manifest: boolean; post?: ExportPost }) {
   const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), { project: p.project, rendersDir: p.paths.renders });
@@ -41,7 +46,7 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
   const wavs = ok.map((r, i) => { const f = `${stem}.${i}.wav`; posts.push(deliver(r.wavPath, f, o.post)); return f; });
   const weights = patch.variation?.weights;
   const manifest = o.manifest
-    ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true }, `${o.dest}.json`)
+    ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true, ...offsetExtra(patch, p) }, `${o.dest}.json`)
     : undefined;
   return { first: ok[0], wavs, manifest, posts };
 }
@@ -52,7 +57,7 @@ export async function exportPatchOne(host: RenderHost, p: OpenProject, patch: Pa
   if (!r.ok) throw new BeepsError('E_RENDER', r.error);
   mkdirSync(dirname(o.dest), { recursive: true });
   const post = deliver(r.wavPath, o.dest, o.post);
-  const manifest = o.manifest ? writeExportManifest(o.dest, r, o.role) : undefined;
+  const manifest = o.manifest ? writeExportManifest(o.dest, r, o.role, offsetExtra(patch, p)) : undefined;
   return { rendered: r, manifest, post };
 }
 

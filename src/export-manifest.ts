@@ -24,6 +24,8 @@ export const ExportManifestSchema = z.strictObject({
   // Optional, additive: sidecars written before these existed stay valid.
   // 1 is most important, 5 least (FMOD convention, as meta.priority and the kit)
   priority: z.number().int().min(1).max(5).optional(),
+  /** LU this sound was trimmed away from its family's stock loudness (project `familyOffsets`, patch `meta.loudnessOffsetDb`); already in the samples, so informational: a player's gain table can start from it. Absent when neither is set. */
+  loudnessOffsetDb: z.number().optional(),
   variants: z.array(Variant).min(1).optional(),
   noRepeat: z.boolean().optional(),
   bpm: z.number().positive().optional(),

@@ -11,6 +11,8 @@ export const ProjectSchema = z.object({
   }).prefault({}),
   /** Max momentary loudness (LUFS) that one-shots are trimmed to. */
   targetLoudness: z.number().min(-40).max(-6).default(-18),
+  /** Loudness offsets (LU re targetLoudness) by patch family, over the stock table: footsteps and foley sit under strikes. A family not listed keeps its stock offset (0 for families the stock table does not know). */
+  familyOffsets: z.record(z.string(), z.number().min(-30).max(12)).optional(),
   /** Integrated loudness (LUFS) songs are trimmed to: under the one-shots, so SFX read over music. */
   musicLoudness: z.number().min(-40).max(-6).default(-20),
   sampleRate: z.literal(48000).default(48000),

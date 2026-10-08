@@ -59,6 +59,22 @@ describe('export manifests', () => {
     expect(ambienceManifest).not.toHaveProperty('priority');
   });
 
+  it.skipIf(!hasChromium)('carries a moved loudness target in the sidecar, and leaves the field out when none is set', () => {
+    const p = project();
+    savePatch(p, { ...coin(), family: 'footstep', name: 'step' });
+    const plain = run(p.paths.root, 'export', 'step', '--wav', 'audio/plain.wav', '--seed', '7', '--manifest');
+    expect(plain.status, plain.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(plain.data.manifest, 'utf8'))).not.toHaveProperty('loudnessOffsetDb');
+    const file = join(p.paths.root, '.agent-beeps', 'project.json');
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), familyOffsets: { footstep: -6 } }));
+    const soft = run(p.paths.root, 'export', 'step', '--wav', 'audio/soft.wav', '--seed', '7', '--manifest');
+    expect(soft.status, soft.stderr).toBe(0);
+    const manifest = JSON.parse(readFileSync(soft.data.manifest, 'utf8'));
+    expect(manifest.loudnessOffsetDb).toBe(-6);
+    expect(manifest.renderKey).not.toBe(JSON.parse(readFileSync(plain.data.manifest, 'utf8')).renderKey);
+    expect(manifest.loudness.lufs).toBeLessThan(JSON.parse(readFileSync(plain.data.manifest, 'utf8')).loudness.lufs - 4);
+  });
+
   it.skipIf(!hasChromium).each([false, true])('exports song identity, delivered measurements and actual loop state (loop=%s)', loop => {
     const p = project();
     writeFileSync(join(p.paths.root, 'garden.json'), JSON.stringify(songInput({ title: loop ? 'Small Worlds' : '', description: 'A quiet garden under glass.', loop })));

@@ -93,6 +93,8 @@ for patches and `music` for songs; `--role ambience` overrides the role and requ
 Only songs authored with `loop: true` are labeled as loops. The sidecar marks
 `normalizationAlreadyApplied: true`: play the WAV at its delivered level, without reapplying
 the render's trim. Loudness names its metric (`momentary-max` for patches, `integrated` for songs).
+A sound whose loudness target was moved off its family's stock offset (project `familyOffsets`, patch
+`meta.loudnessOffsetDb`) carries `loudnessOffsetDb` (LU, already applied in the samples; informational).
 Keep each WAV and its sidecar together when moving them. Without `--manifest`, export is unchanged.
 Repeat `--manifest` when updating a previously manifested WAV; an ordinary export leaves any existing sidecar untouched.
 

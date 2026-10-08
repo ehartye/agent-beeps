@@ -89,7 +89,9 @@ args array and no shell.
 ## Never
 
 - Put a loudness literal in a patch: levels are trimmed to the project target (-18 LUFS by default,
-  per-family offsets). Use `gainDb` only for balance between layers.
+  per-family offsets). Use `gainDb` only for balance between layers. To seat a family under the
+  rest (footsteps, foley), set `familyOffsets` in `.agent-beeps/project.json` or one patch's
+  `meta.loudnessOffsetDb`, not a layer gain.
 - Use `q` on a lowpass/highpass (`resonanceDb`) or `resonanceDb` on a bandpass (`q`).
 - Hand the owner a single sound as "done". Offer a set and audition it.
 
