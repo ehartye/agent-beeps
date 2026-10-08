@@ -21,6 +21,9 @@ judgement are listed on every run: apply them yourself, never skip them silently
   the instrument: 50 ms hat, 300 ms+ cymbal).
 - Blips, coins, lasers, jumps, alarms: `osc` with pitch envelopes. FM for growl and bell-like bite.
 - Whooshes, impacts, rumble: `noise` through swept filters; layer a low sine thump for weight.
+- Beds and ambiences that should feel wide (wind, rain, room tone): `stereo: true` on the `noise` or
+  `grains` source decorrelates left from right with seeded noise. Mono noise measures width ~0 however
+  it is panned. It costs mono compatibility only when both channels are summed (still equal power).
 
 ## Level, peaks, key
 

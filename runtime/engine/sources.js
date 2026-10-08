@@ -27,13 +27,51 @@ const noiseCache = new WeakMap();
  * @param {BaseAudioContext} ctx
  * @param {'white' | 'pink' | 'brown'} color
  * @param {number} seed
+ * @param {number} [width] stereo decorrelation 0..1 (0: the mono buffer, as always)
  */
-function noiseBuffer(ctx, color, seed) {
+function noiseBuffer(ctx, color, seed, width = 0) {
   let perCtx = noiseCache.get(ctx);
   if (!perCtx) { perCtx = new Map(); noiseCache.set(ctx, perCtx); }
-  const key = `${color}:${seed}`;
+  const key = width > 0 ? `${color}:${seed}:${width}` : `${color}:${seed}`;
   let buf = perCtx.get(key);
-  if (!buf) { buf = bufferOf(ctx, noiseSamples(color, Math.ceil(ctx.sampleRate * 2), seed)); perCtx.set(key, buf); }
+  if (!buf) {
+    const n = Math.ceil(ctx.sampleRate * 2);
+    const left = noiseSamples(color, n, seed);
+    buf = width > 0
+      ? stereoBuffer(ctx, decorrelate(left, noiseSamples(color, n, seed + RIGHT_SEED), width))
+      : bufferOf(ctx, left);
+    perCtx.set(key, buf);
+  }
+  return buf;
+}
+
+/** `stereo` option to a decorrelation width in 0..1: true is full width, absent/false/0 is mono. @param {boolean | number | undefined} v */
+const widthOf = v => (v === true ? 1 : typeof v === 'number' ? Math.min(1, Math.max(0, v)) : 0);
+
+/** Seed offset for the second channel's independent noise. */
+const RIGHT_SEED = 104729;
+
+/**
+ * Stereo pair from two independent signals: left = a, right = sqrt(1-w)*a + sqrt(w)*b. Equal power in both
+ * channels, and the channels' correlation is sqrt(1-w): w=0 is mono, w=1 is fully decorrelated.
+ * @param {Float32Array} a
+ * @param {Float32Array} b
+ * @param {number} w
+ */
+function decorrelate(a, b, w) {
+  const ka = Math.sqrt(1 - w), kb = Math.sqrt(w);
+  const right = new Float32Array(a.length);
+  for (let i = 0; i < a.length; i++) right[i] = ka * a[i] + kb * b[i];
+  return [a, right];
+}
+
+/**
+ * @param {BaseAudioContext} ctx
+ * @param {Float32Array[]} channels
+ */
+function stereoBuffer(ctx, channels) {
+  const buf = ctx.createBuffer(channels.length, channels[0].length, ctx.sampleRate);
+  channels.forEach((c, i) => buf.getChannelData(i).set(c));
   return buf;
 }
 
@@ -84,7 +122,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     }
   } else if (src.type === 'noise') {
     const s = ctx.createBufferSource();
-    s.buffer = noiseBuffer(ctx, src.color, seed);
+    s.buffer = noiseBuffer(ctx, src.color, seed, widthOf(src.stereo));
     s.loop = true;
     parts.push(s);
     nodes.push(s);
@@ -142,27 +180,33 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       pitch.push({ param: bp.frequency, ratio });
     }
   } else if (src.type === 'grains') {
-    const rand = mulberry32(seed);
     const len = Math.max(1, Math.ceil(ctx.sampleRate * length));
-    const out = new Float32Array(len);
-    const noise = noiseSamples('white', len, seed + 1);
-    const decaySamples = src.grainDecay * ctx.sampleRate;
-    let t = 0;
-    while (true) {
-      const progress = t / len;
-      const rate = src.rate * (src.rateEnd === undefined ? 1 : 1 + (src.rateEnd - 1) * progress);
-      if (rate <= 0) break;
-      t += Math.max(1, Math.round((-Math.log(1 - rand()) / rate) * ctx.sampleRate)); // Poisson arrivals
-      if (t >= len) break;
-      const amp = 0.5 + 0.5 * rand();
-      const grainLen = Math.min(len - t, Math.ceil(decaySamples * 6));
-      for (let i = 0; i < grainLen; i++) out[t + i] += amp * noise[(t + i) % len] * Math.exp(-i / decaySamples);
-    }
-    let peak = 0;
-    for (const x of out) peak = Math.max(peak, Math.abs(x));
-    if (peak > 0) for (let i = 0; i < len; i++) out[i] /= peak;
+    /** One channel's grain cloud, peak-normalised. @param {number} sd */
+    const cloud = sd => {
+      const rand = mulberry32(sd);
+      const out = new Float32Array(len);
+      const noise = noiseSamples('white', len, sd + 1);
+      const decaySamples = src.grainDecay * ctx.sampleRate;
+      let t = 0;
+      while (true) {
+        const progress = t / len;
+        const rate = src.rate * (src.rateEnd === undefined ? 1 : 1 + (src.rateEnd - 1) * progress);
+        if (rate <= 0) break;
+        t += Math.max(1, Math.round((-Math.log(1 - rand()) / rate) * ctx.sampleRate)); // Poisson arrivals
+        if (t >= len) break;
+        const amp = 0.5 + 0.5 * rand();
+        const grainLen = Math.min(len - t, Math.ceil(decaySamples * 6));
+        for (let i = 0; i < grainLen; i++) out[t + i] += amp * noise[(t + i) % len] * Math.exp(-i / decaySamples);
+      }
+      let peak = 0;
+      for (const x of out) peak = Math.max(peak, Math.abs(x));
+      if (peak > 0) for (let i = 0; i < len; i++) out[i] /= peak;
+      return out;
+    };
+    const width = widthOf(src.stereo);
+    const left = cloud(seed);
     const s = ctx.createBufferSource();
-    s.buffer = bufferOf(ctx, out);
+    s.buffer = width > 0 ? stereoBuffer(ctx, decorrelate(left, cloud(seed + RIGHT_SEED), width)) : bufferOf(ctx, left);
     const bp = ctx.createBiquadFilter();
     bp.type = 'bandpass';
     bp.frequency.value = src.center;
