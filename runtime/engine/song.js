@@ -6,13 +6,43 @@ import { patchLength } from './patch.js';
 import { compileSong } from './sequence.js';
 import { hzToMidi, noteToHz } from './notes.js';
 import { sumInto, voicePool } from './sum.js';
+import { recordNodes } from './retain.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('../../src/schema/song.ts').Song} Song */
 
 const db = (/** @type {number} */ x) => 10 ** (x / 20);
 const GLIDE = 0.05; // seconds: an unramped mix change still glides, so it never clicks
+/** Seconds a finished note stays referenced (retain): its amp is at zero, this outlasts any filter ring. */
+const RELEASE_AFTER = 1;
 const SEED_POOL = 8; // distinct noise/grain seeds per track: enough variety, bounded buffers
+
+/**
+ * Pin a long-lived input to a fixed channel count. Left to 'max', its count follows whichever connections are
+ * live: mono notes alone make it 1, a panned or spread note makes it 2, and it flips as notes start and finish
+ * (and as the lazily built graph is edited between render windows, when a finished note's node may or may not
+ * have been collected yet). The render then showed a burst up to 0.08 of full scale at the quantum of a flip, decaying
+ * over the bus filter's ring and not at the same quantum from one run to the next; pinning the count removes it. That
+ * fits Chromium re-creating the processor behind a node when its input channel count changes, which zeroes a filter's
+ * state. A stereo panner also changes its law with the count (equal-power for mono, balance for stereo), so a flip
+ * moves the level too.
+ * 'speakers' upmixes mono to both sides, exactly as the stereo destination does.
+ * @template {AudioNode} N @param {N} node @param {1 | 2} channels @returns {N}
+ */
+const pinned = (node, channels) => {
+  node.channelCount = channels;
+  node.channelCountMode = 'explicit';
+  node.channelInterpretation = 'speakers';
+  return node;
+};
+
+/** Whether any layer of the patch makes a stereo signal by itself: a layer pan, or a noise or grains source with `stereo`. @param {Patch} p */
+export function patchIsStereo(p) {
+  return p.layers.some(l => {
+    const src = /** @type {any} */ (l.source);
+    return (l.pan !== undefined && l.pan !== 0) || src.stereo === true || (typeof src.stereo === 'number' && src.stereo > 0);
+  });
+}
 
 /** MIDI note of the first pitched layer as written, or null for unpitched instruments. @param {Patch} p */
 export function instrumentRoot(p) {
@@ -111,18 +141,24 @@ export function songTail(song, instruments) {
  * @param {BaseAudioContext} ctx
  * @param {Song} song
  * @param {Record<string, Patch>} instruments  parsed instrument patch per track
- * @param {{ destination?: AudioNode, when?: number, lazy?: boolean, only?: string[] }} [opts]
+ * @param {{ destination?: AudioNode, when?: number, lazy?: boolean, only?: string[], retain?: boolean }} [opts]
  *   only: play just these tracks' notes out of the full song. Every chance roll, arp order and
  *   noise seed is still drawn as in the full song, so solos of the parts sum back to the mix.
  *   lazy: build no notes yet; call `advance(t)` to build every note starting before context time t.
  *   Notes built just ahead of the playhead keep the graph small (offline renders run several
  *   times faster, and live playback never holds a whole song's nodes).
- * @returns {{ end: number, length: number, sections: ReturnType<typeof compileSong>['sections'], advance: (t: number) => number, done: () => boolean }}
+ *   retain: keep every node referenced from here (the song's own graph for good, a note's until `release(now)`
+ *   finds it over). Chromium disposes a node whose JS wrapper is collected and drops its output connections on
+ *   the spot, even while it carries a tail: a collection cut a master delay's feedback loop, and the body of a
+ *   modal drum hit whose 5 ms exciter had finished, at moments that changed from run to run (see retain.js).
+ *   Offline renders retain; live playback need not.
+ * @returns {{ end: number, length: number, sections: ReturnType<typeof compileSong>['sections'], advance: (t: number) => number, release: (now: number) => number, graph: AudioNode[] | undefined, done: () => boolean }}
  */
 export function buildSong(ctx, song, instruments, opts = {}) {
-  const { destination = ctx.destination, when = 0, lazy = false, only } = opts;
+  const { destination = ctx.destination, when = 0, lazy = false, only, retain = false } = opts;
   const playing = only ? new Set(only) : undefined;
   const c = compileSong(song);
+  const setup = retain ? recordNodes(ctx) : undefined;
   const master = ctx.createGain();
   master.connect(destination);
   // Every many-to-one meeting point is summed in a fixed order (see sum.js), or renders are not bit-exact.
@@ -136,7 +172,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   /** @type {GainNode | undefined} */
   let reverbIn;
   if (song.master.reverb) {
-    reverbIn = ctx.createGain();
+    reverbIn = pinned(ctx.createGain(), 2);
     const ret = ctx.createGain();
     ret.gain.value = db(song.master.reverb.returnDb);
     toMaster.push(reverbIn.connect(buildReverb(ctx, song.master.reverb.preset)).connect(ret));
@@ -145,7 +181,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   let delayIn;
   if (song.master.delay) {
     const d = song.master.delay;
-    delayIn = ctx.createGain();
+    delayIn = pinned(ctx.createGain(), 2);
     const line = ctx.createDelay(d.beats * c.spb);
     line.delayTime.value = d.beats * c.spb;
     // Darkening each repeat keeps echoes behind the dry sound instead of stacking up bright.
@@ -162,12 +198,15 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     if (reverbIn) toReverb.push(ret);
   }
 
+  // A track's bus is as wide as the widest note it can play, for the whole song, whichever notes happen to be live
+  // (and in a solo render too, so a stem sums back to the mix): stereo when a note is spread or its patch is stereo.
+  const spread = new Set(c.events.filter(e => e.pan).map(e => e.track));
   /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, shift: ReturnType<typeof trackShift> }>} */
   const buses = {};
   for (const [name, t] of Object.entries(song.tracks)) {
     const p = instruments[name];
     if (!p) throw new Error(`track "${name}" has no instrument patch`);
-    const input = ctx.createGain();
+    const input = pinned(ctx.createGain(), spread.has(name) || patchIsStereo(p) ? 2 : 1);
     /** @type {AudioNode} */
     let node = input;
     // The instrument's own effects run once per track, not once per note.
@@ -233,8 +272,18 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   if (reverbIn) sumInto(ctx, toReverb, reverbIn);
   if (delayIn) sumInto(ctx, toDelay, delayIn);
 
+  // Everything built so far (the master effects, every bus and its sends) lives as long as the song object does.
+  const graph = setup?.stop();
   /** @type {Map<string, Patch>} */
   const voices = new Map();
+  /** @type {{ end: number, keep: AudioNode[] }[]} */
+  let held = [];
+  /** Let go of the notes that ended more than a second before context time `now`: silent, and long past any filter ring. Returns how many. */
+  const release = (/** @type {number} */ now) => {
+    const before = held.length;
+    held = held.filter(h => h.end + RELEASE_AFTER > now);
+    return before - held.length;
+  };
   let cursor = 0;
   /** Build every not-yet-built note that starts before context time `t`; returns how many. */
   const advance = (/** @type {number} */ t) => {
@@ -245,13 +294,8 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     }
     return cursor - from;
   };
-  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i) => {
-    const bus = buses[e.track];
-    const t = song.tracks[e.track];
-    const shift = bus.shift ? bus.shift(e.midi) : 0;
-    const key = `${e.track}:${shift.toFixed(3)}:${e.dur ?? 'patch'}`;
-    let p = voices.get(key);
-    if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }
+  /** Builds one note's nodes into its track's bus; returns when it falls silent. */
+  const buildNote = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i, /** @type {Patch} */ p, /** @type {typeof buses[string]} */ bus) => {
     const out = ctx.createGain();
     out.gain.value = e.vel;
     /** @type {AudioNode} */
@@ -266,13 +310,25 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     let end = at;
     const layerOuts = p.layers.map((layer, li) => {
       const lo = ctx.createGain();
-      end = Math.max(end, buildLayer(ctx, layer, { when: at, duration: /** @type {Patch} */ (p).duration, seed: seed + li * 7919, out: lo }).end);
+      end = Math.max(end, buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo }).end);
       return lo;
     });
     sumInto(ctx, layerOuts, out);
     // buildLayer stops sources 10 ms after `end`; the amp is already at zero then, so `end` is when the note falls silent.
     note.connect(bus.pool.slot(at, end));
+    return end;
+  };
+  const playEvent = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i) => {
+    const bus = buses[e.track];
+    const t = song.tracks[e.track];
+    const shift = bus.shift ? bus.shift(e.midi) : 0;
+    const key = `${e.track}:${shift.toFixed(3)}:${e.dur ?? 'patch'}`;
+    let p = voices.get(key);
+    if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }
+    const recording = retain ? recordNodes(ctx) : undefined;
+    let end = when + e.time;
+    try { end = buildNote(e, i, p, bus); } finally { if (recording) held.push({ end, keep: recording.stop() }); }
   };
   if (!lazy) advance(Infinity);
-  return { end: when + c.length + songTail(song, instruments), length: c.length, sections: c.sections, advance, done: () => cursor >= c.events.length };
+  return { end: when + c.length + songTail(song, instruments), length: c.length, sections: c.sections, advance, release, graph, done: () => cursor >= c.events.length };
 }

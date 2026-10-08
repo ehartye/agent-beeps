@@ -9,10 +9,14 @@ when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio 
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`. Mechanism, schema and failure modes:
 `docs/build-lock-and-store.md` (read it before changing the setup; this skill is the recipe).
 
-The rule: **an input that already has an output is never rendered again.** Renders are bit-exact for
-a seed on one Chromium build (engine 2), but another Chromium build can round differently, so a
-re-render costs time and can change shipped bytes for nothing. The author renders once, the
-lock records what was made, everyone else fetches by hash.
+The rule: **an input that already has an output is never rendered again.** Patches have been bit-exact
+for a seed on one Chromium build since engine 2, and songs since song pipeline 6 (before it, one song
+rendered several ways: Chromium's garbage collector disposed nodes the render still needed). Bit-exact
+means the same samples for the same `inputHash` on one machine and one Chromium build, not across
+builds or CPUs: another can round differently, so a re-render elsewhere costs time and can change
+shipped bytes for nothing. The author renders once, the lock records what was made, everyone else
+fetches by hash. `beeps build --verify-determinism` renders each song twice and fails (`E_NONDETERMINISTIC`)
+if they differ; use it when a song is new or a graph feature is, not on every build (it doubles song time).
 
 ## 1. Describe the project
 
@@ -64,6 +68,14 @@ A new engine, pipeline, Chromium or ffmpeg changes every hash. `beeps build` sto
 and the drift instead of re-rendering all; pull what exists (`--pull`), or pass
 `--allow-toolchain-change` once, on purpose, on the author's machine, then `--push`. Never let CI do it.
 
+A bump that cannot change the files you hold (the release notes say so; a song-pipeline bump leaves the
+sound effects' hashes alone, and for songs that always rendered one way the bits are the same) needs no
+render: `beeps build --adopt` verifies every locked output against its sha256, keeps the files and re-keys
+the lock to the new toolchain (it refuses if the encoder or bitrate differs). Songs that used to render
+several ways keep the variant you shipped; to move one to the canonical render, `beeps build --only <id>
+--all --allow-toolchain-change --verify-determinism`, commit the lock, `--push`. Then `beeps build --check`
+passes with no further renders, and a later re-render of those songs reproduces the committed files.
+
 ## Codec traps (web)
 
 - **MP3 and `-fflags +bitexact`**: bitexact makes ffmpeg write the encoder id `Lavf lame`; the delay and
@@ -87,6 +99,8 @@ and the drift instead of re-rendering all; pull what exists (`--pull`), or pass
 | `build --check` exit 1 | run `beeps build`, commit the lock |
 | `output modified: f` | someone edited a built file; rebuild (the render cache restores it) or `--pull` |
 | `E_TOOLCHAIN` | section 4 |
+| `E_NONDETERMINISTIC` | the song rendered two ways in one page: re-run once; if it repeats, report the song and the message (first frame, size). Nothing was built or locked |
+| `BEEPS_FFMPEG ... does not exist` / `is a directory` | the variable is the path of the ffmpeg executable (`/usr/bin/ffmpeg`), never a command name or a folder |
 | `E_LOCK` key scheme | `beeps build --adopt` |
 | fetch.mjs: not in the store | author runs `beeps build --push` |
 | `E_STORE` sha256 / manifest | corrupt entry; rebuild the asset and push to a fresh store |

@@ -63,7 +63,8 @@ describe('input hash', () => {
     expect(changed(base, hashes(fx, { target: 'web-mp3' }))).toEqual(all);
     expect(changed(base, hashes(fx, { target: 'wav-master' }))).toEqual(all);
     expect(changed(base, hashes(fx, { encoder: { ffmpeg: '7.0', libavcodec: 'x' } }))).toEqual(all);
-    expect(changed(base, hashes(fx, { toolchain: { songPipeline: 99 } }))).toEqual(all);
+    // The song pipeline is a song's own: a bump leaves the sound effects' hashes alone.
+    expect(changed(base, hashes(fx, { toolchain: { songPipeline: 99 } }))).toEqual(['plain', 'theme']);
     expect(changed(base, hashes(fx, { toolchain: { exportPipeline: 99 } }))).toEqual(all);
     expect(changed(base, hashes(fx, { toolchain: { chromium: '999@1' } }))).toEqual(all);
   });

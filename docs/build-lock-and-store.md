@@ -10,15 +10,28 @@ together is the `beeps-ship` skill; this page is the mechanism.
 
 Two measured facts shape the design:
 
-- **Renders are bit-exact for a seed on one Chromium build, since engine 2 (agent-beeps 0.8.0).** Before
-  that they were not: one song rendered four times from empty caches gave four WAVs that differ in 33 to
-  50 of 786,516 samples, and a sound with three or more layers, or a `metal`, unison, `additive`,
-  `modal` or multi-modulator `fm` source, or both reverb and delay, differed in 0 to 8 samples per render,
-  all by one 16-bit step. Chromium sums the connections into one node input in an order that changes
-  between runs (float addition of three or more terms depends on order); engine 2 sums every such point
-  through a fixed chain of two-input gains (`runtime/engine/sum.js`). An input that already has an output
-  is still **never rendered again**: another Chromium build can round differently, and a re-render costs
-  time for nothing. The lock records output hashes, not just input hashes.
+- **Renders are reproducible: the same inputs give the same samples, run after run, on one Chromium build.**
+  Two separate defects made them not, and each was fixed at its cause (details under "What reproducible
+  means").
+  - *Sums in a per-run order (engine 2, 0.8.0).* Chromium sums the connections into one node input in an order
+    that changes between runs, and float addition of three or more terms depends on order: a sound with three
+    or more layers, or a `metal`, unison, `additive`, `modal` or multi-modulator `fm` source, or both reverb and
+    delay, differed in 0 to 8 samples per render, all by one 16-bit step. Engine 2 sums every such point through
+    a fixed chain of two-input gains (`runtime/engine/sum.js`).
+  - *Songs were still not reproducible (song pipeline 6, 0.10.0).* Measured on Fallow Valley's `mus-desert`
+    rendered 8 times with one input hash: the full mix came out in 5 distinct versions, differing by up to 0.08 of
+    full scale over up to two seconds, not by a rounding step. Songs are built while the offline context is
+    suspended every 2 s, so the page allocates while it renders, and the garbage collector ran at moments that
+    changed from run to run. Chromium disposes a node whose JS wrapper has been collected and drops its output
+    connections at once, even while the node carries a tail. A modal drum's 5 ms exciter had finished, so a
+    collection cut the resonators behind it mid-ring; a master delay's feedback loop that nothing in the page
+    referenced was disposed with every echo after the first; and a bus filter whose input flipped between mono
+    and stereo as notes started and ended (a chord's centre voice is mono, the others are panned) gave a burst
+    of up to 0.08 at the flip that decays over the filter's ring (the filter's state is lost; pinning the count
+    removes it). Song pipeline 6 keeps every node alive for as long as it matters and pins the
+    channel count of each bus.
+  An input that already has an output is still **never rendered again**: another Chromium build can round
+  differently, and a re-render costs time for nothing. The lock records output hashes, not just input hashes.
 - **Encoding is deterministic.** The same WAV through the same ffmpeg build gives the same Opus bytes.
   So everything after the render (export, encode, bundle, lock) can be repeated and compared byte for
   byte, and a rebuild from the render cache reproduces the lock exactly.
@@ -31,7 +44,7 @@ For every recipe, with no browser and no ffmpeg run:
 inputHash = sha256( { renders, export, toolchain, delivery } )   each part itself a sha256
   renders    the beeps render keys the asset needs (patch: one per variant; song: the mix)
   export     id, role, kind, seed, variants, layers
-  toolchain  ENGINE, PIPELINE, SONG_PIPELINE and EXPORT_PIPELINE versions, Chromium, Playwright, sample rate
+  toolchain  ENGINE, PIPELINE, SONG_PIPELINE (songs only) and EXPORT_PIPELINE versions, Chromium, Playwright, sample rate
   delivery   format, this role's kbps (an adaptive song also the mix kbps), encoder flags, ffmpeg build
 ```
 
@@ -125,7 +138,7 @@ block (about 25 lines) plus the catalog.
   },
   "keyScheme": "beeps-input@1",
   "schema": "beeps/build-lock@1",
-  "toolchain": { "chromium": "153.0.8010.12@1243", "engine": "1", "exportPipeline": 1, "pipeline": 2, "playwright": "1.63.0", "sampleRate": 48000, "songPipeline": 5 }
+  "toolchain": { "chromium": "153.0.8010.12@1243", "engine": "2", "exportPipeline": 1, "pipeline": 2, "playwright": "1.63.0", "sampleRate": 48000, "songPipeline": 6 }
 }
 ```
 
@@ -136,7 +149,8 @@ block (about 25 lines) plus the catalog.
 - `keyScheme` names how `inputHash` was computed. A lock written by another tool (a game's wrapper) says
   so; `beeps build --adopt` verifies every output against the lock's sha256, re-keys it into
   `beeps-input@1` with **no rendering**, and keeps fields it does not know. Assets whose outputs differ
-  are rebuilt.
+  are rebuilt. The same flag re-keys a `beeps-input@1` lock written by an older toolchain (see "Adopting a
+  toolchain bump").
 
 ## The store
 
@@ -203,12 +217,53 @@ measurement shows a leading offset yet).
 |---|---|
 | Cache miss, evicted Actions cache | Nothing renders. CI fetches from the store; the cache is an accelerator. |
 | Author forgot to push | `fetch.mjs` fails naming the assets. Run `beeps build --push` (or `store push`). |
-| Tool version bump (engine, pipeline, Chromium, ffmpeg) | Every hash changes. `beeps build` stops with `E_TOOLCHAIN` listing the drift instead of silently re-rendering everything; pass `--allow-toolchain-change`, or `--pull` assets someone already built. Renders come from the render cache when it is warm, so a Chromium-only bump is minutes of encoding, not a render. |
+| Tool version bump (engine, pipeline, Chromium, ffmpeg) | Every hash changes (a song-pipeline bump: every song's, and the sound effects' once, in the release that makes the toolchain part per kind). `beeps build` stops with `E_TOOLCHAIN` listing the drift instead of silently re-rendering everything; pass `--allow-toolchain-change`, or `--pull` assets someone already built. Renders come from the render cache when it is warm, so a Chromium-only bump is minutes of encoding, not a render. |
 | ffmpeg drift | The encoder fingerprint is in every hash, so another ffmpeg makes every asset stale (same guard). Use the ffmpeg the lock names, or accept the change on purpose. |
 | Partial rebuild (killed, disk full) | Finished assets are committed; an interrupted asset keeps its old files and old lock entry (still valid). Its new files are installed one by one, so a crash in that window leaves that asset mismatching the lock: the next build sees `output modified` and redoes it from the render cache. `beeps verify` reports it. |
-| Re-render of an unchanged input | Never done. On the same Chromium build a re-render reproduces the bytes (engine 2); after a Chromium change an asset rebuilt from scratch can differ by float rounding: equivalent, not identical. |
+| Re-render of an unchanged input | Never done. On the same Chromium build a re-render reproduces the bytes (engine 2, song pipeline 6); after a Chromium change an asset rebuilt from scratch can differ by float rounding: equivalent, not identical. |
+| `E_NONDETERMINISTIC` | `--verify-determinism` rendered a song twice and the renders differ. Re-run once; if it repeats, the song hits a case the fixes do not cover: report it with the message (song, first frame, size). The asset is not built, so nothing unreproducible reaches the lock. |
 | Poisoned or corrupt store entry | Rejected by sha256 against the lock; nothing written. |
 | Recipe removed | Its outputs and lock entry are deleted (not with `--only`). |
+
+## What reproducible means
+
+For one `inputHash` on one Chromium build (version and revision in the lock's `toolchain`), on one machine:
+every render of a song or a patch gives **the same 32-bit float samples, bit for bit**, whether the page is
+fresh or has rendered before, whatever else the machine is doing, and however often the garbage collector runs.
+`tests/render/song-determinism.test.ts` holds that for a small song with a modal drum, spread chords, a bus
+filter and both master effects, with a collection forced every 40 ms; before song pipeline 6 the same test failed
+on the first run.
+
+It is **not** claimed across Chromium builds, CPUs or operating systems. Chromium's DSP (biquads, the convolver's
+FFT, the resampler) may round differently with a different instruction set, so a render on another machine can
+differ in the low bits; nothing here has measured how far. That is why the lock stores output hashes and the store
+serves bytes: the author renders once and everyone else fetches. Reproducibility is what lets a *re-render on
+the author's machine* leave the lock alone, not a licence to render in CI.
+
+There is deliberately no tolerance-based "canonical hash": with one Chromium build the bits are exact, and a
+tolerance would need the cross-build measurements nobody has made. If a Chromium bump changes the bits, treat
+every output as changed (the toolchain guard says so) and compare WAVs with `beeps verify --decode` and by ear.
+
+`--verify-determinism` (on `beeps build`, `song render` and `song export`) renders each song **twice in the
+same page** and compares them in the page, bit for bit; any difference fails that asset with
+`E_NONDETERMINISTIC` naming the first frame and the size. It doubles song render time (sound effects are not
+re-rendered) and does not repeat a render served from the cache. It catches a graph that is unstable in a page;
+it cannot see a difference between browsers or machines.
+
+## Adopting a toolchain bump
+
+`beeps build --adopt` also re-keys a lock of the current scheme whose `toolchain` differs from this
+beeps': it verifies every locked output against its sha256, keeps the files exactly as they are, and
+rewrites each asset's `inputHash` and the lock's `toolchain`, with no rendering (the log lists the drift it
+accepted). It refuses (`E_LOCK`) when the delivery or encoder differs, because then the locked files were
+made another way. Whether to adopt is a judgement about the change, so the release notes say which it is:
+
+- **Output provably unchanged** (a patch's render under a song-pipeline-only bump): adopt.
+- **Output unchanged for every song that rendered one way before, settled for the rest** (song pipeline 6):
+  adopt keeps the locked files, which for a song that used to render several ways are one of those ways. To
+  move such a song to the one canonical render, rebuild it: `beeps build --only <ids> --all
+  --allow-toolchain-change --verify-determinism` (the render cache is keyed by the new pipeline, so it
+  re-renders those songs and nothing else), then commit the lock and `--push`.
 
 Unmeasured: Linux Opus byte identity against a Windows ffmpeg build (a lock pins one ffmpeg), and store
 fetch time on a CI runner.

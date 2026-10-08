@@ -14,8 +14,13 @@ import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
 
-/** Bump when song rendering or measurement changes, so cached renders are redone. */
-export const SONG_PIPELINE_VERSION = 5;
+/**
+ * Bump when song rendering or measurement changes, so cached renders are redone.
+ * 6: song renders are reproducible. Nodes the page let go of were disposed by Chromium's garbage collector mid-render (a delay's
+ * feedback loop, a modal drum's resonators) and bus inputs changed channel count with the live notes (resetting their filters),
+ * so the same song rendered several ways. Songs that rendered one way before render the same bits now; the rest settle on one.
+ */
+export const SONG_PIPELINE_VERSION = 6;
 
 export interface RenderedSong {
   key: string; song: Song; trimDb: number; features: SongFeatures;

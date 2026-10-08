@@ -6,6 +6,7 @@ import { chromiumAvailable } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
 import { runBuild } from '../../src/build/build.ts';
 import { lockText, readLock } from '../../src/build/lock.ts';
+import { SONG_PIPELINE_VERSION } from '../../src/render/song-pipeline.ts';
 import { verifyOutputs } from '../../src/build/verify.ts';
 import { cloneFixture, diffKeys, makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
 
@@ -184,7 +185,7 @@ describe.skipIf(!ok)('beeps build', () => {
     await expect(runBuild(fx.cfg())).rejects.toMatchObject({ code: 'E_TOOLCHAIN' });
     const r = await runBuild(fx.cfg(), { allowToolchainChange: true });
     expect(r.built.length).toBe(4); // from the render cache: seconds, not minutes
-    expect(readLock(fx.path('audio.lock.json'))!.toolchain.songPipeline).toBe(5);
+    expect(readLock(fx.path('audio.lock.json'))!.toolchain.songPipeline).toBe(SONG_PIPELINE_VERSION);
   }, 120000);
 
   it('rebuilds only the role whose bitrate was changed, without the toolchain guard', async () => {
@@ -224,6 +225,33 @@ describe.skipIf(!ok)('beeps build', () => {
       expect(after.assets.coin.inputHash).toBe(baseLock().assets.coin.inputHash);
       expect((await runBuild(fx.cfg(), { check: true })).ok).toBe(true);
     }, 60000);
+
+    it('re-keys a lock of an older toolchain without rendering, keeping its files, and refuses when the encoding differs', async () => {
+      const fx = cloneFixture(base);
+      const lock = fx.read('audio.lock.json');
+      lock.toolchain.songPipeline = SONG_PIPELINE_VERSION - 1;
+      for (const a of Object.values<any>(lock.assets)) { a.inputHash = 'sha256:' + '0'.repeat(64); a.parts.toolchain = '0'.repeat(12); }
+      fx.write('audio.lock.json', lock);
+      await expect(runBuild(fx.cfg())).rejects.toMatchObject({ code: 'E_TOOLCHAIN' });
+      const files = snapshot(fx.path('public/audio'));
+      const logs: string[] = [];
+      const r = await runBuild(fx.cfg(), { adopt: true, log: s => logs.push(s) });
+      expect(r.built).toEqual([]);
+      expect(r.adopted.sort()).toEqual(['blip', 'coin', 'plain', 'theme']);
+      expect(logs.join(' ')).toMatch(/toolchain\.songPipeline: \d+ -> \d+/);
+      expect(snapshot(fx.path('public/audio'))).toEqual(files);
+      const after = readLock(fx.path('audio.lock.json'))!;
+      expect(after.toolchain.songPipeline).toBe(SONG_PIPELINE_VERSION);
+      expect(after.assets.theme.inputHash).toBe(baseLock().assets.theme.inputHash);
+      expect((await runBuild(fx.cfg(), { check: true })).ok).toBe(true);
+      // An encoder or bitrate that differs from the lock's means the files were made another way: nothing to keep.
+      await expect(runBuild(fx.cfg({ kbps: { sfx: 60 } }), { adopt: true })).rejects.toMatchObject({ code: 'E_LOCK' });
+    }, 60000);
+
+    it('a song-pipeline bump leaves the sound effects fresh', () => {
+      const lock = baseLock();
+      expect(lock.assets.coin.parts!.toolchain).not.toBe(lock.assets.theme.parts!.toolchain);
+    });
 
     it('rebuilds only the assets whose outputs do not match the foreign lock', async () => {
       const fx = cloneFixture(base);

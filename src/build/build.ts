@@ -9,7 +9,7 @@ import { exportPatchVariants, exportSongAssets } from '../export-assets.ts';
 import { ExportManifestSchema } from '../export-manifest.ts';
 import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.ts';
 import { loadSong } from '../music.ts';
-import { openRenderHost, type RenderHost } from '../render/host.ts';
+import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import { parseProject } from '../schema/project.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
@@ -28,10 +28,16 @@ export interface BuildOptions {
   /** Publish the assets this run built to the store. */
   push?: boolean;
   store?: Store;
-  /** Rewrite a lock another tool wrote (keyScheme other than beeps-input@1) into beeps' scheme, with no rendering, when its outputs verify. */
+  /**
+   * Rewrite a lock another tool wrote (keyScheme other than beeps-input@1) into beeps' scheme, with no rendering, when its outputs verify.
+   * Also re-keys a lock of this scheme whose toolchain (engine, pipelines, Chromium, Playwright) differs: the locked outputs are kept
+   * as they are, which is right when the change cannot alter them and a statement of trust when it might (see docs/build-lock-and-store.md).
+   */
   adopt?: boolean;
   /** Allow a build when the toolchain or encoder differs from the lock's (this re-renders and re-encodes whatever the store lacks). */
   allowToolchainChange?: boolean;
+  /** Render every song twice and fail the asset (E_NONDETERMINISTIC) when the two renders differ in any sample. Doubles song render time; cached renders are not repeated. */
+  verifyDeterminism?: boolean;
   jobs?: number;
   log?: (line: string) => void;
   /** Test seams: called around each asset's install. A throw simulates a crash. */
@@ -157,7 +163,18 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
     if (!o.adopt) throw new BeepsError('E_LOCK', `${cfg.lock} was written with key scheme "${lock.keyScheme}", not ${KEY_SCHEME}`, { hint: 'run "beeps build --adopt" to take it over without rendering (every output must still match its sha256)' });
     const a = adopt(cfg, lock, plans, toolchain, deliveryRec, o.check ?? false, log);
     lock = a.lock; adopted = a.adopted;
-  } else if (o.adopt) log("--adopt: the lock is already in beeps' scheme");
+  } else if (lock && o.adopt) {
+    // A lock in beeps' scheme made by an older toolchain: keep its outputs under the new toolchain's hashes, with no rendering.
+    const drift = driftOf(lock, toolchain as unknown as Record<string, unknown>, deliveryRec);
+    const tool = drift.filter(d => d.startsWith('toolchain.')), other = drift.filter(d => !d.startsWith('toolchain.'));
+    if (other.length) throw new BeepsError('E_LOCK', `--adopt keeps the lock's outputs, which were encoded another way:\n  ${other.slice(0, 6).join('\n  ')}`, { hint: "the delivery or encoder differs from the lock's: rebuild instead (--allow-toolchain-change), or restore the settings and the ffmpeg the lock names", details: { drift: other } });
+    if (!tool.length) log("--adopt: the lock is already in beeps' scheme and its toolchain matches");
+    else {
+      log(`--adopt: keeping the locked outputs under the new toolchain (nothing is re-rendered):\n  ${tool.join('\n  ')}`);
+      const a = adopt(cfg, lock, plans, toolchain, deliveryRec, o.check ?? false, log);
+      lock = a.lock; adopted = a.adopted;
+    }
+  }
 
   const drift = driftOf(lock, toolchain as unknown as Record<string, unknown>, deliveryRec);
   const next: Lock = lock ? { ...lock, assets: { ...lock.assets } } : emptyLock(deliveryRec, toolchain);
@@ -234,7 +251,8 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
     const queue = [...toBuild];
     let failed: unknown;
     const worker = async () => {
-      const { host, close } = lazyHost();
+      const lazy = lazyHost();
+      const host = o.verifyDeterminism ? verifyingDeterminism(lazy.host) : lazy.host, close = lazy.close;
       try {
         while (queue.length && !failed) {
           const pl = queue.shift()!;

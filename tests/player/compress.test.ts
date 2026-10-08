@@ -119,9 +119,19 @@ describe.skipIf(!hasFfmpeg)('beeps compress', () => {
     expect(() => compressBundle(d, d)).toThrow(/differ/);
   });
 
-  it('rejects a missing ffmpeg override with a hint', () => {
+  it('rejects a missing ffmpeg override with a hint that it must be a path', () => {
     const old = process.env.BEEPS_FFMPEG;
-    process.env.BEEPS_FFMPEG = join(tmpdir(), 'no-such-ffmpeg.exe');
-    try { expect(() => findFfmpeg()).toThrow(/does not exist/); } finally { if (old === undefined) delete process.env.BEEPS_FFMPEG; else process.env.BEEPS_FFMPEG = old; }
+    try {
+      for (const bad of [join(tmpdir(), 'no-such-ffmpeg.exe'), 'ffmpeg']) {
+        process.env.BEEPS_FFMPEG = bad;
+        expect(() => findFfmpeg()).toThrow(expect.objectContaining({ message: expect.stringMatching(/does not exist/), hint: expect.stringMatching(/must be the path of the ffmpeg executable/) }));
+      }
+    } finally { if (old === undefined) delete process.env.BEEPS_FFMPEG; else process.env.BEEPS_FFMPEG = old; }
+  });
+
+  it('rejects a directory as the ffmpeg override', () => {
+    const old = process.env.BEEPS_FFMPEG;
+    process.env.BEEPS_FFMPEG = tmpdir();
+    try { expect(() => findFfmpeg()).toThrow(/is a directory/); } finally { if (old === undefined) delete process.env.BEEPS_FFMPEG; else process.env.BEEPS_FFMPEG = old; }
   });
 });

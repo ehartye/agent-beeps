@@ -14,7 +14,10 @@ const LEAD_WINDOW = 4096, MAX_LEAD = 3000;
 export interface RateResult {
   sampleRate: number; frames: number; wantFrames: number; frameDelta: number;
   /** Frames the decode leads the source (positive: extra frames at the start; negative: frames trimmed from the start). Absent when the start has no signal to correlate. */
-  lead?: number; problems: string[];
+  lead?: number;
+  /** Why `lead` is absent when it is not the signal's fault: no source WAV to measure against ("n/a"). */
+  leadNote?: string;
+  problems: string[];
 }
 export interface EngineFile { file: string; results: RateResult[] }
 export interface EngineReport {
@@ -78,9 +81,10 @@ export async function engineCheck(files: string[], engines: Engine[], opts: { so
     const frames = wav ? wav.channels[0].length : sidecar ? Math.round(sidecar.durationSec * baseRate) : decodeChannels(ffmpeg, file, channels, baseRate)[0].length;
     const loop = sidecar?.loop ?? true;
     const tolerance = /\.mp3$/i.test(file) && !loop ? MP3_ONESHOT_TOLERANCE : 0;
-    // The reference at each decode rate: the source resampled by ffmpeg (a .wav source) or the delivered file as ffmpeg decodes it.
+    // The reference at each decode rate: the source resampled by ffmpeg. Without a source WAV the lead is not measured:
+    // ffmpeg's decode of the same file is not the source, and correlating a decode with itself reads as a lead of ~2600 frames.
     const at = (rate: number) => decodeChannels(ffmpeg, sourceWav ?? file, channels, rate)[0];
-    return { file, channels, baseRate, frames, tolerance, at, bytes: readFileSync(file) };
+    return { file, channels, baseRate, frames, tolerance, at, hasSource: !!sourceWav, bytes: readFileSync(file) };
   });
   const playwright = await import('playwright').catch(() => undefined);
   const reports: EngineReport[] = [];
@@ -104,9 +108,9 @@ export async function engineCheck(files: string[], engines: Engine[], opts: { so
           // A sample-rate conversion rounds, so a context at another rate may differ by one frame; at the file's own rate the count is exact.
           const tol = ref.tolerance + (d.sampleRate === ref.baseRate ? 0 : 1);
           if (Math.abs(delta) > tol) problems.push(`${engine} decoded ${d.frames} frames at ${d.sampleRate} Hz, want ${want}: ${delta > 0 ? 'keeps' : 'trims'} ${Math.abs(delta)} frames`);
-          const lead = d.head ? startLead(ref.at(d.sampleRate), Float32Array.from(d.head)) : undefined;
+          const lead = d.head && ref.hasSource ? startLead(ref.at(d.sampleRate), Float32Array.from(d.head)) : undefined;
           if (lead !== undefined && lead !== 0) problems.push(`${engine} output leads the source by ${lead} frames at ${d.sampleRate} Hz`);
-          return { sampleRate: d.sampleRate, frames: d.frames, wantFrames: want, frameDelta: delta, ...(lead !== undefined ? { lead } : {}), problems };
+          return { sampleRate: d.sampleRate, frames: d.frames, wantFrames: want, frameDelta: delta, ...(lead !== undefined ? { lead } : {}), ...(!ref.hasSource ? { leadNote: 'n/a: no source WAV beside the file (pass --source)' } : {}), problems };
         });
         report.files.push({ file: ref.file, results });
       }

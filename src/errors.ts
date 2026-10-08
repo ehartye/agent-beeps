@@ -1,11 +1,11 @@
 export type ErrorCode =
   | 'E_USAGE' | 'E_SCHEMA' | 'E_NOT_FOUND' | 'E_RENDER' | 'E_BROWSER_MISSING' | 'E_RUNTIME_MISSING'
   | 'E_SERVER' | 'E_PREDICTION_REQUIRED' | 'E_CONFLICT' | 'E_PROJECT'
-  | 'E_LOCK' | 'E_STORE' | 'E_VERIFY' | 'E_TOOLCHAIN' | 'E_BUDGET';
+  | 'E_LOCK' | 'E_STORE' | 'E_VERIFY' | 'E_TOOLCHAIN' | 'E_BUDGET' | 'E_NONDETERMINISTIC';
 
 export const ERROR_CODES: ErrorCode[] = ['E_USAGE', 'E_SCHEMA', 'E_NOT_FOUND', 'E_RENDER', 'E_BROWSER_MISSING',
   'E_RUNTIME_MISSING', 'E_SERVER', 'E_PREDICTION_REQUIRED', 'E_CONFLICT', 'E_PROJECT',
-  'E_LOCK', 'E_STORE', 'E_VERIFY', 'E_TOOLCHAIN', 'E_BUDGET'];
+  'E_LOCK', 'E_STORE', 'E_VERIFY', 'E_TOOLCHAIN', 'E_BUDGET', 'E_NONDETERMINISTIC'];
 
 export interface ErrorJson { code: ErrorCode; message: string; pointer?: string; hint?: string; [detail: string]: unknown }
 
