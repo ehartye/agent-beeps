@@ -106,6 +106,14 @@ song is never heard (every layer at once), so judge `beeps song states <name>` i
 state as its own piece, at the loudness it will play. Plan a score whose songs crossfade with
 `beeps song compat`, and listen to each state's layers alone (`song-adaptive-states`).
 
+## 7. Deliver to the web
+
+A web game hosts encoded files, not WAVs, and the codec can change a loop's length or seam. Default to Ogg Opus at 48 kHz
+(`beeps build`, `beeps compress`), use MP3 only for Safari before 18.4 (never `+bitexact`, never without the Xing tag), and
+budget decoded memory, not download size: 26.3 MB per stereo 68.6 s layer. Then `beeps verify`,
+`beeps loopcheck <files> --engines chromium,firefox,webkit`, and `beeps player selftest` on a real device. Format table, exact
+settings and the checks: `references/web-delivery.md`; build, lock and CI: skill `beeps-ship`.
+
 ## Never
 
 - Put a loudness literal anywhere: `gainDb` is balance between tracks only.
