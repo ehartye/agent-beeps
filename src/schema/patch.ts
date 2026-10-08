@@ -41,7 +41,9 @@ const Osc = z.strictObject({
   pitch: Pitch,
   unison: z.strictObject({ voices: z.number().int().min(1).max(7), detuneCents: z.number().min(0).max(100) }).optional(),
 });
-const Noise = z.strictObject({ type: z.literal('noise'), color: z.enum(['white', 'pink', 'brown']).default('white') });
+/** Opt-in decorrelated stereo: true is full width, a number 0..1 is partial (channel correlation sqrt(1-width)). Absent: mono, as before. */
+const Stereo = z.union([z.boolean(), z.number().min(0).max(1)]);
+const Noise = z.strictObject({ type: z.literal('noise'), color: z.enum(['white', 'pink', 'brown']).default('white'), stereo: Stereo.optional() });
 const Fm = z.strictObject({
   type: z.literal('fm'),
   pitch: Pitch,
@@ -75,6 +77,7 @@ const Grains = z.strictObject({
   q: z.number().positive().max(100).default(1),
   /** rate multiplier reached at the end of the sound, e.g. 0.1 thins out to a trickle */
   rateEnd: z.number().min(0).max(10).optional(),
+  stereo: Stereo.optional(),
 });
 const Metal = z.strictObject({
   type: z.literal('metal'),

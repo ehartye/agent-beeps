@@ -34,12 +34,18 @@
 | type | fields | use for |
 |---|---|---|
 | `osc` | `wave` sine/square/sawtooth/triangle, `pitch`, `unison {voices, detuneCents}` | blips, coins, lasers, tones |
-| `noise` | `color` white/pink/brown | whooshes, impacts, rumble |
+| `noise` | `color` white/pink/brown, `stereo` | whooshes, impacts, rumble, wide beds |
 | `fm` | `pitch`, `operators [{ratio, index, wave}]`, `algorithm [[from,to]]` (0 = carrier) | bells, metallic tones, growls |
 | `additive` | `pitch`, `partials [[ratio, gainDb, decaySec]]` | bells, chimes, realistic tones |
 | `modal` | `pitch`, `modes [[ratio, q, gainDb]]`, `exciter` impulse/noiseBurst | struck wood, glass, metal, clicks |
-| `grains` | `rate` per s, `grainDecay`, `center`, `q`, `rateEnd` | shakers, rain, debris, crackle |
+| `grains` | `rate` per s, `grainDecay`, `center`, `q`, `rateEnd`, `stereo` | shakers, rain, debris, crackle |
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
+
+`noise` and `grains` are mono by default. `stereo: true` (or a width 0..1; correlation between the
+channels is sqrt(1 - width)) gives each channel its own seeded noise: deterministic, the left channel
+is the mono signal, and patches without it render exactly as before. Use it on beds and ambiences;
+a layer `pan` then moves the whole image as a balance. Two panned mono tracks with different noise
+are no longer needed for width.
 
 `pitch` is a note name (`E6`, `F#5`, `Bb3`) or Hz. Pitched sources snap to the project scale
 (`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key. Songs
