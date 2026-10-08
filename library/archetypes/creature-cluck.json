@@ -1,0 +1,102 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-cluck",
+  "family": "creature",
+  "description": "Cluck: a very short voiced pop, f0 dropping fast through mid formants",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-cluck",
+    "family": "creature",
+    "archetype": "creature-cluck",
+    "tags": [],
+    "duration": 0.09,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 380,
+          "formants": [
+            [
+              1100,
+              12,
+              0
+            ],
+            [
+              2000,
+              10,
+              -2
+            ],
+            [
+              3200,
+              6,
+              -10
+            ]
+          ],
+          "tilt": 1.1,
+          "jitterCents": 30
+        },
+        "amp": {
+          "attack": 0.006,
+          "decay": 0.06,
+          "sustain": 0,
+          "release": 0.02
+        },
+        "pitchEnv": [
+          {
+            "at": 0.07,
+            "to": 200,
+            "curve": "exp"
+          }
+        ]
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 260,
+      "max": 520,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.4,
+      "max": 0.8,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 800,
+      "max": 1400,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 1700,
+      "max": 2400,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 2800,
+      "max": 3800,
+      "scale": "log"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 10,
+      "max": 50,
+      "scale": "lin"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.04,
+      "max": 0.08,
+      "scale": "log"
+    }
+  }
+}

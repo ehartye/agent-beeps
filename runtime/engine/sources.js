@@ -1,6 +1,6 @@
 // Sound sources: each patch source type becomes a small group of Web Audio nodes.
 import { mulberry32, noiseSamples } from './rng.js';
-import { sumInto } from './sum.js';
+import { sumInto, sumNodes } from './sum.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Source} Source */
 /**
@@ -213,6 +213,89 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     bp.Q.value = src.q;
     parts.push(s.connect(bp));
     nodes.push(s);
+  } else if (src.type === 'voice') {
+    // Source-filter voice: a glottal pulse train (and breath noise) excites parallel formant bandpasses.
+    const tilt = src.tilt ?? 1.5;
+    const harmonics = 48;
+    const real = new Float32Array(harmonics + 1);
+    const imag = new Float32Array(harmonics + 1);
+    for (let n = 1; n <= harmonics; n++) imag[n] = 1 / n ** tilt;
+    const pulse = ctx.createOscillator();
+    pulse.setPeriodicWave(ctx.createPeriodicWave(real, imag));
+    pulse.frequency.value = pitchHz;
+    nodes.push(pulse); pitch.push({ param: pulse.frequency, ratio: 1 }); detune.push(pulse.detune);
+    const breath = Math.min(1, Math.max(0, src.breath ?? 0));
+    /** Pitch modulators, summed into the pulse's detune through one connection (see sum.js). */
+    /** @type {AudioNode[]} */
+    const wobbles = [];
+
+    if (src.jitterCents) {
+      // Smoothed seeded random walk, ~50 knots a second, looping seamlessly, driving the pulse train's detune.
+      const rand = mulberry32(seed + 31);
+      const knotsPerSec = 50;
+      const knots = knotsPerSec * 2;
+      const values = Array.from({ length: knots }, () => rand() * 2 - 1);
+      const wobble = new Float32Array(Math.ceil(ctx.sampleRate * 2));
+      const per = wobble.length / knots;
+      for (let i = 0; i < wobble.length; i++) {
+        const k = Math.floor(i / per), f = i / per - k;
+        wobble[i] = values[k] + (values[(k + 1) % knots] - values[k]) * f;
+      }
+      const j = ctx.createBufferSource();
+      j.buffer = bufferOf(ctx, wobble);
+      j.loop = true;
+      const depth = ctx.createGain();
+      depth.gain.value = src.jitterCents;
+      wobbles.push(j.connect(depth));
+      nodes.push(j);
+    }
+    if (src.vibrato) {
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = src.vibrato.rate;
+      const depth = ctx.createGain();
+      depth.gain.value = src.vibrato.cents;
+      wobbles.push(lfo.connect(depth));
+      nodes.push(lfo);
+    }
+
+    sumInto(ctx, wobbles, pulse.detune);
+    const pulseGain = ctx.createGain();
+    pulseGain.gain.value = 1 - breath;
+    /** @type {AudioNode[]} */
+    const excitation = [pulse.connect(pulseGain)];
+    if (breath > 0) {
+      const air = ctx.createBufferSource();
+      air.buffer = noiseBuffer(ctx, 'white', seed + 53);
+      air.loop = true;
+      const airGain = ctx.createGain();
+      airGain.gain.value = breath;
+      excitation.push(air.connect(airGain));
+      nodes.push(air);
+    }
+    /** @type {AudioNode} */
+    let drive = sumNodes(ctx, excitation);
+    if (src.tremolo) {
+      const d = Math.min(1, src.tremolo.depth);
+      const trem = ctx.createGain();
+      trem.gain.value = 1 - d / 2;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = src.tremolo.rate;
+      const depth = ctx.createGain();
+      depth.gain.value = d / 2;
+      lfo.connect(depth).connect(trem.gain);
+      nodes.push(lfo);
+      drive = drive.connect(trem);
+    }
+    for (const [hz, q, gainDb] of src.formants) {
+      if (!nyquistSafe(ctx, hz)) continue;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = hz;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.value = db(gainDb);
+      parts.push(drive.connect(bp).connect(g));
+    }
   } else if (src.type === 'metal') {
     const sum = ctx.createGain();
     sum.gain.value = 1 / METAL_RATIOS.length;

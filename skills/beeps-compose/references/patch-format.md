@@ -39,6 +39,7 @@
 | `additive` | `pitch`, `partials [[ratio, gainDb, decaySec]]` | bells, chimes, realistic tones |
 | `modal` | `pitch`, `modes [[ratio, q, gainDb]]`, `exciter` impulse/noiseBurst | struck wood, glass, metal, clicks |
 | `grains` | `rate` per s, `grainDecay`, `center`, `q`, `rateEnd`, `stereo` | shakers, rain, debris, crackle |
+| `voice` | `pitch` (f0), `formants [[hz, q, gainDb]]` (2-4), `tilt`, `jitterCents`, `vibrato {rate, cents}`, `tremolo {rate, depth}`, `breath` | animal calls, creature vocals, grunts, hisses, huffs |
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
 
 `noise` and `grains` are mono by default. `stereo: true` (or a width 0..1; correlation between the
@@ -46,6 +47,15 @@ channels is sqrt(1 - width)) gives each channel its own seeded noise: determinis
 is the mono signal, and patches without it render exactly as before. Use it on beds and ambiences;
 a layer `pan` then moves the whole image as a balance. Two panned mono tracks with different noise
 are no longer needed for width.
+
+`voice` is a source-filter voice: a glottal pulse train at `pitch` (draw the f0 contour with the
+layer's `pitchEnv`) feeds 2-4 parallel bandpass resonances that stay put as the pitch moves, as a
+real tract does. `tilt` is the harmonic slope (1/n^tilt: 0.7-1 buzzy and raspy, 2+ soft and hooty),
+`jitterCents` a seeded random pitch wobble (roughness), `vibrato` and `tremolo` the wobble of a
+bleat or the flutter of a growl, `breath` (0..1) swaps pulse energy for seeded breath noise through
+the same formants (1 is a hiss). Rough formant starting points: open "ah" 700/1200/2600, "oo" 350/700/2300,
+"eh" 550/1800/2500. Small animals sit higher (yip: 900/2200/3200), big ones lower (moo: 450/800/2200).
+Songs pitch-shift it; the formants do not move. New type: existing patches render exactly as before.
 
 `pitch` is a note name (`E6`, `F#5`, `Bb3`) or Hz. Pitched sources snap to the project scale
 (`beeps init --scale C:majorPentatonic` is the default) so overlapping sounds share a key. Songs

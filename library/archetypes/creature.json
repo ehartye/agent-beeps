@@ -1,0 +1,122 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature",
+  "family": "creature",
+  "description": "Generic voiced animal call: glottal pulse train with a gentle falling f0, vibrato and jitter through three vowel-like formants",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature",
+    "family": "creature",
+    "archetype": "creature",
+    "tags": [],
+    "duration": 0.45,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 220,
+          "formants": [
+            [
+              700,
+              8,
+              0
+            ],
+            [
+              1200,
+              8,
+              -4
+            ],
+            [
+              2600,
+              6,
+              -12
+            ]
+          ],
+          "tilt": 1.4,
+          "jitterCents": 8,
+          "vibrato": {
+            "rate": 5,
+            "cents": 20
+          },
+          "breath": 0.05
+        },
+        "amp": {
+          "attack": 0.03,
+          "decay": 0.35,
+          "sustain": 0,
+          "release": 0.1
+        },
+        "pitchEnv": [
+          {
+            "at": 0.35,
+            "to": 170,
+            "curve": "exp"
+          }
+        ]
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 130,
+      "max": 420,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.6,
+      "max": 1.1,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 500,
+      "max": 950,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 1100,
+      "max": 1700,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/2/0": {
+      "min": 2300,
+      "max": 3200,
+      "scale": "log"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 0,
+      "max": 25,
+      "scale": "lin"
+    },
+    "/layers/0/source/vibrato/rate": {
+      "min": 3,
+      "max": 8,
+      "scale": "lin"
+    },
+    "/layers/0/source/vibrato/cents": {
+      "min": 8,
+      "max": 40,
+      "scale": "lin"
+    },
+    "/layers/0/source/breath": {
+      "min": 0,
+      "max": 0.15,
+      "scale": "lin"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.25,
+      "max": 0.45,
+      "scale": "log"
+    }
+  }
+}

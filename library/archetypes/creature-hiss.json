@@ -1,0 +1,89 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-hiss",
+  "family": "creature",
+  "description": "Hiss: breath noise only, through narrow high formants (a snake, a cat, steam)",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-hiss",
+    "family": "creature",
+    "archetype": "creature-hiss",
+    "tags": [],
+    "duration": 0.5,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 200,
+          "formants": [
+            [
+              5000,
+              3,
+              0
+            ],
+            [
+              7500,
+              3,
+              -3
+            ]
+          ],
+          "tilt": 1.5,
+          "breath": 1
+        },
+        "amp": {
+          "attack": 0.08,
+          "decay": 0.35,
+          "sustain": 0,
+          "release": 0.1
+        }
+      }
+    ],
+    "variation": {
+      "pitchCents": 25,
+      "gainDb": 1,
+      "variants": 4,
+      "noRepeat": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/formants/0/0": {
+      "min": 3500,
+      "max": 6000,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 6500,
+      "max": 9000,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/0/1": {
+      "min": 1.5,
+      "max": 6,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/1/1": {
+      "min": 1.5,
+      "max": 6,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/1/2": {
+      "min": -8,
+      "max": 0,
+      "scale": "lin"
+    },
+    "/layers/0/amp/attack": {
+      "min": 0.05,
+      "max": 0.14,
+      "scale": "lin"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.25,
+      "max": 0.45,
+      "scale": "log"
+    }
+  }
+}

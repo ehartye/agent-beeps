@@ -20,8 +20,11 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
 
 ## Generate first, author second
 
-- `beeps archetypes` lists the 16 starting points (coin, pickup, jump, land, hit, explosion, laser,
-  powerup, powerdown, ui-click, ui-hover, confirm, no, blip, whoosh, alarm).
+- `beeps archetypes` lists the starting points (coin, pickup, jump, land, hit, explosion, laser,
+  powerup, powerdown, ui-click, ui-hover, confirm, no, blip, whoosh, alarm), plus the `creature`
+  family (voice-source animal calls: `creature` samples all of them; `creature-yip`, `-growl`,
+  `-bleat`, `-low`, `-cluck`, `-huff`, `-hiss`). Start a creature from these instead of hand-building
+  it from oscillators and noise.
 - `beeps generate <archetype> --count 6 --prompt "<what it is for>"` oversamples, renders, drops
   lint failures, and keeps a diverse set (taste-ranked once the model has data). Words in the prompt
   steer it (soft, warm, dark, bright, short, punchy...; `steering` shows what it read). It prints the
