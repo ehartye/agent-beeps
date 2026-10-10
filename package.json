@@ -1,6 +1,6 @@
 {
   "name": "agent-beeps-runtime",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Browser-safe runtime of agent-beeps: a patch, a seed and named inputs in, a voice in your AudioContext out. Generated; do not edit.",
   "license": "MIT",
   "type": "module",
