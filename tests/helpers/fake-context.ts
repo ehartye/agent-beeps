@@ -62,6 +62,7 @@ export class FakeContext {
   createDelay() { return this.make('delay', { delayTime: 0 }); }
   createIIRFilter(feedforward: number[], feedback: number[]) { const n = this.make('iir'); n.feedforward = feedforward; n.feedback = feedback; return n; }
   createChannelMerger() { return this.make('merger'); }
+  createConstantSource() { return this.make('constant', { offset: 1 }); }
   nodes(kind: string) { return this.created.filter(n => n.kind === kind); }
   /** The most connections any one node input or AudioParam receives (Chromium sums 3+ in a per-run order). */
   maxFanIn() {

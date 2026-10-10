@@ -7,7 +7,8 @@ import { loadConfig } from '../build/config.ts';
 import { runBuild } from '../build/build.ts';
 import { openStore } from '../build/store.ts';
 import { ciExport, storePull, storePush, storeStatus } from '../build/store-ops.ts';
-import { verifyOutputs } from '../build/verify.ts';
+import { verifyOutputs, verifyParity } from '../build/verify.ts';
+import type { EngineName } from '../runtime/harness.ts';
 import { int } from './shared.ts';
 
 const list = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean);
@@ -49,7 +50,8 @@ export function registerBuildCommands(program: Command, io: Io) {
     .option('--lock <file>', 'the lock (default: the config\'s, else <dir>/audio.lock.json)')
     .option('--out <dir>', 'the output directory when the target is a lock file')
     .option('--decode', 'also decode loops and check their frame counts and wraps (needs ffmpeg)')
-    .action((target: string | undefined, o: { config?: string; lock?: string; out?: string; decode?: boolean }) => {
+    .option('--parity [engines]', 'also play every runtime cue (delivery runtime or both) and compare it with its bake: bit-exact in Chromium; in other engines (e.g. chromium,firefox) loudness within 1 LU and centroid within 30 Hz. Needs Chromium', list)
+    .action(async (target: string | undefined, o: { config?: string; lock?: string; out?: string; decode?: boolean; parity?: string[] | true }) => {
       let lock = o.lock, out = o.out;
       if (target) {
         if (target.endsWith('.json')) { lock = lock ?? resolve(target); } else { out = out ?? resolve(target); lock = lock ?? resolve(target, 'audio.lock.json'); }
@@ -58,7 +60,11 @@ export function registerBuildCommands(program: Command, io: Io) {
         const cfg = cfgFor(o);
         lock = lock ?? cfg.lock; out = out ?? cfg.out;
       }
-      const r = verifyOutputs({ lock, out, decode: o.decode });
+      const r = verifyOutputs({ lock, out, decode: o.decode }) as ReturnType<typeof verifyOutputs> & { parity?: unknown };
+      if (o.parity) {
+        const p = await verifyParity({ lock, out, engines: o.parity === true ? ['chromium'] : (o.parity as EngineName[]) });
+        r.parity = p.parity; r.problems.push(...p.problems); r.warnings.push(...p.warnings); r.ok = r.problems.length === 0;
+      }
       io.emit(r);
       if (!r.ok) process.exitCode = 1;
     });

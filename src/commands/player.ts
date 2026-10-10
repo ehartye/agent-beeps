@@ -16,7 +16,7 @@ import { PLAYER_VERSION } from '../../runtime/player/version.js';
 /** Runtime files the vendored player needs (relative to runtime/): its modules and the engine modules they import. */
 export const PLAYER_FILES = [
   'player/player.js', 'player/player.d.ts', 'player/version.js', 'player/voices.js', 'player/timing.js', 'player/lifecycle.js', 'player/loader.js', 'player/params.js',
-  'engine/fx.js', 'engine/rng.js', 'engine/variation.js', 'engine/notes.js',
+  'engine/fx.js', 'engine/rng.js', 'engine/variation.js',
 ];
 
 /** Copy the player into <dir>/beeps-player/, keeping relative imports; games import player/player.js. */

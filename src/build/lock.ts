@@ -22,7 +22,9 @@ export interface LockAsset {
   source?: string;
   inputHash: string;
   /** 12-hex prefixes of the four hashes `inputHash` is made of, so a stale asset can say which part changed. */
-  parts?: { delivery: string; export: string; renders: string; toolchain: string };
+  parts?: { delivery: string; export: string; renders: string; toolchain: string; runtime?: string };
+  /** Present when the asset ships a runtime cue: 'runtime' (the cue only) or 'both'. Absent means baked, as in every lock written before the runtime path. */
+  delivery?: 'runtime' | 'both';
   outputs: OutputRef[];
   [extra: string]: unknown;
 }

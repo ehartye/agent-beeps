@@ -62,6 +62,16 @@ Anything heard often (steps, blips, coins, hits) gets `variation` - 3+ variants 
 `noRepeat`, or 3+ hand-made sibling patches (`<stem>-<n>` names or one `meta.variantOf`) when the
 variants need different structure. Use `weights` to make a distinctive variant rarer. Audition it with the ×75 button.
 
+## Sounds a game plays live
+
+A patch with runtime inputs is judged at its corners, not only at its defaults. `beeps runtime check` lints every input at min
+and max; a finding the default lacks is yours to fix (narrow the range, `clamp`, or compensate with `/out/gainDb`). Read the
+loudness spread it prints: a sound 8 LU louder at the top of its range is a mix bug. Make inputs that move while the sound
+plays **live** and the rest **static**; make pitch inputs live, because a static one is snapped to the project scale. Send
+voices with reverb to one shared bus (`createReverbBus`): a convolver per voice costs 2 to 4 ms of main-thread time, a send
+gain about 0.3 ms. Vary by `variant` or a few fixed seeds, not a fresh seed per play. Across browsers the tolerance is
+features, not samples (1 LU, 30 Hz of centroid); sweeps and noise differ more than tones.
+
 ## A kit is a system
 
 - One "no" for the whole game: a soft falling figure, never a buzzer, so it is learned once.

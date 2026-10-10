@@ -11,6 +11,8 @@ import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.t
 import { loadSong } from '../music.ts';
 import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import { parseProject } from '../schema/project.ts';
+import { renderAndMeasure } from '../render/pipeline.ts';
+import { cueFile, cueText, makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
 import { planAsset, type Encoder, type Planned } from './plan.ts';
@@ -229,7 +231,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       o.hooks?.beforeInstall?.(id);
       install(cfg.out, sdir, manifest.outputs, prior?.outputs);
       rmSync(sdir, { recursive: true, force: true });
-      commit(id, { role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs });
+      commit(id, { role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) });
       o.hooks?.afterInstall?.(id);
       todo.delete(id); pulled.push(id);
       log(`pulled ${id}`);
@@ -325,37 +327,57 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   const sdir = join(stage, r.id), wavDir = join(sdir, 'wav'), outDir = join(sdir, 'out');
   rmSync(sdir, { recursive: true, force: true });
   mkdirSync(wavDir, { recursive: true });
-  const wav = join(wavDir, `${r.id}.wav`);
-  if (r.kind === 'patch') {
-    await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true });
-  } else {
-    const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, layers: pl.layers });
-    for (const w of out.warnings) log(`${r.id}: ${w}`);
-  }
-  const side = ExportManifestSchema.parse(JSON.parse(readFileSync(`${wav}.json`, 'utf8')));
-  if (side.id !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" exported asset id "${side.id}": rename the ${r.kind} "name" to "${r.id}"`, { hint: 'the catalog keys assets by the patch or song name, so the recipe id must match it' });
-
+  const baked = wantsBaked(pl.ships);
   let from = wavDir;
-  if (delivery.format !== 'wav') {
-    const k = delivery.kbps!;
-    const c = compressBundle(wavDir, outDir, { format: delivery.format, kbps: { music: k.music, ambience: k.ambience, sfx: k.sfx, mix: k.mix } });
-    if (c.problems.length) throw new BeepsError('E_VERIFY', `${r.id}: encoded audio does not verify: ${c.problems.flatMap(x => x.problems.map(m => `${x.file}: ${m}`)).join('; ')}`, { details: { problems: c.problems } });
-    from = outDir;
+  let trimDb: number | undefined;
+  if (baked) {
+    const wav = join(wavDir, `${r.id}.wav`);
+    if (r.kind === 'patch') {
+      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true });
+      trimDb = ex.first.trimDb;
+    } else {
+      const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, layers: pl.layers });
+      for (const w of out.warnings) log(`${r.id}: ${w}`);
+    }
+    const side = ExportManifestSchema.parse(JSON.parse(readFileSync(`${wav}.json`, 'utf8')));
+    if (side.id !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" exported asset id "${side.id}": rename the ${r.kind} "name" to "${r.id}"`, { hint: 'the catalog keys assets by the patch or song name, so the recipe id must match it' });
+
+    if (delivery.format !== 'wav') {
+      const k = delivery.kbps!;
+      const c = compressBundle(wavDir, outDir, { format: delivery.format, kbps: { music: k.music, ambience: k.ambience, sfx: k.sfx, mix: k.mix } });
+      if (c.problems.length) throw new BeepsError('E_VERIFY', `${r.id}: encoded audio does not verify: ${c.problems.flatMap(x => x.problems.map(m => `${x.file}: ${m}`)).join('; ')}`, { details: { problems: c.problems } });
+      from = outDir;
+    }
+  } else {
+    // Runtime only: nothing is exported or encoded. The one render is the trim measurement (a cache hit when the patch was baked before).
+    const patch = loadPatch(p, r.source);
+    if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
+    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders });
+    if (!m.ok) throw new BeepsError('E_RENDER', m.error);
+    trimDb = m.trimDb;
+  }
+  if (wantsRuntime(pl.ships)) {
+    const patch = loadPatch(p, r.source);
+    if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
+    mkdirSync(from, { recursive: true });
+    atomicWrite(join(from, cueFile(r.id)), cueText(makeCue(patch, p.project, r.seed, trimDb!)));
   }
   const outputs = listOutputs(from);
-  // Cheap static checks of what was just encoded (headers, tag, encoder id, length), over and above compress's decode verification.
-  const sidecarOut = outputs.find(f => /\.(wav|ogg|mp3)\.json$/.test(f.file))!;
-  const sc = ExportManifestSchema.parse(JSON.parse(readFileSync(join(from, sidecarOut.file), 'utf8')));
-  const expects = sidecarExpectations(sidecarOut.file, sc);
-  for (const f of outputs.filter(x => /\.(ogg|mp3)$/.test(x.file))) {
-    const res = staticCheck(join(from, f.file), expects.get(f.file));
-    if (res.problems.length) throw new BeepsError('E_VERIFY', `${r.id}: ${f.file}: ${res.problems.join('; ')}`);
+  if (baked) {
+    // Cheap static checks of what was just encoded (headers, tag, encoder id, length), over and above compress's decode verification.
+    const sidecarOut = outputs.find(f => /.(wav|ogg|mp3).json$/.test(f.file))!;
+    const sc = ExportManifestSchema.parse(JSON.parse(readFileSync(join(from, sidecarOut.file), 'utf8')));
+    const expects = sidecarExpectations(sidecarOut.file, sc);
+    for (const f of outputs.filter(x => /.(ogg|mp3)$/.test(x.file))) {
+      const res = staticCheck(join(from, f.file), expects.get(f.file));
+      if (res.problems.length) throw new BeepsError('E_VERIFY', `${r.id}: ${f.file}: ${res.problems.join('; ')}`);
+    }
   }
   o.hooks?.afterBuild?.(r.id);
   o.hooks?.beforeInstall?.(r.id);
   install(cfg.out, from, outputs, prior?.outputs);
   rmSync(sdir, { recursive: true, force: true });
-  return { role: r.role, source: r.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs };
+  return { role: r.role, source: r.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
 }
 
 /**
@@ -370,7 +392,7 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
     if (!a) continue;
     const bad = a.outputs.filter(f => !existsSync(join(cfg.out, f.file)) || sha256File(join(cfg.out, f.file)).sha256 !== f.sha256);
     if (bad.length) { log(`adopt: ${pl.recipe.id}: ${bad[0].file} does not match the lock; it will be rebuilt`); continue; }
-    assets[pl.recipe.id] = { ...a, role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts };
+    assets[pl.recipe.id] = { ...a, role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
     adopted.push(pl.recipe.id);
   }
   // Assets not in this run's plan (--only) keep the foreign entry untouched.

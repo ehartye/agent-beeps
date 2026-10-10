@@ -62,6 +62,18 @@ names the assets the store lacks (the author forgot `--push`). Key any Actions c
 Add `beeps build --check` (needs ffmpeg for the encoder fingerprint, or trusts the lock's) to the test
 job to fail on stale audio.
 
+## Runtime cues
+
+A recipe may add `"delivery": "runtime"` or `"both"` (default `baked`; absent, the patch's `xRuntime.delivery`). `beeps build`
+then writes `<id>.runtime.json` next to the baked files. It is in the lock (`parts.runtime`, `delivery`) and the store like any
+output, a runtime-only asset encodes nothing and ignores bitrate changes, and editing a binding rebuilds the cue and not its bake.
+The game installs only the engine, as `agent-beeps-runtime` (pin a commit of the repo's `runtime` branch;
+`docs/runtime-package.md`), loads the cue with `parseCue` and plays it with `build(ctx, out, cue).start()`, with a shared
+`createReverbBus` when voices have reverb. Add **`beeps verify --parity chromium,firefox`** to a CI job that has the browsers:
+bit-exact in Chromium, loudness within 1 LU and centroid within 30 Hz in Firefox; WebKit without `OfflineAudioContext` is a
+warning, not a pass. A new engine version makes `parseCue` refuse old cues: rebuild with the toolchain change below. Which
+delivery to pick: `docs/runtime.md`.
+
 ## 4. Toolchain changes
 
 A new engine, pipeline, Chromium or ffmpeg changes every hash. `beeps build` stops with `E_TOOLCHAIN`
@@ -106,3 +118,5 @@ passes with no further renders, and a later re-render of those songs reproduces 
 | `E_STORE` sha256 / manifest | corrupt entry; rebuild the asset and push to a fresh store |
 | `E_BUDGET` | lower kbps or raise `budgetBytes`; nothing was rendered |
 | `E_VERIFY` | the encode failed its decode or header check; fix the source, not the check |
+| `verify`: cue measured with engine N | its trim is stale; rebuild (`--allow-toolchain-change`) and commit the lock |
+| `verify --parity`: tap differs | the voice no longer plays as the renderer (an engine or Chromium change); do not ship until it is bit-exact |

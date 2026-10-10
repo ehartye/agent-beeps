@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildPatch } from '../../runtime/engine/patch.js';
 import { envelopeAt } from '../../runtime/engine/layer.js';
-import { createPicker, variantPatch } from '../../runtime/engine/variation.js';
+import { createPicker, variantDraw, variantPatch } from '../../runtime/engine/variation.js';
 import { impulseResponse } from '../../runtime/engine/fx.js';
-import { noteToHz } from '../../runtime/engine/notes.js';
+import { noteToHz, snapToScale } from '../../runtime/engine/notes.js';
 import { FakeContext, asCtx } from '../helpers/fake-context.ts';
 import { coin, patch, tone, withSource } from '../helpers/patches.ts';
 
@@ -137,15 +137,47 @@ describe('envelope', () => {
 
 describe('variation', () => {
   const varied = () => patch({ ...coin(), variation: { pitchCents: 50, gainDb: 2, variants: 4 } });
-  it('keeps variant 0 as written and perturbs others deterministically within range', () => {
+  it('keeps variant 0 as written and draws the others deterministically within range', () => {
     const p = varied();
-    expect(variantPatch(p, 0, 1)).toBe(p);
+    expect(variantPatch(p, 0, 1)).toEqual({ patch: p, pitchRatio: 1 });
+    expect(variantDraw(p, 0, 1)).toBeNull();
     const a = variantPatch(p, 2, 1), b = variantPatch(p, 2, 1);
     expect(a).toEqual(b);
-    const hz = (a.layers[0].source as any).pitch as number;
-    const cents = 1200 * Math.log2(hz / noteToHz('E6'));
+    const cents = 1200 * Math.log2(a.pitchRatio);
     expect(Math.abs(cents)).toBeLessThanOrEqual(50);
-    expect(Math.abs(a.layers[0].gainDb)).toBeLessThanOrEqual(2);
+    expect(Math.abs(cents)).toBeGreaterThan(0);
+    expect(Math.abs(a.patch.layers[0].gainDb)).toBeLessThanOrEqual(2);
+    // The pitch is not baked into the patch any more: the layers apply the ratio after the scale has chosen the note.
+    expect((a.patch.layers[0].source as any).pitch).toBe('E6');
+  });
+
+  describe('with a scale that snaps', () => {
+    const scale = { root: 'C', mode: 'majorPentatonic' as const, snap: true };
+    const osc = (f: FakeContext) => f.nodes('osc').map(o => o.frequency.value as number);
+    const hzAt = (variant: number, sc: typeof scale | undefined) => osc(build(varied(), { variant, scale: sc }).f)[0];
+    it('detunes each variant from the snapped note (pitchCents used to be erased by the snap)', () => {
+      const snapped = hzAt(0, scale);
+      expect(snapped).toBeCloseTo(noteToHz('E6'), 6); // E is in C major pentatonic
+      const hz = [1, 2, 3].map(v => hzAt(v, scale));
+      expect(new Set(hz).size).toBe(3);
+      for (const [i, h] of hz.entries()) {
+        const ratio = variantDraw(varied(), i + 1, 1)!.pitchRatio;
+        expect(h).toBe(snapped * ratio);
+        expect(Math.abs(1200 * Math.log2(h / snapped))).toBeLessThanOrEqual(50);
+      }
+    });
+    it('puts the pitch envelope target on the same detune, so a sweep keeps its interval', () => {
+      const f = build(varied(), { variant: 2, scale }).f;
+      const ratio = variantDraw(varied(), 2, 1)!.pitchRatio;
+      const [step] = f.nodes('osc')[0].frequency.events.filter((e: any) => e.kind === 'set').slice(-1);
+      expect(step.value).toBe(snapToScale(noteToHz('B6'), scale) * ratio);
+    });
+    it('is the same graph as before the fix when the scale does not snap, and for variant 0', () => {
+      const off = { ...scale, snap: false };
+      const hz = hzAt(2, off);
+      expect(hz).toBe(noteToHz('E6') * variantDraw(varied(), 2, 1)!.pitchRatio);
+      expect(hzAt(0, scale)).toBe(hzAt(0, off));
+    });
   });
   it('never repeats a variant back to back and honours weights', () => {
     const picker = createPicker(varied(), 9);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { applyParams, isLiveTarget, MACROS, targetsOf } from '../../runtime/engine/params.js';
 
 const NOTE = /^[A-G](#|b)?-?\d$/;
 export const Pitch = z.union([
@@ -119,6 +120,36 @@ const Layer = z.strictObject({
   pan: z.number().min(-1).max(1).optional(),
 });
 
+/**
+ * `xRuntime`, a stable extension of beeps/patch@1: named runtime inputs and how they move the patch when a game plays it live
+ * in its own AudioContext (docs/runtime.md). Optional and ignored by the baked path, so a patch without it renders, hashes and
+ * lints exactly as before, and one with it bakes to the same bytes as the same patch without it.
+ */
+const RuntimeInput = z.strictObject({
+  min: z.number(), max: z.number(), default: z.number(),
+  description: z.string().optional(),
+});
+const RuntimeBind = z.strictObject({
+  input: z.string(),
+  /** A JSON pointer into the patch (a layer index may be `*` for every layer) or a macro: /out/gainDb, /out/transpose, /out/brightness. */
+  target: z.union([z.string().startsWith('/'), z.array(z.string().startsWith('/')).min(1)]),
+  /** Value of the binding at the input's min and max: dB, semitones (transpose), octaves (Hz and seconds) or plain units. The authored value sits at the input's default. */
+  range: z.tuple([z.number(), z.number()]),
+  shape: z.enum(['linear', 'quad', 'sqrt']).optional(),
+  unit: z.enum(['db', 'lin', 'oct', 'st']).optional(),
+  /** Automate the running voice (set(input, value)) instead of fixing the value when it is built. */
+  live: z.boolean().optional(),
+  clamp: z.tuple([z.number(), z.number()]).optional(),
+});
+const RuntimeBlockSchema = z.strictObject({
+  /** What the patch ships as, unless the build recipe says otherwise. baked: the exported file. runtime: the cue the game plays live. both: ship both and verify them against each other (`beeps verify --parity`). */
+  delivery: z.enum(['baked', 'runtime', 'both']).default('baked'),
+  /** The voice sounds until released (engine beds, held tones) instead of ending at `duration`. */
+  hold: z.boolean().optional(),
+  inputs: z.record(z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'camelCase input name'), RuntimeInput),
+  bind: z.array(RuntimeBind).max(32),
+});
+
 export const PatchSchema = z.strictObject({
   schema: z.literal('beeps/patch@1'),
   name: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes'),
@@ -141,6 +172,8 @@ export const PatchSchema = z.strictObject({
     /** Relative play probability per variant (Halo-style permutation weighting). */
     weights: z.array(z.number().min(0)).optional(),
   }).optional(),
+  /** Runtime inputs and how they move the patch (see RuntimeBlockSchema). */
+  xRuntime: RuntimeBlockSchema.optional(),
   meta: z.strictObject({
     priority: z.number().int().min(1).max(5).default(3),
     intent: z.enum(['click', 'oneshot', 'bed']).default('oneshot'),
@@ -189,9 +222,58 @@ function deepest(issue: ZIssue): ZIssue {
   return best ? ({ ...best, path: [...issue.path, ...best.path] } as ZIssue) : issue;
 }
 
+/** Cross-checks of an `xRuntime` block the shape alone cannot express. */
+export function runtimeIssues(patch: Patch): Issue[] {
+  const rt = patch.xRuntime;
+  if (!rt) return [];
+  const issues: Issue[] = [];
+  const at = (path: string, message: string, hint?: string) => issues.push({ pointer: path, message, ...(hint ? { hint } : {}) });
+  for (const [name, i] of Object.entries(rt.inputs)) {
+    if (!(i.min < i.max)) at(`/xRuntime/inputs/${name}`, 'min must be below max');
+    else if (i.default < i.min || i.default > i.max) at(`/xRuntime/inputs/${name}/default`, 'default must lie within [min, max]');
+  }
+  rt.bind.forEach((b, n) => {
+    const where = `/xRuntime/bind/${n}`;
+    if (!rt.inputs[b.input]) { at(`${where}/input`, `input "${b.input}" is not declared in xRuntime.inputs`); return; }
+    for (const t of targetsOf(patch, b)) {
+      if (!(t in MACROS)) {
+        let cur: any = patch;
+        for (const k of t.slice(1).split('/')) cur = cur?.[k];
+        if (cur === undefined) { at(`${where}/target`, `target ${t} does not exist in this patch`, 'a field must be present (or defaulted) to be bound; macros are /out/gainDb, /out/transpose, /out/brightness'); continue; }
+        if (typeof cur !== 'number' && !(typeof cur === 'string' && /(pitch|to)$/.test(t))) { at(`${where}/target`, `target ${t} is not a number`); continue; }
+      }
+      if (b.live && !isLiveTarget(t)) at(`${where}/live`, `${t} cannot be live`, 'live targets: the macros, a layer gainDb / pan / filter cutoff / lfo rate, and fx reverb / delay sendDb');
+    }
+  });
+  if (issues.length) return issues;
+  // Every input at its min, at its max, and at each end alone: the patch must stay a valid patch (or the binding clamps it).
+  const names = Object.keys(rt.inputs);
+  const corners: Record<string, number>[] = [
+    Object.fromEntries(names.map(k => [k, rt.inputs[k].min])), Object.fromEntries(names.map(k => [k, rt.inputs[k].max])),
+    ...names.flatMap(k => [{ [k]: rt.inputs[k].min }, { [k]: rt.inputs[k].max }]),
+  ];
+  const seen = new Set<string>();
+  for (const c of corners) {
+    let applied;
+    try { applied = applyParams(patch, c).patch; } catch (e) { at('/xRuntime/bind', (e as Error).message); break; }
+    const { xRuntime: __, ...rest } = applied as Patch;
+    const v = PatchSchema.safeParse(rest);
+    if (!v.success) for (const iss of v.error.issues) {
+      const key = pointerOf(iss.path);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      at('/xRuntime/bind', `input corner ${JSON.stringify(c)} makes ${key || '/'} invalid: ${iss.message}`, 'narrow the binding range or add "clamp": [min, max] to the binding');
+    }
+  }
+  return issues;
+}
+
 export function parsePatch(input: unknown): ParseResult {
   const r = PatchSchema.safeParse(input);
-  if (r.success) return { ok: true, patch: r.data };
+  if (r.success) {
+    const issues = runtimeIssues(r.data);
+    return issues.length ? { ok: false, issues } : { ok: true, patch: r.data };
+  }
   const issues = r.error.issues.map(raw => {
     const issue = deepest(raw);
     const hint = hintFor(issue);

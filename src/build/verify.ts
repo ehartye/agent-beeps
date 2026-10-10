@@ -8,6 +8,11 @@ import { ExportManifestSchema, type ExportManifest } from '../export-manifest.ts
 import { parseMp3, parseOgg } from '../audio/container.ts';
 import { sha256Hex } from './store.ts';
 import { readLock, type Lock } from './lock.ts';
+import { parseCue } from '../../runtime/engine/index.js';
+import { ENGINE_VERSION } from '../../runtime/engine/version.js';
+import { parsePatch } from '../schema/patch.ts';
+import { checkParity, type EngineName, type ParityCheck } from '../runtime/harness.ts';
+import type { Cue } from '../runtime/cue.ts';
 
 export interface StaticInfo { format: 'opus' | 'mp3' | 'wav' | 'unknown'; frames?: number; channels?: number; sampleRate?: number; encoder?: string; delay?: number; padding?: number }
 export interface StaticResult { info: StaticInfo; problems: string[] }
@@ -95,6 +100,7 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
       if (buf.length !== f.bytes) { problems.push({ asset: id, file: f.file, problem: `${buf.length} bytes, lock says ${f.bytes}` }); continue; }
       if (sha256Hex(buf) !== f.sha256) { problems.push({ asset: id, file: f.file, problem: `sha256 ${sha256Hex(buf).slice(0, 12)}, lock says ${f.sha256.slice(0, 12)}` }); continue; }
       intact.add(f.file);
+      if (/.runtime.json$/.test(f.file)) { cueProblems(id, f.file, buf, problems); continue; }
       if (/\.(wav|ogg|mp3)\.json$/.test(f.file)) {
         const m = ExportManifestSchema.safeParse(safeJson(buf));
         if (!m.success) { problems.push({ asset: id, file: f.file, problem: `not a beeps/audio-asset@1 sidecar (${m.error.issues[0].message})` }); continue; }
@@ -111,7 +117,7 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
       for (const pr of r.problems) problems.push({ asset: id, file: f.file, problem: pr });
     }
   }
-  if (o.catalog !== false) catalogProblems(out, lock, tracked, problems, warnings);
+  if (o.catalog !== false && Object.values(lock.assets).some(a => a.delivery !== 'runtime')) catalogProblems(out, lock, tracked, problems, warnings);
   // Files in the output directory that no asset owns (a deleted recipe's leftovers, a hand-added file).
   if (existsSync(out)) for (const f of listFlat(out)) if (f !== 'index.json' && !tracked.has(f) && /\.(ogg|mp3|wav|json)$/.test(f)) warnings.push(`${f} is not in the lock`);
   if (o.decode && loops.length) {
@@ -124,6 +130,46 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
     }
   }
   return { ok: problems.length === 0, lock: typeof o.lock === 'string' ? o.lock : '(in memory)', out, assets: Object.keys(lock.assets).length, files, checkedStatic, problems, warnings };
+}
+
+/** A runtime cue in the output: the right schema and engine, the id of its asset, and a patch that still parses (xRuntime included). */
+function cueProblems(asset: string, file: string, buf: Buffer, problems: VerifyProblem[]): void {
+  const add = (problem: string) => problems.push({ asset, file, problem });
+  let cue: Cue;
+  try { cue = parseCue(safeJson(buf), { allowEngineMismatch: true }); } catch (e) { add((e as Error).message); return; }
+  if (cue.engine !== ENGINE_VERSION) add(`cue was measured with engine ${cue.engine}, this beeps is engine ${ENGINE_VERSION}: its loudness trim is stale (beeps build --allow-toolchain-change)`);
+  if (cue.id !== asset) add(`cue id "${cue.id}" is not the asset id "${asset}"`);
+  const p = parsePatch(cue.patch);
+  if (!p.ok) add(`the patch in the cue no longer parses: ${p.issues[0].pointer} ${p.issues[0].message}`);
+}
+
+/** The cues a lock's runtime-shipping assets point at, read from the output directory (those that exist and parse). */
+export function lockedCues(lock: Lock, out: string): Cue[] {
+  const cues: Cue[] = [];
+  for (const asset of Object.values(lock.assets)) {
+    for (const f of asset.outputs) {
+      if (!/.runtime.json$/.test(f.file) || !existsSync(join(out, f.file))) continue;
+      try { cues.push(parseCue(JSON.parse(readFileSync(join(out, f.file), 'utf8')), { allowEngineMismatch: true })); } catch { /* reported by verifyOutputs */ }
+    }
+  }
+  return cues;
+}
+
+/**
+ * `beeps verify --parity`: every runtime cue baked against played, in Chromium bit for bit, and in the other engines by features
+ * (loudness within 1 LU, centroid within 30 Hz of Chromium's bake). A verdict that fails is a verify problem; an engine that cannot
+ * render offline audio is a warning, never a pass.
+ */
+export async function verifyParity(o: { lock: string | Lock; out: string; engines: EngineName[] }): Promise<{ parity: ParityCheck; problems: VerifyProblem[]; warnings: string[] }> {
+  const lock = typeof o.lock === 'string' ? readLock(o.lock) : o.lock;
+  if (!lock) throw new BeepsError('E_NOT_FOUND', `no lock at ${o.lock}`);
+  const cues = lockedCues(lock, resolve(o.out)).filter(c => c.engine === ENGINE_VERSION);
+  const parity = await checkParity(cues, o.engines);
+  const problems: VerifyProblem[] = [], warnings: string[] = [];
+  for (const v of parity.verdicts) if (!v.ok) for (const pr of v.problems) problems.push({ asset: v.cue, problem: `parity (${v.engine}, ${v.mode}): ${pr}` });
+  for (const e of parity.engines) if (e.status !== 'ok') warnings.push(`${e.engine}: ${e.status === 'no-web-audio' ? 'no OfflineAudioContext in this build, so parity was not checked there' : e.version}`);
+  if (!cues.length) warnings.push('no runtime cues at the current engine version to check');
+  return { parity, problems, warnings };
 }
 
 const safeJson = (b: Buffer): unknown => { try { return JSON.parse(b.toString('utf8')); } catch { return undefined; } };
@@ -152,7 +198,7 @@ function catalogProblems(out: string, lock: Lock, tracked: Set<string>, problems
       if (!tracked.has(f) && !existsSync(join(out, f))) problems.push({ asset: id, file: f, problem: 'listed in index.json but missing' });
     }
   }
-  for (const id of Object.keys(lock.assets)) if (!ids.has(id)) problems.push({ asset: id, problem: 'in the lock but not in index.json' });
+  for (const [id, a] of Object.entries(lock.assets)) if (!ids.has(id) && a.delivery !== 'runtime') problems.push({ asset: id, problem: 'in the lock but not in index.json' });
   for (const id of ids) if (!lock.assets[id]) warnings.push(`index.json lists ${id}, which is not in the lock`);
 }
 

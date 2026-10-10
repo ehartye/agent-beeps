@@ -3,6 +3,17 @@ import { buildSource } from './sources.js';
 import { noteToHz, snapToScale } from './notes.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Layer} Layer */
+/**
+ * Nodes the layer already contains, for a runtime that automates live inputs.
+ * @typedef {object} LayerNodes
+ * @property {GainNode} gain  the layer's trim (static value, never automated by the engine)
+ * @property {StereoPannerNode | undefined} pan
+ * @property {BiquadFilterNode | undefined} filter
+ * @property {OscillatorNode | undefined} lfo
+ * @property {{ param: AudioParam, ratio: number }[]} pitch
+ * @property {AudioParam[]} detune
+ * @property {number} baseHz
+ */
 /** @typedef {{ root: string, mode: 'chromatic'|'major'|'minor'|'dorian'|'majorPentatonic'|'minorPentatonic'|'blues', snap: boolean }} Scale */
 
 const MIN_FREQ = 1;
@@ -43,18 +54,24 @@ export function envelopeAt(amp, t) {
 }
 
 /**
+ * `hold` (runtime path only): the layer does not schedule its own release. It sounds until the returned
+ * `release(at)` is called, which schedules exactly what the default path schedules at `when + duration`.
+ * The returned `nodes` are references to nodes the graph already contains (no node is added for them), so a
+ * runtime can automate a live input. Without `hold` the graph, its events and their order are unchanged.
  * @param {BaseAudioContext} ctx
  * @param {Layer} layer
- * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode }} opts
- * @returns {{ end: number }}
+ * `pitchRatio` is a pitch offset applied after the scale has chosen the note (a variant's detune): the scale decides which
+ * note a sound is, the offset moves it from there. Sources without a pitch (noise, grains, metal) are not moved by it.
+ * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode, hold?: boolean, pitchRatio?: number }} opts
+ * @returns {{ end: number, release: (at: number) => number, stop: (t: number) => void, nodes: LayerNodes }}
  */
-export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
+export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1 }) {
   const t0 = when + layer.start;
   const { attack, decay, sustain, release } = layer.amp;
   const off = Math.max(t0 + Math.min(attack, 0.002), when + duration);
   const end = off + release;
   const src = /** @type {any} */ (layer.source);
-  const base = 'pitch' in src ? resolvePitch(src.pitch, scale) : 440;
+  const base = 'pitch' in src ? resolvePitch(src.pitch, scale) * pitchRatio : 440;
   const built = buildSource(ctx, layer.source, { pitchHz: base, seed, length: end - t0 });
 
   // Pitch envelope: every frequency param follows, keeping its ratio to the fundamental.
@@ -63,7 +80,7 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
       param.setValueAtTime(base * ratio, t0);
       for (const point of layer.pitchEnv) {
         const at = t0 + point.at;
-        const v = Math.max(MIN_FREQ, resolvePitch(point.to, scale) * ratio);
+        const v = Math.max(MIN_FREQ, resolvePitch(point.to, scale) * pitchRatio * ratio);
         if (point.curve === 'step') param.setValueAtTime(v, at);
         else if (point.curve === 'linear') param.linearRampToValueAtTime(v, at);
         else param.exponentialRampToValueAtTime(v, at);
@@ -103,9 +120,13 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
   if (attack > 0) amp.gain.linearRampToValueAtTime(1, t0 + attack);
   else amp.gain.setValueAtTime(1, t0);
   if (decay > 0 && sustain < 1) amp.gain.setTargetAtTime(sustain, t0 + attack, decay / 3);
-  const level = envelopeAt(layer.amp, off - t0);
-  amp.gain.setValueAtTime(level, off);
-  amp.gain.linearRampToValueAtTime(0, end);
+  /** The release: hold the analytic level at `at`, then fall linearly to silence. Returns when the voice is silent. */
+  const scheduleRelease = (/** @type {number} */ at) => {
+    amp.gain.setValueAtTime(envelopeAt(layer.amp, at - t0), at);
+    amp.gain.linearRampToValueAtTime(0, at + release);
+    return at + release;
+  };
+  if (!hold) scheduleRelease(off);
   node = node.connect(amp);
 
   // Opt-in second filter, after the envelope: the envelope is what leaves a short low burst with a
@@ -118,6 +139,8 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
     node = node.connect(hp);
   }
 
+  /** @type {OscillatorNode | undefined} */
+  let lfoNode;
   if (layer.lfo) {
     const lfo = ctx.createOscillator();
     lfo.frequency.value = layer.lfo.rate;
@@ -134,13 +157,17 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
       node = node.connect(trem);
     }
     lfo.start(t0);
-    lfo.stop(end);
+    if (!hold) lfo.stop(end);
+    lfoNode = lfo;
   }
 
+  /** @type {StereoPannerNode | undefined} */
+  let panNode;
   if (layer.pan !== undefined && layer.pan !== 0) {
     const pan = ctx.createStereoPanner();
     pan.pan.value = layer.pan;
     node = node.connect(pan);
+    panNode = pan;
   }
 
   const gain = ctx.createGain();
@@ -148,6 +175,20 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out }) {
   node.connect(gain).connect(out);
 
   built.start(t0);
-  built.stop(end + 0.01);
-  return { end };
+  if (!hold) built.stop(end + 0.01);
+  return {
+    end: hold ? Infinity : end,
+    release(at) {
+      const silent = scheduleRelease(Math.max(at, t0 + Math.min(attack, 0.002)));
+      built.stop(silent + 0.01);
+      lfoNode?.stop(silent);
+      return silent;
+    },
+    /** Stop every source of the layer at `t` (used to tear a voice down; stopping twice is harmless). */
+    stop(t) {
+      built.stop(t);
+      lfoNode?.stop(t);
+    },
+    nodes: { gain, pan: panNode, filter, lfo: lfoNode, pitch: built.pitch, detune: built.detune, baseHz: base },
+  };
 }

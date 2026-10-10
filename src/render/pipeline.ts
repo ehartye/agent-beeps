@@ -38,9 +38,23 @@ export const PEAK_CEILING_DB = -1.7;
 /** Bump when trimming or measurement changes, so cached renders are redone. */
 export const PIPELINE_VERSION = 2;
 
+const withoutRuntime = (patch: Patch): Patch => { if (!patch.xRuntime) return patch; const { xRuntime: _, ...rest } = patch; return rest; };
+
+/**
+ * True when the render applies the variant's pitch detune after the scale snapped the pitch. Engine versions before that fix applied
+ * it before, so a snapping scale collapsed every variant to the same note. Only these renders changed, so only their keys carry the
+ * marker (below); every other render, and every lock built from them, keeps its hash.
+ */
+export const detunesAfterSnap = (patch: Patch, project: Project, variant: number): boolean =>
+  variant > 0 && project.scale.snap && (patch.variation?.pitchCents ?? 0) > 0 && patch.layers.some(l => 'pitch' in l.source || !!l.pitchEnv?.length);
+
 /** The cache key of one patch render, computable without a browser (`beeps build` hashes it). */
 export const patchRenderKey = (patch: Patch, project: Project, seed: number, variant: number): string =>
-  renderKey(patch, { seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION });
+  // `xRuntime` (runtime inputs) never changes the baked render, so it is not part of its key: editing a binding must not re-bake.
+  renderKey(withoutRuntime(patch), {
+    seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION,
+    ...(detunesAfterSnap(patch, project, variant) ? { detune: 'after-snap' } : {}),
+  });
 
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
