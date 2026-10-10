@@ -1,0 +1,40 @@
+{
+  "schema": "beeps/kit@1",
+  "sounds": [
+    {
+      "name": "comet-blaster",
+      "family": "laser",
+      "priority": 3,
+      "trimDb": -5.56,
+      "seed": 261026
+    },
+    {
+      "name": "shield-ripple",
+      "family": "hit",
+      "priority": 3,
+      "trimDb": -2.42,
+      "seed": 261037
+    },
+    {
+      "name": "hyperdrive-charge",
+      "family": "powerup",
+      "priority": 4,
+      "trimDb": -13.76,
+      "seed": 261048
+    },
+    {
+      "name": "asteroid-burst",
+      "family": "explosion",
+      "priority": 4,
+      "trimDb": -8.36,
+      "seed": 261059
+    },
+    {
+      "name": "creature-call",
+      "family": "creature",
+      "priority": 3,
+      "trimDb": -9,
+      "seed": 261070
+    }
+  ]
+}

@@ -38,9 +38,12 @@ export const PEAK_CEILING_DB = -1.7;
 /** Bump when trimming or measurement changes, so cached renders are redone. */
 export const PIPELINE_VERSION = 2;
 
+const withoutRuntime = (patch: Patch): Patch => { if (!patch.xRuntime) return patch; const { xRuntime: _, ...rest } = patch; return rest; };
+
 /** The cache key of one patch render, computable without a browser (`beeps build` hashes it). */
 export const patchRenderKey = (patch: Patch, project: Project, seed: number, variant: number): string =>
-  renderKey(patch, { seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION });
+  // `xRuntime` (runtime inputs) never changes the baked render, so it is not part of its key: editing a binding must not re-bake.
+  renderKey(withoutRuntime(patch), { seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION });
 
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 

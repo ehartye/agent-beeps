@@ -1,0 +1,44 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "engine-drone",
+  "family": "engine",
+  "tags": ["loop", "bed"],
+  "duration": 1.2,
+  "layers": [
+    {
+      "source": { "type": "osc", "wave": "sawtooth", "pitch": 55, "unison": { "voices": 3, "detuneCents": 14 } },
+      "gainDb": -6,
+      "amp": { "attack": 0.25, "decay": 0.4, "sustain": 0.85, "release": 0.35 },
+      "filter": { "type": "lowpass", "cutoff": 700, "resonanceDb": 4 },
+      "lfo": { "target": "pitch", "rate": 5.5, "depth": 6 }
+    },
+    {
+      "source": { "type": "osc", "wave": "sine", "pitch": 55 },
+      "gainDb": -9,
+      "amp": { "attack": 0.2, "decay": 0.01, "sustain": 1, "release": 0.35 }
+    },
+    {
+      "source": { "type": "noise", "color": "brown" },
+      "gainDb": -16,
+      "amp": { "attack": 0.3, "decay": 0.01, "sustain": 1, "release": 0.35 },
+      "filter": { "type": "bandpass", "cutoff": 900, "q": 0.8 }
+    }
+  ],
+  "fx": { "reverb": { "preset": "small", "sendDb": -26 } },
+  "xRuntime": {
+    "delivery": "both",
+    "hold": true,
+    "inputs": {
+      "speed": { "min": 0, "max": 1, "default": 0.4, "description": "0 idle .. 1 full burn" },
+      "load": { "min": 0, "max": 1, "default": 0, "description": "0 coasting .. 1 straining" }
+    },
+    "bind": [
+      { "input": "speed", "target": "/out/transpose", "range": [-5, 12], "live": true },
+      { "input": "speed", "target": "/out/brightness", "range": [-1, 1.5], "live": true },
+      { "input": "speed", "target": "/layers/2/gainDb", "range": [-9, 9], "live": true },
+      { "input": "load", "target": "/out/gainDb", "range": [0, 4], "live": true },
+      { "input": "load", "target": "/layers/0/lfo/rate", "range": [0, 1.2], "live": true }
+    ]
+  },
+  "meta": { "priority": 2, "intent": "bed", "description": "A ship engine held under the player: pitch, brightness and rush follow speed, strain follows load." }
+}
