@@ -57,9 +57,11 @@ export interface Recipe {
   seed: number;
   /** Patches: variants to export (default: the patch's declared count). */
   variants?: number;
+  /** baked (default): the encoded file. runtime: the cue a game plays live (<id>.runtime.json), nothing encoded. both: ship both. Absent: the patch's own xRuntime.delivery, else baked. Patches only. */
+  delivery?: 'baked' | 'runtime' | 'both';
 }
 
-const RecipeSchema = z.strictObject({ id: z.string().min(1).optional(), source: z.string().min(1), role: Role, kind: z.enum(['patch', 'song']).optional(), seed: z.number().int().optional(), variants: z.number().int().min(1).max(16).optional() });
+const RecipeSchema = z.strictObject({ id: z.string().min(1).optional(), source: z.string().min(1), role: Role, kind: z.enum(['patch', 'song']).optional(), seed: z.number().int().optional(), variants: z.number().int().min(1).max(16).optional(), delivery: z.enum(['baked', 'runtime', 'both']).optional() });
 
 export function loadRecipes(cfg: BuildConfig): Recipe[] {
   let raw: unknown;
@@ -75,7 +77,9 @@ export function loadRecipes(cfg: BuildConfig): Recipe[] {
     if (out.has(id)) throw new BeepsError('E_CONFLICT', `recipe "${id}" appears twice`);
     const source = resolve(base, r.data.source);
     if (!existsSync(source)) throw new BeepsError('E_NOT_FOUND', `recipe "${id}": source ${r.data.source} does not exist`, { pointer: `/${id}/source` });
-    out.set(id, { id, role: r.data.role, kind: r.data.kind ?? (r.data.role === 'sfx' ? 'patch' : 'song'), source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(r.data.variants ? { variants: r.data.variants } : {}) });
+    const kind = r.data.kind ?? (r.data.role === 'sfx' ? 'patch' : 'song');
+    if (r.data.delivery && r.data.delivery !== 'baked' && kind !== 'patch') throw new BeepsError('E_SCHEMA', `recipe "${id}": delivery "${r.data.delivery}" is for patches; songs ship baked`, { pointer: `/${id}/delivery` });
+    out.set(id, { id, role: r.data.role, kind, source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(r.data.variants ? { variants: r.data.variants } : {}), ...(r.data.delivery ? { delivery: r.data.delivery } : {}) });
   }
   return [...out.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
 }

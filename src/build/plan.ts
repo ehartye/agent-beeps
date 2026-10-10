@@ -17,11 +17,14 @@ import { songRenderKey } from '../render/song-pipeline.ts';
 import type { OpenProject } from '../project.ts';
 import type { Delivery, Recipe } from './config.ts';
 import type { Toolchain } from './lock.ts';
+import { deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
 
 export interface Planned {
   recipe: Recipe;
   inputHash: string;
-  parts: { delivery: string; export: string; renders: string; toolchain: string };
+  parts: { delivery: string; export: string; renders: string; toolchain: string; runtime?: string };
+  /** How the asset ships: baked (the encoded file), runtime (the cue a game plays live) or both. */
+  ships: AssetDelivery;
   /** What the export step needs: variants for a patch, layers for an adaptive song. */
   variants: number;
   layers: boolean;
@@ -37,10 +40,14 @@ const h12 = (hex: string) => hex.slice(0, 12);
 const withoutSongPipeline = ({ songPipeline: _songs, ...rest }: Toolchain): Omit<Toolchain, 'songPipeline'> => rest;
 
 export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, toolchain: Toolchain, encoder: Encoder | undefined): Planned {
-  let renders: string[], variants = 1, layers = false, seconds: number;
+  let renders: string[], variants = 1, layers = false, seconds: number, runtime: string | undefined;
+  let ships: AssetDelivery = 'baked';
   if (recipe.kind === 'patch') {
     const patch = loadPatch(p, recipe.source);
-    variants = recipe.variants ?? patch.variation?.variants ?? 1;
+    ships = deliveryOf(patch, recipe.delivery);
+    // A runtime-only asset needs one render (variant 0 at the input defaults) to measure its trim; the game makes variants itself.
+    variants = wantsBaked(ships) ? (recipe.variants ?? patch.variation?.variants ?? 1) : 1;
+    if (wantsRuntime(ships)) runtime = runtimePart(patch);
     renders = Array.from({ length: variants }, (_, v) => patchRenderKey(patch, p.project, recipe.seed, v));
     seconds = patch.duration * variants;
   } else {
@@ -50,20 +57,24 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     seconds = compileSong(song).length * (layers ? Object.keys(song.adaptive!.layers).length + 1 : 1);
   }
   const rate = (r: 'music' | 'ambience' | 'sfx' | 'mix') => delivery.kbps?.[r] ?? 0;
-  const deliveryPart = delivery.format === 'wav'
+  const deliveryPart = !wantsBaked(ships)
+    ? { format: 'runtime' } // no encoder, bitrate or container is involved: changing them must not rebuild a cue
+    : delivery.format === 'wav'
     ? { format: 'wav' }
     : { format: delivery.format, kbps: rate(recipe.role), ...(layers ? { mixKbps: Math.min(rate(recipe.role), rate('mix')) } : {}), flags: delivery.flags, ...(encoder ?? {}) };
   const parts = {
     delivery: sha256(canonicalJson(deliveryPart)),
-    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers })),
+    // `delivery` joins the export step only when the asset ships a cue, so every baked asset keeps the hash it always had.
+    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers, ...(ships !== 'baked' ? { delivery: ships } : {}) })),
     renders: sha256(canonicalJson(renders)),
     toolchain: sha256(canonicalJson(recipe.kind === 'patch' ? withoutSongPipeline(toolchain) : toolchain)),
+    ...(runtime ? { runtime } : {}),
   };
-  const bytes = delivery.format === 'wav' ? seconds * 48000 * 4 : (seconds * rate(recipe.role) * 1000) / 8;
+  const bytes = !wantsBaked(ships) ? 8192 : delivery.format === 'wav' ? seconds * 48000 * 4 : (seconds * rate(recipe.role) * 1000) / 8;
   return {
-    recipe, variants, layers,
+    recipe, variants, layers, ships,
     inputHash: `sha256:${sha256(canonicalJson({ schema: 'beeps-input@1', ...parts }))}`,
-    parts: { delivery: h12(parts.delivery), export: h12(parts.export), renders: h12(parts.renders), toolchain: h12(parts.toolchain) },
+    parts: { delivery: h12(parts.delivery), export: h12(parts.export), renders: h12(parts.renders), toolchain: h12(parts.toolchain), ...(runtime ? { runtime: h12(runtime) } : {}) },
     estimateBytes: Math.ceil(bytes * 1.1),
   };
 }
