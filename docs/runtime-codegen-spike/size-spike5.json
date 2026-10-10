@@ -1,0 +1,61 @@
+{
+ "patches": 5,
+ "rows": [
+  {
+   "what": "interpreter alone (createVoice + buildPatch + every source type)",
+   "n": 0,
+   "raw": 17366,
+   "gz": 6700,
+   "br": 6138
+  },
+  {
+   "what": "generated kernel alone (what any cue module pulls in, tree-shaken)",
+   "n": 0,
+   "raw": 1513,
+   "gz": 876,
+   "br": 806
+  },
+  {
+   "what": "interpreter + 1 patches as data",
+   "n": 1,
+   "raw": 19315,
+   "gz": 7410,
+   "br": 6758
+  },
+  {
+   "what": "generated modules x 1",
+   "n": 1,
+   "raw": 12085,
+   "gz": 4286,
+   "br": 3841
+  },
+  {
+   "what": "interpreter + 3 patches as data",
+   "n": 3,
+   "raw": 22350,
+   "gz": 8074,
+   "br": 7319
+  },
+  {
+   "what": "generated modules x 3",
+   "n": 3,
+   "raw": 21447,
+   "gz": 6352,
+   "br": 5485
+  },
+  {
+   "what": "interpreter + 5 patches as data",
+   "n": 5,
+   "raw": 26220,
+   "gz": 8748,
+   "br": 7878
+  },
+  {
+   "what": "generated modules x 5",
+   "n": 5,
+   "raw": 33417,
+   "gz": 8164,
+   "br": 6829
+  }
+ ]
+}

@@ -262,3 +262,9 @@ claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals i
 ```
 
 Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`.
+
+## Runtime path (experimental spike)
+
+`beeps runtime emit | check | verify | parity | perf | live | look` play a patch live in a game's own AudioContext, with named
+inputs (speed, size, distance) bound to patch parameters through an optional `xRuntime` block. Baked delivery is unchanged. Findings,
+measurements and the recommendation: [`docs/runtime-codegen-spike.md`](docs/runtime-codegen-spike.md).

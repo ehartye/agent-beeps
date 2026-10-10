@@ -17,7 +17,9 @@ import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { cuesFor } from '../codegen/cues.ts';
 import { emitModule } from '../codegen/emit.ts';
 import { exportRuntime, patchHash, type RuntimeManifest } from '../codegen/export.ts';
-import { runLive, runParity, runPerf, type EngineName } from '../codegen/parity.ts';
+import { renderKinds, runLive, runParity, runPerf, type EngineName } from '../codegen/parity.ts';
+import { diffTap, featuresOf } from '../codegen/compare.ts';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { withHost, int } from './shared.ts';
 
 const list = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean);
@@ -165,10 +167,38 @@ export function registerRuntimeCommands(program: Command, io: Io) {
   common(rt.command('perf <refs...>'))
     .description('time graph builds of each cue (first and warm) through the interpreter and its generated module in Chromium, and count the nodes and buffers created')
     .option('--n <count>', 'builds per measurement', int, 60)
-    .action(async (refs: string[], o: Common & { n: number }) => {
+    .option('--realtime', 'build into a running AudioContext instead of an OfflineAudioContext')
+    .option('--vary-seed', 'a different seed for every build (what a game does for variation): shows what a per-play seed costs')
+    .action(async (refs: string[], o: Common & { n: number; realtime?: boolean; varySeed?: boolean }) => {
       const { project, patches, seeds } = context(io, refs, o);
       const cues = await withHost(host => cuesFor(host, patches, project, { seeds }));
-      io.emit({ perf: await runPerf(cues, project.scale, { n: o.n }) });
+      io.emit({ perf: await runPerf(cues, project.scale, { n: o.n, realtime: o.realtime, varySeed: o.varySeed }) });
+    });
+
+  common(rt.command('look <ref>'))
+    .description('look images of one cue at chosen inputs: the baked render (the patch with the inputs applied) and the runtime render, from the same seed. The image is the spectrogram and envelope the other look commands draw')
+    .option('--set <pairs>', 'inputs, e.g. size=1,distance=0.4', list, [])
+    .option('--no-snap', 'render without scale snapping (a live input is continuous; the bake otherwise quantises it)')
+    .option('--variant <n>', 'variant', int, 0)
+    .requiredOption('--out <dir>', 'where baked.png and runtime.png go')
+    .action(async (ref: string, o: Common & { set: string[]; snap: boolean; variant: number; out: string }) => {
+      const { project, patches, seeds } = context(io, [ref], o);
+      const params = Object.fromEntries(o.set.map(kv => { const [k, v] = kv.split('='); return [k, Number(v)]; }));
+      const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds }));
+      const r = await renderKinds(cue, project.scale, params, ['baked', 'gen'], { variant: o.variant, noSnap: !o.snap });
+      mkdirSync(resolve(o.out), { recursive: true });
+      const files: Record<string, string> = {};
+      await withHost(async host => {
+        for (const [kind, label] of [['baked', 'baked'], ['gen', 'runtime']] as const) {
+          const pcm = r[kind];
+          const mono = new Float32Array(pcm.authored[0].length);
+          for (const ch of pcm.authored) for (let i = 0; i < mono.length; i++) mono[i] += ch[i] / pcm.authored.length;
+          const [png] = await host.looks([{ mono, sampleRate: pcm.sampleRate, features: featuresOf(pcm), label: `${cue.patch.name} ${label} ${o.set.join(' ')}` }]);
+          files[label] = join(resolve(o.out), `${label}.png`);
+          writeFileSync(files[label], png);
+        }
+      });
+      io.emit({ files, diff: diffTap(r.baked.delivered, r.gen.delivered), params });
     });
 
   common(rt.command('live <ref>'))

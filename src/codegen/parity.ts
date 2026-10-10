@@ -69,10 +69,10 @@ export const defaultCases = (patch: Patch, seed: number): ParityCase[] => {
   ];
 };
 
-export async function launch(engine: EngineName) {
+export async function launch(engine: EngineName, args: string[] = []) {
   const pw = await import('playwright');
   const type = pw[engine];
-  return type.launch({ timeout: 60000 });
+  return type.launch({ timeout: 60000, ...(args.length ? { args } : {}) });
 }
 
 export interface ParityOptions { cues: CueInput[]; scale: Scale; engines: EngineName[]; runs: number; cases?: (p: Patch, seed: number) => ParityCase[] }
@@ -146,11 +146,11 @@ export async function runParity(o: ParityOptions): Promise<EngineReport[]> {
 }
 
 /** Time graph builds (cold and warm) and count the nodes and buffers they create, in one browser. */
-export async function runPerf(cues: CueInput[], scale: Scale, { n = 60, engine = 'chromium' as EngineName } = {}) {
+export async function runPerf(cues: CueInput[], scale: Scale, { n = 60, engine = 'chromium' as EngineName, realtime = false, varySeed = false } = {}) {
   const st = stage(cues);
   const site = await serveStatic(st.dir);
-  const browser = await launch(engine);
-  const out: { cue: string; kind: Kind; firstMs: number; medianMs: number; p95Ms: number; maxMs: number; warmCounts: Record<string, number>; firstCounts: Record<string, number> }[] = [];
+  const browser = await launch(engine, realtime ? ['--autoplay-policy=no-user-gesture-required'] : []);
+  const out: { cue: string; kind: Kind; ctxState?: string; firstMs: number; medianMs: number; p95Ms: number; maxMs: number; warmCounts: Record<string, number>; firstCounts: Record<string, number> }[] = [];
   try {
     const ctx = await browser.newContext();
     const pg = await ctx.newPage();
@@ -161,7 +161,7 @@ export async function runPerf(cues: CueInput[], scale: Scale, { n = 60, engine =
       const p2 = await ctx.newPage();
       await p2.goto(`${site.url}/index.html`);
       await p2.waitForFunction(() => (window as any).ready === true);
-      const spec = { kind, name: cue.patch.name, patch: cue.patch, params: {}, seed: cue.seed, variant: 0, scale, trimDb: cue.trimDb };
+      const spec = { kind, name: cue.patch.name, patch: cue.patch, params: {}, seed: cue.seed, variant: 0, scale, trimDb: cue.trimDb, realtime, varySeed };
       const r = await p2.evaluate(([s, count]) => (window as any).perf(s, count), [spec, n] as const) as any;
       out.push({ cue: cue.patch.name, kind, ...r });
       await p2.close();
@@ -233,4 +233,24 @@ export async function runLive(cue: CueInput, scale: Scale, move: { input: string
     }
     return out;
   } finally { await browser.close(); site.server.close(); st.cleanup(); }
+}
+
+/** Render one cue at given inputs through the requested paths in one browser (fresh page each), for looks and spot checks. */
+export async function renderKinds(cue: CueInput, scale: Scale, params: Record<string, number>, kinds: Kind[], { engine = 'chromium' as EngineName, variant = 0, seed = cue.seed, noSnap = false } = {}): Promise<Record<Kind, Pcm>> {
+  const st = stage([cue]);
+  const site = await serveStatic(st.dir);
+  const browser = await launch(engine);
+  const out = {} as Record<Kind, Pcm>;
+  try {
+    for (const kind of kinds) {
+      const ctx = await browser.newContext(); const pg = await ctx.newPage();
+      try {
+        await pg.goto(`${site.url}/index.html`);
+        await pg.waitForFunction(() => (window as any).ready === true);
+        const spec: Spec = { kind, name: cue.patch.name, patch: cue.patch, params, seed, variant, scale: noSnap ? { ...scale, snap: false } : scale, trimDb: cue.trimDb };
+        out[kind] = unpack(await pg.evaluate((s: Spec) => (window as any).run(s), spec));
+      } finally { await ctx.close(); }
+    }
+  } finally { await browser.close(); site.server.close(); st.cleanup(); }
+  return out;
 }

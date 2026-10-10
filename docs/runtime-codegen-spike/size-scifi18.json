@@ -1,0 +1,207 @@
+{
+ "patches": 18,
+ "rows": [
+  {
+   "what": "interpreter alone (createVoice + buildPatch + every source type)",
+   "n": 0,
+   "raw": 17366,
+   "gz": 6700,
+   "br": 6138
+  },
+  {
+   "what": "generated kernel alone (what any cue module pulls in, tree-shaken)",
+   "n": 0,
+   "raw": 1513,
+   "gz": 876,
+   "br": 806
+  },
+  {
+   "what": "interpreter + 1 patches as data",
+   "n": 1,
+   "raw": 17922,
+   "gz": 6964,
+   "br": 6354
+  },
+  {
+   "what": "generated modules x 1",
+   "n": 1,
+   "raw": 4511,
+   "gz": 2065,
+   "br": 1869
+  },
+  {
+   "what": "interpreter + 3 patches as data",
+   "n": 3,
+   "raw": 19993,
+   "gz": 7541,
+   "br": 6837
+  },
+  {
+   "what": "generated modules x 3",
+   "n": 3,
+   "raw": 14872,
+   "gz": 4680,
+   "br": 4107
+  },
+  {
+   "what": "interpreter + 5 patches as data",
+   "n": 5,
+   "raw": 21882,
+   "gz": 7915,
+   "br": 7161
+  },
+  {
+   "what": "generated modules x 5",
+   "n": 5,
+   "raw": 21181,
+   "gz": 5776,
+   "br": 4917
+  },
+  {
+   "what": "interpreter + 10 patches as data",
+   "n": 10,
+   "raw": 24687,
+   "gz": 8516,
+   "br": 7622
+  },
+  {
+   "what": "generated modules x 10",
+   "n": 10,
+   "raw": 30045,
+   "gz": 7236,
+   "br": 5957
+  },
+  {
+   "what": "interpreter + 18 patches as data",
+   "n": 18,
+   "raw": 31592,
+   "gz": 9618,
+   "br": 8494
+  },
+  {
+   "what": "generated modules x 18",
+   "n": 18,
+   "raw": 53922,
+   "gz": 9822,
+   "br": 7800
+  }
+ ]
+}
+{
+ "baked": {
+  "cues": 18,
+  "totalSec": 15.03,
+  "wavBytes": 2887444,
+  "opusBytes": 117690,
+  "per": [
+   {
+    "name": "airlock-breath",
+    "sec": 0.55,
+    "wav": 105648,
+    "opus": 3609
+   },
+   {
+    "name": "asteroid-burst",
+    "sec": 2.292,
+    "wav": 440108,
+    "opus": 8409
+   },
+   {
+    "name": "bubble-ray",
+    "sec": 0.29,
+    "wav": 55728,
+    "opus": 2494
+   },
+   {
+    "name": "comet-blaster",
+    "sec": 0.885,
+    "wav": 169964,
+    "opus": 5051
+   },
+   {
+    "name": "cosmic-owl",
+    "sec": 0.67,
+    "wav": 128688,
+    "opus": 5642
+   },
+   {
+    "name": "crystal-switch",
+    "sec": 0.085,
+    "wav": 16364,
+    "opus": 1738
+   },
+   {
+    "name": "curious-alien",
+    "sec": 0.55,
+    "wav": 105648,
+    "opus": 5790
+   },
+   {
+    "name": "energy-shard",
+    "sec": 0.35,
+    "wav": 67244,
+    "opus": 4801
+   },
+   {
+    "name": "engine-sleep",
+    "sec": 0.63,
+    "wav": 121004,
+    "opus": 5937
+   },
+   {
+    "name": "gravity-hop",
+    "sec": 0.32,
+    "wav": 61484,
+    "opus": 3696
+   },
+   {
+    "name": "hyperdrive-charge",
+    "sec": 2.455,
+    "wav": 471404,
+    "opus": 19217
+   },
+   {
+    "name": "navigation-online",
+    "sec": 0.5,
+    "wav": 96044,
+    "opus": 6527
+   },
+   {
+    "name": "pocket-portal",
+    "sec": 0.55,
+    "wav": 105648,
+    "opus": 3405
+   },
+   {
+    "name": "relic-discovered",
+    "sec": 1.412,
+    "wav": 271148,
+    "opus": 12649
+   },
+   {
+    "name": "scanner-pulse",
+    "sec": 0.6635,
+    "wav": 127440,
+    "opus": 7163
+   },
+   {
+    "name": "shield-ripple",
+    "sec": 1.492,
+    "wav": 286512,
+    "opus": 7400
+   },
+   {
+    "name": "sleepy-robot",
+    "sec": 0.63,
+    "wav": 121004,
+    "opus": 5427
+   },
+   {
+    "name": "star-candy",
+    "sec": 0.71,
+    "wav": 136364,
+    "opus": 8735
+   }
+  ]
+ }
+}

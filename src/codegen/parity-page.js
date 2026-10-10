@@ -81,13 +81,16 @@ async function perf(/** @type {any} */ spec, /** @type {number} */ n) {
       return r;
     };
   }
-  const ctx = new OfflineAudioContext(2, SR, SR);
+  const ctx = spec.realtime ? new AudioContext({ sampleRate: SR, latencyHint: 'interactive' }) : new OfflineAudioContext(2, SR, SR);
+  if (spec.realtime && ctx.state !== 'running') await ctx.resume().catch(() => {});
   const out = ctx.createGain();
   out.connect(ctx.destination);
   const gen = spec.kind === 'gen' ? await import(`./cues/${spec.name}.js`) : null;
+  let n0 = 0;
+  const sd = () => (spec.varySeed ? spec.seed + n0++ : spec.seed);
   const build = () => (gen
-    ? gen.build(ctx, out, params, spec.seed, { variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb })
-    : createVoice(ctx, spec.patch, out, params, spec.seed, { variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb }));
+    ? gen.build(ctx, out, params, sd(), { variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb })
+    : createVoice(ctx, spec.patch, out, params, sd(), { variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb }));
   const times = [];
   let first = 0, firstCounts;
   for (let i = 0; i < n; i++) {
@@ -99,9 +102,11 @@ async function perf(/** @type {any} */ spec, /** @type {number} */ n) {
     if (i === 1) counts.warm = Object.fromEntries(Object.entries(counts).filter(([k]) => k !== 'warm').map(([k, v]) => [k, v - before[k]]));
   }
   for (const [k, orig] of originals) proto[k] = orig;
+  const state = ctx.state;
+  if (spec.realtime) await ctx.close();
   times.sort((a, b) => a - b);
   const pick = (/** @type {number} */ q) => times[Math.min(times.length - 1, Math.floor(q * times.length))];
-  return { firstMs: first, medianMs: pick(0.5), p95Ms: pick(0.95), maxMs: times[times.length - 1], firstCounts, warmCounts: counts.warm, n };
+  return { firstMs: first, medianMs: pick(0.5), p95Ms: pick(0.95), maxMs: times[times.length - 1], firstCounts, warmCounts: counts.warm, n, ctxState: state };
 }
 
 /** Pitch and level of a held tone, for the live-input check: zero crossings and RMS over a window. */

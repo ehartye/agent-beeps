@@ -1,0 +1,5799 @@
+{
+  "reports": [
+    {
+      "engine": "chromium",
+      "version": "153.0.8010.12",
+      "cases": [
+        {
+          "cue": "asteroid-burst",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 190788,
+            "maxAbs": 0.4853043928742409,
+            "maxAbsDb": -6.279715550475333,
+            "rmsRelDb": -6.371522432283085,
+            "correlation": 0.8876471361492653,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 192135,
+            "maxAbs": 0.43464580178260803,
+            "maxAbsDb": -7.237290216851195,
+            "rmsRelDb": -5.934919795326757,
+            "correlation": 0.8632151049576849,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 169810,
+            "maxAbs": 0.4698425903916359,
+            "maxAbsDb": -6.560952355097822,
+            "rmsRelDb": -6.335960169563526,
+            "correlation": 0.8857821062452087,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 182911,
+            "maxAbs": 0.02914293995127082,
+            "maxAbsDb": -30.709332771149302,
+            "rmsRelDb": -8.665713436999479,
+            "correlation": 0.9296893669220355,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 183066,
+            "maxAbs": 0.026640839874744415,
+            "maxAbsDb": -31.489041755787465,
+            "rmsRelDb": -8.528288813931697,
+            "correlation": 0.9313434874549863,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 61084,
+            "maxAbs": 0.1916465386748314,
+            "maxAbsDb": -14.349980402494243,
+            "rmsRelDb": -15.889258853305872,
+            "correlation": 0.9874187190280356,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 66092,
+            "maxAbs": 0.509126290678978,
+            "maxAbsDb": -5.863489518613,
+            "rmsRelDb": -1.887285412902104,
+            "correlation": 0.680404708846416,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 61139,
+            "maxAbs": 0.19164638966321945,
+            "maxAbsDb": -14.3499871560674,
+            "rmsRelDb": -16.85361619203959,
+            "correlation": 0.9897992809239766,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 52272,
+            "maxAbs": 0.01973067596554756,
+            "maxAbsDb": -34.09716071454214,
+            "rmsRelDb": -16.27316427027761,
+            "correlation": 0.9902862710888408,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 50094,
+            "maxAbs": 0.023901697248220444,
+            "maxAbsDb": -32.4314251782212,
+            "rmsRelDb": -17.367107304254677,
+            "correlation": 0.9909253417321944,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "engine-drone",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 176006,
+            "maxAbs": 0.02918669581413269,
+            "maxAbsDb": -30.696301362256087,
+            "rmsRelDb": -24.57091517165093,
+            "correlation": 0.9982551889943335,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "engine-drone",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 176441,
+            "maxAbs": 0.029851093888282776,
+            "maxAbsDb": -30.500794991904637,
+            "rmsRelDb": -24.59731894084647,
+            "correlation": 0.9982653265531558,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185075,
+              "maxAbs": 0.4087227135896683,
+              "maxAbsDb": -7.771424539012094,
+              "rmsRelDb": 3.6040522372223665,
+              "correlation": -0.14728475500209903,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2062262892723083,
+              "maxAbsDb": 1.628575790632323,
+              "rmsRelDb": 3.6040522394974017,
+              "correlation": -0.14728475579088982,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0.06,
+              "integratedLufs": 0.09,
+              "samplePeakDb": -0.09,
+              "truePeakDb": -0.09,
+              "centroidHz": 0.5,
+              "centroidPeakHz": 0.9,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.001,
+              "tailSec": -0.001,
+              "crestDb": -0.07,
+              "flatness": 0,
+              "sharpness": 0.0008,
+              "roughness": 0.0148,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185075,
+              "maxAbs": 0.4087227135896683,
+              "maxAbsDb": -7.771424539012094,
+              "rmsRelDb": 3.6040522372223665,
+              "correlation": -0.14728475500209903,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2062262892723083,
+              "maxAbsDb": 1.628575790632323,
+              "rmsRelDb": 3.6040522394974017,
+              "correlation": -0.14728475579088982,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0.06,
+              "integratedLufs": 0.09,
+              "samplePeakDb": -0.09,
+              "truePeakDb": -0.09,
+              "centroidHz": 0.5,
+              "centroidPeakHz": 0.9,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.001,
+              "tailSec": -0.001,
+              "crestDb": -0.07,
+              "flatness": 0,
+              "sharpness": 0.0008,
+              "roughness": 0.0148,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185091,
+            "maxAbs": 0.41690413653850555,
+            "maxAbsDb": -7.599275915323188,
+            "rmsRelDb": 3.6069204079575097,
+            "correlation": -0.14770837888324428,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185743,
+              "maxAbs": 0.6769133806228638,
+              "maxAbsDb": -3.3893380214012874,
+              "rmsRelDb": 3.661263144322071,
+              "correlation": -0.1694185563668009,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2604716420173645,
+              "maxAbsDb": 2.0106615880491447,
+              "rmsRelDb": 3.6612631353173954,
+              "correlation": -0.16941855302336845,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": -0.03,
+              "integratedLufs": -0.04,
+              "samplePeakDb": -0.45,
+              "truePeakDb": -0.45,
+              "centroidHz": 1,
+              "centroidPeakHz": 3.7,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.002,
+              "tailSec": 0,
+              "crestDb": -0.38,
+              "flatness": 0,
+              "sharpness": -0.0016,
+              "roughness": 0.0066,
+              "pitchHz": 1.1
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185743,
+              "maxAbs": 0.6769133806228638,
+              "maxAbsDb": -3.3893380214012874,
+              "rmsRelDb": 3.661263144322071,
+              "correlation": -0.1694185563668009,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2604716420173645,
+              "maxAbsDb": 2.0106615880491447,
+              "rmsRelDb": 3.6612631353173954,
+              "correlation": -0.16941855302336845,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": -0.03,
+              "integratedLufs": -0.04,
+              "samplePeakDb": -0.45,
+              "truePeakDb": -0.45,
+              "centroidHz": 1,
+              "centroidPeakHz": 3.7,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.002,
+              "tailSec": 0,
+              "crestDb": -0.38,
+              "flatness": 0,
+              "sharpness": -0.0016,
+              "roughness": 0.0066,
+              "pitchHz": 1.1
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185848,
+            "maxAbs": 0.7168013751506805,
+            "maxAbsDb": -2.892023403420313,
+            "rmsRelDb": 3.703281852107154,
+            "correlation": -0.17992187081628036,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 141601,
+              "maxAbs": 0.00008215568959712982,
+              "maxAbsDb": -81.70724709252141,
+              "rmsRelDb": -88.1798406406458,
+              "correlation": 0.9999999992396378,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 187117,
+              "maxAbs": 0.0001529306173324585,
+              "maxAbsDb": -76.31011116717572,
+              "rmsRelDb": -88.18022252343043,
+              "correlation": 0.9999999992396743,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 141601,
+              "maxAbs": 0.00008215568959712982,
+              "maxAbsDb": -81.70724709252141,
+              "rmsRelDb": -88.1798406406458,
+              "correlation": 0.9999999992396378,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 187117,
+              "maxAbs": 0.0001529306173324585,
+              "maxAbsDb": -76.31011116717572,
+              "rmsRelDb": -88.18022252343043,
+              "correlation": 0.9999999992396743,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 180283,
+            "maxAbs": 0.09761272370815277,
+            "maxAbsDb": -20.209871376977393,
+            "rmsRelDb": -16.439579178047047,
+            "correlation": 0.9886582187906431,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 143014,
+            "maxAbs": 0.009017284959554672,
+            "maxAbsDb": -40.89848411519028,
+            "rmsRelDb": -40.7351123103181,
+            "correlation": 0.9999577887513045,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 215822,
+            "maxAbs": 0.013256683945655823,
+            "maxAbsDb": -37.55130195332878,
+            "rmsRelDb": -26.175670057501883,
+            "correlation": 0.9999642031521687,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 137168,
+            "maxAbs": 0.0035898517817258835,
+            "maxAbsDb": -48.898469645188015,
+            "rmsRelDb": -48.79546173831483,
+            "correlation": 0.9999934018551968,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 207435,
+            "maxAbs": 0.02302636206150055,
+            "maxAbsDb": -32.75549341736883,
+            "rmsRelDb": -32.0040727968625,
+            "correlation": 0.99972029214092,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 146796,
+            "maxAbs": 0.022650182247161865,
+            "maxAbsDb": -32.89856598461829,
+            "rmsRelDb": -32.549420345308974,
+            "correlation": 0.9997219862880105,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 99437,
+            "maxAbs": 0.08364586532115936,
+            "maxAbsDb": -21.551110433561877,
+            "rmsRelDb": -25.48476047897452,
+            "correlation": 0.99858882839026,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 115052,
+            "maxAbs": 0.09375762939453125,
+            "maxAbsDb": -20.559867641257192,
+            "rmsRelDb": -20.926583352470903,
+            "correlation": 0.9988286370201029,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 90930,
+            "maxAbs": 0.05080337077379227,
+            "maxAbsDb": -25.88214943152952,
+            "rmsRelDb": -25.30618505779171,
+            "correlation": 0.9985315190137436,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 135483,
+            "maxAbs": 1.5016232132911682,
+            "maxAbsDb": 3.5312194667242105,
+            "rmsRelDb": 3.0570579134383897,
+            "correlation": -0.0922672341614105,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 107516,
+            "maxAbs": 0.12745339423418045,
+            "maxAbsDb": -17.892971885330727,
+            "rmsRelDb": -25.784204860365037,
+            "correlation": 0.9986818650292104,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          },
+          "hostEqualsHarness": true
+        }
+      ]
+    },
+    {
+      "engine": "firefox",
+      "version": "155.0",
+      "cases": [
+        {
+          "cue": "asteroid-burst",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 190719,
+            "maxAbs": 0.4867114871740341,
+            "maxAbsDb": -6.25456807174285,
+            "rmsRelDb": -6.543947916805061,
+            "correlation": 0.890688482081609,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 192095,
+            "maxAbs": 0.4227516050450504,
+            "maxAbsDb": -7.4782946971527124,
+            "rmsRelDb": -5.821841762961773,
+            "correlation": 0.859240746024255,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 169719,
+            "maxAbs": 0.471199706196785,
+            "maxAbsDb": -6.535899780257585,
+            "rmsRelDb": -6.425226195666606,
+            "correlation": 0.8871308727818135,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 182853,
+            "maxAbs": 0.0282119857147336,
+            "maxAbsDb": -30.991326894687056,
+            "rmsRelDb": -8.8115811697761,
+            "correlation": 0.932544139491266,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 220032,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 182932,
+            "maxAbs": 0.02671041525900364,
+            "maxAbsDb": -31.46638720154038,
+            "rmsRelDb": -8.432660475205957,
+            "correlation": 0.9276183481579657,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 60934,
+            "maxAbs": 0.19164630770683289,
+            "maxAbsDb": -14.349990870534874,
+            "rmsRelDb": -16.86390763593125,
+            "correlation": 0.9899636756378187,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 66099,
+            "maxAbs": 0.5180972367525101,
+            "maxAbsDb": -5.7117744799220125,
+            "rmsRelDb": -2.782475521085766,
+            "correlation": 0.7107355184559244,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 61128,
+            "maxAbs": 0.19164634868502617,
+            "maxAbsDb": -14.349989013300938,
+            "rmsRelDb": -17.059905803586485,
+            "correlation": 0.9902875839014078,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 52070,
+            "maxAbs": 0.023793366737663746,
+            "maxAbsDb": -32.47088202757101,
+            "rmsRelDb": -16.40238322770377,
+            "correlation": 0.9910915214322259,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 84960,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 49838,
+            "maxAbs": 0.023901576176285744,
+            "maxAbsDb": -32.43146917593883,
+            "rmsRelDb": -17.11945722820548,
+            "correlation": 0.9903871233838523,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 176059,
+            "maxAbs": 0.029187366366386414,
+            "maxAbsDb": -30.696101809829717,
+            "rmsRelDb": -24.58915212665356,
+            "correlation": 0.9982625001313215,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 192480,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 176476,
+            "maxAbs": 0.029850855469703674,
+            "maxAbsDb": -30.50086436576891,
+            "rmsRelDb": -24.615570392745244,
+            "correlation": 0.99827260186657,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185075,
+              "maxAbs": 0.4090745151042938,
+              "maxAbsDb": -7.763951514619691,
+              "rmsRelDb": 3.603653176261244,
+              "correlation": -0.14684269169618025,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188159,
+              "maxAbs": 1.2072646021842957,
+              "maxAbsDb": 1.6360493402128282,
+              "rmsRelDb": 3.6036531687934175,
+              "correlation": -0.14684269011526854,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0.08,
+              "integratedLufs": 0.1,
+              "samplePeakDb": -0.08,
+              "truePeakDb": -0.08,
+              "centroidHz": 0.4,
+              "centroidPeakHz": 0.9,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.001,
+              "tailSec": -0.001,
+              "crestDb": -0.07,
+              "flatness": 0,
+              "sharpness": 0.0008,
+              "roughness": 0.0149,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185075,
+              "maxAbs": 0.4090745151042938,
+              "maxAbsDb": -7.763951514619691,
+              "rmsRelDb": 3.603653176261244,
+              "correlation": -0.14684269169618025,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188159,
+              "maxAbs": 1.2072646021842957,
+              "maxAbsDb": 1.6360493402128282,
+              "rmsRelDb": 3.6036531687934175,
+              "correlation": -0.14684269011526854,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0.08,
+              "integratedLufs": 0.1,
+              "samplePeakDb": -0.08,
+              "truePeakDb": -0.08,
+              "centroidHz": 0.4,
+              "centroidPeakHz": 0.9,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.001,
+              "tailSec": -0.001,
+              "crestDb": -0.07,
+              "flatness": 0,
+              "sharpness": 0.0008,
+              "roughness": 0.0149,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185077,
+            "maxAbs": 0.41727472841739655,
+            "maxAbsDb": -7.591558336976847,
+            "rmsRelDb": 3.606520946671993,
+            "correlation": -0.14726578695260484,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185730,
+              "maxAbs": 0.6787388920783997,
+              "maxAbsDb": -3.3659452960849388,
+              "rmsRelDb": 3.6641503042142465,
+              "correlation": -0.16994225655426032,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2638710737228394,
+              "maxAbsDb": 2.0340554848372965,
+              "rmsRelDb": 3.6641502859718185,
+              "correlation": -0.1699422525835102,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": -0.03,
+              "integratedLufs": -0.04,
+              "samplePeakDb": -0.44,
+              "truePeakDb": -0.44,
+              "centroidHz": 1,
+              "centroidPeakHz": 3.7,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.002,
+              "tailSec": 0,
+              "crestDb": -0.37,
+              "flatness": 0,
+              "sharpness": -0.0017,
+              "roughness": 0.0066,
+              "pitchHz": 1.1
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 185730,
+              "maxAbs": 0.6787388920783997,
+              "maxAbsDb": -3.3659452960849388,
+              "rmsRelDb": 3.6641503042142465,
+              "correlation": -0.16994225655426032,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 188158,
+              "maxAbs": 1.2638710737228394,
+              "maxAbsDb": 2.0340554848372965,
+              "rmsRelDb": 3.6641502859718185,
+              "correlation": -0.1699422525835102,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": -0.03,
+              "integratedLufs": -0.04,
+              "samplePeakDb": -0.44,
+              "truePeakDb": -0.44,
+              "centroidHz": 1,
+              "centroidPeakHz": 3.7,
+              "energyLengthSec": 0.002,
+              "attackSec": -0.002,
+              "tailSec": 0,
+              "crestDb": -0.37,
+              "flatness": 0,
+              "sharpness": -0.0017,
+              "roughness": 0.0066,
+              "pitchHz": 1.1
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185843,
+            "maxAbs": 0.7185860574245453,
+            "maxAbsDb": -2.870424271498159,
+            "rmsRelDb": 3.706060883706991,
+            "correlation": -0.18041910766796085,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 102026,
+              "maxAbs": 0.000017826445400714874,
+              "maxAbsDb": -94.97870493319071,
+              "rmsRelDb": -102.18264984957024,
+              "correlation": 0.9999999999696884,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 174986,
+              "maxAbs": 0.00003312528133392334,
+              "maxAbsDb": -89.59680849129042,
+              "rmsRelDb": -102.1862776165031,
+              "correlation": 0.9999999999697443,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 102026,
+              "maxAbs": 0.000017826445400714874,
+              "maxAbsDb": -94.97870493319071,
+              "rmsRelDb": -102.18264984957024,
+              "correlation": 0.9999999999696884,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": false,
+              "samples": 192480,
+              "differing": 174986,
+              "maxAbs": 0.00003312528133392334,
+              "maxAbsDb": -89.59680849129042,
+              "rmsRelDb": -102.1862776165031,
+              "correlation": 0.9999999999697443,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 180287,
+            "maxAbs": 0.09760080277919769,
+            "maxAbsDb": -20.21093220380921,
+            "rmsRelDb": -16.449897763939227,
+            "correlation": 0.9886851471785258,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 147298,
+            "maxAbs": 0.009015258168801665,
+            "maxAbsDb": -40.90043663855305,
+            "rmsRelDb": -40.7352994526356,
+            "correlation": 0.9999577906168096,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 215792,
+            "maxAbs": 0.013258710503578186,
+            "maxAbsDb": -37.54997423719566,
+            "rmsRelDb": -26.175703813332916,
+            "correlation": 0.9999641937645556,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 140086,
+            "maxAbs": 0.003589015454053879,
+            "maxAbsDb": -48.90049343241087,
+            "rmsRelDb": -48.79478303262567,
+            "correlation": 0.9999934008262635,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 207453,
+            "maxAbs": 0.023021720349788666,
+            "maxAbsDb": -32.75724451724906,
+            "rmsRelDb": -32.0046261725774,
+            "correlation": 0.9997203208313385,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 235680,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 152072,
+            "maxAbs": 0.022645294666290283,
+            "maxAbsDb": -32.90044047589668,
+            "rmsRelDb": -32.549424117991975,
+            "correlation": 0.9997219864115273,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "defaults",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 99335,
+            "maxAbs": 0.08382835239171982,
+            "maxAbsDb": -21.53218139237291,
+            "rmsRelDb": -25.481896278402356,
+            "correlation": 0.9985879207003774,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "variant 2, other seed",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 115095,
+            "maxAbs": 0.09377677738666534,
+            "maxAbsDb": -20.55809391503916,
+            "rmsRelDb": -20.93019545700097,
+            "correlation": 0.9988310035228387,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at min",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 90880,
+            "maxAbs": 0.05077159404754639,
+            "maxAbsDb": -25.887584021572856,
+            "rmsRelDb": -25.31059238282605,
+            "correlation": 0.9985331466454859,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 135465,
+            "maxAbs": 1.5030285716056824,
+            "maxAbsDb": 3.5393447264786486,
+            "rmsRelDb": 3.0569135299279218,
+            "correlation": -0.09211961577651173,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max, no scale snap",
+          "interp": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "gen": {
+            "delivered": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "authored": {
+              "bitExact": true,
+              "samples": 143234,
+              "differing": 0,
+              "maxAbs": 0,
+              "maxAbsDb": "-inf",
+              "rmsRelDb": "-inf",
+              "correlation": 1,
+              "lengthDelta": 0
+            },
+            "features": {
+              "momentaryMaxLufs": 0,
+              "integratedLufs": 0,
+              "samplePeakDb": 0,
+              "truePeakDb": 0,
+              "centroidHz": 0,
+              "centroidPeakHz": 0,
+              "energyLengthSec": 0,
+              "attackSec": 0,
+              "tailSec": 0,
+              "crestDb": 0,
+              "flatness": 0,
+              "sharpness": 0,
+              "roughness": 0,
+              "pitchHz": 0
+            }
+          },
+          "control": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 107490,
+            "maxAbs": 0.12749620154500008,
+            "maxAbsDb": -17.890055076776157,
+            "rmsRelDb": -25.781981350585603,
+            "correlation": 0.9986811981619266,
+            "lengthDelta": 0
+          },
+          "distinct": {
+            "baked": 1,
+            "interp": 1,
+            "gen": 1
+          }
+        }
+      ],
+      "vsChromium": [
+        {
+          "cue": "asteroid-burst",
+          "case": "defaults",
+          "baked": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 149512,
+            "maxAbs": 0.7386454343795776,
+            "maxAbsDb": -2.6312796446818942,
+            "rmsRelDb": 3.6453638664351704,
+            "correlation": -0.13262615649342463,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 149512,
+            "maxAbs": 0.7386454343795776,
+            "maxAbsDb": -2.6312796446818942,
+            "rmsRelDb": 3.6453638664351704,
+            "correlation": -0.13262615649342463,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.17,
+            "integratedLufs": 0.17,
+            "samplePeakDb": 0.13,
+            "truePeakDb": 0.12,
+            "centroidHz": -3.7,
+            "centroidPeakHz": 4.3,
+            "energyLengthSec": 0,
+            "attackSec": 0.003,
+            "tailSec": 0,
+            "crestDb": -0.07,
+            "flatness": -0.0001,
+            "sharpness": -0.0004,
+            "roughness": -0.0001,
+            "pitchHz": -28.91
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "variant 2, other seed",
+          "baked": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 151979,
+            "maxAbs": 0.790493905544281,
+            "maxAbsDb": -2.0420294798142384,
+            "rmsRelDb": 3.320988446468931,
+            "correlation": -0.08076927544234884,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 151979,
+            "maxAbs": 0.790493905544281,
+            "maxAbsDb": -2.0420294798142384,
+            "rmsRelDb": 3.320988446468931,
+            "correlation": -0.08076927544234884,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": -0.05,
+            "integratedLufs": -0.05,
+            "samplePeakDb": 0.01,
+            "truePeakDb": 0.01,
+            "centroidHz": 3.4,
+            "centroidPeakHz": 35.3,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.04,
+            "flatness": 0.0006,
+            "sharpness": 0.0093,
+            "roughness": -0.0001,
+            "pitchHz": 14.87
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at min",
+          "baked": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 131567,
+            "maxAbs": 0.8040782809257507,
+            "maxAbsDb": -1.8940333703256802,
+            "rmsRelDb": -0.27496004163739657,
+            "correlation": 0.5363540002887325,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 131567,
+            "maxAbs": 0.8040782809257507,
+            "maxAbsDb": -1.8940333703256802,
+            "rmsRelDb": -0.27496004163739657,
+            "correlation": 0.5363540002887325,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.1,
+            "integratedLufs": 0.08,
+            "samplePeakDb": 0.49,
+            "truePeakDb": 0.54,
+            "centroidHz": -1.6,
+            "centroidPeakHz": 7.1,
+            "energyLengthSec": 0,
+            "attackSec": 0.002,
+            "tailSec": 0,
+            "crestDb": 0.35,
+            "flatness": 0.0002,
+            "sharpness": 0.0053,
+            "roughness": -0.0001,
+            "pitchHz": 9.63
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max",
+          "baked": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 153030,
+            "maxAbs": 0.09622980281710625,
+            "maxAbsDb": -20.333808082211924,
+            "rmsRelDb": 4.997017513761989,
+            "correlation": -0.531795985500889,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 153030,
+            "maxAbs": 0.09622980281710625,
+            "maxAbsDb": -20.333808082211924,
+            "rmsRelDb": 4.997017513761989,
+            "correlation": -0.531795985500889,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.29,
+            "integratedLufs": 0.13,
+            "samplePeakDb": -0.44,
+            "truePeakDb": -0.44,
+            "centroidHz": -3,
+            "centroidPeakHz": -13.8,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": -0.63,
+            "flatness": -0.0003,
+            "sharpness": -0.0022,
+            "roughness": -0.0011,
+            "pitchHz": 13.22
+          }
+        },
+        {
+          "cue": "asteroid-burst",
+          "case": "inputs at max, no scale snap",
+          "baked": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 150542,
+            "maxAbs": 0.09089525416493416,
+            "maxAbsDb": -20.82917583254352,
+            "rmsRelDb": 4.7148720864257125,
+            "correlation": -0.4958116342682486,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 220032,
+            "differing": 150542,
+            "maxAbs": 0.09089525416493416,
+            "maxAbsDb": -20.82917583254352,
+            "rmsRelDb": 4.7148720864257125,
+            "correlation": -0.4958116342682486,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": -0.13,
+            "integratedLufs": -0.08,
+            "samplePeakDb": 0.25,
+            "truePeakDb": 0.26,
+            "centroidHz": -0.4,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.27,
+            "flatness": 0.0003,
+            "sharpness": 0.0066,
+            "roughness": -0.0003,
+            "pitchHz": -2.01
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "defaults",
+          "baked": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 73523,
+            "maxAbs": 0.6240840703248978,
+            "maxAbsDb": -4.095138051900607,
+            "rmsRelDb": 1.3762092516786615,
+            "correlation": 0.3927296458925448,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 73523,
+            "maxAbs": 0.6240840703248978,
+            "maxAbsDb": -4.095138051900607,
+            "rmsRelDb": 1.3762092516786615,
+            "correlation": 0.3927296458925448,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.9,
+            "integratedLufs": 0.83,
+            "samplePeakDb": 1.96,
+            "truePeakDb": 1.94,
+            "centroidHz": -4.4,
+            "centroidPeakHz": -19.6,
+            "energyLengthSec": -0.023,
+            "attackSec": 0,
+            "tailSec": -0.002,
+            "crestDb": 0.96,
+            "flatness": 0,
+            "sharpness": -0.0024,
+            "roughness": 0,
+            "pitchHz": -13.14
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "variant 2, other seed",
+          "baked": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 73583,
+            "maxAbs": 0.6479333192110062,
+            "maxAbsDb": -3.7693937279212304,
+            "rmsRelDb": 1.3771383509717734,
+            "correlation": 0.3996513667391453,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 73583,
+            "maxAbs": 0.6479333192110062,
+            "maxAbsDb": -3.7693937279212304,
+            "rmsRelDb": 1.3771383509717734,
+            "correlation": 0.3996513667391453,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.99,
+            "integratedLufs": 0.91,
+            "samplePeakDb": 1.7,
+            "truePeakDb": 1.7,
+            "centroidHz": -5.7,
+            "centroidPeakHz": -19.5,
+            "energyLengthSec": -0.022,
+            "attackSec": 0,
+            "tailSec": -0.002,
+            "crestDb": 0.61,
+            "flatness": 0,
+            "sharpness": -0.0033,
+            "roughness": 0,
+            "pitchHz": -1.9
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at min",
+          "baked": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 74442,
+            "maxAbs": 0.47411443293094635,
+            "maxAbsDb": -6.482336474854373,
+            "rmsRelDb": 0.7714832768112814,
+            "correlation": 0.4170923344069834,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 74442,
+            "maxAbs": 0.47411443293094635,
+            "maxAbsDb": -6.482336474854373,
+            "rmsRelDb": 0.7714832768112814,
+            "correlation": 0.4170923344069834,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.2,
+            "integratedLufs": 0.16,
+            "samplePeakDb": 1.19,
+            "truePeakDb": 1.22,
+            "centroidHz": -13.3,
+            "centroidPeakHz": -49.7,
+            "energyLengthSec": -0.001,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.98,
+            "flatness": 0,
+            "sharpness": 0.002,
+            "roughness": -0.0004,
+            "pitchHz": -13.43
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max",
+          "baked": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 65749,
+            "maxAbs": 0.1033540591597557,
+            "maxAbsDb": -19.71344924167922,
+            "rmsRelDb": 2.8563980870563377,
+            "correlation": 0.0747942480557691,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 65749,
+            "maxAbs": 0.1033540591597557,
+            "maxAbsDb": -19.71344924167922,
+            "rmsRelDb": 2.8563980870563377,
+            "correlation": 0.0747942480557691,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.33,
+            "integratedLufs": 0.31,
+            "samplePeakDb": 1.95,
+            "truePeakDb": 1.95,
+            "centroidHz": 12.5,
+            "centroidPeakHz": -26,
+            "energyLengthSec": -0.018,
+            "attackSec": -0.001,
+            "tailSec": -0.001,
+            "crestDb": 1.57,
+            "flatness": 0,
+            "sharpness": 0.0256,
+            "roughness": 0,
+            "pitchHz": 16.23
+          }
+        },
+        {
+          "cue": "comet-blaster",
+          "case": "inputs at max, no scale snap",
+          "baked": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 67642,
+            "maxAbs": 0.10925398021936417,
+            "maxAbsDb": -19.23125464672623,
+            "rmsRelDb": 2.898506206164568,
+            "correlation": -0.0023867705801118287,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 84960,
+            "differing": 67642,
+            "maxAbs": 0.10925398021936417,
+            "maxAbsDb": -19.23125464672623,
+            "rmsRelDb": 2.898506206164568,
+            "correlation": -0.0023867705801118287,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": -0.22,
+            "integratedLufs": -0.21,
+            "samplePeakDb": -1.28,
+            "truePeakDb": -1.28,
+            "centroidHz": 31,
+            "centroidPeakHz": 79.3,
+            "energyLengthSec": -0.006,
+            "attackSec": -0.001,
+            "tailSec": -0.001,
+            "crestDb": -1.04,
+            "flatness": 0,
+            "sharpness": 0.0164,
+            "roughness": -0.0002,
+            "pitchHz": -43.48
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "defaults",
+          "baked": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 169170,
+            "maxAbs": 0.0008195340633392334,
+            "maxAbsDb": -61.72865981166051,
+            "rmsRelDb": -51.40713811602837,
+            "correlation": 0.9999985944738259,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 169170,
+            "maxAbs": 0.0008195340633392334,
+            "maxAbsDb": -61.72865981166051,
+            "rmsRelDb": -51.40713811602837,
+            "correlation": 0.9999985944738259,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.02,
+            "integratedLufs": 0.02,
+            "samplePeakDb": 0.02,
+            "truePeakDb": 0.02,
+            "centroidHz": 0.1,
+            "centroidPeakHz": 0.1,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": -0.0003,
+            "roughness": 0.0009,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "variant 2, other seed",
+          "baked": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 169248,
+            "maxAbs": 0.0008203685283660889,
+            "maxAbsDb": -61.71982017473045,
+            "rmsRelDb": -51.40724477839122,
+            "correlation": 0.9999985960994664,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 169248,
+            "maxAbs": 0.0008203685283660889,
+            "maxAbsDb": -61.71982017473045,
+            "rmsRelDb": -51.40724477839122,
+            "correlation": 0.9999985960994664,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.02,
+            "integratedLufs": 0.02,
+            "samplePeakDb": 0.02,
+            "truePeakDb": 0.02,
+            "centroidHz": 0.1,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": -0.0003,
+            "roughness": 0.0009,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at min",
+          "baked": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 168596,
+            "maxAbs": 0.00028987228870391846,
+            "maxAbsDb": -70.75586600943764,
+            "rmsRelDb": -61.812005552558624,
+            "correlation": 0.9999999452081254,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185104,
+            "maxAbs": 0.4089558720588684,
+            "maxAbsDb": -7.7664710308193,
+            "rmsRelDb": 3.607320665344635,
+            "correlation": -0.14696159447014875,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.08,
+            "integratedLufs": 0.1,
+            "samplePeakDb": -0.08,
+            "truePeakDb": -0.08,
+            "centroidHz": 0.5,
+            "centroidPeakHz": 0.9,
+            "energyLengthSec": 0.002,
+            "attackSec": -0.001,
+            "tailSec": -0.001,
+            "crestDb": -0.07,
+            "flatness": 0,
+            "sharpness": 0.0008,
+            "roughness": 0.0149,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max",
+          "baked": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 171009,
+            "maxAbs": 0.0010169297456741333,
+            "maxAbsDb": -59.85418098323545,
+            "rmsRelDb": -54.975109136669914,
+            "correlation": 0.9999988810198305,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 185809,
+            "maxAbs": 0.6780909895896912,
+            "maxAbsDb": -3.3742405289905744,
+            "rmsRelDb": 3.6674837142039074,
+            "correlation": -0.16971206733207247,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": -0.02,
+            "integratedLufs": -0.03,
+            "samplePeakDb": -0.43,
+            "truePeakDb": -0.43,
+            "centroidHz": 1.2,
+            "centroidPeakHz": 3.8,
+            "energyLengthSec": 0.002,
+            "attackSec": -0.002,
+            "tailSec": 0,
+            "crestDb": -0.37,
+            "flatness": 0,
+            "sharpness": -0.0021,
+            "roughness": 0.0069,
+            "pitchHz": 1.1
+          }
+        },
+        {
+          "cue": "engine-drone",
+          "case": "inputs at max, no scale snap",
+          "baked": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 170883,
+            "maxAbs": 0.0012143254280090332,
+            "maxAbsDb": -58.31329821498281,
+            "rmsRelDb": -53.07348058470406,
+            "correlation": 0.9999982445392345,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 192480,
+            "differing": 170879,
+            "maxAbs": 0.0012140870094299316,
+            "maxAbsDb": -58.31500375514598,
+            "rmsRelDb": -53.07644728805606,
+            "correlation": 0.9999982458851552,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.01,
+            "integratedLufs": 0.01,
+            "samplePeakDb": 0.02,
+            "truePeakDb": 0.02,
+            "centroidHz": 0.2,
+            "centroidPeakHz": 0.1,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": -0.0005,
+            "roughness": 0.0003,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "defaults",
+          "baked": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211559,
+            "maxAbs": 0.0015728101134300232,
+            "maxAbsDb": -56.0664741383475,
+            "rmsRelDb": -51.8454147767304,
+            "correlation": 0.9999967317100587,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211559,
+            "maxAbs": 0.0015728101134300232,
+            "maxAbsDb": -56.0664741383475,
+            "rmsRelDb": -51.8454147767304,
+            "correlation": 0.9999967317100587,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.0001,
+            "roughness": 0.0002,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "variant 2, other seed",
+          "baked": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211662,
+            "maxAbs": 0.0015498623251914978,
+            "maxAbsDb": -56.194137572919296,
+            "rmsRelDb": -51.845156888903865,
+            "correlation": 0.9999967315313428,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211662,
+            "maxAbs": 0.0015498623251914978,
+            "maxAbsDb": -56.194137572919296,
+            "rmsRelDb": -51.845156888903865,
+            "correlation": 0.9999967315313428,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": 0,
+            "roughness": 0.0002,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at min",
+          "baked": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211058,
+            "maxAbs": 0.0012923628091812134,
+            "maxAbsDb": -57.77231096665916,
+            "rmsRelDb": -54.586813169126515,
+            "correlation": 0.999998262967968,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211058,
+            "maxAbs": 0.0012923628091812134,
+            "maxAbsDb": -57.77231096665916,
+            "rmsRelDb": -54.586813169126515,
+            "correlation": 0.999998262967968,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": -0.02,
+            "truePeakDb": -0.02,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": -0.03,
+            "flatness": 0,
+            "sharpness": 0.0001,
+            "roughness": -0.0001,
+            "pitchHz": -0.01
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max",
+          "baked": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211477,
+            "maxAbs": 0.001863822340965271,
+            "maxAbsDb": -54.5919097368037,
+            "rmsRelDb": -51.20527061198124,
+            "correlation": 0.9999962142623032,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211477,
+            "maxAbs": 0.001863822340965271,
+            "maxAbsDb": -54.5919097368037,
+            "rmsRelDb": -51.20527061198124,
+            "correlation": 0.9999962142623032,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.0002,
+            "roughness": 0,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "hyperdrive-charge",
+          "case": "inputs at max, no scale snap",
+          "baked": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211799,
+            "maxAbs": 0.001980072818696499,
+            "maxAbsDb": -54.06637675864261,
+            "rmsRelDb": -50.651644863582504,
+            "correlation": 0.9999956968581651,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 235680,
+            "differing": 211799,
+            "maxAbs": 0.001980072818696499,
+            "maxAbsDb": -54.06637675864261,
+            "rmsRelDb": -50.651644863582504,
+            "correlation": 0.9999956968581651,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.0004,
+            "roughness": -0.0001,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "defaults",
+          "baked": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 102802,
+            "maxAbs": 0.0018141567707061768,
+            "maxAbsDb": -54.82650372026205,
+            "rmsRelDb": -49.373273747639,
+            "correlation": 0.9999942839512361,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 102802,
+            "maxAbs": 0.0018141567707061768,
+            "maxAbsDb": -54.82650372026205,
+            "rmsRelDb": -49.373273747639,
+            "correlation": 0.9999942839512361,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0.01,
+            "integratedLufs": 0.01,
+            "samplePeakDb": 0,
+            "truePeakDb": 0.01,
+            "centroidHz": -0.1,
+            "centroidPeakHz": -0.2,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": -0.0013,
+            "roughness": 0,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "variant 2, other seed",
+          "baked": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 102344,
+            "maxAbs": 0.0016824007034301758,
+            "maxAbsDb": -55.481411174768276,
+            "rmsRelDb": -49.41449528758362,
+            "correlation": 0.9999943792297742,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 102344,
+            "maxAbs": 0.0016824007034301758,
+            "maxAbsDb": -55.481411174768276,
+            "rmsRelDb": -49.41449528758362,
+            "correlation": 0.9999943792297742,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0.01,
+            "samplePeakDb": 0.01,
+            "truePeakDb": 0.01,
+            "centroidHz": 0.1,
+            "centroidPeakHz": -0.1,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.001,
+            "roughness": -0.0001,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at min",
+          "baked": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 90454,
+            "maxAbs": 0.0011095702648162842,
+            "maxAbsDb": -59.09690380724703,
+            "rmsRelDb": -49.244108269313415,
+            "correlation": 0.9999940990534152,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 90454,
+            "maxAbs": 0.0011095702648162842,
+            "maxAbsDb": -59.09690380724703,
+            "rmsRelDb": -49.244108269313415,
+            "correlation": 0.9999940990534152,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0.01,
+            "samplePeakDb": 0.01,
+            "truePeakDb": 0.01,
+            "centroidHz": -0.1,
+            "centroidPeakHz": -0.1,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0.01,
+            "flatness": 0,
+            "sharpness": -0.0012,
+            "roughness": 0,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max",
+          "baked": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 113699,
+            "maxAbs": 0.002870410680770874,
+            "maxAbsDb": -50.84111925254709,
+            "rmsRelDb": -49.46651383301743,
+            "correlation": 0.9999943827779333,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 113699,
+            "maxAbs": 0.002870410680770874,
+            "maxAbsDb": -50.84111925254709,
+            "rmsRelDb": -49.46651383301743,
+            "correlation": 0.9999943827779333,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0.01,
+            "centroidHz": 0,
+            "centroidPeakHz": 0,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.001,
+            "roughness": 0,
+            "pitchHz": 0
+          }
+        },
+        {
+          "cue": "shield-ripple",
+          "case": "inputs at max, no scale snap",
+          "baked": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 114175,
+            "maxAbs": 0.0026470422744750977,
+            "maxAbsDb": -51.54478245523745,
+            "rmsRelDb": -50.26305426915911,
+            "correlation": 0.9999953417058814,
+            "lengthDelta": 0
+          },
+          "gen": {
+            "bitExact": false,
+            "samples": 143234,
+            "differing": 114175,
+            "maxAbs": 0.0026470422744750977,
+            "maxAbsDb": -51.54478245523745,
+            "rmsRelDb": -50.26305426915911,
+            "correlation": 0.9999953417058814,
+            "lengthDelta": 0
+          },
+          "genFeatures": {
+            "momentaryMaxLufs": 0,
+            "integratedLufs": 0,
+            "samplePeakDb": 0,
+            "truePeakDb": 0,
+            "centroidHz": 0,
+            "centroidPeakHz": -0.1,
+            "energyLengthSec": 0,
+            "attackSec": 0,
+            "tailSec": 0,
+            "crestDb": 0,
+            "flatness": 0,
+            "sharpness": -0.001,
+            "roughness": 0,
+            "pitchHz": 0
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "version": "26.6",
+      "status": "no-web-audio",
+      "cases": []
+    }
+  ]
+}
