@@ -16,11 +16,12 @@ export function toBase64(f) {
 }
 
 /**
- * @param {Patch} patch
- * @param {{ seed?: number, variant?: number, trimDb?: number, scale?: import('./layer.js').Scale }} [opts]
+ * The renderer's tap layout: a 4-channel OfflineAudioContext whose first two channels are the delivered stereo bus and the
+ * last two the authored one. The parity harness builds a runtime voice into the same layout the baked render uses.
+ * @param {number} seconds  length of the sound, before the pad
  */
-export async function renderOfflinePcm(patch, opts = {}) {
-  const length = Math.ceil((patchLength(patch) + PAD) * SAMPLE_RATE);
+export function tapContext(seconds) {
+  const length = Math.ceil((seconds + PAD) * SAMPLE_RATE);
   const ctx = new OfflineAudioContext(4, length, SAMPLE_RATE);
   ctx.destination.channelInterpretation = 'discrete';
   const merger = ctx.createChannelMerger(4);
@@ -40,13 +41,27 @@ export async function renderOfflinePcm(patch, opts = {}) {
   };
   const delivered = stereoInto(0);
   const authored = stereoInto(2);
-  buildPatch(ctx, patch, { ...opts, destination: delivered, authoredTap: authored });
+  return { ctx, delivered, authored };
+}
+
+/** Render a tap context and return its four channels as the delivered and authored stereo pairs. @param {OfflineAudioContext} ctx */
+export async function renderTaps(ctx) {
   const buf = await ctx.startRendering();
   return {
     sampleRate: SAMPLE_RATE,
     delivered: [buf.getChannelData(0), buf.getChannelData(1)],
     authored: [buf.getChannelData(2), buf.getChannelData(3)],
   };
+}
+
+/**
+ * @param {Patch} patch
+ * @param {{ seed?: number, variant?: number, trimDb?: number, scale?: import('./layer.js').Scale }} [opts]
+ */
+export async function renderOfflinePcm(patch, opts = {}) {
+  const { ctx, delivered, authored } = tapContext(patchLength(patch));
+  buildPatch(ctx, patch, { ...opts, destination: delivered, authoredTap: authored });
+  return renderTaps(ctx);
 }
 
 /** Same as renderOfflinePcm, with channels base64-encoded for transfer out of the page. */
