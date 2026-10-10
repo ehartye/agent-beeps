@@ -10,6 +10,15 @@ export { ENGINE_VERSION } from './version.js';
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('./layer.js').Scale} Scale */
 
+/**
+ * Nodes the graph already contains, for a runtime that automates live inputs (spike).
+ * @typedef {object} PatchNodes
+ * @property {GainNode} trim  the loudness trim: static value, never automated by the engine
+ * @property {GainNode | undefined} reverbSend
+ * @property {GainNode | undefined} delaySend
+ * @property {import('./layer.js').LayerNodes[]} layers
+ */
+
 const db = (/** @type {number} */ x) => 10 ** (x / 20);
 
 /**
@@ -32,12 +41,14 @@ export function patchLength(p) {
 /**
  * @param {BaseAudioContext} ctx
  * @param {Patch} patch  a parsed patch (defaults filled)
+ * `hold` (spike, runtime path): no layer schedules its release; the returned `release(at)` does, for every layer, and returns
+ * when the voice is silent (the effect tails excluded). The returned `nodes` are references into the graph, for live inputs.
  * @param {{ destination?: AudioNode, when?: number, seed?: number, variant?: number, trimDb?: number,
- *           scale?: Scale, authoredTap?: AudioNode, limiter?: boolean }} [opts]
- * @returns {{ end: number, authored: GainNode }}
+ *           scale?: Scale, authoredTap?: AudioNode, limiter?: boolean, hold?: boolean }} [opts]
+ * @returns {{ end: number, authored: GainNode, release: (at: number) => number, nodes: PatchNodes }}
  */
 export function buildPatch(ctx, patch, opts = {}) {
-  const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true } = opts;
+  const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true, hold = false } = opts;
   const p = variantPatch(patch, variant, seed);
 
   const mix = ctx.createGain();
@@ -48,25 +59,32 @@ export function buildPatch(ctx, patch, opts = {}) {
   const toAuthored = [dry];
 
   let end = when;
+  /** @type {ReturnType<typeof buildLayer>[]} */
+  const built = [];
   // Each layer gets its own output; they are summed into the mix in layer order.
   const layerOuts = p.layers.map((layer, i) => {
     const out = ctx.createGain();
-    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out });
+    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out, hold });
+    built.push(r);
     end = Math.max(end, r.end);
     return out;
   });
   sumInto(ctx, layerOuts, mix);
 
   let tail = 0;
+  /** @type {GainNode | undefined} */
+  let reverbSend;
+  /** @type {GainNode | undefined} */
+  let delaySend;
   if (p.fx?.reverb) {
-    const send = ctx.createGain();
+    const send = reverbSend = ctx.createGain();
     send.gain.value = db(p.fx.reverb.sendDb);
     toAuthored.push(dry.connect(send).connect(buildReverb(ctx, p.fx.reverb.preset)));
     const preset = REVERB_PRESETS[p.fx.reverb.preset];
     tail = Math.max(tail, preset.decay + preset.preDelay);
   }
   if (p.fx?.delay) {
-    const send = ctx.createGain();
+    const send = delaySend = ctx.createGain();
     send.gain.value = db(p.fx.delay.sendDb);
     const d = buildDelay(ctx, p.fx.delay);
     dry.connect(send).connect(d.input);
@@ -83,5 +101,14 @@ export function buildPatch(ctx, patch, opts = {}) {
   else trim.connect(destination);
   if (authoredTap) authored.connect(authoredTap);
 
-  return { end: end + tail, authored };
+  return {
+    end: end + tail,
+    authored,
+    release(at) {
+      let silent = at;
+      for (const b of built) silent = Math.max(silent, b.release(at));
+      return silent + tail;
+    },
+    nodes: { trim, reverbSend, delaySend, layers: built.map(b => b.nodes) },
+  };
 }
