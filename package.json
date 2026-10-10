@@ -1,0 +1,26 @@
+{
+  "name": "agent-beeps-runtime",
+  "version": "0.9.0",
+  "description": "Browser-safe runtime of agent-beeps: a patch, a seed and named inputs in, a voice in your AudioContext out. Generated; do not edit.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ehartye/agent-beeps.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./runtime/engine/index.d.ts",
+      "default": "./runtime/engine/index.js"
+    },
+    "./schema": "./src/schema/patch.ts",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

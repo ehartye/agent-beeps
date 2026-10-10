@@ -1,0 +1,383 @@
+// Sound sources: each patch source type becomes a small group of Web Audio nodes.
+import { mulberry32, noiseSamples } from './rng.js';
+import { sumInto, sumNodes } from './sum.js';
+
+/** @typedef {import('../../src/schema/patch.ts').Source} Source */
+/**
+ * @typedef {object} BuiltSource
+ * @property {AudioNode} output
+ * @property {{ param: AudioParam, ratio: number }[]} pitch   frequency params that follow the pitch envelope
+ * @property {AudioParam[]} detune                            cent-valued params for pitch LFOs
+ * @property {(t: number) => void} start
+ * @property {(t: number) => void} stop
+ */
+
+const db = (/** @type {number} */ x) => 10 ** (x / 20);
+export const nyquistSafe = (/** @type {BaseAudioContext} */ ctx, /** @type {number} */ hz) => hz < 0.45 * ctx.sampleRate;
+
+/** 808 metal: six detuned squares in deliberately inharmonic ratios. */
+export const METAL_RATIOS = [2, 3, 4.16, 5.43, 6.79, 8.21];
+
+/**
+ * Noise buffers are cached per context, colour, seed and width, with a byte budget. A song fires hundreds of noise notes
+ * from a handful of seeds, so the cache pays; a game that plays a sound with a fresh seed each time would otherwise keep
+ * every buffer (375 KB per mono layer) until the context dies. The least recently used entries go first. A buffer a voice
+ * is still playing is held by its source node, not by the cache, so evicting it never cuts a sound short.
+ */
+export const NOISE_CACHE_BYTES = 16 * 1024 * 1024;
+
+/** @typedef {{ entries: Map<string, AudioBuffer>, bytes: number }} NoiseCache */
+/** @type {WeakMap<BaseAudioContext, NoiseCache>} */
+const noiseCache = new WeakMap();
+let noiseLimit = NOISE_CACHE_BYTES;
+
+/**
+ * Change the byte budget of every context's noise cache (default 16 MiB, about 42 mono buffers); a smaller one evicts on
+ * the next noise build. `Infinity` is the unbounded cache of engine versions before the bound (the measurement uses it).
+ * @param {number} bytes
+ */
+export function setNoiseCacheLimit(bytes) { noiseLimit = bytes; }
+
+/** What a context's noise cache holds now. @param {BaseAudioContext} ctx */
+export function noiseCacheStats(ctx) {
+  const c = noiseCache.get(ctx);
+  return { entries: c?.entries.size ?? 0, bytes: c?.bytes ?? 0, limit: noiseLimit };
+}
+
+const bytesOf = (/** @type {AudioBuffer} */ b) => b.length * b.numberOfChannels * 4;
+
+/**
+ * Seeded 2-second looping noise, built once per context, colour and seed (while it stays in the cache, see above).
+ * @param {BaseAudioContext} ctx
+ * @param {'white' | 'pink' | 'brown'} color
+ * @param {number} seed
+ * @param {number} [width] stereo decorrelation 0..1 (0: the mono buffer, as always)
+ */
+export function noiseBuffer(ctx, color, seed, width = 0) {
+  let cache = noiseCache.get(ctx);
+  if (!cache) { cache = { entries: new Map(), bytes: 0 }; noiseCache.set(ctx, cache); }
+  const key = width > 0 ? `${color}:${seed}:${width}` : `${color}:${seed}`;
+  let buf = cache.entries.get(key);
+  if (buf) {
+    cache.entries.delete(key); // Map keeps insertion order: re-inserting marks it most recently used
+    cache.entries.set(key, buf);
+    return buf;
+  }
+  const n = Math.ceil(ctx.sampleRate * 2);
+  const left = noiseSamples(color, n, seed);
+  buf = width > 0
+    ? stereoBuffer(ctx, decorrelate(left, noiseSamples(color, n, seed + RIGHT_SEED), width))
+    : bufferOf(ctx, left);
+  cache.entries.set(key, buf);
+  cache.bytes += bytesOf(buf);
+  // Evict from the least recently used end, never the buffer just built.
+  for (const [k, old] of cache.entries) {
+    if (cache.bytes <= noiseLimit || cache.entries.size <= 1) break;
+    cache.entries.delete(k);
+    cache.bytes -= bytesOf(old);
+  }
+  return buf;
+}
+
+/** `stereo` option to a decorrelation width in 0..1: true is full width, absent/false/0 is mono. @param {boolean | number | undefined} v */
+export const widthOf = v => (v === true ? 1 : typeof v === 'number' ? Math.min(1, Math.max(0, v)) : 0);
+
+/** Seed offset for the second channel's independent noise. */
+const RIGHT_SEED = 104729;
+
+/**
+ * Stereo pair from two independent signals: left = a, right = sqrt(1-w)*a + sqrt(w)*b. Equal power in both
+ * channels, and the channels' correlation is sqrt(1-w): w=0 is mono, w=1 is fully decorrelated.
+ * @param {Float32Array} a
+ * @param {Float32Array} b
+ * @param {number} w
+ */
+function decorrelate(a, b, w) {
+  const ka = Math.sqrt(1 - w), kb = Math.sqrt(w);
+  const right = new Float32Array(a.length);
+  for (let i = 0; i < a.length; i++) right[i] = ka * a[i] + kb * b[i];
+  return [a, right];
+}
+
+/**
+ * @param {BaseAudioContext} ctx
+ * @param {Float32Array[]} channels
+ */
+function stereoBuffer(ctx, channels) {
+  const buf = ctx.createBuffer(channels.length, channels[0].length, ctx.sampleRate);
+  channels.forEach((c, i) => buf.getChannelData(i).set(c));
+  return buf;
+}
+
+/**
+ * @param {BaseAudioContext} ctx
+ * @param {Float32Array} samples
+ * @param {number} [channels]
+ */
+function bufferOf(ctx, samples, channels = 1) {
+  const buf = ctx.createBuffer(channels, samples.length, ctx.sampleRate);
+  for (let c = 0; c < channels; c++) buf.getChannelData(c).set(samples);
+  return buf;
+}
+
+/**
+ * A modal source's exciter: a one-sample impulse, or 5 ms of white noise with a falling taper.
+ * @param {BaseAudioContext} ctx
+ * @param {'impulse' | 'noiseBurst'} kind
+ * @param {number} seed
+ */
+export function exciterBuffer(ctx, kind, seed) {
+  const n = kind === 'impulse' ? 1 : Math.ceil(ctx.sampleRate * 0.005);
+  const excite = kind === 'impulse' ? Float32Array.of(1) : noiseSamples('white', n, seed);
+  if (kind === 'noiseBurst') for (let i = 0; i < n; i++) excite[i] *= 1 - i / n;
+  return bufferOf(ctx, excite);
+}
+
+/**
+ * The Poisson grain cloud of a `grains` source as an AudioBuffer: `length` seconds, each channel peak-normalised.
+ * Exported so generated runtime modules build the identical buffer.
+ * @param {BaseAudioContext} ctx
+ * @param {{ rate: number, rateEnd?: number, grainDecay: number, stereo?: boolean | number }} src
+ * @param {number} seed
+ * @param {number} length seconds the source may sound
+ */
+export function grainBuffer(ctx, src, seed, length) {
+  const len = Math.max(1, Math.ceil(ctx.sampleRate * length));
+  /** One channel's grain cloud, peak-normalised. @param {number} sd */
+  const cloud = sd => {
+    const rand = mulberry32(sd);
+    const out = new Float32Array(len);
+    const noise = noiseSamples('white', len, sd + 1);
+    const decaySamples = src.grainDecay * ctx.sampleRate;
+    let t = 0;
+    while (true) {
+      const progress = t / len;
+      const rate = src.rate * (src.rateEnd === undefined ? 1 : 1 + (src.rateEnd - 1) * progress);
+      if (rate <= 0) break;
+      t += Math.max(1, Math.round((-Math.log(1 - rand()) / rate) * ctx.sampleRate)); // Poisson arrivals
+      if (t >= len) break;
+      const amp = 0.5 + 0.5 * rand();
+      const grainLen = Math.min(len - t, Math.ceil(decaySamples * 6));
+      for (let i = 0; i < grainLen; i++) out[t + i] += amp * noise[(t + i) % len] * Math.exp(-i / decaySamples);
+    }
+    let peak = 0;
+    for (const x of out) peak = Math.max(peak, Math.abs(x));
+    if (peak > 0) for (let i = 0; i < len; i++) out[i] /= peak;
+    return out;
+  };
+  const width = widthOf(src.stereo);
+  const left = cloud(seed);
+  return width > 0 ? stereoBuffer(ctx, decorrelate(left, cloud(seed + RIGHT_SEED), width)) : bufferOf(ctx, left);
+}
+
+/**
+ * @param {BaseAudioContext} ctx
+ * @param {Source} src
+ * @param {{ pitchHz: number, seed: number, length: number }} opts  length = seconds the source may sound
+ * @returns {BuiltSource}
+ */
+export function buildSource(ctx, src, { pitchHz, seed, length }) {
+  const mix = ctx.createGain();
+  /** @type {AudioScheduledSourceNode[]} */
+  const nodes = [];
+  /** @type {BuiltSource['pitch']} */
+  const pitch = [];
+  /** @type {AudioParam[]} */
+  const detune = [];
+  /** @type {((t: number) => void)[]} */
+  const onStart = [];
+  /** Signals summed into `mix` in this order (never connected to it directly: see sum.js). */
+  /** @type {AudioNode[]} */
+  const parts = [];
+
+  if (src.type === 'osc') {
+    const voices = src.unison?.voices ?? 1;
+    const spread = src.unison?.detuneCents ?? 0;
+    for (let i = 0; i < voices; i++) {
+      const o = ctx.createOscillator();
+      o.type = src.wave;
+      o.frequency.value = pitchHz;
+      // Spread evenly: in-phase unison voices would add at onset instead of chorusing.
+      o.detune.value = voices === 1 ? 0 : -spread / 2 + (spread * i) / (voices - 1);
+      const g = ctx.createGain();
+      g.gain.value = 1 / voices;
+      parts.push(o.connect(g));
+      nodes.push(o); pitch.push({ param: o.frequency, ratio: 1 }); detune.push(o.detune);
+    }
+  } else if (src.type === 'noise') {
+    const s = ctx.createBufferSource();
+    s.buffer = noiseBuffer(ctx, src.color, seed, widthOf(src.stereo));
+    s.loop = true;
+    parts.push(s);
+    nodes.push(s);
+  } else if (src.type === 'fm') {
+    const ops = src.operators.map(op => {
+      const o = ctx.createOscillator();
+      o.type = op.wave;
+      o.frequency.value = pitchHz * op.ratio;
+      nodes.push(o); pitch.push({ param: o.frequency, ratio: op.ratio }); detune.push(o.detune);
+      return o;
+    });
+    /** @type {AudioNode[][]} modulators per operator, summed into its frequency in algorithm order */
+    const mods = ops.map(() => []);
+    for (const [from, to] of src.algorithm) {
+      if (from >= ops.length || to >= ops.length || from === to) continue;
+      const depth = ctx.createGain();
+      depth.gain.value = src.operators[from].index * pitchHz * src.operators[to].ratio;
+      mods[to].push(ops[from].connect(depth));
+    }
+    mods.forEach((m, i) => sumInto(ctx, m, ops[i].frequency));
+    parts.push(ops[0]);
+  } else if (src.type === 'additive') {
+    const total = src.partials.reduce((a, [, g]) => a + db(g), 0) || 1;
+    for (const [ratio, gainDb, decay] of src.partials) {
+      if (!nyquistSafe(ctx, pitchHz * ratio)) continue;
+      const o = ctx.createOscillator();
+      o.frequency.value = pitchHz * ratio;
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      parts.push(o.connect(g));
+      nodes.push(o); pitch.push({ param: o.frequency, ratio }); detune.push(o.detune);
+      // Each partial decays on its own clock: that independence is what makes additive sound physical.
+      onStart.push(t => {
+        g.gain.setValueAtTime(db(gainDb) / total, t);
+        g.gain.setTargetAtTime(0, t, decay / 5);
+      });
+    }
+  } else if (src.type === 'modal') {
+    const exciter = ctx.createBufferSource();
+    exciter.buffer = exciterBuffer(ctx, src.exciter, seed);
+    nodes.push(exciter);
+    for (const [ratio, q, gainDb] of src.modes) {
+      if (!nyquistSafe(ctx, pitchHz * ratio)) continue;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = pitchHz * ratio;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      // A bandpass passes a sliver of an impulse; scale by Q so modes ring at a usable level.
+      g.gain.value = db(gainDb) * q * 4;
+      parts.push(exciter.connect(bp).connect(g));
+      pitch.push({ param: bp.frequency, ratio });
+    }
+  } else if (src.type === 'grains') {
+    const s = ctx.createBufferSource();
+    s.buffer = grainBuffer(ctx, src, seed, length);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = src.center;
+    bp.Q.value = src.q;
+    parts.push(s.connect(bp));
+    nodes.push(s);
+  } else if (src.type === 'voice') {
+    // Source-filter voice: a glottal pulse train (and breath noise) excites parallel formant bandpasses.
+    const tilt = src.tilt ?? 1.5;
+    const harmonics = 48;
+    const real = new Float32Array(harmonics + 1);
+    const imag = new Float32Array(harmonics + 1);
+    for (let n = 1; n <= harmonics; n++) imag[n] = 1 / n ** tilt;
+    const pulse = ctx.createOscillator();
+    pulse.setPeriodicWave(ctx.createPeriodicWave(real, imag));
+    pulse.frequency.value = pitchHz;
+    nodes.push(pulse); pitch.push({ param: pulse.frequency, ratio: 1 }); detune.push(pulse.detune);
+    const breath = Math.min(1, Math.max(0, src.breath ?? 0));
+    /** Pitch modulators, summed into the pulse's detune through one connection (see sum.js). */
+    /** @type {AudioNode[]} */
+    const wobbles = [];
+
+    if (src.jitterCents) {
+      // Smoothed seeded random walk, ~50 knots a second, looping seamlessly, driving the pulse train's detune.
+      const rand = mulberry32(seed + 31);
+      const knotsPerSec = 50;
+      const knots = knotsPerSec * 2;
+      const values = Array.from({ length: knots }, () => rand() * 2 - 1);
+      const wobble = new Float32Array(Math.ceil(ctx.sampleRate * 2));
+      const per = wobble.length / knots;
+      for (let i = 0; i < wobble.length; i++) {
+        const k = Math.floor(i / per), f = i / per - k;
+        wobble[i] = values[k] + (values[(k + 1) % knots] - values[k]) * f;
+      }
+      const j = ctx.createBufferSource();
+      j.buffer = bufferOf(ctx, wobble);
+      j.loop = true;
+      const depth = ctx.createGain();
+      depth.gain.value = src.jitterCents;
+      wobbles.push(j.connect(depth));
+      nodes.push(j);
+    }
+    if (src.vibrato) {
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = src.vibrato.rate;
+      const depth = ctx.createGain();
+      depth.gain.value = src.vibrato.cents;
+      wobbles.push(lfo.connect(depth));
+      nodes.push(lfo);
+    }
+
+    sumInto(ctx, wobbles, pulse.detune);
+    const pulseGain = ctx.createGain();
+    pulseGain.gain.value = 1 - breath;
+    /** @type {AudioNode[]} */
+    const excitation = [pulse.connect(pulseGain)];
+    if (breath > 0) {
+      const air = ctx.createBufferSource();
+      air.buffer = noiseBuffer(ctx, 'white', seed + 53);
+      air.loop = true;
+      const airGain = ctx.createGain();
+      airGain.gain.value = breath;
+      excitation.push(air.connect(airGain));
+      nodes.push(air);
+    }
+    /** @type {AudioNode} */
+    let drive = sumNodes(ctx, excitation);
+    if (src.tremolo) {
+      const d = Math.min(1, src.tremolo.depth);
+      const trem = ctx.createGain();
+      trem.gain.value = 1 - d / 2;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = src.tremolo.rate;
+      const depth = ctx.createGain();
+      depth.gain.value = d / 2;
+      lfo.connect(depth).connect(trem.gain);
+      nodes.push(lfo);
+      drive = drive.connect(trem);
+    }
+    for (const [hz, q, gainDb] of src.formants) {
+      if (!nyquistSafe(ctx, hz)) continue;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = hz;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.value = db(gainDb);
+      parts.push(drive.connect(bp).connect(g));
+    }
+  } else if (src.type === 'metal') {
+    const sum = ctx.createGain();
+    sum.gain.value = 1 / METAL_RATIOS.length;
+    const squares = METAL_RATIOS.map(r => {
+      const o = ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = src.base * r;
+      nodes.push(o); detune.push(o.detune);
+      return o;
+    });
+    sumInto(ctx, squares, sum);
+    for (const band of src.bands) {
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = band;
+      bp.Q.value = 1.5;
+      parts.push(sum.connect(bp));
+    }
+  }
+
+  sumInto(ctx, parts, mix);
+  return {
+    output: mix,
+    pitch,
+    detune,
+    start: t => { for (const f of onStart) f(t); for (const n of nodes) n.start(t); },
+    stop: t => { for (const n of nodes) n.stop(t); },
+  };
+}
