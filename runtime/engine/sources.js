@@ -13,40 +13,74 @@ import { sumInto, sumNodes } from './sum.js';
  */
 
 const db = (/** @type {number} */ x) => 10 ** (x / 20);
-const nyquistSafe = (/** @type {BaseAudioContext} */ ctx, /** @type {number} */ hz) => hz < 0.45 * ctx.sampleRate;
+export const nyquistSafe = (/** @type {BaseAudioContext} */ ctx, /** @type {number} */ hz) => hz < 0.45 * ctx.sampleRate;
 
 /** 808 metal: six detuned squares in deliberately inharmonic ratios. */
 export const METAL_RATIOS = [2, 3, 4.16, 5.43, 6.79, 8.21];
 
-/** @type {WeakMap<BaseAudioContext, Map<string, AudioBuffer>>} */
+/**
+ * Noise buffers are cached per context, colour, seed and width, with a byte budget. A song fires hundreds of noise notes
+ * from a handful of seeds, so the cache pays; a game that plays a sound with a fresh seed each time would otherwise keep
+ * every buffer (375 KB per mono layer) until the context dies. The least recently used entries go first. A buffer a voice
+ * is still playing is held by its source node, not by the cache, so evicting it never cuts a sound short.
+ */
+export const NOISE_CACHE_BYTES = 16 * 1024 * 1024;
+
+/** @typedef {{ entries: Map<string, AudioBuffer>, bytes: number }} NoiseCache */
+/** @type {WeakMap<BaseAudioContext, NoiseCache>} */
 const noiseCache = new WeakMap();
+let noiseLimit = NOISE_CACHE_BYTES;
 
 /**
- * Seeded 2-second looping noise, built once per context, colour and seed: a song fires hundreds of
- * noise notes and would otherwise allocate a fresh buffer for each.
+ * Change the byte budget of every context's noise cache (default 16 MiB, about 42 mono buffers); a smaller one evicts on
+ * the next noise build. `Infinity` is the unbounded cache of engine versions before the bound (the measurement uses it).
+ * @param {number} bytes
+ */
+export function setNoiseCacheLimit(bytes) { noiseLimit = bytes; }
+
+/** What a context's noise cache holds now. @param {BaseAudioContext} ctx */
+export function noiseCacheStats(ctx) {
+  const c = noiseCache.get(ctx);
+  return { entries: c?.entries.size ?? 0, bytes: c?.bytes ?? 0, limit: noiseLimit };
+}
+
+const bytesOf = (/** @type {AudioBuffer} */ b) => b.length * b.numberOfChannels * 4;
+
+/**
+ * Seeded 2-second looping noise, built once per context, colour and seed (while it stays in the cache, see above).
  * @param {BaseAudioContext} ctx
  * @param {'white' | 'pink' | 'brown'} color
  * @param {number} seed
  * @param {number} [width] stereo decorrelation 0..1 (0: the mono buffer, as always)
  */
-function noiseBuffer(ctx, color, seed, width = 0) {
-  let perCtx = noiseCache.get(ctx);
-  if (!perCtx) { perCtx = new Map(); noiseCache.set(ctx, perCtx); }
+export function noiseBuffer(ctx, color, seed, width = 0) {
+  let cache = noiseCache.get(ctx);
+  if (!cache) { cache = { entries: new Map(), bytes: 0 }; noiseCache.set(ctx, cache); }
   const key = width > 0 ? `${color}:${seed}:${width}` : `${color}:${seed}`;
-  let buf = perCtx.get(key);
-  if (!buf) {
-    const n = Math.ceil(ctx.sampleRate * 2);
-    const left = noiseSamples(color, n, seed);
-    buf = width > 0
-      ? stereoBuffer(ctx, decorrelate(left, noiseSamples(color, n, seed + RIGHT_SEED), width))
-      : bufferOf(ctx, left);
-    perCtx.set(key, buf);
+  let buf = cache.entries.get(key);
+  if (buf) {
+    cache.entries.delete(key); // Map keeps insertion order: re-inserting marks it most recently used
+    cache.entries.set(key, buf);
+    return buf;
+  }
+  const n = Math.ceil(ctx.sampleRate * 2);
+  const left = noiseSamples(color, n, seed);
+  buf = width > 0
+    ? stereoBuffer(ctx, decorrelate(left, noiseSamples(color, n, seed + RIGHT_SEED), width))
+    : bufferOf(ctx, left);
+  cache.entries.set(key, buf);
+  cache.bytes += bytesOf(buf);
+  // Evict from the least recently used end, never the buffer just built.
+  for (const [k, old] of cache.entries) {
+    if (cache.bytes <= noiseLimit || cache.entries.size <= 1) break;
+    cache.entries.delete(k);
+    cache.bytes -= bytesOf(old);
   }
   return buf;
 }
 
 /** `stereo` option to a decorrelation width in 0..1: true is full width, absent/false/0 is mono. @param {boolean | number | undefined} v */
-const widthOf = v => (v === true ? 1 : typeof v === 'number' ? Math.min(1, Math.max(0, v)) : 0);
+export const widthOf = v => (v === true ? 1 : typeof v === 'number' ? Math.min(1, Math.max(0, v)) : 0);
 
 /** Seed offset for the second channel's independent noise. */
 const RIGHT_SEED = 104729;
@@ -84,6 +118,56 @@ function bufferOf(ctx, samples, channels = 1) {
   const buf = ctx.createBuffer(channels, samples.length, ctx.sampleRate);
   for (let c = 0; c < channels; c++) buf.getChannelData(c).set(samples);
   return buf;
+}
+
+/**
+ * A modal source's exciter: a one-sample impulse, or 5 ms of white noise with a falling taper.
+ * @param {BaseAudioContext} ctx
+ * @param {'impulse' | 'noiseBurst'} kind
+ * @param {number} seed
+ */
+export function exciterBuffer(ctx, kind, seed) {
+  const n = kind === 'impulse' ? 1 : Math.ceil(ctx.sampleRate * 0.005);
+  const excite = kind === 'impulse' ? Float32Array.of(1) : noiseSamples('white', n, seed);
+  if (kind === 'noiseBurst') for (let i = 0; i < n; i++) excite[i] *= 1 - i / n;
+  return bufferOf(ctx, excite);
+}
+
+/**
+ * The Poisson grain cloud of a `grains` source as an AudioBuffer: `length` seconds, each channel peak-normalised.
+ * Exported so generated runtime modules build the identical buffer.
+ * @param {BaseAudioContext} ctx
+ * @param {{ rate: number, rateEnd?: number, grainDecay: number, stereo?: boolean | number }} src
+ * @param {number} seed
+ * @param {number} length seconds the source may sound
+ */
+export function grainBuffer(ctx, src, seed, length) {
+  const len = Math.max(1, Math.ceil(ctx.sampleRate * length));
+  /** One channel's grain cloud, peak-normalised. @param {number} sd */
+  const cloud = sd => {
+    const rand = mulberry32(sd);
+    const out = new Float32Array(len);
+    const noise = noiseSamples('white', len, sd + 1);
+    const decaySamples = src.grainDecay * ctx.sampleRate;
+    let t = 0;
+    while (true) {
+      const progress = t / len;
+      const rate = src.rate * (src.rateEnd === undefined ? 1 : 1 + (src.rateEnd - 1) * progress);
+      if (rate <= 0) break;
+      t += Math.max(1, Math.round((-Math.log(1 - rand()) / rate) * ctx.sampleRate)); // Poisson arrivals
+      if (t >= len) break;
+      const amp = 0.5 + 0.5 * rand();
+      const grainLen = Math.min(len - t, Math.ceil(decaySamples * 6));
+      for (let i = 0; i < grainLen; i++) out[t + i] += amp * noise[(t + i) % len] * Math.exp(-i / decaySamples);
+    }
+    let peak = 0;
+    for (const x of out) peak = Math.max(peak, Math.abs(x));
+    if (peak > 0) for (let i = 0; i < len; i++) out[i] /= peak;
+    return out;
+  };
+  const width = widthOf(src.stereo);
+  const left = cloud(seed);
+  return width > 0 ? stereoBuffer(ctx, decorrelate(left, cloud(seed + RIGHT_SEED), width)) : bufferOf(ctx, left);
 }
 
 /**
@@ -162,10 +246,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     }
   } else if (src.type === 'modal') {
     const exciter = ctx.createBufferSource();
-    const n = src.exciter === 'impulse' ? 1 : Math.ceil(ctx.sampleRate * 0.005);
-    const excite = src.exciter === 'impulse' ? Float32Array.of(1) : noiseSamples('white', n, seed);
-    if (src.exciter === 'noiseBurst') for (let i = 0; i < n; i++) excite[i] *= 1 - i / n;
-    exciter.buffer = bufferOf(ctx, excite);
+    exciter.buffer = exciterBuffer(ctx, src.exciter, seed);
     nodes.push(exciter);
     for (const [ratio, q, gainDb] of src.modes) {
       if (!nyquistSafe(ctx, pitchHz * ratio)) continue;
@@ -180,33 +261,8 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       pitch.push({ param: bp.frequency, ratio });
     }
   } else if (src.type === 'grains') {
-    const len = Math.max(1, Math.ceil(ctx.sampleRate * length));
-    /** One channel's grain cloud, peak-normalised. @param {number} sd */
-    const cloud = sd => {
-      const rand = mulberry32(sd);
-      const out = new Float32Array(len);
-      const noise = noiseSamples('white', len, sd + 1);
-      const decaySamples = src.grainDecay * ctx.sampleRate;
-      let t = 0;
-      while (true) {
-        const progress = t / len;
-        const rate = src.rate * (src.rateEnd === undefined ? 1 : 1 + (src.rateEnd - 1) * progress);
-        if (rate <= 0) break;
-        t += Math.max(1, Math.round((-Math.log(1 - rand()) / rate) * ctx.sampleRate)); // Poisson arrivals
-        if (t >= len) break;
-        const amp = 0.5 + 0.5 * rand();
-        const grainLen = Math.min(len - t, Math.ceil(decaySamples * 6));
-        for (let i = 0; i < grainLen; i++) out[t + i] += amp * noise[(t + i) % len] * Math.exp(-i / decaySamples);
-      }
-      let peak = 0;
-      for (const x of out) peak = Math.max(peak, Math.abs(x));
-      if (peak > 0) for (let i = 0; i < len; i++) out[i] /= peak;
-      return out;
-    };
-    const width = widthOf(src.stereo);
-    const left = cloud(seed);
     const s = ctx.createBufferSource();
-    s.buffer = width > 0 ? stereoBuffer(ctx, decorrelate(left, cloud(seed + RIGHT_SEED), width)) : bufferOf(ctx, left);
+    s.buffer = grainBuffer(ctx, src, seed, length);
     const bp = ctx.createBiquadFilter();
     bp.type = 'bandpass';
     bp.frequency.value = src.center;

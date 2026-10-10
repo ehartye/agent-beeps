@@ -1,33 +1,41 @@
 // Variation: per-variant parameter perturbation and a variant picker for repeating sounds.
 import { mulberry32 } from './rng.js';
-import { noteToHz } from './notes.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 
 /**
- * Variant 0 is the patch as written. Other variants detune pitched sources and nudge layer gain
- * within the patch's declared variation ranges, from a seeded generator.
+ * What a variant changes: a pitch ratio and a gain offset, drawn from a seeded generator within the patch's declared
+ * variation ranges. Variant 0 is the patch as written (null). The ratio is returned, not applied to the patch, because it
+ * has to be applied after the project scale has snapped the pitch: applied before, a scale that snaps maps every variant
+ * back to the same note and `pitchCents` does nothing (engine versions up to the snap fix did exactly that).
  * @param {Patch} patch
  * @param {number} variant
  * @param {number} seed
- * @returns {Patch}
+ * @returns {{ pitchRatio: number, gainDb: number } | null}
  */
-export function variantPatch(patch, variant, seed) {
+export function variantDraw(patch, variant, seed) {
   const v = patch.variation;
-  if (!variant || !v || (!v.pitchCents && !v.gainDb)) return patch;
+  if (!variant || !v || (!v.pitchCents && !v.gainDb)) return null;
   const rand = mulberry32((seed * 7919 + variant * 104729) >>> 0);
   const u = () => rand() * 2 - 1;
-  const ratio = 2 ** ((u() * v.pitchCents) / 1200);
-  const gain = u() * v.gainDb;
+  return { pitchRatio: 2 ** ((u() * v.pitchCents) / 1200), gainDb: u() * v.gainDb };
+}
+
+/**
+ * The patch a variant plays: variant 0 as written, others with the drawn gain offset on every layer. The pitch ratio is
+ * returned beside it for the layers to apply after snapping (see variantDraw).
+ * @param {Patch} patch
+ * @param {number} variant
+ * @param {number} seed
+ * @returns {{ patch: Patch, pitchRatio: number }}
+ */
+export function variantPatch(patch, variant, seed) {
+  const draw = variantDraw(patch, variant, seed);
+  if (!draw) return { patch, pitchRatio: 1 };
   /** @type {Patch} */
   const out = structuredClone(patch);
-  for (const layer of out.layers) {
-    const src = /** @type {any} */ (layer.source);
-    if ('pitch' in src) src.pitch = noteToHz(src.pitch) * ratio;
-    if (layer.pitchEnv) for (const p of layer.pitchEnv) p.to = noteToHz(p.to) * ratio;
-    layer.gainDb += gain;
-  }
-  return out;
+  for (const layer of out.layers) layer.gainDb += draw.gainDb;
+  return { patch: out, pitchRatio: draw.pitchRatio };
 }
 
 /**

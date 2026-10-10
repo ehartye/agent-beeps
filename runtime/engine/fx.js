@@ -66,6 +66,41 @@ export function buildReverb(ctx, preset) {
 }
 
 /**
+ * @typedef {object} ReverbBus
+ * @property {AudioNode} input    voices send here (the bus's convolver)
+ * @property {GainNode} output    the bus's return, connected to the destination it was made with
+ * @property {keyof typeof REVERB_PRESETS} preset
+ * @property {() => void} dispose
+ * One of these (every voice sends to it), or an object of them by preset (a voice whose preset is missing builds its own): what a voice's `reverb` option takes.
+ * @typedef {ReverbBus | Partial<Record<keyof typeof REVERB_PRESETS, ReverbBus>>} ReverbBuses
+ */
+
+/**
+ * A reverb the game owns and many voices send to: one convolver for the whole mix instead of one per voice (a ConvolverNode
+ * costs about 4 ms to build and a voice that has one pays it every time). It uses the same impulse response a voice's own
+ * reverb would, built once per context and preset. `returnDb` trims the wet return.
+ * @param {BaseAudioContext} ctx
+ * @param {AudioNode} out  where the wet signal goes
+ * @param {{ preset?: keyof typeof REVERB_PRESETS, returnDb?: number }} [opts]
+ * @returns {ReverbBus}
+ */
+export function createReverbBus(ctx, out, { preset = 'room', returnDb = 0 } = {}) {
+  if (!REVERB_PRESETS[preset]) throw new Error(`unknown reverb preset "${preset}"`);
+  const input = buildReverb(ctx, preset);
+  const output = ctx.createGain();
+  output.gain.value = 10 ** (returnDb / 20);
+  input.connect(output).connect(out);
+  return { input, output, preset, dispose() { input.disconnect(); output.disconnect(); } };
+}
+
+/** The bus a voice with this reverb preset sends to: a single bus takes every voice, a record is looked up by preset (a preset it lacks keeps the voice's own reverb). @param {ReverbBuses | undefined} buses @param {keyof typeof REVERB_PRESETS} preset */
+export function busFor(buses, preset) {
+  if (!buses) return undefined;
+  if ('input' in buses) return buses; // one bus: the game's room, whatever preset the patch asked for
+  return buses[preset];
+}
+
+/**
  * Feedback delay: in → delay ↔ feedback → out.
  * @param {BaseAudioContext} ctx
  * @param {{ time: number, feedback: number }} opts
