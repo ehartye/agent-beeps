@@ -90,6 +90,14 @@ Writing a build script that calls beeps (Windows `.cmd` shim, exit codes, seeds)
 beeps from your own build script": run `node <npm root -g>/agent-beeps/scripts/beeps.mjs` with an
 args array and no shell.
 
+## When the game plays it live
+
+If the sound is a function of game state (an engine that follows speed, an impact that follows mass), declare named inputs in
+an `xRuntime` block instead of baking dozens of variants: `beeps runtime check` lints the patch at every input corner,
+`beeps runtime look` draws baked and live side by side, and `delivery` in the build recipe picks baked, runtime or both.
+One-shots with no input stay baked. Decision table, binding targets and units, the checks and the traps:
+`references/runtime-inputs.md`; the format and API: `docs/runtime.md`.
+
 ## Never
 
 - Put a loudness literal in a patch: levels are trimmed to the project target (-18 LUFS by default,
@@ -98,6 +106,8 @@ args array and no shell.
   `meta.loudnessOffsetDb`, not a layer gain.
 - Use `q` on a lowpass/highpass (`resonanceDb`) or `resonanceDb` on a bandpass (`q`).
 - Hand the owner a single sound as "done". Offer a set and audition it.
+- Add `xRuntime` to a sound nothing in the game varies, or let an input's `default` drift from the value the authored patch sounds
+  right at: the audition, the bake and the cue's level are all measured there.
 
 ## Done bar
 

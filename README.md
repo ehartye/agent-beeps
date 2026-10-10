@@ -71,7 +71,8 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `loopcheck <files...>` | decode encoded audio and report frame count against its sidecar and the loop wrap (tick size, level step, and seam metrics: boundary step and slope jump in dB against a typical sample step, last zero-crossing phase, with a warning when the delivered seam is 3 dB worse than the source's); `--engines chromium,firefox,webkit` also decodes each file with `decodeAudioData` in those browsers at 48000 and 44100 Hz and reports frame delta and start lead against the source (the lead needs the source WAV beside the file or `--source`; without one it reads `n/a`, not a number) (non-zero exit on a delta; an engine that is not installed or has no Web Audio is reported, never passed) |
 | `song states <song>` | adaptive songs: judge every state as its own piece (loudness, trim, range, seam, register overlaps among its tracks, lint) |
 | `song compat <songs...>` | plan crossfades between songs without rendering: tempo relation, phase-lock, estimated key, harmony agreement per pair |
-| `build` | incremental audio build from `beeps.build.json`: render, export, compress and bundle only assets whose input hash differs from the committed `audio.lock.json` (or whose outputs are missing or modified); `--check` renders nothing and exits 1 listing what is stale; `--only`, `--all`, `--target web-universal` (default), `web-mp3` or `wav-master`, `--pull` / `--push` with `--store dir:<path>` or `release:<owner/repo>`, `--adopt` (also re-keys a lock of an older toolchain without rendering), `--allow-toolchain-change`, `--verify-determinism` (render each song twice and fail the asset if the renders differ) ([docs](docs/build-lock-and-store.md)) |
+| `build` | incremental audio build from `beeps.build.json`: render, export, compress and bundle only assets whose input hash differs from the committed `audio.lock.json` (or whose outputs are missing or modified); `--check` renders nothing and exits 1 listing what is stale; `--only`, `--all`, `--target web-universal` (default), `web-mp3` or `wav-master`, `--pull` / `--push` with `--store dir:<path>` or `release:<owner/repo>`, `--adopt` (also re-keys a lock of an older toolchain without rendering), `--allow-toolchain-change`, `--verify-determinism` (render each song twice and fail the asset if the renders differ); a recipe's `delivery` (`baked`, `runtime`, `both`) also writes the runtime cue ([docs](docs/build-lock-and-store.md)) |
+| `runtime export`, `check`, `verify`, `parity`, `perf`, `live`, `look` | the runtime path: write a patch's cue, lint it at its input corners, verify cues are current, compare baked and live voices (`--engines chromium,firefox`), time voice builds (`--bus`, `--plays N`), move an input mid-note, look at both renders ([docs](docs/runtime.md)) |
 | `verify [dir or lock]` | outputs against the lock (sha256), the catalog, and Opus/MP3 container headers (length, tag, encoder id); `--decode` adds the loop checks |
 | `store push/pull/status` | the content-addressed audio store (one tar per asset, named by input hash, immutable): a `dir:` directory or GitHub `release:` assets |
 | `ci export <dir>` | vendor a zero-dependency `fetch.mjs`: `node fetch.mjs` materialises the audio from the store by hash and verifies it against the lock, no beeps, Chromium or ffmpeg |
@@ -166,7 +167,8 @@ drive and pan, a generated-impulse reverb and a delay, an opt-in DC blocker (`fx
 transparent safety clipper. Pitched
 sources snap to the project scale. The engine is plain browser JavaScript
 (`runtime/engine/patch.js`): games can import it and call
-`buildPatch(audioContext, patch, { trimDb, variant, seed })`.
+`buildPatch(audioContext, patch, { trimDb, variant, seed })`. For a game, prefer `build` from the runtime package
+([Runtime path](#runtime-path)): named inputs, live handles and a shared reverb bus on top of the same graph.
 
 Songs use `runtime/engine/song.js`: `buildSong(ctx, song, instruments, { lazy: true })` returns
 `advance(t)`, which builds only the notes that start before `t`. Call it a couple of seconds ahead
@@ -286,3 +288,21 @@ claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals i
 ```
 
 Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`.
+
+## Runtime path
+
+A patch ships baked (a file the game plays) or as a **cue** the game plays live in its own AudioContext, with named inputs
+(speed, size, distance) bound to patch parameters through the optional `xRuntime` block of `beeps/patch@1`, a seed, a shared
+reverb bus, and live `set()` while it sounds. Recipes in `beeps.build.json` choose `delivery: baked | runtime | both`; the lock
+pins the cue; `beeps verify --parity` proves the cue plays as its bake (bit-exact in Chromium, within 1 LU and 30 Hz of centroid
+across browsers). The game installs only the engine, as the generated slim package `agent-beeps-runtime`.
+
+```js
+import { build, parseCue } from 'agent-beeps-runtime';
+const voice = build(ctx, ctx.destination, parseCue(cueJson), { params: { speed: 0.4 } }).start();
+voice.set('speed', 0.9);
+```
+
+`beeps runtime export | check | verify | parity | perf | live | look` author and measure it. When to pick which delivery, the
+API, the input format, the measured costs and the compatibility notes: [`docs/runtime.md`](docs/runtime.md). The package and its
+`runtime` branch: [`docs/runtime-package.md`](docs/runtime-package.md).

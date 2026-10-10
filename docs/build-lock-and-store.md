@@ -202,6 +202,20 @@ decoding:
 `--decode` decodes every loop file and checks its frame count against the sidecar (a failure) and its wrap tick and level step (warnings: measured without the source WAV they also flag music that is quiet at its end); it needs
 ffmpeg. Exit 1 lists each problem as `{ asset, file, problem }`.
 
+### Runtime cues: `delivery`
+
+A patch recipe may ship as a runtime cue (`<id>.runtime.json`) the game plays live instead of, or beside, the encoded file:
+`"delivery": "baked"` (default) `| "runtime" | "both"`; absent, the patch's own `xRuntime.delivery`; absent, baked. The input hash gains a
+fifth part, `runtime` (sha256 of the patch with its `xRuntime` block), **only** for assets that ship a cue; every baked asset
+keeps the hash it had. The cue is one of the asset's sha256-pinned outputs, and its lock entry gains `"delivery": "runtime" | "both"`
+and `parts.runtime`. A `runtime` asset has no sidecar, is not in `index.json`, and ignores bitrate and encoder changes. Details,
+the cue format and the API: [`runtime.md`](runtime.md).
+
+`beeps verify` checks each cue's schema, engine version, id and that its patch still parses. **`--parity [engines]`** plays every cue at
+its input defaults and compares it with its bake: bit-exact on both taps in Chromium, or `E_VERIFY`; in other engines
+(`--parity chromium,firefox`) loudness within 1 LU and spectral centroid within 30 Hz of Chromium's bake. An engine without an
+`OfflineAudioContext` is a warning, never a pass. It needs Chromium.
+
 ## Catalog and player: exact length
 
 Sidecars (and so `index.json`) carry `frames`, the exact integer length of the source, and, after
