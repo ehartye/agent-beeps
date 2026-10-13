@@ -19,6 +19,19 @@ function hashes(fx: ReturnType<typeof makeFixture>, o: { target?: string; kbps?:
 const changed = (a: Record<string, string>, b: Record<string, string>) => Object.keys(a).filter(k => a[k] !== b[k]).sort();
 
 describe('input hash', () => {
+  it('keys baked delivery IDs only in export while seed differences retain distinct authored renders', () => {
+    const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg), tc = currentToolchain();
+    const recipe = loadRecipes(cfg).find(r => r.id === 'coin')!;
+    const plan = (id: string, seed: number) => planAsset(p, { ...recipe, id, seed, variants: 1 }, deliveryFor('wav-master'), tc, undefined);
+    const native = plan('coin', 11), first = plan('inspect-0', 11), second = plan('inspect-1', 18);
+    expect(first.parts.renders).toBe(native.parts.renders);
+    expect({ ...first.parts, export: native.parts.export }).toEqual(native.parts);
+    expect(first.parts.export).not.toBe(native.parts.export);
+    expect(first.inputHash).not.toBe(native.inputHash);
+    expect(second.parts.renders).not.toBe(first.parts.renders);
+    expect(fx.read('sfx/coin.json').name).toBe('coin');
+  });
+
   it('keeps the historical export identity exactly when post options are omitted', () => {
     const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg);
     for (const recipe of loadRecipes(cfg)) {

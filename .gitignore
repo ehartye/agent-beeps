@@ -1,6 +1,7 @@
 .superpowers/
 node_modules/
 .agent-beeps/
+.local/
 coverage/
 *.log
 evals/results/

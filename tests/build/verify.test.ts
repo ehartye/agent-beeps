@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, truncateSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeWav } from '../../src/audio/wav.ts';
@@ -14,6 +14,28 @@ import { cloneFixture, makeFixture, type Fixture } from '../helpers/build-fixtur
 
 const ffmpeg = (() => { try { return findFfmpeg(); } catch { return undefined; } })();
 const hasChromium = await chromiumAvailable();
+
+describe('WAV declared channel checks', () => {
+  it.each([1, 2])('refuses a declared channel count that differs from an actual %i-channel PCM header', channels => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-wav-channels-')), wav = join(dir, 'tone.wav');
+    try {
+      // Honest static PCM header fixture, without any generator lock or render provenance.
+      const bytes = writeWav(Array.from({ length: channels }, () => new Float32Array([0.1, -0.1])), 48000);
+      writeFileSync(wav, bytes);
+      const mtime = statSync(wav).mtimeMs;
+      const info = { format: 'wav', frames: 2, channels, sampleRate: 48000 };
+      expect(staticCheck(wav, { frames: 2, channels, sampleRate: 48000 })).toEqual({ info, problems: [] });
+      expect(staticCheck(wav, { frames: 2, sampleRate: 48000 })).toEqual({ info, problems: [] });
+      const expectedChannels = channels === 1 ? 2 : 1;
+      // Current causal RED: the WAV path reports no problem despite this explicit disagreement.
+      expect(staticCheck(wav, { frames: 2, channels: expectedChannels, sampleRate: 48000 })).toEqual({
+        info, problems: [`${channels} channels, sidecar says ${expectedChannels}`],
+      });
+      expect(readFileSync(wav)).toEqual(bytes);
+      expect(statSync(wav).mtimeMs).toBe(mtime);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});
 
 describe.skipIf(!ffmpeg)('static container checks', () => {
   const dir = mkdtempSync(join(tmpdir(), 'beeps-static-'));
