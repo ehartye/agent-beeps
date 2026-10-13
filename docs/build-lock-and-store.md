@@ -92,8 +92,14 @@ report, and `budgetBytes` fails a build before the first render.
 Paths are relative to the file. `recipes` is `{ "<id>": { "source": "sfx/coin.json", "role": "sfx" } }`
 or an array of `{ id, source, role }`; a recipe may add `seed` (default 1) and, for a patch, `variants`
 (default: the patch's declared count). Roles `sfx`, `music`, `ambience`; an `sfx` is a patch, the others
-songs (`kind` overrides). The recipe id must equal the patch or song `name` (the catalog keys assets by
-it). `project` is a `beeps/project@1` file (scale and loudness targets); without it the nearest
+songs (`kind` overrides). For baked delivery, the recipe id names the delivered files, sidecar and
+catalog entry; it may differ from the authored patch or song `name`. Sources retain their names,
+labels and render keys, so multiple recipes can share one source with independent patch seeds.
+Recipe ids use lowercase letters, digits and dashes, starting with a letter or digit; Windows device
+names are refused. An id differing from its source name is limited to 128 characters. `runtime` and
+`both` delivery still require the recipe id to equal the authored patch name, including delivery
+inherited from `xRuntime`; an explicit `delivery: "baked"` can override that default.
+`project` is a `beeps/project@1` file (scale and loudness targets); without it the nearest
 `.agent-beeps/project.json` is used. `patches` is the directory of project patches songs may name as
 instruments. `workDir` holds staging and the local render cache (`.agent-beeps/renders`); gitignore it.
 `jobs` (default 3) is the number of parallel Chromium hosts.
@@ -104,13 +110,20 @@ mono conversion, through the same post-processing as `beeps export`. The legacy 
 `trimTail` is accepted and normalized to `trimTailDb`; specifying both with different values fails.
 For example, Space's `{ "source": "sfx/step.json", "role": "sfx", "variants": 1,
 "channels": 1, "trimTail": -60 }` exports one trimmed mono recording as `step.0.wav` for `wav-master`.
-The recipe id must still match the patch name, and the build catalog records that numbered path.
+Here the recipe id is `step`; the source may retain its authored name, and the build catalog records
+that numbered path.
 
 These options are for baked patch files: song recipes (including adaptive layers) and runtime-only
 delivery reject them. With `delivery: "both"`, they affect the baked files only; the live cue retains
 its own channel and lifetime behavior. Each explicit option changes the asset's export identity,
 leaving raw render keys and unrelated assets unchanged. Omitting both preserves historical hashes
 and export behavior exactly; no engine, render or export pipeline version changes are needed.
+
+The shared `exportPatchVariants` and `exportSongAssets` APIs accept optional `manifestId` with
+`manifest: true` to choose the baked sidecar id. Admission runs before rendering or delivery writes.
+Omitting it preserves the authored id and existing export bytes; the direct CLI exports keep that
+default. The override changes neither authored labels/metadata nor raw render inputs, adaptive layers
+or loudness measurements. Build supplies its recipe id through these same exporters.
 
 ### Delivery presets (`--target`)
 

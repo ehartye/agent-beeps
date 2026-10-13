@@ -2,7 +2,8 @@
 // Materialises an app's audio from the content-addressed store, with no dependencies: Node 20+ built-ins only. No agent-beeps
 // checkout, no Chromium, no ffmpeg. Reads the committed audio.lock.json, downloads each missing asset (a tar named by its input hash),
 // checks every file's sha256 and size against the LOCK (never against the store's own manifest), writes it atomically, and
-// regenerates index.json exactly as `beeps bundle` does.
+// regenerates index.json exactly as `beeps bundle` does. --check only inspects;
+// a missing or stale full-bundle index is a refusal, with no repairs.
 //
 //   node fetch.mjs [--lock <audio.lock.json>] [--out <dir>] [--store <spec>] [--only a,b] [--check] [--jobs 6]
 //
@@ -168,7 +169,10 @@ if (!missing.length && !bad.length && !only) {
   }
   const text = JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n';
   const index = join(outDir, 'index.json');
-  if (!existsSync(index) || readFileSync(index, 'utf8') !== text) writeAtomic(index, text);
+  if (!existsSync(index) || readFileSync(index, 'utf8') !== text) {
+    if (has('check')) bad.push('index.json is missing or does not match the locked audio bundle');
+    else writeAtomic(index, text);
+  }
 }
 
 const summary = { ok: !missing.length && !bad.length, assets: ids.length, present, fetched, missing, problems: bad };

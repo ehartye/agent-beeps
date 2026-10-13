@@ -1,17 +1,19 @@
 // `beeps build` end to end on a tiny project: incremental, minimal-diff, atomic, check, adopt.
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chromiumAvailable, openRenderHost } from '../../src/render/host.ts';
+import { chromiumAvailable, openRenderHost, type RenderHost } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
 import { openBuildProject, runBuild } from '../../src/build/build.ts';
 import { lockText, readLock } from '../../src/build/lock.ts';
 import { SONG_PIPELINE_VERSION } from '../../src/render/song-pipeline.ts';
 import { verifyOutputs } from '../../src/build/verify.ts';
 import { cloneFixture, diffKeys, makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
-import { exportPatchOne } from '../../src/export-assets.ts';
+import { exportPatchOne, exportPatchVariants, exportSongAssets } from '../../src/export-assets.ts';
 import { loadPatch } from '../../src/project.ts';
 import { pcm16 } from '../../src/audio/post.ts';
+import { loadRecipes } from '../../src/build/config.ts';
+import { loadSong } from '../../src/music.ts';
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const hasChromium = await chromiumAvailable();
@@ -254,10 +256,45 @@ describe.skipIf(!ok)('beeps build', () => {
     expect((await runBuild(fx.cfg({ kbps: { sfx: 60 } }), { check: true })).ok).toBe(true);
   }, 120000);
 
-  it('rejects a recipe whose patch name differs from its id', async () => {
+  it('switches one baked recipe to an existing authored source without renaming it or rebuilding unrelated assets', async () => {
     const fx = cloneFixture(base);
-    fx.write('recipes.json', { ...fx.read('recipes.json'), coin: { source: 'sfx/blip.json', role: 'sfx' } });
-    await expect(runBuild(fx.cfg(), { only: ['coin'] })).rejects.toThrow(/exported asset id "blip"/);
+    try {
+      const cfg = fx.cfg(), p = openBuildProject(cfg), prior = readLock(cfg.lock)!, before = snapshot(cfg.out), cached = snapshot(p.paths.renders);
+      const sources = { coin: readFileSync(fx.path('sfx/coin.json')), blip: readFileSync(fx.path('sfx/blip.json')) };
+      const authored = fx.read('public/audio/blip.0.ogg.json');
+      // This tuple is already genuinely rendered/encoded by the existing warm blip fixture.
+      fx.write('recipes.json', { ...fx.read('recipes.json'), coin: { source: 'sfx/blip.json', role: 'sfx' } });
+      const report = await runBuild(cfg, { only: ['coin'], jobs: 1 });
+      expect(report).toMatchObject({ ok: true, built: ['coin'], pulled: [], removed: [] });
+      const lock = readLock(cfg.lock)!;
+      expect(lock.assets.coin).toMatchObject({ source: 'sfx/blip.json', role: 'sfx', parts: { renders: prior.assets.blip.parts!.renders } });
+      expect(lock.assets.coin.inputHash).not.toBe(prior.assets.coin.inputHash);
+      expect(lock.assets.coin.parts!.export).not.toBe(prior.assets.blip.parts!.export);
+      expect(fx.read('public/audio/coin.0.ogg.json')).toEqual({
+        ...authored, id: 'coin', file: 'coin.0.ogg', variants: authored.variants.map((v: { file: string; weight?: number }) => ({ ...v, file: v.file.replace(/^blip/, 'coin') })),
+      });
+      expect(fx.read('public/audio/index.json').assets.coin).toMatchObject({ id: 'coin', label: 'Blip', file: 'coin.0.ogg', renderKey: authored.renderKey });
+      expect(readFileSync(fx.path('public/audio/coin.0.ogg'))).toEqual(readFileSync(fx.path('public/audio/blip.0.ogg')));
+      const delivered = snapshot(cfg.out);
+      expect(diffKeys(before, delivered).every(file => file === 'index.json' || file.startsWith('coin.'))).toBe(true);
+      for (const id of ['blip', 'plain', 'theme']) {
+        expect(lock.assets[id]).toEqual(prior.assets[id]);
+        for (const output of prior.assets[id].outputs) expect(delivered[output.file]).toBe(before[output.file]);
+      }
+      // Installation must retire any previous coin variant paths absent from the replacement.
+      const owned = new Set(lock.assets.coin.outputs.map(output => output.file));
+      for (const previous of prior.assets.coin.outputs) if (!owned.has(previous.file)) expect(existsSync(fx.path(`public/audio/${previous.file}`))).toBe(false);
+      expect(lock.assets.coin.outputs.map(output => output.file)).toEqual(['coin.0.ogg', 'coin.0.ogg.json']);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      expect(readFileSync(fx.path('sfx/coin.json'))).toEqual(sources.coin);
+      expect(readFileSync(fx.path('sfx/blip.json'))).toEqual(sources.blip);
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out })).toMatchObject({ ok: true, problems: [] });
+      const accepted = snapshot(fx.dir), files = Object.keys(accepted).map(file => fx.path(file)), mtimes = files.map(file => statSync(file).mtimeMs);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect((await runBuild(cfg, { only: ['coin'], jobs: 1 })).built).toEqual([]);
+      expect(snapshot(fx.dir)).toEqual(accepted);
+      expect(files.map(file => statSync(file).mtimeMs)).toEqual(mtimes);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
   }, 60000);
 
   describe('--adopt', () => {
@@ -332,4 +369,253 @@ describe.skipIf(!ok)('beeps build', () => {
     expect(full.estimate.totalBytes - half.estimate.totalBytes).toBeGreaterThan(sfxBytes * 0.45);
     expect(full.estimate.totalBytes - half.estimate.totalBytes).toBeLessThan(sfxBytes * 0.55);
   }, 120000);
+});
+
+// Baked delivery keys belong to the export, while source names and render caches stay authored.
+
+const coinRecipe = { source: 'sfx/coin.json', role: 'sfx', seed: 11, variants: 1 };
+const themeRecipe = { source: 'songs/theme.json', role: 'music', kind: 'song' };
+const normalRecipes = { coin: coinRecipe, theme: themeRecipe };
+
+describe('delivery ID preflight', () => {
+  it('refuses nonportable recipe IDs before build or check writes', async () => {
+    const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
+    try {
+      const invalid = ['', '.', '..', '../escape', 'a/b', 'a\\b', 'C:drive', 'with space', 'UPPER', 'trailing.', 'nul', 'con', 'prn', 'aux', 'com1', 'lpt9'];
+      for (const id of invalid) {
+        fx.write('recipes.json', { [id]: coinRecipe });
+        const before = snapshot(fx.dir);
+        expect(() => loadRecipes(fx.cfg()), id).toThrow(/id/i);
+        await expect(runBuild(fx.cfg(), { check: true }), id).rejects.toMatchObject({ code: 'E_SCHEMA' });
+        await expect(runBuild(fx.cfg()), id).rejects.toMatchObject({ code: 'E_SCHEMA' });
+        expect(snapshot(fx.dir), id).toEqual(before);
+        // Array form must use the same admission as object keys.
+        fx.write('recipes.json', [{ ...coinRecipe, id }]);
+        expect(() => loadRecipes(fx.cfg()), `array id ${id}`).toThrow();
+      }
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('bounds new aliases without tightening the existing authored-name length contract', async () => {
+    const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } }), id = 'a'.repeat(129);
+    try {
+      fx.write('recipes.json', { [id]: coinRecipe });
+      const before = snapshot(fx.dir);
+      await expect(runBuild(fx.cfg(), { check: true })).rejects.toMatchObject({ code: 'E_SCHEMA' });
+      expect(snapshot(fx.dir)).toEqual(before);
+      // Authored schemas historically admit this name; matched IDs keep that contract.
+      fx.write('sfx/coin.json', { ...fx.read('sfx/coin.json'), name: id });
+      expect(loadRecipes(fx.cfg())[0].id).toBe(id);
+      const matched = snapshot(fx.dir);
+      expect((await runBuild(fx.cfg(), { check: true })).stale[0].id).toBe(id);
+      expect(snapshot(fx.dir)).toEqual(matched);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('keeps runtime and both delivery tied to the authored patch name before writes', async () => {
+    const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
+    const authoredPatch = fx.read('sfx/coin.json');
+    try {
+      for (const delivery of ['runtime', 'both']) {
+        fx.write('recipes.json', { 'inspect-0': { ...coinRecipe, delivery } });
+        const before = snapshot(fx.dir);
+        await expect(runBuild(fx.cfg(), { check: true })).rejects.toMatchObject({ code: 'E_SCHEMA', message: expect.stringMatching(/inspect-0.*coin/) });
+        await expect(runBuild(fx.cfg())).rejects.toMatchObject({ code: 'E_SCHEMA', message: expect.stringMatching(/inspect-0.*coin/) });
+        expect(snapshot(fx.dir)).toEqual(before);
+        fx.write('sfx/coin.json', { ...authoredPatch, xRuntime: { delivery, inputs: {}, bind: [] } });
+        fx.write('recipes.json', { 'inspect-0': coinRecipe });
+        const inherited = snapshot(fx.dir);
+        await expect(runBuild(fx.cfg(), { check: true })).rejects.toMatchObject({ code: 'E_SCHEMA', message: expect.stringMatching(/inspect-0.*coin/) });
+        expect(snapshot(fx.dir)).toEqual(inherited);
+        // An explicit baked recipe retains the existing ability to override a runtime default.
+        fx.write('recipes.json', { 'inspect-0': { ...coinRecipe, delivery: 'baked' } });
+        expect((await runBuild(fx.cfg(), { check: true })).stale[0].id).toBe('inspect-0');
+      }
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+});
+
+describe.skipIf(!hasChromium)('baked delivery identities', () => {
+  let base: Fixture;
+  // A cache miss is a failure here: these exports must reuse genuinely rendered authored inputs.
+  const cacheOnlyHost = new Proxy({} as RenderHost, { get: () => () => { throw new Error('delivery identity unexpectedly requested rendering'); } });
+
+  beforeAll(async () => {
+    base = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
+    base.write('recipes.json', normalRecipes);
+    const cfg = base.cfg(), p = openBuildProject(cfg), host = await openRenderHost();
+    try {
+      const patch = loadPatch(p, base.path('sfx/coin.json'));
+      // One owned host warms each genuine source/options tuple once, including both footstep-style seeds.
+      for (const seed of [11, 18]) await exportPatchVariants(host, p, patch, { dest: base.path(`direct/${seed}/coin.wav`), seed, n: 1, role: 'sfx', manifest: true });
+      await exportSongAssets(host, p, loadSong(p, base.path('songs/theme.json')), { dest: base.path('direct/theme/theme.wav'), role: 'music', manifest: true, layers: true });
+    } finally { await host.close(); }
+    expect((await runBuild(cfg)).built).toEqual(['coin', 'theme']);
+  }, 120000);
+  afterAll(() => { if (base) rmSync(base.dir, { recursive: true, force: true }); });
+
+  it('preserves ordinary matched-ID export bytes, hashes and unchanged checks', async () => {
+    const fx = cloneFixture(base);
+    try {
+      for (const [direct, delivered] of [['direct/11/coin.0.wav', 'public/audio/coin.0.wav'], ['direct/11/coin.wav.json', 'public/audio/coin.wav.json'], ['direct/theme/theme.wav', 'public/audio/theme.wav'], ['direct/theme/theme.wav.json', 'public/audio/theme.wav.json']]) {
+        expect(readFileSync(fx.path(delivered))).toEqual(readFileSync(fx.path(direct)));
+      }
+      const cfg = fx.cfg(), before = snapshot(fx.dir), files = Object.keys(before).map(f => fx.path(f)), mtimes = files.map(f => statSync(f).mtimeMs);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect((await runBuild(cfg)).built).toEqual([]);
+      expect(snapshot(fx.dir)).toEqual(before);
+      expect(files.map(f => statSync(f).mtimeMs)).toEqual(mtimes);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('builds two delivery IDs from one unchanged patch at distinct seeds using its raw cache', async () => {
+    const fx = cloneFixture(base);
+    try {
+      fx.write('recipes.json', { ...normalRecipes, 'inspect-0': coinRecipe, 'inspect-1': { ...coinRecipe, seed: 18 } });
+      const cfg = fx.cfg(), p = openBuildProject(cfg), source = readFileSync(fx.path('sfx/coin.json')), cached = snapshot(p.paths.renders), original = snapshot(cfg.out);
+      // Current causal RED: buildOne rejects the genuinely exported authored id "coin".
+      expect((await runBuild(cfg)).built).toEqual(['inspect-0', 'inspect-1']);
+      const lock = readLock(cfg.lock)!;
+      for (const [id, seed] of [['inspect-0', 11], ['inspect-1', 18]] as const) {
+        const side = fx.read(`public/audio/${id}.wav.json`), authored = fx.read(`direct/${seed}/coin.wav.json`);
+        expect(side).toEqual({ ...authored, id, file: `${id}.0.wav`, variants: [{ file: `${id}.0.wav`, weight: 1 }] });
+        expect(readFileSync(fx.path(`public/audio/${id}.0.wav`))).toEqual(readFileSync(fx.path(`direct/${seed}/coin.0.wav`)));
+        expect(lock.assets[id]).toMatchObject({ source: 'sfx/coin.json', role: 'sfx' });
+      }
+      expect(fx.read('public/audio/inspect-0.wav.json').renderKey).not.toBe(fx.read('public/audio/inspect-1.wav.json').renderKey);
+      expect(lock.assets['inspect-0'].parts!.renders).toBe(lock.assets.coin.parts!.renders);
+      expect(lock.assets['inspect-0'].parts!.export).not.toBe(lock.assets.coin.parts!.export);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      expect(readFileSync(fx.path('sfx/coin.json'))).toEqual(source);
+      for (const [file, hash] of Object.entries(original).filter(([file]) => file !== 'index.json')) expect(snapshot(cfg.out)[file]).toBe(hash);
+      expect(fx.read('public/audio/index.json').assets).toMatchObject({ 'inspect-0': { id: 'inspect-0' }, 'inspect-1': { id: 'inspect-1' } });
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out }).ok).toBe(true);
+      const built = snapshot(fx.dir);
+      expect((await runBuild(cfg)).built).toEqual([]);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect(snapshot(fx.dir)).toEqual(built);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('treats a constructor delivery ID absent from an existing lock as a new asset', async () => {
+    const fx = cloneFixture(base);
+    try {
+      fx.write('recipes.json', { ...normalRecipes, constructor: coinRecipe });
+      const cfg = fx.cfg(), p = openBuildProject(cfg), prior = readLock(cfg.lock)!, source = readFileSync(fx.path('sfx/coin.json')), cached = snapshot(p.paths.renders), original = snapshot(cfg.out);
+      expect(Object.hasOwn(prior.assets, 'constructor')).toBe(false);
+      const beforeCheck = snapshot(fx.dir), existingFiles = Object.keys(beforeCheck).map(file => fx.path(file)), existingMtimes = existingFiles.map(file => statSync(file).mtimeMs);
+      // Current causal RED: inherited Object.prototype.constructor is mistaken for a locked asset.
+      expect(await runBuild(cfg, { check: true })).toMatchObject({
+        ok: false, unchanged: ['coin', 'theme'], stale: [{ id: 'constructor', reasons: ['new: not in the lock'] }],
+      });
+      expect(snapshot(fx.dir)).toEqual(beforeCheck);
+      expect(existingFiles.map(file => statSync(file).mtimeMs)).toEqual(existingMtimes);
+      expect((await runBuild(cfg, { only: ['constructor'], jobs: 1 })).built).toEqual(['constructor']);
+      const lock = readLock(cfg.lock)!;
+      expect(Object.hasOwn(lock.assets, 'constructor')).toBe(true);
+      expect(lock.assets['constructor']).toMatchObject({ source: 'sfx/coin.json', role: 'sfx', parts: { renders: prior.assets.coin.parts!.renders } });
+      expect(fx.read('public/audio/constructor.wav.json')).toMatchObject({ id: 'constructor', label: 'Coin', file: 'constructor.0.wav', renderKey: fx.read('public/audio/coin.wav.json').renderKey });
+      expect(readFileSync(fx.path('public/audio/constructor.0.wav'))).toEqual(readFileSync(fx.path('public/audio/coin.0.wav')));
+      expect(fx.read('public/audio/index.json').assets['constructor']).toMatchObject({ id: 'constructor', file: 'constructor.0.wav' });
+      const delivered = snapshot(cfg.out);
+      for (const id of ['coin', 'theme']) {
+        expect(lock.assets[id]).toEqual(prior.assets[id]);
+        for (const output of prior.assets[id].outputs) expect(delivered[output.file]).toBe(original[output.file]);
+      }
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      expect(readFileSync(fx.path('sfx/coin.json'))).toEqual(source);
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out })).toMatchObject({ ok: true, problems: [] });
+      const accepted = snapshot(fx.dir), files = Object.keys(accepted).map(file => fx.path(file)), mtimes = files.map(file => statSync(file).mtimeMs);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect((await runBuild(cfg, { only: ['constructor'], jobs: 1 })).built).toEqual([]);
+      expect(snapshot(fx.dir)).toEqual(accepted);
+      expect(files.map(file => statSync(file).mtimeMs)).toEqual(mtimes);
+
+      // These bytes were genuinely built above. Change only the scheme marker as a controlled
+      // foreign-lock adoption fixture, without inventing source or render provenance.
+      const foreign = readLock(cfg.lock)!, unselected = foreign.assets['constructor'];
+      const beforeAdopt = snapshot(cfg.out), outputFiles = Object.keys(beforeAdopt).map(file => fx.path(`public/audio/${file}`)), outputMtimes = outputFiles.map(file => statSync(file).mtimeMs);
+      fx.write('audio.lock.json', { ...foreign, keyScheme: 'game-v0' });
+      expect(await runBuild(cfg, { adopt: true, only: ['coin'], jobs: 1 })).toMatchObject({ ok: true, adopted: ['coin'], built: [], pulled: [] });
+      const adopted = readLock(cfg.lock)!;
+      // Second causal RED, after own-entry reads are fixed: `id in assets` drops this unselected entry.
+      expect(adopted.assets['constructor']).toEqual(unselected);
+      expect(Object.hasOwn(adopted.assets, 'constructor')).toBe(true);
+      expect(adopted.assets.theme).toEqual(foreign.assets.theme);
+      expect(snapshot(cfg.out)).toEqual(beforeAdopt);
+      expect(outputFiles.map(file => statSync(file).mtimeMs)).toEqual(outputMtimes);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      expect(readFileSync(fx.path('sfx/coin.json'))).toEqual(source);
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out })).toMatchObject({ ok: true, problems: [], warnings: [] });
+      const adoptedState = snapshot(fx.dir);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect(snapshot(fx.dir)).toEqual(adoptedState);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('builds a song delivery ID while preserving authored metadata, aligned layers and raw cache', async () => {
+    const fx = cloneFixture(base);
+    try {
+      fx.write('recipes.json', { ...normalRecipes, 'music-garden': themeRecipe });
+      const cfg = fx.cfg(), p = openBuildProject(cfg), source = readFileSync(fx.path('songs/theme.json')), cached = snapshot(p.paths.renders);
+      // Current causal RED: buildOne rejects the real rendered song's authored id "theme".
+      expect((await runBuild(cfg)).built).toEqual(['music-garden']);
+      const side = fx.read('public/audio/music-garden.wav.json'), authored = fx.read('direct/theme/theme.wav.json');
+      const layers = authored.layers.map((layer: { name: string; file: string }) => ({ ...layer, file: layer.file.replace(/^theme/, 'music-garden') }));
+      expect(side).toEqual({ ...authored, id: 'music-garden', file: 'music-garden.wav', layers });
+      for (const file of [authored.file, ...authored.layers.map((layer: { file: string }) => layer.file)]) expect(readFileSync(fx.path(`public/audio/${file.replace(/^theme/, 'music-garden')}`))).toEqual(readFileSync(fx.path(`direct/theme/${file}`)));
+      const lock = readLock(cfg.lock)!;
+      expect(lock.assets['music-garden']).toMatchObject({ source: 'songs/theme.json', role: 'music', parts: { renders: lock.assets.theme.parts!.renders } });
+      expect(lock.assets['music-garden'].parts!.export).not.toBe(lock.assets.theme.parts!.export);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      expect(readFileSync(fx.path('songs/theme.json'))).toEqual(source);
+      expect(fx.read('public/audio/index.json').assets['music-garden']).toMatchObject({ id: 'music-garden', role: 'music', loop: true });
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out }).ok).toBe(true);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('allows shared exporters to opt into a manifest ID without renaming source objects', async () => {
+    const fx = cloneFixture(base);
+    try {
+      const p = openBuildProject(fx.cfg()), patch = loadPatch(p, fx.path('sfx/coin.json')), song = loadSong(p, fx.path('songs/theme.json'));
+      const sources = JSON.stringify({ patch, song }), cached = snapshot(p.paths.renders);
+      const patchOptions = { dest: fx.path('alias/inspect-0.wav'), seed: 11, n: 1, role: 'sfx' as const, manifest: true, manifestId: 'inspect-0' };
+      const songOptions = { dest: fx.path('alias/music-garden.wav'), role: 'music' as const, manifest: true, layers: true, manifestId: 'music-garden' };
+      await exportPatchVariants(cacheOnlyHost, p, patch, patchOptions);
+      await exportSongAssets(cacheOnlyHost, p, song, songOptions);
+      expect(fx.read('alias/inspect-0.wav.json')).toMatchObject({ id: 'inspect-0', label: 'Coin', renderKey: fx.read('direct/11/coin.wav.json').renderKey });
+      expect(fx.read('alias/music-garden.wav.json')).toMatchObject({ id: 'music-garden', label: 'Theme', renderKey: fx.read('direct/theme/theme.wav.json').renderKey });
+      expect(JSON.stringify({ patch, song })).toBe(sources);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('refuses malformed exporter aliases before writing any delivered file', async () => {
+    const fx = cloneFixture(base);
+    try {
+      const p = openBuildProject(fx.cfg()), patch = loadPatch(p, fx.path('sfx/coin.json')), song = loadSong(p, fx.path('songs/theme.json'));
+      for (const manifestId of ['', '../escape', 'a/b', 'a\\b', 'nul', 'a'.repeat(129)]) {
+        const before = snapshot(fx.dir);
+        const patchOptions = { dest: fx.path('alias/inspect.wav'), seed: 11, n: 1, role: 'sfx' as const, manifest: true, manifestId };
+        const songOptions = { dest: fx.path('alias/music.wav'), role: 'music' as const, manifest: true, layers: true, manifestId };
+        await expect(exportPatchVariants(cacheOnlyHost, p, patch, patchOptions)).rejects.toMatchObject({ code: 'E_SCHEMA' });
+        expect(snapshot(fx.dir)).toEqual(before);
+        await expect(exportSongAssets(cacheOnlyHost, p, song, songOptions)).rejects.toMatchObject({ code: 'E_SCHEMA' });
+        expect(snapshot(fx.dir)).toEqual(before);
+      }
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('refuses a manifest-only identity when no manifest was requested before writes', async () => {
+    const fx = cloneFixture(base);
+    try {
+      const p = openBuildProject(fx.cfg()), patch = loadPatch(p, fx.path('sfx/coin.json')), song = loadSong(p, fx.path('songs/theme.json')), before = snapshot(fx.dir);
+      const patchOptions = { dest: fx.path('alias/inspect.wav'), seed: 11, n: 1, role: 'sfx' as const, manifest: false, manifestId: 'inspect-0' };
+      const songOptions = { dest: fx.path('alias/music.wav'), role: 'music' as const, manifest: false, layers: true, manifestId: 'music-garden' };
+      await expect(exportPatchVariants(cacheOnlyHost, p, patch, patchOptions)).rejects.toMatchObject({ code: 'E_USAGE' });
+      expect(snapshot(fx.dir)).toEqual(before);
+      await expect(exportSongAssets(cacheOnlyHost, p, song, songOptions)).rejects.toMatchObject({ code: 'E_USAGE' });
+      expect(snapshot(fx.dir)).toEqual(before);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
 });

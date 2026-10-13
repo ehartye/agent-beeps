@@ -10,7 +10,7 @@ import { customLoudnessOffset, renderAndMeasure } from './render/pipeline.ts';
 import { renderSong } from './render/song-pipeline.ts';
 import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, stateTrim } from './render/layers.ts';
 import { resolveInstruments } from './music.ts';
-import { writeExportManifest, type ExportRole } from './export-manifest.ts';
+import { admitAssetId, writeExportManifest, type ExportRole } from './export-manifest.ts';
 import type { OpenProject } from './project.ts';
 import type { RenderHost } from './render/host.ts';
 import type { Patch } from './schema/patch.ts';
@@ -36,8 +36,17 @@ const offsetExtra = (patch: Patch, p: OpenProject) => {
   return loudnessOffsetDb === undefined ? {} : { loudnessOffsetDb };
 };
 
+/** Admission precedes cache lookup, DSP and delivery writes; authored render inputs are never renamed. */
+function manifestIdentity(o: { manifest: boolean; manifestId?: string }, sourceId: string): { id?: string } {
+  if (o.manifestId === undefined) return {};
+  if (!o.manifest) throw new BeepsError('E_USAGE', 'manifestId requires a manifest export');
+  admitAssetId(o.manifestId, sourceId);
+  return { id: o.manifestId };
+}
+
 /** Every variant 0..n-1 of a patch as `<stem>.<i>.wav`, and (with `manifest`) one sidecar `<dest>.json` listing them. */
-export async function exportPatchVariants(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; n: number; role: ExportRole; manifest: boolean; post?: ExportPost }) {
+export async function exportPatchVariants(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; n: number; role: ExportRole; manifest: boolean; manifestId?: string; post?: ExportPost }) {
+  const identity = manifestIdentity(o, patch.name);
   const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), { project: p.project, rendersDir: p.paths.renders });
   const ok = outs.map(r => { if (!r.ok) throw new BeepsError('E_RENDER', r.error); return r; });
   const stem = o.dest.replace(/\.wav$/i, '');
@@ -46,7 +55,7 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
   const wavs = ok.map((r, i) => { const f = `${stem}.${i}.wav`; posts.push(deliver(r.wavPath, f, o.post)); return f; });
   const weights = patch.variation?.weights;
   const manifest = o.manifest
-    ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true, ...offsetExtra(patch, p) }, `${o.dest}.json`)
+    ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true, ...offsetExtra(patch, p), ...identity }, `${o.dest}.json`)
     : undefined;
   return { first: ok[0], wavs, manifest, posts };
 }
@@ -62,7 +71,8 @@ export async function exportPatchOne(host: RenderHost, p: OpenProject, patch: Pa
 }
 
 /** A song (and, with `layers`, each adaptive layer and per-state trim) as `dest` plus its sidecar. */
-export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song, o: { dest: string; role: ExportRole; manifest: boolean; layers: boolean; trimTailDb?: number }) {
+export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song, o: { dest: string; role: ExportRole; manifest: boolean; manifestId?: string; layers: boolean; trimTailDb?: number }) {
+  const identity = manifestIdentity(o, s.name);
   // A loop's tail is folded onto its start and layers must stay sample-aligned with the mix: trimming either would break the wrap or the sum.
   if (o.trimTailDb !== undefined && (s.loop || o.layers)) throw new BeepsError('E_USAGE', `--trim-tail is for a non-loop song exported without --layers (${s.loop ? `"${s.name}" loops: its tail wraps onto the start` : 'layers must line up with the mix'})`);
   const instruments = resolveInstruments(p, s);
@@ -101,6 +111,6 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
   const extra = layerFiles && s.adaptive
     ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial, ...(stateTrimDb ? { stateTrimDb } : {}) }
     : {};
-  const manifest = o.manifest ? writeExportManifest(dest, r, o.role, extra) : undefined;
+  const manifest = o.manifest ? writeExportManifest(dest, r, o.role, { ...extra, ...identity }) : undefined;
   return { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings, post };
 }

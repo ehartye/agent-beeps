@@ -1,7 +1,7 @@
 // `beeps ci export`: the vendored zero-dependency fetch.mjs materialises the audio from a store with only Node built-ins.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
@@ -12,6 +12,7 @@ import { runBuild } from '../../src/build/build.ts';
 import { readLock } from '../../src/build/lock.ts';
 import { DirStore, storeName } from '../../src/build/store.ts';
 import { ciExport } from '../../src/build/store-ops.ts';
+import { writeWav } from '../../src/audio/wav.ts';
 import { makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
@@ -71,6 +72,46 @@ describe('fetch.mjs against a release store (mocked GitHub)', () => {
     const json = JSON.parse(r.stdout.trim().split('\n').pop()!);
     expect(json, r.stderr).toMatchObject({ assets: 8, fetched: 8, missing: [] });
     expect(readdirSync(join(dir, 'out')).filter(n => n.endsWith('.ogg'))).toHaveLength(8);
+  });
+});
+
+describe('exported fetch inspection is read-only', () => {
+  const inventory = (root: string) => readdirSync(root, {recursive: true, withFileTypes: true})
+    .filter(e => e.isFile()).map(e => join(e.parentPath, e.name)).sort()
+    .map(file => ({file: file.slice(root.length), bytes: statSync(file).size,
+      sha256: createHash('sha256').update(readFileSync(file)).digest('hex'), mtime: statSync(file).mtimeMs}));
+  it.each(['missing', 'stale', 'valid'] as const)('checks a %s index without healing any file', state => {
+    const root = mkdtempSync(join(tmpdir(), 'beeps-fetch-inspection-'));
+    const fixture = makeFixture({config: {target: 'wav-master'}});
+    try {
+      const cfg = fixture.cfg({out: join(root, 'out'), lock: join(root, 'audio.lock.json')});
+      mkdirSync(cfg.out, {recursive: true});
+      // Static PCM fixture exercises exported fetch, without pretending it was synthesized.
+      const bytes = writeWav([new Float32Array([.1, -.1])], 48000);
+      const sidecar = {schema: 'beeps/audio-asset@1', id: 'inspect', label: 'Inspect',
+        description: 'Static PCM fetch fixture', role: 'sfx', file: 'inspect.0.wav', loop: false,
+        durationSec: 2 / 48000, sampleRate: 48000, channels: 1, truePeakDb: -20, normalizationAlreadyApplied: true};
+      const outputs = [['inspect.0.wav', bytes], ['inspect.wav.json', Buffer.from(JSON.stringify(sidecar))]] as const;
+      for (const [file, data] of outputs) writeFileSync(join(cfg.out, file), data);
+      const refs = outputs.map(([file, data]) => ({file, bytes: data.length,
+        sha256: createHash('sha256').update(data).digest('hex')}));
+      writeFileSync(cfg.lock, JSON.stringify({schema: 'beeps/build-lock@1', assets: {
+        inspect: {inputHash: 'sha256:' + '1'.repeat(64), role: 'sfx', outputs: refs}}}));
+      const expected = JSON.stringify({schema: 'beeps/audio-bundle@1', assets: {inspect: sidecar}}, null, 2) + '\n';
+      if (state !== 'missing') writeFileSync(join(cfg.out, 'index.json'), state === 'valid' ? expected : '{}\n');
+      const exported = ciExport(cfg, join(root, 'tools'), 'dir:unavailable-store');
+      const before = inventory(root);
+      const result = spawnSync(process.execPath, [exported.file, '--check', '--jobs', '1'], {
+        cwd: root, encoding: 'utf8', windowsHide: true, env: {...process.env, PATH: ''}});
+      expect(inventory(root)).toEqual(before);
+      expect(result.status, result.stderr).toBe(state === 'valid' ? 0 : 1);
+      const report = JSON.parse(result.stdout.trim().split('\n').pop()!);
+      expect(report.fetched).toBe(0);
+      expect(report.problems.join()).toMatch(state === 'valid' ? /^$/ : /index\.json/);
+    } finally {
+      rmSync(fixture.dir, {recursive: true, force: true});
+      rmSync(root, {recursive: true, force: true});
+    }
   });
 });
 

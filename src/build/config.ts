@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { BeepsError } from '../errors.ts';
 import { encoderArgs, FORMATS, type CompressFormat } from '../compress.ts';
+import { admitAssetId } from '../export-manifest.ts';
 
 export const CONFIG_FILE = 'beeps.build.json';
 
@@ -90,6 +91,7 @@ export function loadRecipes(cfg: BuildConfig): Recipe[] {
     if (!r.success) throw new BeepsError('E_SCHEMA', `recipes ${key ?? ''}: ${r.error.issues[0].message}`, { pointer: `/${key ?? ''}/${r.error.issues[0].path.join('/')}` });
     const id = key ?? r.data.id;
     if (!id) throw new BeepsError('E_SCHEMA', 'a recipe needs an id (the object key, or "id" in an array entry)');
+    admitAssetId(id);
     if (out.has(id)) throw new BeepsError('E_CONFLICT', `recipe "${id}" appears twice`);
     const source = resolve(base, r.data.source);
     if (!existsSync(source)) throw new BeepsError('E_NOT_FOUND', `recipe "${id}": source ${r.data.source} does not exist`, { pointer: `/${id}/source` });

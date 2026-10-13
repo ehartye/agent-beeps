@@ -46,6 +46,17 @@ export type ExportManifest = z.infer<typeof ExportManifestSchema>;
  */
 export const EXPORT_PIPELINE_VERSION = 1;
 
+/** Recipe stems and explicit delivery aliases use the authored-name grammar and portable file names. */
+export function admitAssetId(id: string, sourceId?: string): void {
+  if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(id) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(id)) {
+    throw new BeepsError('E_SCHEMA', `asset id "${id}" must use lowercase letters, digits and dashes and cannot be a reserved device name`);
+  }
+  // Source schemas historically have no maximum name length. Only a newly aliased identity is bounded.
+  if (sourceId !== undefined && id !== sourceId && id.length > 128) {
+    throw new BeepsError('E_SCHEMA', `asset id "${id}" is a delivery alias longer than 128 characters`);
+  }
+}
+
 export function exportRole(role: string | undefined, manifest: boolean | undefined, fallback: ExportRole): ExportRole {
   if (role !== undefined && !manifest) throw new BeepsError('E_USAGE', '--role requires --manifest');
   const r = Role.safeParse(role ?? fallback);

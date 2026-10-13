@@ -18,6 +18,7 @@ import type { OpenProject } from '../project.ts';
 import type { Delivery, Recipe } from './config.ts';
 import type { Toolchain } from './lock.ts';
 import { BeepsError } from '../errors.ts';
+import { admitAssetId } from '../export-manifest.ts';
 import { deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
 
 export interface Planned {
@@ -45,7 +46,11 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
   let ships: AssetDelivery = 'baked';
   if (recipe.kind === 'patch') {
     const patch = loadPatch(p, recipe.source);
+    admitAssetId(recipe.id, patch.name);
     ships = deliveryOf(patch, recipe.delivery);
+    if (wantsRuntime(ships) && patch.name !== recipe.id) {
+      throw new BeepsError('E_SCHEMA', `recipe "${recipe.id}" is the patch "${patch.name}": runtime and both delivery require the authored patch name`, { hint: 'use the patch name as the recipe id, or select delivery "baked" for a delivery alias' });
+    }
     // A runtime-only asset needs one render (variant 0 at the input defaults) to measure its trim; the game makes variants itself.
     variants = wantsBaked(ships) ? (recipe.variants ?? patch.variation?.variants ?? 1) : 1;
     if (wantsRuntime(ships)) runtime = runtimePart(patch);
@@ -53,6 +58,7 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     seconds = patch.duration * variants;
   } else {
     const song = loadSong(p, recipe.source);
+    admitAssetId(recipe.id, song.name);
     layers = !!song.adaptive;
     renders = [songRenderKey(song, resolveInstruments(p, song), { target: p.project.musicLoudness })];
     seconds = compileSong(song).length * (layers ? Object.keys(song.adaptive!.layers).length + 1 : 1);

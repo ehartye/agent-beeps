@@ -57,6 +57,7 @@ export function staticCheck(path: string, expect: Expect = {}): StaticResult {
     if (buf.length < 44 || buf.toString('latin1', 0, 4) !== 'RIFF') return { info: { format: 'unknown' }, problems: ['not a RIFF WAV'] };
     const channels = buf.readUInt16LE(22), bits = buf.readUInt16LE(34), sampleRate = buf.readUInt32LE(24), data = buf.readUInt32LE(40);
     const frames = Math.floor(data / (channels * (bits / 8)));
+    if (expect.channels !== undefined && channels !== expect.channels) problems.push(`${channels} channels, sidecar says ${expect.channels}`);
     if (expect.sampleRate !== undefined && sampleRate !== expect.sampleRate) problems.push(`WAV is ${sampleRate} Hz, sidecar says ${expect.sampleRate} Hz`);
     if (data + 44 > buf.length) problems.push('WAV data chunk is longer than the file');
     if (expect.frames !== undefined && frames !== expect.frames) problems.push(`WAV has ${frames} frames, sidecar says ${expect.frames}`);

@@ -72,6 +72,11 @@ function lazyHost(): { host: RenderHost; close(): Promise<void> } {
 
 const prefer = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
+/** A JSON inventory contains own entries; a valid id such as constructor may name an inherited method. */
+function lockedAsset(lock: Lock | undefined, id: string): LockAsset | undefined {
+  return lock && Object.hasOwn(lock.assets, id) ? lock.assets[id] : undefined;
+}
+
 /** Where a build's project lives: the config's project file (render cache under workDir), or the nearest .agent-beeps. */
 export function openBuildProject(cfg: BuildConfig): OpenProject {
   if (!cfg.project) {
@@ -185,7 +190,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   const stale: StaleAsset[] = [];
   const unchanged: string[] = [];
   for (const pl of plans) {
-    const reasons = staleReasons(pl, lock?.assets[pl.recipe.id], cfg.out, !!o.all);
+    const reasons = staleReasons(pl, lockedAsset(lock, pl.recipe.id), cfg.out, !!o.all);
     if (reasons.length) stale.push({ id: pl.recipe.id, reasons }); else unchanged.push(pl.recipe.id);
   }
   const removed = !o.only && lock ? Object.keys(lock.assets).filter(id => !recipes.some(r => r.id === id)) : [];
@@ -220,7 +225,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   // 1. The store, before any render.
   if (o.pull && o.store) {
     for (const pl of [...todo.values()]) {
-      const id = pl.recipe.id, prior = lock?.assets[id];
+      const id = pl.recipe.id, prior = lockedAsset(lock, id);
       const bytes = await o.store.get(storeName(pl.inputHash));
       if (!bytes) continue;
       const expectOutputs = prior && prior.inputHash === pl.inputHash ? prior.outputs : undefined;
@@ -259,7 +264,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
         while (queue.length && !failed) {
           const pl = queue.shift()!;
           const t = Date.now();
-          const entry = await buildOne(host, p, cfg, pl, delivery, stage, lock?.assets[pl.recipe.id], o, log);
+          const entry = await buildOne(host, p, cfg, pl, delivery, stage, lockedAsset(lock, pl.recipe.id), o, log);
           commit(pl.recipe.id, entry);
           o.hooks?.afterInstall?.(pl.recipe.id);
           built.push(pl.recipe.id);
@@ -299,7 +304,7 @@ function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Deliv
   let total = 0, fresh = 0;
   const oldKbps = (lock?.delivery.kbps ?? {}) as Record<string, number>;
   for (const pl of plans) {
-    const prior = lock?.assets[pl.recipe.id];
+    const prior = lockedAsset(lock, pl.recipe.id);
     if (!prior) { total += pl.estimateBytes; fresh++; continue; }
     const bytes = prior.outputs.reduce((s, f) => s + f.bytes, 0);
     // A bitrate change scales the locked size by the ratio: arithmetic, no rendering.
@@ -333,14 +338,14 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   if (baked) {
     const wav = join(wavDir, `${r.id}.wav`);
     if (r.kind === 'patch') {
-      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true, post: { channels: r.channels, trimTailDb: r.trimTailDb } });
+      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true, manifestId: r.id, post: { channels: r.channels, trimTailDb: r.trimTailDb } });
       trimDb = ex.first.trimDb;
     } else {
-      const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, layers: pl.layers });
+      const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, manifestId: r.id, layers: pl.layers });
       for (const w of out.warnings) log(`${r.id}: ${w}`);
     }
     const side = ExportManifestSchema.parse(JSON.parse(readFileSync(`${wav}.json`, 'utf8')));
-    if (side.id !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" exported asset id "${side.id}": rename the ${r.kind} "name" to "${r.id}"`, { hint: 'the catalog keys assets by the patch or song name, so the recipe id must match it' });
+    if (side.id !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" exported asset id "${side.id}": delivery identity mismatch`, { hint: 'the shared exporter must write the recipe id into the baked sidecar' });
 
     if (delivery.format !== 'wav') {
       const k = delivery.kbps!;
@@ -388,7 +393,7 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
   const assets: Record<string, LockAsset> = {};
   const adopted: string[] = [];
   for (const pl of plans) {
-    const a = lock.assets[pl.recipe.id];
+    const a = lockedAsset(lock, pl.recipe.id);
     if (!a) continue;
     const bad = a.outputs.filter(f => !existsSync(join(cfg.out, f.file)) || sha256File(join(cfg.out, f.file)).sha256 !== f.sha256);
     if (bad.length) { log(`adopt: ${pl.recipe.id}: ${bad[0].file} does not match the lock; it will be rebuilt`); continue; }
@@ -396,7 +401,7 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
     adopted.push(pl.recipe.id);
   }
   // Assets not in this run's plan (--only) keep the foreign entry untouched.
-  for (const [id, a] of Object.entries(lock.assets)) if (!(id in assets) && !plans.some(pl => pl.recipe.id === id)) assets[id] = a;
+  for (const [id, a] of Object.entries(lock.assets)) if (!Object.hasOwn(assets, id) && !plans.some(pl => pl.recipe.id === id)) assets[id] = a;
   const next = { ...lock, keyScheme: KEY_SCHEME, delivery, toolchain: { ...toolchain }, assets } as Lock;
   if (!check) writeLock(cfg.lock, next);
   log(`adopted ${adopted.length} of ${plans.length} assets from the ${lock.keyScheme} lock`);
