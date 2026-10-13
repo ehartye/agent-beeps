@@ -17,6 +17,7 @@ import { songRenderKey } from '../render/song-pipeline.ts';
 import type { OpenProject } from '../project.ts';
 import type { Delivery, Recipe } from './config.ts';
 import type { Toolchain } from './lock.ts';
+import { BeepsError } from '../errors.ts';
 import { deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
 
 export interface Planned {
@@ -56,6 +57,9 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     renders = [songRenderKey(song, resolveInstruments(p, song), { target: p.project.musicLoudness })];
     seconds = compileSong(song).length * (layers ? Object.keys(song.adaptive!.layers).length + 1 : 1);
   }
+  if ((recipe.channels !== undefined || recipe.trimTailDb !== undefined) && (recipe.kind !== 'patch' || !wantsBaked(ships))) {
+    throw new BeepsError('E_SCHEMA', `recipe "${recipe.id}": channels and tail trimming are for baked patch files, not ${recipe.kind !== 'patch' ? 'songs or layers' : 'runtime-only delivery'}`, { pointer: `/${recipe.id}/${recipe.channels !== undefined ? 'channels' : 'trimTailDb'}` });
+  }
   const rate = (r: 'music' | 'ambience' | 'sfx' | 'mix') => delivery.kbps?.[r] ?? 0;
   const deliveryPart = !wantsBaked(ships)
     ? { format: 'runtime' } // no encoder, bitrate or container is involved: changing them must not rebuild a cue
@@ -65,7 +69,7 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
   const parts = {
     delivery: sha256(canonicalJson(deliveryPart)),
     // `delivery` joins the export step only when the asset ships a cue, so every baked asset keeps the hash it always had.
-    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers, ...(ships !== 'baked' ? { delivery: ships } : {}) })),
+    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers, ...(ships !== 'baked' ? { delivery: ships } : {}), ...(recipe.channels !== undefined ? { channels: recipe.channels } : {}), ...(recipe.trimTailDb !== undefined ? { trimTailDb: recipe.trimTailDb } : {}) })),
     renders: sha256(canonicalJson(renders)),
     toolchain: sha256(canonicalJson(recipe.kind === 'patch' ? withoutSongPipeline(toolchain) : toolchain)),
     ...(runtime ? { runtime } : {}),

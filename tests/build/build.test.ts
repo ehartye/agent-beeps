@@ -1,17 +1,73 @@
 // `beeps build` end to end on a tiny project: incremental, minimal-diff, atomic, check, adopt.
 import { beforeAll, describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chromiumAvailable } from '../../src/render/host.ts';
+import { chromiumAvailable, openRenderHost } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
-import { runBuild } from '../../src/build/build.ts';
+import { openBuildProject, runBuild } from '../../src/build/build.ts';
 import { lockText, readLock } from '../../src/build/lock.ts';
 import { SONG_PIPELINE_VERSION } from '../../src/render/song-pipeline.ts';
 import { verifyOutputs } from '../../src/build/verify.ts';
 import { cloneFixture, diffKeys, makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
+import { exportPatchOne } from '../../src/export-assets.ts';
+import { loadPatch } from '../../src/project.ts';
+import { pcm16 } from '../../src/audio/post.ts';
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
-const ok = (await chromiumAvailable()) && hasFfmpeg;
+const hasChromium = await chromiumAvailable();
+const ok = hasChromium && hasFfmpeg;
+
+describe.skipIf(!hasChromium)('patch build post options', () => {
+  it('matches direct export samples, length and channels, then refuses changed or corrupt outputs', async () => {
+    const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
+    const recipe = { source: 'sfx/coin.json', role: 'sfx', seed: 47, variants: 1, channels: 1, trimTail: -60 };
+    fx.write('recipes.json', { coin: recipe });
+    const cfg = fx.cfg(), p = openBuildProject(cfg), host = await openRenderHost();
+    try {
+      // Render once through the direct owner; build reuses that raw render cache.
+      const direct = await exportPatchOne(host, p, loadPatch(p, fx.path('sfx/coin.json')), { dest: fx.path('direct/coin.wav'), seed: 47, variant: 0, role: 'sfx', manifest: true, post: { channels: 1, trimTailDb: -60 } });
+      const original = pcm16(readFileSync(direct.rendered.wavPath));
+      const expected = pcm16(readFileSync(fx.path('direct/coin.wav')));
+      expect(original.channels).toHaveLength(2);
+      expect(expected.channels).toHaveLength(1);
+      expect(expected.channels[0].length).toBeLessThan(original.channels[0].length);
+      const cached = snapshot(p.paths.renders);
+      expect(Object.keys(cached).length).toBeGreaterThan(0);
+      expect((await runBuild(cfg)).built).toEqual(['coin']);
+      const built = pcm16(readFileSync(fx.path('public/audio/coin.0.wav')));
+      expect(built.sampleRate).toBe(expected.sampleRate);
+      expect(built.channels).toHaveLength(expected.channels.length);
+      expect(built.channels[0]).toHaveLength(expected.channels[0].length);
+      expect(built.channels).toEqual(expected.channels);
+      expect(snapshot(p.paths.renders)).toEqual(cached);
+      // The direct path has no variant suffix; both sidecars keep the authored id.
+      const directSide = fx.read('direct/coin.wav.json'), builtSide = fx.read('public/audio/coin.wav.json');
+      expect(directSide).toMatchObject({ id: 'coin', file: 'coin.wav', channels: 1, frames: expected.channels[0].length });
+      expect(builtSide).toMatchObject({ id: 'coin', file: 'coin.0.wav', channels: 1, frames: expected.channels[0].length, renderKey: directSide.renderKey });
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out })).toMatchObject({ ok: true, problems: [] });
+      const before = snapshot(fx.dir), files = Object.keys(before).map(f => fx.path(f)), mtimes = files.map(f => statSync(f).mtimeMs);
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect((await runBuild(cfg)).built).toEqual([]);
+      expect(snapshot(fx.dir)).toEqual(before);
+      expect(files.map(f => statSync(f).mtimeMs)).toEqual(mtimes);
+
+      fx.write('recipes.json', { coin: { ...recipe, trimTail: -50 } });
+      expect((await runBuild(cfg, { check: true })).stale).toEqual([{ id: 'coin', reasons: [expect.stringMatching(/^inputs changed \(export\):/)] }]);
+      expect(snapshot(fx.path('public/audio'))).toEqual(Object.fromEntries(Object.entries(before).filter(([f]) => f.startsWith('public/audio/')).map(([f, hash]) => [f.slice('public/audio/'.length), hash])));
+      fx.write('recipes.json', { coin: recipe });
+      const wav = fx.path('public/audio/coin.0.wav'), corrupt = readFileSync(wav);
+      corrupt[44] ^= 1; // same size: the lock must check actual bytes.
+      writeFileSync(wav, corrupt);
+      const verification = verifyOutputs({ lock: cfg.lock, out: cfg.out });
+      expect(verification.ok).toBe(false);
+      expect(verification.problems).toEqual(expect.arrayContaining([expect.objectContaining({ asset: 'coin', file: 'coin.0.wav', problem: expect.stringMatching(/sha256/) })]));
+      expect((await runBuild(cfg, { check: true })).stale[0].reasons).toContain('output modified: coin.0.wav');
+    } finally {
+      await host.close();
+      rmSync(fx.dir, { recursive: true, force: true });
+    }
+  }, 60000);
+});
 
 describe.skipIf(!ok)('beeps build', () => {
   let base: Fixture;
