@@ -43,7 +43,7 @@ For every recipe, with no browser and no ffmpeg run:
 ```
 inputHash = sha256( { renders, export, toolchain, delivery } )   each part itself a sha256
   renders    the beeps render keys the asset needs (patch: one per variant; song: the mix)
-  export     id, role, kind, seed, variants, layers
+  export     id, role, kind, seed, variants, layers, explicit patch post options
   toolchain  ENGINE, PIPELINE, SONG_PIPELINE (songs only) and EXPORT_PIPELINE versions, Chromium, Playwright, sample rate
   delivery   format, this role's kbps (an adaptive song also the mix kbps), encoder flags, ffmpeg build
 ```
@@ -97,6 +97,20 @@ it). `project` is a `beeps/project@1` file (scale and loudness targets); without
 `.agent-beeps/project.json` is used. `patches` is the directory of project patches songs may name as
 instruments. `workDir` holds staging and the local render cache (`.agent-beeps/renders`); gitignore it.
 `jobs` (default 3) is the number of parallel Chromium hosts.
+
+Patch recipes may set `channels` (`1` folds the delivered WAV to mono; `2` keeps stereo)
+and `trimTailDb` (a dBFS threshold from -120 inclusive to 0 exclusive). Tail trimming runs before
+mono conversion, through the same post-processing as `beeps export`. The legacy spelling
+`trimTail` is accepted and normalized to `trimTailDb`; specifying both with different values fails.
+For example, Space's `{ "source": "sfx/step.json", "role": "sfx", "variants": 1,
+"channels": 1, "trimTail": -60 }` exports one trimmed mono recording as `step.0.wav` for `wav-master`.
+The recipe id must still match the patch name, and the build catalog records that numbered path.
+
+These options are for baked patch files: song recipes (including adaptive layers) and runtime-only
+delivery reject them. With `delivery: "both"`, they affect the baked files only; the live cue retains
+its own channel and lifetime behavior. Each explicit option changes the asset's export identity,
+leaving raw render keys and unrelated assets unchanged. Omitting both preserves historical hashes
+and export behavior exactly; no engine, render or export pipeline version changes are needed.
 
 ### Delivery presets (`--target`)
 

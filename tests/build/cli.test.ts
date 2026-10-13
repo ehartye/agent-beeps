@@ -18,6 +18,18 @@ const beeps = (cwd: string, ...args: string[]) => {
 };
 
 describe('beeps build usage errors', () => {
+  it('accepts Space patch post options in a read-only WAV build check', () => {
+    const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
+    fx.write('recipes.json', { coin: { source: 'sfx/coin.json', role: 'sfx', variants: 1, channels: 1, trimTail: -60 } });
+    const r = beeps(fx.dir, 'build', '--check');
+    expect(r.status, r.stderr).toBe(1);
+    expect(r.err).toBeUndefined();
+    expect(r.out).toMatchObject({ ok: false, stale: [{ id: 'coin', reasons: ['new: not in the lock'] }] });
+    expect(existsSync(fx.path('audio.lock.json'))).toBe(false);
+    expect(existsSync(fx.path('.work'))).toBe(false);
+    expect(existsSync(fx.path('public/audio'))).toBe(false);
+  });
+
   it('needs a config, and rejects an unknown target or store', () => {
     const empty = mkdtempSync(join(tmpdir(), 'beeps-cli-'));
     const r = beeps(empty, 'build');

@@ -333,7 +333,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   if (baked) {
     const wav = join(wavDir, `${r.id}.wav`);
     if (r.kind === 'patch') {
-      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true });
+      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true, post: { channels: r.channels, trimTailDb: r.trimTailDb } });
       trimDb = ex.first.trimDb;
     } else {
       const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, layers: pl.layers });
