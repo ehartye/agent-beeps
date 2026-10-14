@@ -7,8 +7,8 @@
 //
 //   node fetch.mjs [--lock <audio.lock.json>] [--out <dir>] [--store <spec>] [--only a,b] [--check] [--jobs 6]
 //
-// Store specs: dir:<path> (relative to the working directory) | release:<owner/repo>[@tag]. GITHUB_TOKEN is used when set (private store
-// repos); a public store needs none. Exit 0: every asset present and verified. Exit 1: something is missing or does not verify (named).
+// Store specs: dir:<path> (relative to the working directory) | release:<owner/repo>[@tag]. GITHUB_TOKEN/GH_TOKEN are used when set
+// (private store repos); gh login is not consulted. Public reads need no token. Exit 0: verified. Exit 1: missing or invalid assets.
 // Vendored by `beeps ci export`; do not edit.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, statSync } from 'node:fs';
@@ -29,6 +29,7 @@ const storeSpec = flag('store') ?? process.env.BEEPS_AUDIO_STORE ?? DEFAULTS.sto
 const only = flag('only')?.split(',').filter(Boolean);
 const jobs = Number(flag('jobs') ?? 6);
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+const warnings = [];
 
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 
@@ -73,7 +74,12 @@ function openStore(spec) {
     for (let n = 0; ; n++) {
       const tag = n === 0 ? base : `${base}-${n}`;
       const r = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, { headers: headers() });
-      if (r.status === 404) break;
+      if (r.status === 404) {
+        if (n === 0 && !token) {
+          warnings.push('Release store unavailable (first release tag returned HTTP 404): the repository or tag may not exist, or a private repository may require GITHUB_TOKEN/GH_TOKEN with read access. No token was supplied.');
+        }
+        break;
+      }
       if (!r.ok) throw new Error(`GitHub ${r.status} reading release ${tag} of ${repo}`);
       const { id } = await r.json();
       for (let page = 1; ; page++) {
@@ -175,8 +181,9 @@ if (!missing.length && !bad.length && !only) {
   }
 }
 
-const summary = { ok: !missing.length && !bad.length, assets: ids.length, present, fetched, missing, problems: bad };
+const summary = { ok: !missing.length && !bad.length, assets: ids.length, present, fetched, missing, problems: bad, ...(warnings.length ? { warnings } : {}) };
 console.log(JSON.stringify(summary));
-if (missing.length) console.error(`fetch.mjs: ${missing.length} asset(s) are not in the store (the author must run "beeps build --push" or "beeps store push"):\n  ${missing.slice(0, 20).join('\n  ')}`);
+for (const warning of warnings) console.error(`fetch.mjs: ${warning}`);
+if (missing.length) console.error(`fetch.mjs: ${missing.length} asset(s) are not in the store (check the repository/tag and read access; if genuinely absent, the author must publish the locked assets with "beeps store push"):\n  ${missing.slice(0, 20).join('\n  ')}`);
 if (bad.length) console.error(`fetch.mjs: ${bad.length} problem(s):\n  ${bad.slice(0, 20).join('\n  ')}`);
 process.exit(summary.ok ? 0 : 1);

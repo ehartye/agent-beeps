@@ -29,6 +29,9 @@ const pick = (lock: Lock, only?: string[]) => {
   return Object.entries(lock.assets).filter(([id]) => !only || only.includes(id)).sort(([a], [b]) => (a < b ? -1 : 1));
 };
 
+const diagnostics = (store?: Store): { warnings?: string[] } =>
+  store?.warnings?.length ? { warnings: [...store.warnings] } : {};
+
 /** Publishes every asset of the lock whose outputs verify locally and that the store lacks. Immutable: an existing entry is never replaced. */
 export async function storePush(cfg: BuildConfig, store: Store, only?: string[]) {
   const lock = requireLock(cfg);
@@ -40,7 +43,7 @@ export async function storePush(cfg: BuildConfig, store: Store, only?: string[])
     if (!v.ok) { skipped.push({ id, problem: `${v.problem}: build it first` }); continue; }
     if (await store.put(name, packAsset(id, a.inputHash, a.outputs, f => readFileSync(join(cfg.out, f)))) === 'stored') pushed.push(id); else existing.push(id);
   }
-  return { store: store.spec, pushed, existing, skipped, ok: skipped.length === 0 };
+  return { store: store.spec, pushed, existing, skipped, ok: skipped.length === 0, ...diagnostics(store) };
 }
 
 /** Writes the lock's assets from the store into the output directory, checking every file against the lock; then the catalog. */
@@ -62,7 +65,7 @@ export async function storePull(cfg: BuildConfig, store: Store, only?: string[])
     } catch (e) { problems.push({ id, problem: (e as Error).message }); }
   }
   if (!only && !missing.length && !problems.length && existsSync(cfg.out)) bundleDir(cfg.out, { skipUnchanged: true });
-  return { store: store.spec, pulled, present, missing, problems, ok: !missing.length && !problems.length };
+  return { store: store.spec, pulled, present, missing, problems, ok: !missing.length && !problems.length, ...diagnostics(store) };
 }
 
 export async function storeStatus(cfg: BuildConfig, store: Store | undefined, only?: string[]) {
@@ -76,6 +79,7 @@ export async function storeStatus(cfg: BuildConfig, store: Store | undefined, on
   return {
     ...(store ? { store: store.spec } : {}), assets: rows.length, localOk: count(r => r.local === 'ok'), ...(store ? { inStore: count(r => r.store === 'present'), missingFromStore: rows.filter(r => r.store === 'missing').map(r => r.id) } : {}),
     notBuilt: rows.filter(r => r.local !== 'ok').map(r => r.id),
+    ...diagnostics(store),
   };
 }
 

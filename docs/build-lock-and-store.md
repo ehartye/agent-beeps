@@ -198,6 +198,20 @@ and creates the next numbered release when all are full; a lookup walks the chai
 use the public download URL (no API rate limit); with one, the API (private repos). A lost upload race
 (HTTP 422) counts as the first writer winning.
 
+A first release-tag HTTP 404 without a token is ambiguous: the repository or tag may not exist,
+or a private repository may require `GITHUB_TOKEN`/`GH_TOKEN` with read access. Producer store reports
+and the exported fetcher's JSON include an additive `warnings` list in this case; the fetcher also
+prints the warning once to stderr, shared across concurrent workers. The store still returns missing
+entries. This warning adds no requests or credential probes. A trailing numbered-tag 404 is normal
+chain termination and produces no warning. An authenticated 404 also remains missing without the
+no-token warning; supplying a token alone does not prove access. A successful authenticated lookup
+can find an empty release or a genuinely absent asset, which may need publishing.
+
+The producer CLI resolves `GITHUB_TOKEN`, then `GH_TOKEN`, then `gh auth token`. The dependency-free
+exported `fetch.mjs` uses only `GITHUB_TOKEN`/`GH_TOKEN`; a local `gh auth login` does not automatically
+authenticate it. Public fetches continue to work without credentials. Check the repository/tag and
+read access before treating missing assets as a forgotten push; do not render to repair a lookup failure.
+
 Commands:
 
 - `beeps build --pull --store <spec>`: before rendering, fetch each stale asset by its new `inputHash`.
@@ -212,7 +226,8 @@ Commands:
   file's sha256 and size against the **lock**, writes them atomically and regenerates `index.json`
   byte-identically to `beeps bundle`. It needs no beeps, Chromium or ffmpeg; `--check` verifies without a
   store; `--only`, `--store` and `--lock`/`--out` override the defaults. Exit 1 names each asset the store
-  lacks (`the author must run beeps build --push`) or that does not match the lock.
+  lacks or that does not match the lock. If assets are genuinely absent after checking the address and
+  access, the author publishes the locked assets with `beeps store push`.
 
 ## `beeps verify [dir|lock]`
 
@@ -258,6 +273,7 @@ measurement shows a leading offset yet).
 |---|---|
 | Cache miss, evicted Actions cache | Nothing renders. CI fetches from the store; the cache is an accelerator. |
 | Author forgot to push | `fetch.mjs` fails naming the assets. Run `beeps build --push` (or `store push`). |
+| First release-tag 404 without a token | Missing results plus a warning: check the repo/tag; private reads may need `GITHUB_TOKEN`/`GH_TOKEN`. This can also be a genuinely absent public release. |
 | Tool version bump (engine, pipeline, Chromium, ffmpeg) | Every hash changes (a song-pipeline bump: every song's, and the sound effects' once, in the release that makes the toolchain part per kind). `beeps build` stops with `E_TOOLCHAIN` listing the drift instead of silently re-rendering everything; pass `--allow-toolchain-change`, or `--pull` assets someone already built. Renders come from the render cache when it is warm, so a Chromium-only bump is minutes of encoding, not a render. |
 | ffmpeg drift | The encoder fingerprint is in every hash, so another ffmpeg makes every asset stale (same guard). Use the ffmpeg the lock names, or accept the change on purpose. |
 | Partial rebuild (killed, disk full) | Finished assets are committed; an interrupted asset keeps its old files and old lock entry (still valid). Its new files are installed one by one, so a crash in that window leaves that asset mismatching the lock: the next build sees `output modified` and redoes it from the render cache. `beeps verify` reports it. |

@@ -19,6 +19,8 @@ export const storeName = (inputHash: string): string => `${hexOf(inputHash)}.tar
 
 export interface Store {
   readonly spec: string;
+  /** Non-fatal lookup diagnostics, when the backend can provide them. */
+  readonly warnings?: readonly string[];
   has(name: string): Promise<boolean>;
   /** The entry's bytes, or undefined when the store has no such entry. */
   get(name: string): Promise<Buffer | undefined>;
@@ -120,8 +122,10 @@ export function githubToken(): string | undefined {
  */
 export class ReleaseStore implements Store {
   readonly spec: string;
+  readonly warnings: string[] = [];
   private readonly o: Required<Pick<ReleaseOptions, 'repo' | 'maxAssets' | 'maxBytes' | 'api' | 'uploads'>> & { tag: string; token?: string; fetch: Fetch };
   private tags: TagState[] | undefined;
+  private loading: Promise<TagState[]> | undefined;
   constructor(opts: ReleaseOptions) {
     this.o = {
       repo: opts.repo, tag: opts.tag ?? 'audio-store', token: opts.token,
@@ -142,11 +146,19 @@ export class ReleaseStore implements Store {
   /** Loads every release of the chain (tag, tag-1, ...) until one does not exist. */
   private async load(): Promise<TagState[]> {
     if (this.tags) return this.tags;
+    return this.loading ??= this.loadTags().finally(() => { this.loading = undefined; });
+  }
+  private async loadTags(): Promise<TagState[]> {
     const tags: TagState[] = [];
     for (let n = 0; ; n++) {
       const tag = this.tagName(n);
       const r = await this.call(`${this.o.api}/repos/${this.o.repo}/releases/tags/${tag}`);
-      if (r.status === 404) break;
+      if (r.status === 404) {
+        if (n === 0 && !this.o.token && !this.warnings.length) {
+          this.warnings.push('Release store unavailable (first release tag returned HTTP 404): the repository or tag may not exist, or a private repository may require GITHUB_TOKEN/GH_TOKEN with read access. No token was supplied.');
+        }
+        break;
+      }
       if (!r.ok) throw new BeepsError('E_STORE', `GitHub ${r.status} reading release ${tag} of ${this.o.repo}`, { hint: 'check the repo name, and a token for a private repo (GITHUB_TOKEN)' });
       const rel = await r.json() as { id: number };
       const assets = new Map<string, ReleaseAsset>();

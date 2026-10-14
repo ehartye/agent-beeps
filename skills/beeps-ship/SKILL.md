@@ -20,9 +20,12 @@ if they differ; use it when a song is new or a graph feature is, not on every bu
 
 ## 1. Describe the project
 
-`beeps.build.json` next to the app: `recipes` (`{ "<id>": { "source", "role" } }`, ids equal the
-patch or song `name`), `out` (e.g. `public/audio`), `lock` (committed), `project` (the
+`beeps.build.json` next to the app: `recipes` (`{ "<id>": { "source", "role" } }`), `out`
+(e.g. `public/audio`), `lock` (committed), `project` (the
 `beeps/project@1` file), `workDir` (gitignored: staging and the render cache), `target`, `store`.
+Baked recipe ids may alias the patch or song `name`; keep the authored source name unchanged.
+Effective `runtime`/`both` delivery requires the patch name, including inherited `xRuntime.delivery`;
+explicit `delivery: "baked"` permits an alias. See the detailed id contract in `docs/build-lock-and-store.md`.
 Targets: `web-universal` (Ogg Opus 44/48/72 kbps for music/ambience/sfx, 24 for the adaptive mix
 preview; the default), `web-mp3`, `wav-master`. Override per role with `kbps`; set `budgetBytes`.
 
@@ -48,8 +51,9 @@ beeps store status                                          # built here? in the
 beeps ci export tools/audio                                 # vendors fetch.mjs: Node 20+, no deps
 ```
 
-Writing to a release store needs `GITHUB_TOKEN` (contents: write on the store repo) or `gh auth login`;
-reading a public store needs nothing. In CI, no beeps, Chromium or ffmpeg:
+Writing to a release store needs `GITHUB_TOKEN`/`GH_TOKEN` (contents: write on the store repo) or `gh auth login`.
+Public reads need no token; private reads need a token with access to that repo. The exported `fetch.mjs`
+uses only `GITHUB_TOKEN`/`GH_TOKEN`; it does not automatically use `gh auth login`. In CI, no beeps, Chromium or ffmpeg:
 
 ```yaml
 - name: Fetch audio from the store
@@ -57,7 +61,10 @@ reading a public store needs nothing. In CI, no beeps, Chromium or ffmpeg:
 ```
 
 `fetch.mjs` checks every file against the **lock**, so a bad store entry cannot reach the site; exit 1
-names the assets the store lacks (the author forgot `--push`). Key any Actions cache on the lock's hash
+names missing or invalid assets. A first-tag 404 without a token is ambiguous: the repo/tag may not exist,
+or private reads may require `GITHUB_TOKEN`/`GH_TOKEN`. Verify the store address and access before concluding
+an asset needs publishing; a successful authenticated lookup can still find a genuinely missing asset.
+Key any Actions cache on the lock's hash
 (`hashFiles('audio.lock.json')`), never on the recipe folder, and treat it as an accelerator only.
 Add `beeps build --check` (needs ffmpeg for the encoder fingerprint, or trusts the lock's) to the test
 job to fail on stale audio.
@@ -114,7 +121,7 @@ passes with no further renders, and a later re-render of those songs reproduces 
 | `E_NONDETERMINISTIC` | the song rendered two ways in one page: re-run once; if it repeats, report the song and the message (first frame, size). Nothing was built or locked |
 | `BEEPS_FFMPEG ... does not exist` / `is a directory` | the variable is the path of the ffmpeg executable (`/usr/bin/ffmpeg`), never a command name or a folder |
 | `E_LOCK` key scheme | `beeps build --adopt` |
-| fetch.mjs: not in the store | author runs `beeps build --push` |
+| fetch.mjs: not in the store | check repo/tag and read access; if genuinely absent, the author publishes the locked assets with `beeps store push` |
 | `E_STORE` sha256 / manifest | corrupt entry; rebuild the asset and push to a fresh store |
 | `E_BUDGET` | lower kbps or raise `budgetBytes`; nothing was rendered |
 | `E_VERIFY` | the encode failed its decode or header check; fix the source, not the check |

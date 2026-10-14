@@ -130,6 +130,67 @@ function fakeGithub(o: { maxPerRelease?: number } = {}) {
 describe('release store (mocked GitHub)', () => {
   const entry = (n: number) => Buffer.from(`entry-${n}`);
 
+  it('keeps an absent public first tag missing and reports uncertainty once across concurrent reads', async () => {
+    const gh = fakeGithub(); // This public repository really has no release; 404 alone cannot establish privacy.
+    const store = new ReleaseStore({ repo: 'o/r', fetch: gh.fetch });
+    expect(await Promise.all([store.has('a.tar'), store.get('b.tar'), store.has('c.tar')])).toEqual([false, undefined, false]);
+    expect(await store.get('a.tar')).toBeUndefined();
+    expect(gh.calls).toEqual([{ method: 'GET', url: 'https://api.github.com/repos/o/r/releases/tags/audio-store', auth: undefined }]);
+    expect(store.warnings).toHaveLength(1);
+    expect(store.warnings[0]).toMatch(/repository or tag may not exist/);
+    expect(store.warnings[0]).toMatch(/private.*GITHUB_TOKEN.*GH_TOKEN/);
+    expect(store.warnings[0]).toMatch(/No token was supplied/);
+  });
+
+  it('keeps an authenticated missing release empty without a no-token warning or extra requests', async () => {
+    const gh = fakeGithub();
+    const store = new ReleaseStore({ repo: 'o/r', tag: 'absent', token: 'fake-private-token', fetch: gh.fetch });
+    expect(await Promise.all([store.has('a.tar'), store.get('b.tar')])).toEqual([false, undefined]);
+    expect(store.warnings).toEqual([]);
+    expect(gh.calls).toEqual([{ method: 'GET', url: 'https://api.github.com/repos/o/r/releases/tags/absent', auth: 'Bearer fake-private-token' }]);
+    expect(JSON.stringify(store.warnings)).not.toContain('fake-private-token');
+  });
+
+  it('shares a failed lookup and permits a later caller to retry without retaining the rejection', async () => {
+    let calls = 0;
+    const store = new ReleaseStore({ repo: 'o/r', fetch: async () => new Response('{}', { status: ++calls === 1 ? 503 : 404 }) });
+    const failures = await Promise.allSettled([store.has('a.tar'), store.get('b.tar')]);
+    expect(failures.map(result => result.status)).toEqual(['rejected', 'rejected']);
+    for (const result of failures) if (result.status === 'rejected') expect(result.reason).toMatchObject({ code: 'E_STORE' });
+    expect(calls).toBe(1);
+    expect(store.warnings).toEqual([]);
+    expect(await store.has('a.tar')).toBe(false);
+    expect(await store.get('b.tar')).toBeUndefined();
+    expect(calls).toBe(2);
+    expect(store.warnings).toHaveLength(1);
+  });
+
+  it.each([undefined, 'fake-private-token'])('adds diagnostics to store reports without changing missing results (token: %s)', async token => {
+    const fx = makeFixture();
+    try {
+      fx.write('audio.lock.json', { schema: 'beeps/build-lock@1', assets: {
+        absent: { inputHash: 'sha256:' + 'a'.repeat(64), outputs: [{ file: 'absent.ogg', bytes: 1, sha256: 'b'.repeat(64) }] },
+      } });
+      const lockBefore = readFileSync(fx.path('audio.lock.json'));
+      const gh = fakeGithub();
+      const store = new ReleaseStore({ repo: 'o/r', token, fetch: gh.fetch });
+      const status = await storeStatus(fx.cfg(), store);
+      const pull = await storePull(fx.cfg(), store);
+      const push = await storePush(fx.cfg(), store); // Missing local bytes: no upload or rendering.
+      expect(status).toMatchObject({ inStore: 0, missingFromStore: ['absent'] });
+      expect(pull).toMatchObject({ ok: false, missing: ['absent'], pulled: [], problems: [] });
+      expect(push).toMatchObject({ ok: false, pushed: [], skipped: [{ id: 'absent' }] });
+      for (const report of [status, pull, push]) {
+        if (token) expect(report).not.toHaveProperty('warnings');
+        else expect(report.warnings).toEqual(store.warnings);
+        expect(JSON.stringify(report)).not.toContain('fake-private-token');
+      }
+      expect(gh.calls).toHaveLength(1);
+      expect(readFileSync(fx.path('audio.lock.json'))).toEqual(lockBefore);
+      expect(existsSync(fx.path('public/audio'))).toBe(false);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
   it('stores, finds and downloads assets named by hash, with a public download and no token for reads', async () => {
     const gh = fakeGithub();
     const w = new ReleaseStore({ repo: 'o/r', token: 'tok', fetch: gh.fetch });
@@ -144,6 +205,19 @@ describe('release store (mocked GitHub)', () => {
     expect(await reader.get('zz.tar')).toBeUndefined();
     const download = gh.calls.slice(before).find(c => c.url.startsWith('https://github.com/'))!;
     expect(download.auth).toBeUndefined();
+    expect(reader.warnings).toEqual([]); // The trailing audio-store-1 404 is ordinary chain termination.
+    const authenticated = new ReleaseStore({ repo: 'o/r', token: 'fake-private-token', fetch: gh.fetch });
+    const authStart = gh.calls.length;
+    expect((await authenticated.get('a.tar'))!.equals(entry(1))).toBe(true);
+    expect(await authenticated.get('absent.tar')).toBeUndefined();
+    expect(authenticated.warnings).toEqual([]);
+    expect(gh.calls.slice(authStart).map(c => c.url)).toEqual([
+      'https://api.github.com/repos/o/r/releases/tags/audio-store',
+      `https://api.github.com/repos/o/r/releases/${gh.releases[0].id}/assets?per_page=100&page=1`,
+      'https://api.github.com/repos/o/r/releases/tags/audio-store-1',
+      `https://api.github.com/repos/o/r/releases/assets/${gh.releases[0].assets[0].id}`,
+    ]);
+    expect(gh.calls.slice(authStart).every(c => c.auth === 'Bearer fake-private-token')).toBe(true);
   });
 
   it('spills to numbered releases when one is full (1000 assets per release; 2 here)', async () => {
