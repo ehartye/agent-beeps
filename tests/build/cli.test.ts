@@ -1,9 +1,10 @@
 // The command line: build, build --check, verify, store, ci export, with real exit codes and the JSON error shape.
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { chromiumAvailable } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
 import { makeFixture } from '../helpers/build-fixture.ts';
@@ -47,6 +48,49 @@ describe('beeps build usage errors', () => {
     writeFileSync(fx.path('beeps.build.json'), JSON.stringify({ recipes: 'recipes.json' }));
     const r = beeps(fx.dir, 'build', '--check');
     expect(r.err).toMatchObject({ code: 'E_SCHEMA', pointer: '/out' });
+  });
+});
+
+describe('beeps store first-tag diagnostics (mocked GitHub)', () => {
+  it.each(['status', 'pull', 'push'])('reports an unauthenticated first 404 through %s without changing its exit behavior', command => {
+    const fx = makeFixture();
+    try {
+      fx.write('audio.lock.json', { schema: 'beeps/build-lock@1', assets: {
+        absent: { inputHash: 'sha256:' + 'a'.repeat(64), outputs: [{ file: 'absent.ogg', bytes: 1, sha256: 'b'.repeat(64) }] },
+      } });
+      const lockBefore = readFileSync(fx.path('audio.lock.json'));
+      writeFileSync(fx.path('mock.mjs'), `
+        import childProcess from 'node:child_process';
+        import { syncBuiltinESMExports } from 'node:module';
+        import { writeFileSync } from 'node:fs';
+        // No credential lookup or external process in this CLI regression.
+        childProcess.spawnSync = () => ({ status: 1, stdout: '' });
+        syncBuiltinESMExports();
+        const requests = [];
+        process.on('exit', () => writeFileSync('requests.json', JSON.stringify(requests)));
+        globalThis.fetch = async (url, init) => {
+          requests.push(String(url));
+          if (init.headers.authorization) throw new Error('unexpected authorization');
+          return new Response('{}', { status: 404 });
+        };
+      `);
+      const result = spawnSync(process.execPath, ['--import', pathToFileURL(fx.path('mock.mjs')).href, bin, 'store', command, '--store', 'release:o/r'], {
+        cwd: fx.dir, encoding: 'utf8', windowsHide: true,
+        env: { ...process.env, GITHUB_TOKEN: '', GH_TOKEN: '', PATH: '' },
+      });
+      expect(result.status, result.stderr).toBe(command === 'status' ? 0 : 1);
+      const report = JSON.parse(result.stdout.trim().split('\n').pop()!);
+      expect(report.warnings).toHaveLength(1);
+      expect(report.warnings[0]).toMatch(/repository or tag may not exist/);
+      expect(report.warnings[0]).toMatch(/No token was supplied/);
+      if (command === 'status') expect(report.missingFromStore).toEqual(['absent']);
+      if (command === 'pull') expect(report.missing).toEqual(['absent']);
+      if (command === 'push') expect(report.skipped).toMatchObject([{ id: 'absent' }]);
+      expect(JSON.parse(readFileSync(fx.path('requests.json'), 'utf8'))).toEqual(['https://api.github.com/repos/o/r/releases/tags/audio-store']);
+      expect(readFileSync(fx.path('audio.lock.json'))).toEqual(lockBefore);
+      expect(existsSync(fx.path('public/audio'))).toBe(false);
+      expect(existsSync(fx.path('.work'))).toBe(false);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
   });
 });
 

@@ -31,47 +31,97 @@ describe('fetch.mjs source', () => {
 describe('fetch.mjs against a release store (mocked GitHub)', () => {
   // Regression: the release index loads lazily, and the parallel workers all asked for it before the first load finished, so every
   // asset after the first looked "not in the store". A preload replaces fetch with a slow in-memory GitHub; no network, no ffmpeg.
-  it('downloads every asset when the workers start together', () => {
+  it.each([
+    { credential: 'GITHUB_TOKEN', firstMissing: false, corrupt: false, check: false, defaultJobs: true },
+    { credential: 'GH_TOKEN', firstMissing: false, corrupt: false, check: false },
+    { credential: '', firstMissing: false, corrupt: false, check: false },
+    { credential: '', firstMissing: true, corrupt: false, check: false },
+    { credential: 'GITHUB_TOKEN', firstMissing: true, corrupt: false, check: false },
+    { credential: 'GH_TOKEN', firstMissing: true, corrupt: false, check: false },
+    { credential: 'GITHUB_TOKEN', firstMissing: false, corrupt: true, check: false },
+    { credential: '', firstMissing: true, corrupt: false, check: true },
+  ])('preserves concurrent fetch and verification: %j', ({ credential, firstMissing, corrupt, check, defaultJobs }) => {
     const dir = mkdtempSync(join(tmpdir(), 'beeps-fetch-release-'));
-    const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
-    const tar = (name: string, data: Buffer) => {
-      const h = Buffer.alloc(512);
-      h.write(name, 0); h.write('0000644\0', 100); h.write('0000000\0', 108); h.write('0000000\0', 116);
-      h.write(data.length.toString(8).padStart(11, '0') + '\0', 124); h.write('00000000000\0', 136); h.write('        ', 148); h.write('0', 156); h.write('ustar\0', 257);
-      let sum = 0; for (const b of h) sum += b;
-      h.write(sum.toString(8).padStart(6, '0') + '\0 ', 148);
-      return Buffer.concat([h, data, Buffer.alloc((512 - (data.length % 512)) % 512), Buffer.alloc(1024)]);
-    };
-    const assets: Record<string, unknown> = {};
-    const tars: Record<string, string> = {};
-    for (let n = 0; n < 8; n++) {
-      const data = Buffer.from(`asset-${n}`);
-      const hash = sha(Buffer.from(`in${n}`));
-      assets[`a${n}`] = { inputHash: `sha256:${hash}`, outputs: [{ file: `a${n}.ogg`, bytes: data.length, sha256: sha(data) }], role: 'sfx', source: `a${n}.json` };
-      tars[`${hash}.tar`] = tar(`a${n}.ogg`, data).toString('base64');
+    const fixture = makeFixture();
+    try {
+      const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+      const tar = (name: string, data: Buffer) => {
+        const h = Buffer.alloc(512);
+        h.write(name, 0); h.write('0000644\0', 100); h.write('0000000\0', 108); h.write('0000000\0', 116);
+        h.write(data.length.toString(8).padStart(11, '0') + '\0', 124); h.write('00000000000\0', 136); h.write('        ', 148); h.write('0', 156); h.write('ustar\0', 257);
+        let sum = 0; for (const b of h) sum += b;
+        h.write(sum.toString(8).padStart(6, '0') + '\0 ', 148);
+        return Buffer.concat([h, data, Buffer.alloc((512 - (data.length % 512)) % 512), Buffer.alloc(1024)]);
+      };
+      const assets: Record<string, unknown> = {};
+      const tars: Record<string, string> = {};
+      for (let n = 0; n < 8; n++) {
+        const data = Buffer.from(`asset-${n}`);
+        const hash = sha(Buffer.from(`in${n}`));
+        assets[`a${n}`] = { inputHash: `sha256:${hash}`, outputs: [{ file: `a${n}.ogg`, bytes: data.length, sha256: sha(data) }], role: 'sfx', source: `a${n}.json` };
+        tars[`${hash}.tar`] = tar(`a${n}.ogg`, corrupt ? Buffer.from('damaged') : data).toString('base64');
+      }
+      // Exercise the actual exported artifact, including its baked defaults.
+      const exported = ciExport(fixture.cfg({ lock: join(dir, 'lock.json'), out: join(dir, 'out') }), join(dir, 'tools'), 'release:o/r');
+      writeFileSync(join(dir, 'lock.json'), JSON.stringify({ schema: 'beeps/build-lock@1', assets }));
+      writeFileSync(join(dir, 'mock.mjs'), `
+        import { writeFileSync } from 'node:fs';
+        const tars = ${JSON.stringify(tars)};
+        const names = Object.keys(tars);
+        const requests = [];
+        process.on('exit', () => writeFileSync('requests.json', JSON.stringify(requests)));
+        const delay = () => new Promise((r) => setTimeout(r, 30));
+        const json = (o) => new Response(JSON.stringify(o), { status: 200 });
+        globalThis.fetch = async (url, init) => {
+          const expectedAuth = ${Boolean(credential)} ? 'Bearer fake-fetch-secret' : undefined;
+          if (init.headers.authorization !== expectedAuth) throw new Error('unexpected authorization');
+          requests.push({ url: String(url), accept: init.headers.accept });
+          await delay();
+          const u = String(url);
+          // A genuinely absent public release has the same first-tag 404 as an inaccessible private one.
+          if (u.endsWith('/releases/tags/audio-store')) return ${firstMissing} ? new Response('{}', { status: 404 }) : json({ id: 7 });
+          if (u.includes('/releases/tags/')) return new Response('{}', { status: 404 });
+          if (u.includes('/releases/7/assets?')) return json(names.map((name, i) => ({ id: i + 1, name, browser_download_url: 'https://public.invalid/' + (i + 1) })));
+          const m = u.match(/(?:releases\\/assets\\/|public\\.invalid\\/)(\\d+)$/);
+          if (m) return new Response(Buffer.from(tars[names[Number(m[1]) - 1]], 'base64'), { status: 200 });
+          return new Response('{}', { status: 500 });
+        };`);
+      const lockBefore = readFileSync(join(dir, 'lock.json'));
+      const r = spawnSync(process.execPath, ['--import', pathToFileURL(join(dir, 'mock.mjs')).href, exported.file, ...(defaultJobs ? [] : ['--jobs', '8']), ...(check ? ['--check'] : [])], {
+        cwd: dir, encoding: 'utf8', windowsHide: true,
+        env: { ...process.env, PATH: '', GITHUB_TOKEN: '', GH_TOKEN: '', ...(credential ? { [credential]: 'fake-fetch-secret' } : {}) },
+      });
+      const json = JSON.parse(r.stdout.trim().split('\n').pop()!);
+      const failed = firstMissing || corrupt || check;
+      expect(r.status, r.stderr).toBe(failed ? 1 : 0);
+      expect(json, r.stderr).toMatchObject({ ok: !failed, assets: 8, fetched: failed ? 0 : 8 });
+      expect(json.missing).toHaveLength(firstMissing && !check ? 8 : 0);
+      expect(json.problems).toHaveLength(corrupt || check ? 8 : 0);
+      if (corrupt) expect(json.problems.every((p: string) => p.includes('does not match the lock'))).toBe(true);
+      if (firstMissing && !credential && !check) {
+        expect(json.warnings).toHaveLength(1);
+        expect(json.warnings[0]).toMatch(/repository or tag may not exist/);
+        expect(json.warnings[0]).toMatch(/private.*GITHUB_TOKEN.*GH_TOKEN/);
+        expect(r.stderr.match(/No token was supplied/g)).toHaveLength(1);
+      } else {
+        expect(json).not.toHaveProperty('warnings');
+        expect(r.stderr).not.toMatch(/No token was supplied/);
+      }
+      expect(r.stdout + r.stderr).not.toContain('fake-fetch-secret');
+      const requests = JSON.parse(readFileSync(join(dir, 'requests.json'), 'utf8'));
+      const base = 'https://api.github.com/repos/o/r/releases';
+      expect(requests.map((r: { url: string }) => r.url)).toEqual(check ? [] : firstMissing ? [`${base}/tags/audio-store`] : [
+        `${base}/tags/audio-store`, `${base}/7/assets?per_page=100&page=1`, `${base}/tags/audio-store-1`,
+        ...Array.from({ length: 8 }, (_, i) => credential ? `${base}/assets/${i + 1}` : `https://public.invalid/${i + 1}`),
+      ]);
+      if (!failed && credential) expect(requests.slice(3).every((r: { accept: string }) => r.accept === 'application/octet-stream')).toBe(true);
+      expect(readFileSync(join(dir, 'lock.json'))).toEqual(lockBefore);
+      if (failed) expect(existsSync(join(dir, 'out'))).toBe(false);
+      else expect(readdirSync(join(dir, 'out')).filter(n => n.endsWith('.ogg'))).toHaveLength(8);
+    } finally {
+      rmSync(fixture.dir, { recursive: true, force: true });
+      rmSync(dir, { recursive: true, force: true });
     }
-    mkdirSync(join(dir, 'tools'), { recursive: true });
-    cpSync(join(import.meta.dirname, '..', '..', 'runtime', 'ci', 'fetch.mjs'), join(dir, 'tools', 'fetch.mjs'));
-    writeFileSync(join(dir, 'lock.json'), JSON.stringify({ schema: 'beeps/build-lock@1', assets }));
-    writeFileSync(join(dir, 'mock.mjs'), `
-      const tars = ${JSON.stringify(tars)};
-      const names = Object.keys(tars);
-      const delay = () => new Promise((r) => setTimeout(r, 30));
-      const json = (o) => new Response(JSON.stringify(o), { status: 200 });
-      globalThis.fetch = async (url) => {
-        await delay();
-        const u = String(url);
-        if (u.endsWith('/releases/tags/audio-store')) return json({ id: 7 });
-        if (u.includes('/releases/tags/')) return new Response('{}', { status: 404 });
-        if (u.includes('/releases/7/assets?')) return json(names.map((name, i) => ({ id: i + 1, name })));
-        const m = u.match(/releases\\/assets\\/(\\d+)$/);
-        if (m) return new Response(Buffer.from(tars[names[Number(m[1]) - 1]], 'base64'), { status: 200 });
-        return new Response('{}', { status: 500 });
-      };`);
-    const r = spawnSync(process.execPath, ['--import', pathToFileURL(join(dir, 'mock.mjs')).href, 'tools/fetch.mjs', '--lock', 'lock.json', '--out', 'out', '--store', 'release:o/r'], { cwd: dir, encoding: 'utf8', windowsHide: true, env: { ...process.env, GITHUB_TOKEN: 't' } });
-    const json = JSON.parse(r.stdout.trim().split('\n').pop()!);
-    expect(json, r.stderr).toMatchObject({ assets: 8, fetched: 8, missing: [] });
-    expect(readdirSync(join(dir, 'out')).filter(n => n.endsWith('.ogg'))).toHaveLength(8);
   });
 });
 
