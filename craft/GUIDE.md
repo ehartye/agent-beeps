@@ -180,18 +180,32 @@ something, the text says so. The how-to (instrument recipes, riff notation, per-
   gets its weight from a low minor or phrygian root, the flat second, flat sixth, flat seventh and the tritone, a chug that keeps
   going under held chords, a lead that holds long notes lower and darker, and accented sixteenth hats. If a section sounds light
   with the right notes, look at the harmony, melody shape, register and articulation before touching the tone.
+- **Some moods have no melody.** The owner then gave the art direction (a lawless post-apocalyptic car-combat game in black, white
+  and red in the style of Frank Miller: "atmospheric/dark but high energy like you're driving for your life", surviving by
+  shooting rivals off your tail) and rejected the lead outright: "the fancy keytar solos just isn't the right mood". A melody over
+  a scored chorus reads as a keytar however it is voiced, and a wailing, siren-like sweep reads as police, the wrong world for a
+  lawless wasteland. The five tracks the owner then called beautiful have no lead and no siren: the engine and the guns are the
+  music. Constant sixteenth-note chugs work as engine and machine-gun cadence, kick and snare land like gunfire, a kick, tom and
+  chug war-drum stomp carries the heavy sections, and junkyard clanks, wind, a low pedal and one static held feedback note sit
+  under the quiet parts.
 - **Contrast beats build.** For a black, white and red art direction the lift ends in two beats of silence in every part and the
-  chorus lands on the downbeat with a crash; the look image shows a black gap. Atmosphere (wind, a low pedal, a siren) goes under
-  the intro, breakdown and outro only, and needs much more gain than feels right (it measured 18 to 32 LU under the mix before it
+  chorus lands on the downbeat with a crash; the look image shows a black gap. Atmosphere (wind, a low pedal, junkyard
+  clanks, one static feedback note; not a siren) goes under the intro, breakdown and outro only, and needs much more gain than feels right (it measured 18 to 32 LU under the mix before it
   was audible). Stop it a bar or two before the loop point or `song-loop-seam` fires.
 - **The low end is where metal mixes fail the lint.** A sub-octave partial in the guitar chord, plus the kick and bass, took the
   low-end share to 56% (`song-low-end` warns above 40%). Without the partial, with guitar highpass at 90-110 Hz and the bass about
   3 dB lower, it was 24-33%. Check with `beeps song stems`: the chords were first within 3 LU of the whole mix while the hats
-  were 27 LU under it.
-- **One song per level.** Keep the form and the length, and vary the tempo (to fit the slot), key (move it with each track's
-  `transpose`, lifting the bass an octave whenever the shift would take it below E1), riff cells, chorus root order, atmosphere,
-  reverb and solo. Cheap solo variants from one written solo: invert it, stretch it to half speed, compress it and repeat it, or
-  rotate it.
-- **What the measurements could not say.** Nothing here shows the guitar sounds like a guitar; the tools catch low-end share, seam,
-  hierarchy and inaudible parts, not realism. The five per-level tracks and the noir version of the first draft had not been
-  heard by the owner when this was written.
+  were 27 LU under it. Without a lead the share rose again (52-69% on the five lead-less tracks); the owner approved those by ear
+  with the lint left in place, so the warning measured masking risk the listener did not hear in that mix. An octave-up guitar
+  double and a higher guitar highpass were planned to bring it down and were not tried.
+- **One song per level means five songs.** The first attempt kept one song's form and material and varied the key, the riff cells,
+  the atmosphere and a transformed hook and solo (inverted, stretched, compressed). The owner heard one song in five
+  arrangements and asked for five fresh ones. Write each level's riffs, groove and form from scratch: a thrash gallop with a
+  hard-cut lift; a kick, tom and chug war-drum stomp with a drum-only breakdown; a tremolo-picked tritone chase on a d-beat; slow
+  crushing riffs over double kick and sixteenth hats; a punk d-beat blitz with a short intro and a long final run. What stays
+  shared is only what the game needs: the tempo and the 104-bar length that fit each score slot, and the tuned instruments. Move
+  the key with each track's `transpose`, lifting the bass an octave whenever the shift would take it below E1.
+- **What the measurements could not say, and what the owner said.** The tools catch low-end share, seam, hierarchy and inaudible
+  parts, not realism or mood. The owner heard: the first draft (verse and lift good, the rest "too light, whimsical, plucky"); the
+  noir take (the siren "isn't working", the keytar solos "just isn't the right mood"); and five lead-less tracks written from the
+  brief above ("beautiful"), which were then added to the game. Nothing here shows what a guitar sounds like to anyone else.
