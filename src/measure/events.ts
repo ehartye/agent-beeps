@@ -13,7 +13,7 @@ export interface Events {
   onsetsSec: number[];
   /** Peak of each event in dB relative to the loudest. */
   levelsDb: number[];
-  /** Events per minute from the median interval; null with fewer than 3 events. */
+  /** Events per minute from the median interval; null with fewer than 3 events or when nothing repeats (`periodicity` under 0.12). */
   rpm: number | null;
   intervalMsMedian: number | null;
   /** Standard deviation of the intervals over their mean: ~0 for a machine, 0.2+ for a human or a jittery edit. */
@@ -60,7 +60,7 @@ export function findEvents(x: Float32Array, sr: number): Events {
   const e = new Float64Array(Math.floor(sm.length / hop));
   for (let k = 0; k < e.length; k++) e[k] = Math.sqrt(sm[k * hop]);
   const top = e.reduce((a, b) => Math.max(a, b), 0);
-  if (!(top > 1e-5)) return { ...EMPTY };
+  if (!(top > 1e-3)) return { ...EMPTY };                                     // under -60 dBFS above 800 Hz there is nothing to find
   let a = 0, b = e.length - 1;
   while (e[a] < 0.1 * top) a++;
   while (e[b] < 0.1 * top) b--;
@@ -98,7 +98,7 @@ export function findEvents(x: Float32Array, sr: number): Events {
   const cv = intervals.length >= 2 ? Math.sqrt(intervals.reduce((s, v) => s + (v - mean) ** 2, 0) / intervals.length) / mean : null;
 
   let floorDb: number | null = null;
-  if (onsets.length >= 2) {
+  if (periodic && onsets.length >= 2) {
     const floors: number[] = [], hits: number[] = [];
     for (let i = 0; i < onsets.length - 1; i++) {
       const L = onsets[i + 1] - onsets[i];
@@ -113,9 +113,9 @@ export function findEvents(x: Float32Array, sr: number): Events {
     count: onsets.length,
     onsetsSec: onsets.map(t => Math.round(t * 1e4) / 1e4),
     levelsDb: peaks.map(p => Math.round(100 * db(p / top0)) / 100),
-    rpm: onsets.length >= 3 ? Math.round(10 * 60 / median(intervals)) / 10 : null,
-    intervalMsMedian: intervals.length ? Math.round(10 * 1000 * median(intervals)) / 10 : null,
-    intervalCv: cv === null ? null : Math.round(1e4 * cv) / 1e4,
+    rpm: periodic && onsets.length >= 3 ? Math.round(10 * 60 / median(intervals)) / 10 : null,
+    intervalMsMedian: periodic && intervals.length ? Math.round(10 * 1000 * median(intervals)) / 10 : null,
+    intervalCv: !periodic || cv === null ? null : Math.round(1e4 * cv) / 1e4,
     floorDb,
     periodicity: Math.round(1e3 * strength) / 1e3,
   };

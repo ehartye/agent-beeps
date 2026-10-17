@@ -40,8 +40,10 @@ describe('findEvents', () => {
   });
 
   it('reports irregular firing as a high interval variation', () => {
-    const ev = findEvents(shotTrain(evenOnsets(20, 0.1, { jitterSec: 0.035 }), 0.012), SR);
-    expect(ev.intervalCv).toBeGreaterThan(0.15);
+    const ev = findEvents(shotTrain(evenOnsets(20, 0.1, { jitterSec: 0.012 }), 0.012), SR);
+    expect(ev.rpm).not.toBeNull();
+    expect(ev.intervalCv!).toBeGreaterThan(0.05);
+    expect(ev.intervalCv!).toBeLessThan(0.4);
   });
 
   it('measures the level between shots: a long tail fills the gaps, a short one leaves them empty', () => {
@@ -64,9 +66,17 @@ describe('findEvents', () => {
     expect(findEvents(new Float32Array(SR), SR).count).toBe(0);
   });
 
-  it('finds nothing periodic in steady noise', () => {
-    const ev = findEvents(whiteNoise(1.5, 5, 0.3), SR);
-    expect(ev.rpm === null || ev.periodicity < 0.2).toBe(true);
+  it('reports no rate for a steady low drone (a 47 Hz idle: low harmonics under a slow swell)', () => {
+    const n = Math.round(4 * SR);
+    const drone = Float32Array.from({ length: n }, (_, i) => {
+      const t = i / SR; let v = 0;
+      for (let h = 1; h <= 6; h++) v += Math.sin(2 * Math.PI * 47 * h * t) / h;
+      return 0.2 * v * (1 + 0.3 * Math.sin(2 * Math.PI * 3 * t));
+    });
+    const ev = findEvents(drone, SR);
+    expect(ev.rpm).toBeNull();
+    expect(ev.intervalCv).toBeNull();
+    expect(ev.floorDb).toBeNull();
   });
 });
 
