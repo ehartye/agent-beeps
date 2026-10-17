@@ -12,6 +12,7 @@ import { registerSongCommands } from './commands/songs.ts';
 import { registerPlayerCommands } from './commands/player.ts';
 import { registerBuildCommands } from './commands/build.ts';
 import { registerRuntimeCommands } from './commands/runtime.ts';
+import { registerAnalyzeCommands } from './commands/analyze.ts';
 
 const root = join(import.meta.dirname, '..');
 export const VERSION: string = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
@@ -35,6 +36,7 @@ export function buildProgram(io: Io): Command {
   registerPlayerCommands(program, io);
   registerBuildCommands(program, io);
   registerRuntimeCommands(program, io);
+  registerAnalyzeCommands(program, io);
   return program;
 }
 

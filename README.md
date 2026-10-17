@@ -56,6 +56,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 | `family` | one template patch + a table (JSON/CSV/`--row`) -> N validated patches: `{{param}}` placeholders, `/pointer` columns, seeded `a..b` ranges and `--jitter`, `--lint`, `--set`, `--out`, `--dry-run` |
 | `new`, `sync`, `batch`, `list` | save patches; mirror a directory of committed patch files into the project (`sync <dir>`, validates all first); atomic create/set/remove/delete with `--dry-run` |
 | `render`, `measure`, `look`, `lint`, `export` | render + trim, full features, look images and contact sheets, craft rules, WAV |
+| `analyze <audio...>`, `compare <ref> <candidate>` | measure any audio file (WAV, or MP3/Ogg/FLAC through ffmpeg; no project needed): the patch features plus where the sound is, whether and how it repeats (onsets, rate, regularity, level between events, per-band decay of the mean event) and its spectrum; `compare` gives signed deltas and hints for matching a reference ([guide](skills/beeps-compose/references/matching-a-reference.md)) |
 | `set create` | render patches you already authored into a candidate set (audition a hand-made kit with `--flow explore`) |
 | `mutate`, `crossover` | direction-steered variations; blend two patches |
 | `kit list/add/remove/check` | the project's shipped sounds and kit-level rules |

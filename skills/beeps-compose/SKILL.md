@@ -1,7 +1,7 @@
 ---
 name: beeps-compose
 description: Compose procedural game and UI sounds with agent-beeps - generate diverse candidates from archetypes, author or edit JSON patches, render, measure and look at them, and export loudness-matched WAVs.
-when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
+when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, when the owner supplies a recording or clip to match or reproduce, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
 ---
 
 # Compose sounds
@@ -53,6 +53,8 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
 - `beeps look <name>` (one look.png) or `beeps look a b c` (a contact sheet). Check: the onset is
   where you expect, nothing rings past the energy length you intended, pitch moves the right way,
   noise sits in the band you meant.
+- Matching a recording the owner supplies ("like these clips")? `beeps analyze <audio...>` measures any file (rate, tail, band decay,
+  spectrum) and `beeps compare <ref> <candidate.wav>` lists what to change: `references/matching-a-reference.md`.
 - `beeps measure <name>` - every feature. `beeps lint <name...>` - cited craft rules; fix every
   error, justify every warning. Linting a whole batch? Add `--brief`: only patches with findings, the clean
   ones by name, and each judgement rule once. lint exits 1 only for errors (warnings exit 0) and

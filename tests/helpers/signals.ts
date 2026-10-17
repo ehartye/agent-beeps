@@ -50,3 +50,26 @@ export const withSilence = (x: Float32Array, before: number, after: number) => {
   out.set(x, len(before));
   return out;
 };
+
+/**
+ * A train of noise-burst "shots": exponentially decaying white noise (time constant `tau` s) starting at each onset.
+ * `onsets` are seconds. Known answers for event detection: rate, regularity, decay.
+ */
+export const shotTrain = (onsets: number[], tau: number, { dur, seed = 9, amp = 0.8 }: { dur?: number; seed?: number; amp?: number } = {}) => {
+  const total = dur ?? onsets[onsets.length - 1] + 0.3;
+  const out = new Float32Array(len(total));
+  const r = mulberry32(seed);
+  for (const t0 of onsets) {
+    const start = Math.round(t0 * SR);
+    for (let i = start; i < out.length && i < start + Math.round(tau * 8 * SR); i++) {
+      out[i] += amp * (r() * 2 - 1) * Math.exp(-(i - start) / SR / tau);
+    }
+  }
+  return out;
+};
+
+/** n onsets spaced `intervalSec` apart starting at `first`, with optional uniform jitter of ±`jitterSec` (seeded). */
+export const evenOnsets = (n: number, intervalSec: number, { first = 0.05, jitterSec = 0, seed = 3 }: { first?: number; jitterSec?: number; seed?: number } = {}) => {
+  const r = mulberry32(seed);
+  return Array.from({ length: n }, (_, i) => first + i * intervalSec + (r() * 2 - 1) * jitterSec);
+};
