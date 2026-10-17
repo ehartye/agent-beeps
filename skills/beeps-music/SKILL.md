@@ -114,6 +114,9 @@ budget decoded memory, not download size: 26.3 MB per stereo 68.6 s layer. Then 
 `beeps loopcheck <files> --engines chromium,firefox,webkit`, and `beeps player selftest` on a real device. Format table, exact
 settings and the checks: `references/web-delivery.md`; build, lock and CI: skill `beeps-ship`.
 
+Guitar, metal or rock (distorted guitars, a kit, riffs, a score with one song per level)? `references/guitar-and-metal.md` has the
+instrument recipes, riff notation and the pitfalls; the reasoning is in `craft/GUIDE.md` section 11.
+
 ## Never
 
 - Put a loudness literal anywhere: `gainDb` is balance between tracks only.

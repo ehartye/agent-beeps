@@ -159,3 +159,39 @@ every `beeps song render`. The judgement rules are yours to apply.
   bottom shows bass: a solid bright floor across the whole song means the bass is too loud or too
   low. The number rows give per-section level and brightness, so you can check that a "thin"
   section really is quieter or darker.
+
+## 11. Guitar-driven rock and metal (process notes, no lint rules)
+
+This section is a record of one project, not a cited rule set: it adds no entry to `rules.json` or `music-rules.json`, and the
+numbers come from measurements of that project's songs. The owner's ear graded it, and where the owner has not yet heard
+something, the text says so. The how-to (instrument recipes, riff notation, per-level variation, pitfalls) is in
+`skills/beeps-music/references/guitar-and-metal.md`.
+
+- **A guitar is a chain, so build the chain.** In a layer `drive` sits before the filter and is `tanh(kx)` with
+  `k = 1 + 20 * drive`: past about 0.3 more drive changes little. The tone is decided by what goes in (one `additive` layer
+  holding the whole power chord, so the saturation intermodulates the notes, with partials that each decay at their own rate) and
+  by the filter after it (the cabinet). The same chord as separately driven saws measured twice as rough (0.26 against 0.12). The
+  pick transient, a clipped-harmonic sizzle layer and double-tracked rhythm guitars (two tracks, hard-panned, each humanized) are
+  what separate a guitar from a synth patch. This tone was heard by the owner in the verse and lift ("pretty good"); the rest of
+  the first draft was not judged on tone.
+- **Pitch and timing are not what makes a metal song read as something else.** The first draft was on the grid and in tune and the
+  owner still heard a Zelda or Final Fantasy overworld. The cause was the writing: relative-major chords (i - VI - III - VII), an
+  arpeggiated melody in the fifth octave on a smooth lead, and sustained stabby chords with bright eighth-note hats. Metal
+  gets its weight from a low minor or phrygian root, the flat second, flat sixth, flat seventh and the tritone, a chug that keeps
+  going under held chords, a lead that holds long notes lower and darker, and accented sixteenth hats. If a section sounds light
+  with the right notes, look at the harmony, melody shape, register and articulation before touching the tone.
+- **Contrast beats build.** For a black, white and red art direction the lift ends in two beats of silence in every part and the
+  chorus lands on the downbeat with a crash; the look image shows a black gap. Atmosphere (wind, a low pedal, a siren) goes under
+  the intro, breakdown and outro only, and needs much more gain than feels right (it measured 18 to 32 LU under the mix before it
+  was audible). Stop it a bar or two before the loop point or `song-loop-seam` fires.
+- **The low end is where metal mixes fail the lint.** A sub-octave partial in the guitar chord, plus the kick and bass, took the
+  low-end share to 56% (`song-low-end` warns above 40%). Without the partial, with guitar highpass at 90-110 Hz and the bass about
+  3 dB lower, it was 24-33%. Check with `beeps song stems`: the chords were first within 3 LU of the whole mix while the hats
+  were 27 LU under it.
+- **One song per level.** Keep the form and the length, and vary the tempo (to fit the slot), key (move it with each track's
+  `transpose`, lifting the bass an octave whenever the shift would take it below E1), riff cells, chorus root order, atmosphere,
+  reverb and solo. Cheap solo variants from one written solo: invert it, stretch it to half speed, compress it and repeat it, or
+  rotate it.
+- **What the measurements could not say.** Nothing here shows the guitar sounds like a guitar; the tools catch low-end share, seam,
+  hierarchy and inaudible parts, not realism. The five per-level tracks and the noir version of the first draft had not been
+  heard by the owner when this was written.
