@@ -182,6 +182,25 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.13.0
+
+Two read-only commands for matching a recording you were given (#52). Additive: `ENGINE_VERSION` stays 2 and
+`SONG_PIPELINE_VERSION` stays 6, so no render key and no lock hash changes.
+
+- `beeps analyze <audio...>` measures any audio file, with no project. WAV (16-bit or float) is read directly; MP3, Ogg,
+  FLAC and 24-bit WAV go through ffmpeg (`ffmpeg-static`, `BEEPS_FFMPEG` or the PATH) and are resampled to 48 kHz, with
+  `sourceSampleRate` saying what the file was. It reports the `measure` features plus the active span, repeated events
+  (onsets, per-event level, rate, interval regularity, the level in the gaps between events, repeat strength), the mean
+  event per band (peak time, time to fall 10 and 20 dB) and the octave-band spectrum. Rate, interval and gap-level fields
+  are `null` when nothing repeats (repeat strength under 0.12) or when the signal above 800 Hz is under -50 dBFS, so an
+  engine or drone reports no rate.
+- `beeps compare <reference> <candidate>` gives signed deltas (candidate minus reference) and plain-language hints: gap
+  level, rate, timing regularity, crest, band share, per-band decay, clipping. Export a patch or song first, then compare
+  the WAV. The thresholds come from gunfire clips and synthetic trains; treat the hints as indicators.
+- `readWav` accepts `WAVE_FORMAT_EXTENSIBLE`, the header ffmpeg writes for float output.
+- Skill guide: `skills/beeps-compose/references/matching-a-reference.md` (what an analysis holds, which patch lever answers
+  which number, and how to build a burst of repeating events as a song).
+
 ## What changed in 0.10.0
 
 Songs now render reproducibly (#45). Before, one song with one input hash could render several ways (Fallow Valley's
