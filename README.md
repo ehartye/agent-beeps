@@ -182,6 +182,18 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.13.1
+
+Documentation only (#54): no code, schema, engine or pipeline change, so no render key or lock hash moves.
+
+- `craft/GUIDE.md` section 11 and `skills/beeps-music/references/guitar-and-metal.md`: process notes from building a guitar-driven
+  metal score, labeled as notes (no new lint rule). The guitar amp chain (`drive` is `tanh(kx)`, so the input spectrum and the
+  filter after it decide the tone, and a power chord is one additive layer), double-tracking, riff notation, the bass floor when
+  moving a key, and the render, look and stems loop with the traps it found.
+- What the owner heard, recorded as heard: a metal draft read as a JRPG overworld because of the writing (relative-major chords,
+  an arpeggiated lead), not the pitch or timing; a wailing siren reads as police; a lead over a scored chorus reads as a keytar,
+  so some moods want no melody at all; and five variants of one song are not five songs.
+
 ## What changed in 0.13.0
 
 Two read-only commands for matching a recording you were given (#52). Additive: `ENGINE_VERSION` stays 2 and
