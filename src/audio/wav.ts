@@ -31,6 +31,7 @@ export function readWav(buf: Buffer): { sampleRate: number; channels: Float32Arr
     if (id === 'fmt ') {
       format = buf.readUInt16LE(body); ch = buf.readUInt16LE(body + 2);
       sampleRate = buf.readUInt32LE(body + 4); bits = buf.readUInt16LE(body + 14);
+      if (format === 0xfffe && size >= 40) format = buf.readUInt16LE(body + 24); // WAVE_FORMAT_EXTENSIBLE (ffmpeg's float output): the sub-format GUID starts with the real code
     } else if (id === 'data') {
       const bytes = bits / 8;
       const n = Math.floor(size / (bytes * ch));
