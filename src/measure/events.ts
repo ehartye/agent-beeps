@@ -60,7 +60,7 @@ export function findEvents(x: Float32Array, sr: number): Events {
   const e = new Float64Array(Math.floor(sm.length / hop));
   for (let k = 0; k < e.length; k++) e[k] = Math.sqrt(sm[k * hop]);
   const top = e.reduce((a, b) => Math.max(a, b), 0);
-  if (!(top > 1e-3)) return { ...EMPTY };                                     // under -60 dBFS above 800 Hz there is nothing to find
+  if (!(top > 3e-3)) return { ...EMPTY };                                     // under -50 dBFS above 800 Hz there is nothing to find
   let a = 0, b = e.length - 1;
   while (e[a] < 0.1 * top) a++;
   while (e[b] < 0.1 * top) b--;

@@ -17,9 +17,13 @@ function biquad(x: Float64Array, sr: number, kind: 'lp' | 'hp', fc: number, q: n
 }
 
 export function butterworth4(x: ArrayLike<number>, sr: number, kind: 'lp' | 'hp', fc: number): Float32Array {
-  let y: Float64Array = Float64Array.from(x as ArrayLike<number>);
+  // Odd-reflect 50 ms before the first sample (as filtfilt pads) so a signal that starts mid-cycle does not ring as a step.
+  const pad = Math.min(x.length - 1, Math.round(0.05 * sr));
+  let y: Float64Array = new Float64Array(x.length + pad);
+  for (let i = 0; i < pad; i++) y[i] = 2 * x[0] - x[pad - i];
+  for (let i = 0; i < x.length; i++) y[pad + i] = x[i];
   for (const q of Q4) y = biquad(y, sr, kind, fc, q);
-  return Float32Array.from(y);
+  return Float32Array.from(y.subarray(pad));
 }
 
 /** Moving average of |x| over `ms` milliseconds, centred: a cheap amplitude envelope. */

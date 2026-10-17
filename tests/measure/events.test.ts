@@ -19,6 +19,15 @@ describe('butterworth4', () => {
   });
 });
 
+describe('butterworth4 start-up', () => {
+  it('does not ring at the start of a signal that begins mid-cycle', () => {
+    const x = sine(100, 0.5, 0.5, Math.PI / 2);               // starts at full amplitude: a step for the filter
+    const y = butterworth4(x, SR, 'hp', 800);
+    const head = Math.max(...Array.from(y.subarray(0, 480), Math.abs));
+    expect(head).toBeLessThan(0.01);                           // the steady residual is about 0.0005
+  });
+});
+
 describe('findEvents', () => {
   it('finds the rate of a steady 700 rpm burst and calls it regular', () => {
     const interval = 60 / 700;
