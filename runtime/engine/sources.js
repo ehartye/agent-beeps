@@ -1,6 +1,7 @@
 // Sound sources: each patch source type becomes a small group of Web Audio nodes.
 import { mulberry32, noiseSamples } from './rng.js';
 import { sumInto, sumNodes } from './sum.js';
+import { scheduleEnvelope, validateEnvelope, validateEnvelopeSchedule } from './envelope.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Source} Source */
 /**
@@ -8,6 +9,7 @@ import { sumInto, sumNodes } from './sum.js';
  * @property {AudioNode} output
  * @property {{ param: AudioParam, ratio: number }[]} pitch   frequency params that follow the pitch envelope
  * @property {AudioParam[]} detune                            cent-valued params for pitch LFOs
+ * @property {AudioParam[]} expressionDetune                  note gestures, including modal resonators
  * @property {(t: number) => void} start
  * @property {(t: number) => void} stop
  */
@@ -171,12 +173,46 @@ export function grainBuffer(ctx, src, seed, length) {
 }
 
 /**
+ * Preflight authored source envelopes with the actual played pitch and onset, before any source starts.
+ * @param {Source} src
+ * @param {{ pitchHz: number, when: number }} options
+ */
+export function validateSourceEnvelopes(src, { pitchHz, when }) {
+  if (src.type !== 'fm') return;
+  for (const op of src.operators) if (op.indexEnv !== undefined) validateEnvelope(op.indexEnv);
+  for (const [from, to] of src.algorithm) {
+    if (from >= src.operators.length || to >= src.operators.length || from === to) continue;
+    const env = src.operators[from].indexEnv;
+    if (env !== undefined) validateEnvelopeSchedule(env, { when, scale: src.operators[from].index * pitchHz * src.operators[to].ratio });
+  }
+}
+
+/** Prepared buffers are immutable and content-verified by the caller (normally loadCueAssets).
+ * Validate dimensions before any graph allocation, without copying or rehashing PCM per voice.
+ * @param {Source} src
+ * @param {Readonly<Record<string, AudioBuffer>>} [samples]
+ * @returns {AudioBuffer | undefined}
+ */
+export function sampleBuffer(src, samples) {
+  if (src.type !== 'sample') return undefined;
+  const buffer = samples && Object.hasOwn(samples, src.asset) ? samples[src.asset] : undefined;
+  if (!buffer) throw new Error(`missing prepared sample buffer: ${src.asset}`);
+  if (buffer.sampleRate !== 48000) throw new RangeError(`sample ${src.asset} must be 48 kHz`);
+  if (buffer.numberOfChannels !== 1 && buffer.numberOfChannels !== 2) throw new RangeError(`sample ${src.asset} must have 1 or 2 channels`);
+  if (!Number.isSafeInteger(buffer.length) || buffer.length < 1 || buffer.length > 480000) throw new RangeError(`sample ${src.asset} frames must be in 1..480000`);
+  return buffer;
+}
+
+/**
  * @param {BaseAudioContext} ctx
  * @param {Source} src
- * @param {{ pitchHz: number, seed: number, length: number }} opts  length = seconds the source may sound
+ * @param {{ pitchHz: number, seed: number, length: number, samples?: Readonly<Record<string, AudioBuffer>> }} opts  length = seconds the source may sound
  * @returns {BuiltSource}
  */
-export function buildSource(ctx, src, { pitchHz, seed, length }) {
+export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
+  // Runtime mappings can combine independently; reject every actual FM curve before creating source nodes.
+  if (src.type === 'fm') validateSourceEnvelopes(src, { pitchHz, when: 0 });
+  const prepared = sampleBuffer(src, samples);
   const mix = ctx.createGain();
   /** @type {AudioScheduledSourceNode[]} */
   const nodes = [];
@@ -184,13 +220,21 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
   const pitch = [];
   /** @type {AudioParam[]} */
   const detune = [];
+  /** Modal pitch LFO behavior stays unchanged; note gestures can move the resonators' detune. @type {AudioParam[]} */
+  const modalDetune = [];
   /** @type {((t: number) => void)[]} */
   const onStart = [];
   /** Signals summed into `mix` in this order (never connected to it directly: see sum.js). */
   /** @type {AudioNode[]} */
   const parts = [];
 
-  if (src.type === 'osc') {
+  if (src.type === 'sample') {
+    const s = ctx.createBufferSource();
+    s.buffer = /** @type {AudioBuffer} */ (prepared);
+    // Native defaults: finite one-shot, playbackRate 1, detune 0. Never expose pitch automation.
+    parts.push(s);
+    nodes.push(s);
+  } else if (src.type === 'osc') {
     const voices = src.unison?.voices ?? 1;
     const spread = src.unison?.detuneCents ?? 0;
     for (let i = 0; i < voices; i++) {
@@ -223,7 +267,10 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     for (const [from, to] of src.algorithm) {
       if (from >= ops.length || to >= ops.length || from === to) continue;
       const depth = ctx.createGain();
-      depth.gain.value = src.operators[from].index * pitchHz * src.operators[to].ratio;
+      const peak = src.operators[from].index * pitchHz * src.operators[to].ratio;
+      depth.gain.value = peak;
+      const env = src.operators[from].indexEnv;
+      if (env) onStart.push(t => scheduleEnvelope(depth.gain, env, { when: t, scale: peak }));
       mods[to].push(ops[from].connect(depth));
     }
     mods.forEach((m, i) => sumInto(ctx, m, ops[i].frequency));
@@ -259,6 +306,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       g.gain.value = db(gainDb) * q * 4;
       parts.push(exciter.connect(bp).connect(g));
       pitch.push({ param: bp.frequency, ratio });
+      modalDetune.push(bp.detune);
     }
   } else if (src.type === 'grains') {
     const s = ctx.createBufferSource();
@@ -377,6 +425,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     output: mix,
     pitch,
     detune,
+    expressionDetune: src.type === 'modal' ? modalDetune : detune,
     start: t => { for (const f of onStart) f(t); for (const n of nodes) n.start(t); },
     stop: t => { for (const n of nodes) n.stop(t); },
   };

@@ -28,7 +28,18 @@ export interface Cue {
   /** The project scale the trim and the baked asset were made with; the voice's default. */
   scale?: Scale;
   patch: Patch;
+  assets?: SampleAssetManifest;
 }
+
+/** Canonical immutable 48 kHz float32 WAV dependency, relative to the cue's explicit base URL. */
+export interface SampleAsset { file: string; bytes: number; sampleRate: 48000; channels: 1 | 2; frames: number }
+export type SampleAssetManifest = Record<string, SampleAsset>;
+export interface SampleAssetSource { patch: Patch; assets?: SampleAssetManifest }
+/** Callers promise these verified buffers are shared immutably. */
+export type SampleBuffers = Readonly<Record<string, AudioBuffer>>;
+export interface LoadCueAssetsOptions { baseURL: string | URL; fetcher?: typeof fetch; signal?: AbortSignal }
+/** Explicit asynchronous preload. Validates the exact dependency closure, bytes, SHA256 and canonical WAV metadata. */
+export function loadCueAssets(ctx: BaseAudioContext, source: SampleAssetSource, options: LoadCueAssetsOptions): Promise<Record<string, AudioBuffer>>;
 
 /** Validate a parsed cue file. Throws for another schema, a malformed cue, or (unless allowed) another engine version. */
 export function parseCue(value: unknown, opts?: { allowEngineMismatch?: boolean }): Cue;
@@ -50,6 +61,8 @@ export type ReverbBuses = ReverbBus | Partial<Record<ReverbPreset, ReverbBus>>;
 export function createReverbBus(ctx: BaseAudioContext, out: AudioNode, opts?: { preset?: ReverbPreset; returnDb?: number }): ReverbBus;
 
 export interface BuildOptions {
+  /** Immutable buffers from loadCueAssets (or an equivalent verified caller). No I/O occurs during build/start. */
+  samples?: SampleBuffers;
   /** Selects the noise and grain content and the variant's draw. Default: the cue's seed, else 1. */
   seed?: number;
   /** Starting input values by name. Absent inputs sit at their declared defaults; unknown names throw. */
@@ -62,7 +75,7 @@ export interface BuildOptions {
   scale?: Scale | null;
   /** The transparent safety clipper on the voice's output (default true; a game with its own master limiter may drop it). */
   limiter?: boolean;
-  /** Sound until stopped instead of ending at the patch's duration. Default: the patch's `xRuntime.hold`. */
+  /** Hold amp envelopes until stopped instead of ending at the patch's duration. A finite sample automatically starts its authored release at source exhaustion. Default: the patch's `xRuntime.hold`. */
   hold?: boolean;
   /** Also receive the signal before the trim and limiter. */
   tap?: AudioNode;
@@ -75,7 +88,7 @@ export interface BuildOptions {
 export interface Voice {
   /** True once `start` has created the graph. */
   readonly started: boolean;
-  /** Context time the voice is silent, effect tails included (a shared reverb bus's tail is not the voice's). Infinity while a held voice is held; undefined before `start`. */
+  /** The engine's amp/fx lifetime, including effect tails (a shared reverb bus's tail is not the voice's). Infinity for held procedural sources; held samples include their authored release after source exhaustion. Uses the engine's existing processing-tail convention, not an estimate of arbitrary filter decay. Undefined before `start`. */
   readonly end: number | undefined;
   /** Create the graph and begin at `at` (default: now). A voice plays once. */
   start(at?: number): Voice;
@@ -86,7 +99,8 @@ export interface Voice {
    */
   set(input: string, value: number, at?: number, tau?: number): void;
   /**
-   * End the voice. A held voice releases at `at` with the patch's own release; any other fades out over `fade` seconds
+   * End the voice. Held layers release at `at` with the patch's own release; a sample's automatic release is preserved
+   * if it has already started. Any other voice fades out over `fade` seconds
    * (default 0.02). Returns the context time it is silent. Nothing happens to a voice that already ended.
    */
   stop(at?: number, fade?: number): number;
