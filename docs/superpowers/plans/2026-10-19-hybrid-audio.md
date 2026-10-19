@@ -21,7 +21,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   parity (including a changed-source negative control).
 - [x] Task3A: CLI import/prepare/bundle/sync, explicit preparation-history portability and
   replay after relocation (project render context is established in Task2B).
-- [ ] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
+- [x] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
   actual sample-only/hybrid set playback in the current UI.
 - [ ] Task4A: cue-owned sample delivery in standalone export/build/lock, shared delivered
   dependency validation, delivered-byte parity, ownership cleanup and fixed-byte budgets.
@@ -119,6 +119,16 @@ plays both and Stop/selection change cancels pending loads. Use actual HTTP/auth
 the existing UI. Prepared fades must not trigger a declarative amp attack warning, while a
 measured abrupt sample onset still receives the applicable craft warning. No fabricated owner
 judgement or duplicate listening application.
+
+Task3B verification: coordinator101tests/13files pass with no skips, typecheck and whitespace
+checks pass. Independent spec approved with64tests/5files after sanitizing sample-store HTTP
+errors; independent quality approved with60tests/4files, both no skips. Actual CLI sets feed
+the existing authenticated page. Native48k PCM matches production renders for sample-only,
+hybrid, repeat/kit and phone filtering; actual delayed HTTP and pending-resume tests prove
+Stop/new selection cannot start obsolete audio or record its play. Genuine errors retry,
+warm corrupt/missing/oversized objects fail without local path disclosure, and actual measured
+onset lint distinguishes prepared fades from abrupt PCM. SERVER_API6 replaces older listeners;
+package/engine identity and complete shipping/public release remain later tasks.
 
 Task4A tests first: runtime-only/both outputs contain cue-owned samples; verify detects deleted,
 tampered, mismatched and escaping dependencies; warm build cannot hide bad source; store/fetch

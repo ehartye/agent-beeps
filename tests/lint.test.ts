@@ -47,6 +47,16 @@ describe('lintPatch', () => {
     expect(rulesOf(r.errors)).toContain('attack-floor');
   });
 
+  it('leaves sample onset to measurement while checking procedural layers in hybrids', () => {
+    const p = coin();
+    p.layers[0].source = { type: 'sample', asset: `sha256:${'a'.repeat(64)}` };
+    p.layers[0].amp.attack = 0;
+    expect(lintPatch(p, features(p), project).errors.filter(f => f.rule === 'attack-floor')).toEqual([]);
+    expect(lintPatch(p, features(p, { attackSec: .001 }), project).errors).toContainEqual(expect.objectContaining({ rule: 'attack-floor', message: expect.stringContaining('measured attack') }));
+    p.layers.push({ ...coin().layers[0], amp: { ...coin().layers[0].amp, attack: 0 } });
+    expect(lintPatch(p, features(p), project).errors.filter(f => f.rule === 'attack-floor')).toEqual([expect.objectContaining({ pointer: '/layers/1/amp/attack' })]);
+  });
+
   it('lets click intent through the attack floor', () => {
     const p = coin();
     p.layers[0].amp.attack = 0.001;
