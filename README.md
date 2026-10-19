@@ -14,6 +14,8 @@ through the same engine, with seeded variations so repeated sounds do not fatigu
 reel in the existing listening booth, with nine scenes and eight effects synthesized live in your
 browser. [Score, patches, measurements and build instructions](showcase/README.md).
 
+[Install for Codex or Claude Code](#install) · [Workflow](#workflow) · [Commands](#commands)
+
 Agents also compose **music**: a `beeps/song@1` document plays those same patches as instruments
 through chord progressions (voice-led from chord symbols), arps, bass lines, step drums (including
 Euclidean rhythms such as `x(3,8)`), melodies, sections and mix moves, from loops to one-shot jingles.
@@ -293,18 +295,101 @@ locks stay valid.
   (cuts a near-silent end); both off by default.
 - Docs: calling beeps from a script on Windows, lint exit codes, the export seed rule.
 
-## Install / Claude Code plugin
+## Install
+
+Install **Git** and **Node.js 24 or newer with npm** first. Use a Codex CLI with
+`codex plugin add` support, or a Claude Code version with plugin support. Choose one source per
+client to avoid duplicate skill listings. Both sources install the same agent-beeps plugin.
+
+### With hartye-plugins
+
+The [Hartye marketplace](https://github.com/ehartye/hartye-claude-plugins) includes agent-beeps
+alongside the other Hartye tools. Adding the catalog does not install all its plugins.
+
+**Codex** — run in your terminal:
+
+```sh
+codex plugin marketplace add ehartye/hartye-claude-plugins
+codex plugin add agent-beeps@hartye-plugins
+```
+
+Start a new Codex session in your game or app project, then ask:
 
 ```text
+$agent-beeps:beeps-setup
+```
+
+**Claude Code** — run inside a Claude Code session:
+
+```text
+/plugin marketplace add ehartye/hartye-claude-plugins
 /plugin install agent-beeps@hartye-plugins
+/reload-plugins
 /agent-beeps:beeps-setup
 ```
 
+- **Time** — First setup takes a few minutes to install dependencies and Chromium.
+- **Risk** — A stale marketplace catalog can delay access to a new release.
+- **Complexity** — One shared catalog manages your Hartye plugins.
+- **Best practice** — Install and update through the client's plugin manager.
+- **Maintainability** — Refresh the shared catalog, update agent-beeps, then rerun setup.
+
+### Without hartye-plugins
+
+This repository contains its own single-plugin marketplace, named `agent-beeps`.
+Register it directly to install agent-beeps independently of the Hartye collection.
+
+**Codex** — run in your terminal:
+
+```sh
+codex plugin marketplace add ehartye/agent-beeps
+codex plugin add agent-beeps@agent-beeps
+```
+
+Start a new Codex session in your game or app project, then ask:
+
+```text
+$agent-beeps:beeps-setup
+```
+
+**Claude Code** — run inside a Claude Code session:
+
+```text
+/plugin marketplace add ehartye/agent-beeps
+/plugin install agent-beeps@agent-beeps
+/reload-plugins
+/agent-beeps:beeps-setup
+```
+
+- **Time** — First setup takes the same few minutes; it installs the same runtime.
+- **Risk** — Installs and catalog refreshes depend on this repository being reachable.
+- **Complexity** — A dedicated catalog contains just agent-beeps.
+- **Best practice** — Use the client's plugin manager with the repository's bundled catalog.
+- **Maintainability** — Refresh the `agent-beeps` catalog, update the plugin, then rerun setup.
+
+### Setup and first use
+
 Setup installs the runtime and Chromium into `~/.agent-beeps/releases/<version-hash-platform>`
 (`AGENT_BEEPS_HOME` moves it) and every skill runs that release through
-`scripts/run-managed.js`. Rerun setup after each plugin update.
+`scripts/run-managed.js`. Rerun `beeps-setup` after each plugin update. No separate `npm install`
+inside the plugin cache is needed.
 
-Skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`, `beeps-music`, `beeps-ship`.
+In your game or app project, ask the agent to compose a sound or a piece of music. For example:
+
+> Use beeps-compose to make a small set of soft UI clicks and open an audition so I can choose.
+
+The agent creates the project's `.agent-beeps/` directory with `beeps init` and runs the managed
+CLI. Available skills: `beeps-setup`, `beeps-compose`, `beeps-craft`, `beeps-audition`, `beeps-taste`,
+`beeps-music`, `beeps-ship`.
+
+For local Claude Code development, load a checkout for one session with
+`claude --plugin-dir /absolute/path/to/agent-beeps`, then run `/agent-beeps:beeps-setup`.
+Keep the whole checkout together: the skills resolve scripts and references relative to its root.
+
+Installation syntax was checked with Codex CLI 0.163.0 and Claude Code 2.1.303. Host references:
+[OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins),
+[Claude Code plugin installation](https://code.claude.com/docs/en/discover-plugins), and
+[Claude Code local plugin development](https://code.claude.com/docs/en/plugins).
 
 ## Requirements
 
