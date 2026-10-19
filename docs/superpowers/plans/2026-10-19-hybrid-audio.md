@@ -14,7 +14,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
 
 - [x] Isolate feat/hybrid-audio from1accc6a; npm ci;33 focused baseline tests pass.
 - [x] Inspect current decoder, graph, pipeline, cue and build boundaries; write the design.
-- [ ] Task1: canonical codec, bounded decode, immutable import/preparation and resolver.
+- [x] Task1: canonical codec, bounded decode, immutable import/preparation and resolver.
 - [ ] Task2: strict sample source, synchronous graph preflight/buffers, async cue preparation,
   offline host transport and real runtime parity (including changed-source negative control).
 - [ ] Task3: CLI import/prepare/bundle/sync, actual project sample context at all render entry
@@ -53,6 +53,12 @@ relocation/original removal and provenance coexistence. Verify red for the inten
 then implement and run those tests plus existing WAV/decode tests and typecheck. Do not create
 schema/CLI/graph integration in Task1. Coordinator handles integration after reviewed contract.
 
+Task1 verification: coordinator63tests/5files pass with ffmpeg enabled and no skips; typecheck
+and whitespace checks pass. Independent spec review approved after ADPCM fallback, automatic
+stream selection and returned receipt corrections. Quality review approved after four
+interrupted/concurrent-write publication regressions; its broader69tests/6files pass. No new
+CLI or graph integration is claimed by this checkpoint.
+
 ## Subsequent task checks
 
 Task2 tests first: sample schema rejects pitch semantics; graph fake/native checks actual
@@ -67,7 +73,8 @@ Stop/selection change cancels pending loads. Use actual HTTP/auth routes and exi
 Task4 tests first: runtime-only/both outputs contain cue-owned samples; verify detects deleted,
 tampered, mismatched and escaping dependencies; warm build cannot hide bad source; store/fetch
 roundtrip; rebuilding one cue leaves another intact; actual static runtime consumes fetched
-outputs. Baked game player consumes normal hybrid export.
+outputs. Include a 60-character valid cue ID: hashed owner/content filenames must still fit
+the existing store's 100-byte ustar limit. Baked game player consumes normal hybrid export.
 
 Task5/6: use existing renderer/measurement/looks and current booth styles. Inspect licensed
 source artifacts and rendered PNGs. Match comparisons by actual delivered max momentary and

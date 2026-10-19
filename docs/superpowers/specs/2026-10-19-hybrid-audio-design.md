@@ -33,6 +33,10 @@ Bound decoded duration and reject excess channels/frames before allocating PCM f
 Store under `.agent-beeps/samples/`: `objects/<hex>.wav`, `originals/<hex>.bin`,
 `imports/<receipt-id>.json`, and `recipes/<recipe-id>.json`. Object writes are immutable: an
 existing object must match its ID, never silently overwrite corrupt content. Import receipts
+are published only after complete staged writes. Exclusive atomic publication prevents
+interrupted writes from poisoning a final name and verifies any competing writer's bytes.
+Filesystems without the required hard-link publication support fail clearly with `E_STORE`;
+there is no partial-copy fallback. Import receipts
 retain original hash/name, normalized ID and exact decoder identity plus optional declared
 origin/license. Absolute paths and timestamps are informational, excluded from audio identity.
 Receipts remain separate so identical audio from multiple origins does not overwrite provenance.
@@ -73,6 +77,15 @@ The runtime voice, live audition and offline renderer use the same source graph 
 Playback at context rates other than 48 kHz resamples normally; exact PCM parity is claimed
 only at the same tested engine/context rate.
 
+The existing LAN audition uses HTTP. WebCrypto's `subtle` interface requires a secure
+context, so asset verification cannot depend on it alone ([W3C WebCrypto](https://www.w3.org/TR/webcrypto/)).
+Bundle the SHA256 implementation from pinned `@noble/hashes` 2.4.0 into a local browser
+module, with its MIT notice and a reproducible generator; no CDN or runtime bare imports.
+Use it in both LAN and HTTPS paths and test against Node crypto plus real fetched bytes.
+The [maintainer package](https://github.com/paulmillr/noble-hashes/blob/main/package.json)
+and npm integrity pin identify the version; do not imply a current-version independent audit.
+Checks establish identity against the supplied manifest, not authentication of an HTTP site.
+
 ## Authoring and portable source exchange
 
 Expose `beeps sample import`, `prepare`, `bundle`, and `sync` through the normal JSON CLI.
@@ -92,7 +105,10 @@ ordinary sets and the current listening UI, including procedural layer edits.
 
 Runtime cues gain an optional asset manifest keyed by content ID, carrying relative file,
 sample rate, channels, frames and bytes. Use flat cue-owned filenames
-`<cue-id>.sample-<hex>.wav` so rebuilding one cue cannot remove another cue's dependency.
+`sample-<sha256(canonicalJson({cue: cueId, asset: sampleId}))>.wav`. Hashing the owner/content
+pair keeps names at 75 bytes within the current store's 100-byte ustar limit, even for longer
+valid cue IDs. Changing content changes the filename; different cues own separate copies.
+Rebuilding one cue cannot remove another cue's dependency.
 Standalone runtime export and runtime/both build delivery copy every declared dependency.
 Baked-only game delivery needs only its rendered files. Lock/store/tar output lists and
 budget estimates include runtime source files. Verify and fetch check dependency closure,
