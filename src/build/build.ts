@@ -4,6 +4,7 @@ import { samplePaths } from '../samples/store.ts';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
+import { canonicalJson } from '../hash.ts';
 import { bundleDir, catalogText } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { exportPatchVariants, exportSongAssets } from '../export-assets.ts';
@@ -13,7 +14,8 @@ import { loadSong } from '../music.ts';
 import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import { parseProject } from '../schema/project.ts';
 import { renderAndMeasure } from '../render/pipeline.ts';
-import { cueFile, cueText, makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
+import { makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
+import { cueSources, writeCueDelivery } from '../runtime/delivery.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
 import { planAsset, type Encoder, type Planned } from './plan.ts';
@@ -197,7 +199,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   const removed = !o.only && lock ? Object.keys(lock.assets).filter(id => !recipes.some(r => r.id === id)) : [];
   for (const id of removed) stale.push({ id, reasons: ['removed from the recipes: its outputs and lock entry will be deleted'] });
 
-  const estimate = estimateBytes(plans, lock, delivery);
+  const estimate = estimateBytes(plans, lock, delivery, deliveryRec);
   const catalogDrift = catalogDriftOf(cfg.out, unchanged.length === plans.length);
   const driftLines = [...(stale.length ? [] : drift), ...catalogDrift];
   const report = (over: Partial<BuildReport>): BuildReport => ({
@@ -301,20 +303,27 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   return report({ built, pulled, removed, pushed, catalogWritten, unchanged, stale: [], drift: [], ok: true });
 }
 
-function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Delivery): BuildReport['estimate'] {
+function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Delivery, deliveryRec: Record<string, unknown>): BuildReport['estimate'] {
   let total = 0, fresh = 0;
   const oldKbps = (lock?.delivery.kbps ?? {}) as Record<string, number>;
+  const encodingIdentity = ({ kbps: _rates, preset: _preset, ...encoding }: Record<string, unknown>) => canonicalJson(encoding);
+  const sameEncoding = !!lock && encodingIdentity(lock.delivery) === encodingIdentity(deliveryRec);
   for (const pl of plans) {
     const prior = lockedAsset(lock, pl.recipe.id);
     if (!prior) { total += pl.estimateBytes; fresh++; continue; }
-    const bytes = prior.outputs.reduce((s, f) => s + f.bytes, 0);
-    // A bitrate change scales the locked size by the ratio: arithmetic, no rendering.
+    // Locked bytes describe the old content and delivery mode. Source, duration,
+    // export or mode changes must budget the current plan before replacing anything.
+    const sameContent = prior.parts && (['renders', 'export', 'runtime', 'toolchain'] as const).every(k => prior.parts![k] === pl.parts[k]);
+    if (prior.inputHash !== pl.inputHash && !(sameContent && sameEncoding)) { total += pl.estimateBytes; continue; }
+    const fixed = prior.outputs.filter(f => !/\.(ogg|mp3)$/.test(f.file)).reduce((s, f) => s + f.bytes, 0);
+    const encoded = prior.outputs.filter(f => /\.(ogg|mp3)$/.test(f.file)).reduce((s, f) => s + f.bytes, 0);
+    // Only encoded baked audio scales: canonical sources, cues and sidecars stay fixed.
     const was = oldKbps[pl.recipe.role], now = delivery.kbps?.[pl.recipe.role];
-    total += was && now && was !== now ? Math.ceil(bytes * now / was) : bytes;
+    total += fixed + (was && now && was !== now ? Math.ceil(encoded * now / was) : encoded);
   }
   // Assets outside --only still count against the budget at their locked size.
   if (lock) for (const [id, a] of Object.entries(lock.assets)) if (!plans.some(pl => pl.recipe.id === id)) total += a.outputs.reduce((s, f) => s + f.bytes, 0);
-  return { totalBytes: total, newAssets: fresh, basis: 'locked sizes of existing assets, scaled by any bitrate change; duration x bitrate x 1.1 for new ones' };
+  return { totalBytes: total, newAssets: fresh, basis: 'locked bytes for unchanged assets, scaling only encoded audio for bitrate-only changes; current duration x bitrate x 1.1 plus runtime sources and cue bytes for new or changed assets' };
 }
 
 function catalogDriftOf(out: string, allUnchanged: boolean): string[] {
@@ -366,7 +375,8 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     const patch = loadPatch(p, r.source);
     if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
     mkdirSync(from, { recursive: true });
-    atomicWrite(join(from, cueFile(r.id)), cueText(makeCue(patch, p.project, r.seed, trimDb!)));
+    const sources = cueSources(patch, r.id, samplePaths(p).objects);
+    writeCueDelivery(from, makeCue(patch, p.project, r.seed, trimDb!, sources.assets), sources);
   }
   const outputs = listOutputs(from);
   if (baked) {

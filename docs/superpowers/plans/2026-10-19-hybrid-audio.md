@@ -23,7 +23,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   replay after relocation (project render context is established in Task2B).
 - [x] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
   actual sample-only/hybrid set playback in the current UI.
-- [ ] Task4A: cue-owned sample delivery in standalone export/build/lock, shared delivered
+- [x] Task4A: cue-owned sample delivery in standalone export/build/lock, shared delivered
   dependency validation, delivered-byte parity, ownership cleanup and fixed-byte budgets.
 - [ ] Task4B: use that validation in store push/pull/status, build --pull and standalone
   zero-dependency CI fetch; prove fetched static runtime and baked-player playback.
@@ -137,6 +137,17 @@ valid cue ID: hashed owner/content filenames must still fit the existing store's
 ustar limit. Verify parity from delivered bytes with the authoring store removed. Share a
 small dependency validator rather than repeating closure/hash/canonical/metadata checks in
 each Node path. Runtime source WAV and cue bytes remain fixed when baked bitrate changes.
+
+Task4A verification: coordinator65tests/4files pass with no skips after all fixes; typecheck
+and whitespace checks pass. Spec and quality approved, including the shared required-cue
+inventory guard and warm-budget corrections. Independent checks confirm unchanged546graph
+goldens. Standalone runtime export/verify, baked/runtime/both builds, exact75-byte owned names,
+60-character cue tar roundtrip, owner cleanup and native delivered-byte parity work. Warm
+sample growth, procedural-to-sample and baked-to-both changes respect the current budget
+before output/lock mutation; bitrate-only changes preserve fixed source/cue/sidecar bytes.
+Actual missing-source/missing-cue/wrong-filename probes now reject. Compatibility checks have
+one existing optional Firefox skip; actual Windows junction/nonregular checks ran, while file
+symlink creation was unavailable. Store/fetch/static playback remain Task4B, not this checkpoint.
 
 Task4B tests first: store and CI fetch reject hash-consistent but dangling/malformed cue
 dependencies before installation, including already-present/--check paths and build --pull.

@@ -15,12 +15,15 @@ import { defaultProject, parseProject, type Project } from '../schema/project.ts
 import type { Patch } from '../schema/patch.ts';
 import { applyParams } from '../../runtime/engine/params.js';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
+import { parseCue } from '../../runtime/engine/index.js';
 import { canonicalJson } from '../hash.ts';
 import { cueFile, cuesFor, cueText, makeCue, type Cue } from '../runtime/cue.ts';
 import { diffTap, featuresOf } from '../runtime/compare.ts';
 import { renderKinds, runLive, runParity, runPerf, type EngineName } from '../runtime/harness.ts';
 import { withHost, int } from './shared.ts';
 import { samplePaths } from '../samples/store.ts';
+import { cueSources, readDeliveredFile, writeCueDelivery } from '../runtime/delivery.ts';
+import { validateDeliveredDependencies } from '../runtime/dependencies.ts';
 import { createSampleWavSnapshot, resolveSampleWavs, resolveSamplesForPatches } from '../samples/transport.ts';
 
 const list = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean);
@@ -61,7 +64,10 @@ export function registerRuntimeCommands(program: Command, io: Io) {
       const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
       const cues = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
       mkdirSync(resolve(o.out), { recursive: true });
-      for (const cue of cues) writeFileSync(join(resolve(o.out), cueFile(cue.id)), cueText(cue));
+      for (const cue of cues) {
+        const sources = cueSources(cue.patch, cue.id, sampleObjectsDir);
+        writeCueDelivery(resolve(o.out), { ...cue, ...(sources.assets ? { assets: sources.assets } : {}) }, sources, { cleanPrevious: true });
+      }
       io.emit({ out: resolve(o.out), engine: ENGINE_VERSION, cues: cues.map(c => ({ id: c.id, file: cueFile(c.id), seed: c.seed, trimDb: c.trimDb, inputs: Object.keys(c.patch.xRuntime?.inputs ?? {}) })) });
     });
 
@@ -145,15 +151,25 @@ export function registerRuntimeCommands(program: Command, io: Io) {
       const problems: string[] = [];
       const fresh = o.trim ? await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir })) : undefined;
       for (const [i, patch] of patches.entries()) {
-        const file = join(resolve(dir), cueFile(patch.name));
-        if (!existsSync(file)) { problems.push(`${patch.name}: ${cueFile(patch.name)} is not in the folder`); continue; }
-        const cue = readJsonFile(file) as Cue;
+        let bytes: Buffer | undefined;
+        try { bytes = readDeliveredFile(resolve(dir), cueFile(patch.name)); }
+        catch (e) { problems.push(`${patch.name}: ${(e as Error).message}`); continue; }
+        if (!bytes) { problems.push(`${patch.name}: ${cueFile(patch.name)} is not in the folder`); continue; }
+        let value: unknown;
+        try { value = JSON.parse(bytes.toString('utf8')); }
+        catch (e) { problems.push(`${patch.name}: invalid cue JSON: ${(e as Error).message}`); continue; }
+        let cue: Cue;
+        try { cue = parseCue(value, { allowEngineMismatch: true }); }
+        catch (e) { problems.push(`${patch.name}: ${(e as Error).message}`); continue; }
         if (cue.engine !== ENGINE_VERSION) problems.push(`${patch.name}: engine ${cue.engine} in the cue, ${ENGINE_VERSION} now`);
         if (canonicalJson(cue.patch) !== canonicalJson(patch)) problems.push(`${patch.name}: the patch changed since the cue was written`);
         if (cue.seed !== seeds[patch.name]) problems.push(`${patch.name}: seed ${cue.seed} in the cue, ${seeds[patch.name]} now`);
         if (canonicalJson(cue.scale) !== canonicalJson(project.scale)) problems.push(`${patch.name}: the project scale changed`);
         if (fresh && Math.abs(cue.trimDb - fresh[i].trimDb) > 0.005) problems.push(`${patch.name}: trim ${cue.trimDb} dB in the cue, ${fresh[i].trimDb} dB measured now`);
-        if (readFileSync(file, 'utf8') !== cueText(makeCue(patch, project, cue.seed, cue.trimDb))) problems.push(`${patch.name}: the file is not what beeps writes for this cue (edited by hand?)`);
+        const sources = cueSources(patch, patch.name, sampleObjectsDir);
+        try { validateDeliveredDependencies(patch.name, cue, [{ file: cueFile(patch.name) }, ...[...sources.files.keys()].map(file => ({ file }))], name => readDeliveredFile(resolve(dir), name)); }
+        catch (e) { problems.push(`${patch.name}: ${(e as Error).message}`); }
+        if (bytes.toString('utf8') !== cueText(makeCue(patch, project, cue.seed, cue.trimDb, sources.assets))) problems.push(`${patch.name}: the file is not what beeps writes for this cue (edited by hand?)`);
       }
       io.emit({ ok: problems.length === 0, checked: patches.length, problems });
       if (problems.length) process.exitCode = 1;
