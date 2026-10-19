@@ -119,6 +119,13 @@ const sampleFile = (cue, asset) => `sample-${sha256$1(canonicalJson({
 	cue,
 	asset
 }))}.wav`;
+/** The exact namespace reserved for delivered runtime sources; ordinary baked names
+* such as sample-hit.wav are not reserved. Recognize case aliases too, since they
+* can name the same physical output on a case-insensitive filesystem. */
+const isDeliveredSampleFile = (file) => /^sample-[0-9a-f]{64}\.wav$/i.test(file);
+/** Cue namespace recognition includes filesystem case aliases; owners still use
+* the exact canonical filename checked by assertCueInventory. */
+const isDeliveredCueFile = (file) => /\.runtime\.json$/i.test(file);
 /** Build outputs are flat portable files. The tar layer enforces its own name length. */
 function assertOutputNames(outputs) {
 	const seen = /* @__PURE__ */ new Set();
@@ -134,8 +141,12 @@ function assertOutputNames(outputs) {
 function assertCueInventory(owner, outputs, { requiresCue = false } = {}) {
 	assertOutputNames(outputs);
 	const expected = `${owner}.runtime.json`;
-	for (const { file } of outputs) if (/\.runtime\.json$/.test(file) && file !== expected) throw new Error(`runtime cue filename ${file} does not match owner ${owner}: expected ${expected}`);
+	for (const { file } of outputs) if (isDeliveredCueFile(file) && file !== expected) throw new Error(`runtime cue filename ${file} does not match owner ${owner}: expected ${expected}`);
 	if (requiresCue && !outputs.some((o) => o.file === expected)) throw new Error(`required runtime cue ${expected} is missing from this asset's output inventory`);
+	if (!outputs.some((o) => o.file === expected)) {
+		const orphan = outputs.find((o) => isDeliveredSampleFile(o.file));
+		if (orphan) throw new Error(`orphan runtime sample output ${orphan.file} has no runtime cue`);
+	}
 }
 /** Verify a cue's exact closure against this asset's inventory and already supplied bytes.
 * The callback is called only with validated owned names from that inventory. It must
@@ -157,6 +168,8 @@ function validateDeliveredDependencies(owner, cue, outputs, read) {
 		if (wav.sampleRate !== a.sampleRate || wav.channels.length !== a.channels || wav.frames !== a.frames) throw new Error(`sample ${id} metadata disagrees with canonical WAV`);
 		wavs[id] = bytes;
 	}
+	const requiredFiles = new Set(Object.values(assets).map((a) => a.file));
+	for (const { file } of outputs) if (isDeliveredSampleFile(file) && !requiredFiles.has(file)) throw new Error(`orphan runtime sample output ${file} is not a cue dependency`);
 	return wavs;
 }
 //#endregion

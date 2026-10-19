@@ -17,7 +17,7 @@ import { renderAndMeasure } from '../render/pipeline.ts';
 import { makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
 import { cueSources, writeCueDelivery, readDeliveredFile } from '../runtime/delivery.ts';
 import { validateDeliveredAsset } from '../runtime/inventory.ts';
-import { assertOutputNames } from '../runtime/dependencies.ts';
+import { assertOutputNames, isDeliveredSampleFile, isDeliveredCueFile, sampleFile } from '../runtime/dependencies.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
 import { planAsset, type Encoder, type Planned } from './plan.ts';
@@ -136,10 +136,24 @@ function listOutputs(dir: string): OutputRef[] {
     .map(file => ({ file, ...sha256File(join(dir, file)) }));
 }
 
-/** Copies the asset's staged files into the output directory, atomically per file, leaving files whose bytes already match alone. */
-function install(out: string, stage: string, outputs: OutputRef[], previous: OutputRef[] | undefined): void {
+/** Select only owned reserved sources and canonical owner cues for retirement. */
+function retirementFiles(owner: string, previous: readonly OutputRef[], keep: readonly OutputRef[] = []): string[] {
+  assertOutputNames(previous);
+  const kept = new Set(keep.map(o => o.file));
+  // A corrupt/missing old cue cannot authorize deletion. The canonical output byte
+  // hash is its source ID, so re-derive the exact owner/content name from the lock.
+  return previous.filter(o => {
+    if (kept.has(o.file)) return false;
+    if (isDeliveredSampleFile(o.file)) return o.file === sampleFile(owner, `sha256:${o.sha256}`);
+    if (isDeliveredCueFile(o.file)) return o.file === `${owner}.runtime.json`;
+    return true;
+  }).map(o => o.file);
+}
+
+/** Copies staged outputs atomically per file, then retires previously owned outputs. */
+function install(owner: string, out: string, stage: string, outputs: OutputRef[], previous: OutputRef[] | undefined): void {
   assertOutputNames(outputs);
-  assertOutputNames(previous ?? []);
+  const retire = retirementFiles(owner, previous ?? [], outputs);
   mkdirSync(out, { recursive: true });
   for (const o of outputs) {
     const dest = join(out, o.file);
@@ -147,8 +161,7 @@ function install(out: string, stage: string, outputs: OutputRef[], previous: Out
     if (current && current.length === o.bytes && sha256Hex(current) === o.sha256) continue;
     atomicWrite(dest, readFileSync(join(stage, o.file)));
   }
-  const keep = new Set(outputs.map(o => o.file));
-  for (const o of previous ?? []) if (!keep.has(o.file)) rmSync(join(out, o.file), { force: true });
+  for (const file of retire) rmSync(join(out, file), { force: true });
 }
 
 export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<BuildReport> {
@@ -246,7 +259,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       rmSync(sdir, { recursive: true, force: true }); mkdirSync(sdir, { recursive: true });
       for (const [f, data] of files) atomicWrite(join(sdir, f), data);
       o.hooks?.beforeInstall?.(id);
-      install(cfg.out, sdir, manifest.outputs, prior?.outputs);
+      install(id, cfg.out, sdir, manifest.outputs, prior?.outputs);
       rmSync(sdir, { recursive: true, force: true });
       commit(id, { role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) });
       o.hooks?.afterInstall?.(id);
@@ -296,7 +309,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
 
   // 3. Assets removed from the recipes.
   for (const id of removed) {
-    for (const f of lock!.assets[id].outputs) rmSync(join(cfg.out, f.file), { force: true });
+    for (const file of retirementFiles(id, lock!.assets[id].outputs)) rmSync(join(cfg.out, file), { force: true });
     delete next.assets[id];
   }
   const changed = built.length + pulled.length + removed.length > 0;
@@ -400,7 +413,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   }
   o.hooks?.afterBuild?.(r.id);
   o.hooks?.beforeInstall?.(r.id);
-  install(cfg.out, from, outputs, prior?.outputs);
+  install(r.id, cfg.out, from, outputs, prior?.outputs);
   rmSync(sdir, { recursive: true, force: true });
   return { role: r.role, source: r.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
 }

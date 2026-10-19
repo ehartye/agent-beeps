@@ -158,15 +158,18 @@ outputs and engine under a static project subpath, load verified assets and play
 runtime PCM; the baked game player consumes the normal hybrid export. Neither checkpoint
 alone completes the shipping acceptance; Task4A and Task4B both precede the public release.
 
-Task4B verification: spec and quality approved without outstanding findings. Independent spec
-ran104tests/4files without skips; quality ran50tests/2files without skips. Coordinator's final
-new integration33tests pass, along with typecheck, reproducible generator and whitespace checks.
-The implementer's broader163tests/7files pass with one existing optional Firefox skip. Exported
-single-file fetch actually runs on Node20.20.2 with empty PATH and no ffmpeg. Relocated baked,
-runtime and both delivery survives removal of authoring sources and the store; native static
-project-subpath playback exercises public cue loading and the existing baked player. A changed
-source changes PCM. Invalid dependency closures, owner names, nonregular files and locked byte
-counts fail before installation. Task5 public examples and Task6 release remain pending.
+Task4B verification: spec and quality approved after fixing independently reproduced cross-owner
+overwrite and retirement failures. The final13 ownership regressions pass without skips on actual
+Node20, including Windows source/cue case aliases; independent spec reran overwrite, warm-build
+and removed-recipe probes, and independent quality reran all13 tests. Reserved source outputs
+equal the cue dependency set; retirement derives canonical owner/content names before writes.
+Earlier104tests/4files spec,50tests/2files quality and33 new integration tests pass. Broader170
+tests/8files pass with one existing optional Firefox skip. Typecheck, reproducible generator and
+whitespace checks pass. Exported single-file fetch runs on Node20.20.2 with empty PATH and no
+ffmpeg. Relocated baked/runtime/both delivery survives removal of authoring sources and the store;
+native static playback exercises public cue loading and the existing baked player. A changed
+source changes PCM. Invalid closures, names, nonregular files and locked byte counts fail before
+installation. Task5 public examples and Task6 release remain pending.
 
 Task5/6: use existing renderer/measurement/looks and current booth styles. Inspect licensed
 source artifacts and rendered PNGs. Match comparisons by actual delivered max momentary and
