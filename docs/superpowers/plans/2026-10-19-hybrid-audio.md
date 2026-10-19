@@ -23,7 +23,10 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   replay after relocation (project render context is established in Task2B).
 - [ ] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
   actual sample-only/hybrid set playback in the current UI.
-- [ ] Task4: portable cue assets in standalone export/build/lock/verify/store/fetch/budgets.
+- [ ] Task4A: cue-owned sample delivery in standalone export/build/lock, shared delivered
+  dependency validation, delivered-byte parity, ownership cleanup and fixed-byte budgets.
+- [ ] Task4B: use that validation in store push/pull/status, build --pull and standalone
+  zero-dependency CI fetch; prove fetched static runtime and baked-player playback.
 - [ ] Task5: licensed public hybrid study in existing booth, actual measured comparisons,
   portable downloads, provenance and desktop/mobile/subpath browser verification.
 - [ ] Task6: capability/version identity, legacy compatibility, full regression tests,
@@ -117,11 +120,22 @@ the existing UI. Prepared fades must not trigger a declarative amp attack warnin
 measured abrupt sample onset still receives the applicable craft warning. No fabricated owner
 judgement or duplicate listening application.
 
-Task4 tests first: runtime-only/both outputs contain cue-owned samples; verify detects deleted,
+Task4A tests first: runtime-only/both outputs contain cue-owned samples; verify detects deleted,
 tampered, mismatched and escaping dependencies; warm build cannot hide bad source; store/fetch
-roundtrip; rebuilding one cue leaves another intact; actual static runtime consumes fetched
-outputs. Include a 60-character valid cue ID: hashed owner/content filenames must still fit
-the existing store's 100-byte ustar limit. Baked game player consumes normal hybrid export.
+roundtrip follows in Task4B. Rebuilding one cue leaves another intact. Include a 60-character
+valid cue ID: hashed owner/content filenames must still fit the existing store's 100-byte
+ustar limit. Verify parity from delivered bytes with the authoring store removed. Share a
+small dependency validator rather than repeating closure/hash/canonical/metadata checks in
+each Node path. Runtime source WAV and cue bytes remain fixed when baked bitrate changes.
+
+Task4B tests first: store and CI fetch reject hash-consistent but dangling/malformed cue
+dependencies before installation, including already-present/--check paths and build --pull.
+Keep the single exported fetch script portable on Node20 built-ins without the authoring
+checkout, Chromium or ffmpeg. Share or reproducibly generate its dependency checks from the
+same canonical semantics, preserving its project-defaults marker. Actually serve fetched
+outputs and engine under a static project subpath, load verified assets and play native
+runtime PCM; the baked game player consumes the normal hybrid export. Neither checkpoint
+alone completes the shipping acceptance; Task4A and Task4B both precede the public release.
 
 Task5/6: use existing renderer/measurement/looks and current booth styles. Inspect licensed
 source artifacts and rendered PNGs. Match comparisons by actual delivered max momentary and
