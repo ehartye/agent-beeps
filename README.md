@@ -10,6 +10,10 @@ set, and every audition scores how well the agent predicted the pick.
 No sample files, no AI audio: every sound is a small, editable patch that games can also play live
 through the same engine, with seeded variations so repeated sounds do not fatigue.
 
+**[Listen to Matter →](https://ehartye.github.io/agent-beeps/)** — an original 94-second procedural
+reel in the existing listening booth, with nine scenes and eight effects synthesized live in your
+browser. [Score, patches, measurements and build instructions](showcase/README.md).
+
 Agents also compose **music**: a `beeps/song@1` document plays those same patches as instruments
 through chord progressions (voice-led from chord symbols), arps, bass lines, step drums (including
 Euclidean rhythms such as `x(3,8)`), melodies, sections and mix moves, from loops to one-shot jingles.

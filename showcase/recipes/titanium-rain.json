@@ -1,0 +1,65 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "titanium-rain",
+  "family": "foley",
+  "tags": [
+    "gritty"
+  ],
+  "duration": 1.2,
+  "layers": [
+    {
+      "source": {
+        "type": "metal",
+        "base": 53,
+        "bands": [
+          2600,
+          6100
+        ]
+      },
+      "start": 0,
+      "gainDb": 8,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.6,
+        "sustain": 0,
+        "release": 0.12
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 2200,
+        "resonanceDb": 0
+      }
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 90,
+        "grainDecay": 0.018,
+        "center": 4800,
+        "q": 8,
+        "rateEnd": 0.05,
+        "stereo": true
+      },
+      "start": 0,
+      "gainDb": -5,
+      "amp": {
+        "attack": 0.01,
+        "decay": 1.1,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -18
+    },
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "An inharmonic metal strike breaking into a wide scattering of grains."
+  }
+}

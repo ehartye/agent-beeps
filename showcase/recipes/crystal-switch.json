@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "crystal-switch",
+  "family": "ui-click",
+  "archetype": "ui-click",
+  "tags": [
+    "repeating",
+    "ui"
+  ],
+  "duration": 0.03,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": 1127.425,
+        "modes": [
+          [
+            1,
+            30.276,
+            0
+          ],
+          [
+            3.2799,
+            14,
+            -6
+          ]
+        ],
+        "exciter": "impulse"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0.0011006,
+        "decay": 0.022521,
+        "sustain": 0,
+        "release": 0.005
+      }
+    }
+  ],
+  "variation": {
+    "pitchCents": 40,
+    "gainDb": 1,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 2,
+    "intent": "click",
+    "description": "A tiny crystalline click when a switch is pressed."
+  }
+}

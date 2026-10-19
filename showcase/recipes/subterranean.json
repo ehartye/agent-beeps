@@ -1,0 +1,71 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "subterranean",
+  "family": "creature",
+  "archetype": "creature-growl",
+  "tags": [
+    "gritty"
+  ],
+  "duration": 0.7,
+  "layers": [
+    {
+      "source": {
+        "type": "voice",
+        "pitch": 90,
+        "formants": [
+          [
+            450,
+            6,
+            0
+          ],
+          [
+            900,
+            6,
+            -3
+          ],
+          [
+            1800,
+            5,
+            -10
+          ]
+        ],
+        "tilt": 0.9,
+        "jitterCents": 40,
+        "tremolo": {
+          "rate": 40,
+          "depth": 0.6
+        },
+        "breath": 0.1
+      },
+      "start": 0,
+      "gainDb": 0,
+      "pitchEnv": [
+        {
+          "at": 0.6,
+          "to": 70,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.06,
+        "decay": 0.5,
+        "sustain": 0.4,
+        "release": 0.15
+      }
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "variation": {
+    "pitchCents": 25,
+    "gainDb": 1,
+    "variants": 4,
+    "noRepeat": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A low creature calling from behind the bulkhead: glottal pulses, jitter and a formant-shaped throat."
+  }
+}

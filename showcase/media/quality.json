@@ -1,0 +1,757 @@
+{
+  "song": {
+    "renderKey": "df5948bdaa8e211d690bf22d96973711b46f12ebda36e7313e37f0474c9ee82f",
+    "features": {
+      "durationSec": 94.365,
+      "integratedLufs": -21.84,
+      "shortTermMaxLufs": -19.93,
+      "loudnessRangeLu": 8.1,
+      "samplePeakDb": 0.54,
+      "truePeakDb": 0.8,
+      "crestDb": 24.97,
+      "centroidHz": 980,
+      "flatness": 0.0657,
+      "bands": [
+        -7.16,
+        -7.61,
+        -8.71,
+        -5.39,
+        -14.13,
+        -15.18,
+        -12.34,
+        -17.02
+      ],
+      "lowShare": 0.256,
+      "stereoWidth": 0.297,
+      "arc": [
+        -26.2,
+        -30,
+        -30.2,
+        -30.7,
+        -42.8,
+        -27.7,
+        -31.2,
+        -25.3,
+        -25.7,
+        -24.3,
+        -25.5,
+        -25.3,
+        -25.6,
+        -24.5,
+        -24.6,
+        -22.4,
+        -22.4,
+        -22.7,
+        -22.5,
+        -24.2,
+        -21.7,
+        -25.4,
+        -22.1,
+        -23,
+        -22.7,
+        -24.5,
+        -22.5,
+        -24.3,
+        -22.1,
+        -23.7,
+        -26,
+        -25.9,
+        -28.7,
+        -25.3,
+        -27,
+        -26.3,
+        -27.5,
+        -26.6,
+        -26.5,
+        -27.3,
+        -28.9,
+        -27.3,
+        -27.1,
+        -24.6,
+        -30.9,
+        -21.2,
+        -23.7,
+        -23.4,
+        -22.5,
+        -22.3,
+        -23.5,
+        -23.7,
+        -22.3,
+        -23.3,
+        -24.5,
+        -23.7,
+        -21.4,
+        -23.3,
+        -23.5,
+        -25.4,
+        -27.9,
+        -30.2,
+        -31.5,
+        -36.5,
+        -70.3,
+        -72.5,
+        -72.5,
+        -26.4,
+        -23.4,
+        -23.2,
+        -24,
+        -22.3,
+        -24.8,
+        -24.1,
+        -24.9,
+        -23,
+        -23.9,
+        -23.1,
+        -23.3,
+        -23.2,
+        -24.4,
+        -24.1,
+        -25.5,
+        -29.6,
+        -30.7,
+        -31.7,
+        -38.5,
+        -72.5,
+        -72.5,
+        -72.5,
+        -72.5,
+        -72.5,
+        -72.5,
+        -72.5
+      ],
+      "sections": [
+        {
+          "name": "glass",
+          "start": 0,
+          "end": 7.5,
+          "bars": 4,
+          "lufs": -28.5,
+          "centroidHz": 805
+        },
+        {
+          "name": "current",
+          "start": 7.5,
+          "end": 15,
+          "bars": 4,
+          "lufs": -25,
+          "centroidHz": 1135
+        },
+        {
+          "name": "circuit",
+          "start": 15,
+          "end": 30,
+          "bars": 8,
+          "lufs": -23,
+          "centroidHz": 1273
+        },
+        {
+          "name": "fracture",
+          "start": 30,
+          "end": 37.5,
+          "bars": 4,
+          "lufs": -26.7,
+          "centroidHz": 487
+        },
+        {
+          "name": "pressure",
+          "start": 37.5,
+          "end": 45,
+          "bars": 4,
+          "lufs": -26.7,
+          "centroidHz": 747
+        },
+        {
+          "name": "iron",
+          "start": 45,
+          "end": 60,
+          "bars": 8,
+          "lufs": -23.1,
+          "centroidHz": 1010
+        },
+        {
+          "name": "vacuum",
+          "start": 60,
+          "end": 67.5,
+          "bars": 4,
+          "lufs": -31.6,
+          "centroidHz": 782
+        },
+        {
+          "name": "bloom",
+          "start": 67.5,
+          "end": 82.5,
+          "bars": 8,
+          "lufs": -23.7,
+          "centroidHz": 1031
+        },
+        {
+          "name": "afterglow",
+          "start": 82.5,
+          "end": 90,
+          "bars": 4,
+          "lufs": -30,
+          "centroidHz": 759
+        }
+      ],
+      "delivered": {
+        "integratedLufs": -24.34,
+        "truePeakDb": -1.7,
+        "clippedSamples": 0,
+        "peakLimited": true
+      }
+    },
+    "lint": {
+      "errors": [],
+      "warnings": [
+        {
+          "rule": "song-loudness-target",
+          "message": "plays at -24.3 LUFS, 4.3 LU under target: transients cap the level (crest 25 dB). Soften drum accents or lower the peakiest track"
+        },
+        {
+          "rule": "song-written-pitch",
+          "message": "track \"glass\" writes A4-E6 for an instrument rooted at D5 (587 Hz): the whole patch is retuned 14 semitones up and sounds at 1319 Hz. To play it as built at D5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"G5\" (the note it should sound at as written) or write notes near D5",
+          "pointer": "/tracks/glass"
+        },
+        {
+          "rule": "song-written-pitch",
+          "message": "track \"keys\" writes G3-E5 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 14 semitones up and sounds at 659 Hz. To play it as built at D4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#4\" (the note it should sound at as written) or write notes near D4",
+          "pointer": "/tracks/keys"
+        },
+        {
+          "rule": "song-written-pitch",
+          "message": "track \"silk\" writes D4-E6 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 26 semitones up and sounds at 1319 Hz. To play it as built at D4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Eb5\" (the note it should sound at as written) or write notes near D4",
+          "pointer": "/tracks/silk"
+        },
+        {
+          "rule": "song-written-pitch",
+          "message": "track \"choir\" writes D4-Bb5 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 20 semitones up and sounds at 932 Hz. To play it as built at D4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"C5\" (the note it should sound at as written) or write notes near D4",
+          "pointer": "/tracks/choir"
+        }
+      ],
+      "judgement": [
+        "song-register-bands",
+        "song-fatigue"
+      ],
+      "judgementChecks": [
+        {
+          "rule": "song-register-bands",
+          "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+          "data": [
+            {
+              "section": "current",
+              "overlaps": [
+                "glass E5 and keys E5 share a band"
+              ]
+            },
+            {
+              "section": "circuit",
+              "overlaps": [
+                "glass A4-E5 and keys A3-E5 share a band"
+              ]
+            },
+            {
+              "section": "pressure",
+              "overlaps": [
+                "iron-l D3-Bb3 and iron-r D3-Bb3 share a band"
+              ]
+            },
+            {
+              "section": "iron",
+              "overlaps": [
+                "iron-l D3-Bb3 and iron-r D3-Bb3 share a band"
+              ]
+            },
+            {
+              "section": "vacuum",
+              "overlaps": [
+                "glass D5 and silk D4-E5 share a band"
+              ]
+            },
+            {
+              "section": "bloom",
+              "overlaps": [
+                "glass D5-E6 and silk D4-E6 share a band",
+                "glass D5-F5 and choir D4-Bb5 share a band",
+                "silk D4-E6 and choir D4-Bb5 share a band"
+              ]
+            },
+            {
+              "section": "afterglow",
+              "overlaps": [
+                "glass D5 and choir D4-E5 share a band"
+              ]
+            }
+          ]
+        },
+        {
+          "rule": "song-fatigue",
+          "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+        }
+      ]
+    }
+  },
+  "pads": [
+    {
+      "name": "crystal-switch",
+      "seed": 261126,
+      "trimDb": 0.98,
+      "renderKey": "a311f1b8956e632602e95b04fbc4fb315b5c61838c8825f446332930835bed59",
+      "features": {
+        "durationSec": 0.085,
+        "samplePeakDb": -2.81,
+        "truePeakDb": -2.68,
+        "dcOffset": -0.000151,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -25.63,
+        "shortTermMaxLufs": -34.38,
+        "integratedLufs": -25.63,
+        "integratedReliable": false,
+        "attackSec": 0,
+        "energyLengthSec": 0.019,
+        "tailSec": 0.028,
+        "crestDb": 15.31,
+        "centroidHz": 1186.4,
+        "centroidPeakHz": 1186.4,
+        "flatness": 0,
+        "bands": [
+          -72.51,
+          -67.89,
+          -58.63,
+          -37.4,
+          -0.02,
+          -23.77,
+          -36.33,
+          -85.12
+        ],
+        "sharpness": 1.327,
+        "roughness": 0.0572,
+        "fluctuation": 1.7255,
+        "pitchHz": 1208.86,
+        "pitchStrength": 0.9113,
+        "pitchDirection": 0,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -1.83,
+          "truePeakDb": -1.7,
+          "momentaryMaxLufs": -24.65,
+          "clippedSamples": 0,
+          "peakLimited": true
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "energy-shard",
+      "seed": 261070,
+      "trimDb": -7.94,
+      "renderKey": "393d170168a7ae55070f364aab4d3d9232a49c85e0215014382f339f54dd555c",
+      "features": {
+        "durationSec": 0.35,
+        "samplePeakDb": -0.45,
+        "truePeakDb": -0.45,
+        "dcOffset": 0.00001,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -11.06,
+        "shortTermMaxLufs": -19.81,
+        "integratedLufs": -11.06,
+        "integratedReliable": false,
+        "attackSec": 0.003,
+        "energyLengthSec": 0.277,
+        "tailSec": 0.28,
+        "crestDb": 12.54,
+        "centroidHz": 1229.9,
+        "centroidPeakHz": 903.6,
+        "flatness": 0,
+        "bands": [
+          -53.33,
+          -50.37,
+          -43.71,
+          -4.8,
+          -1.85,
+          -18.5,
+          -27.51,
+          -62.03
+        ],
+        "sharpness": 1.4426,
+        "roughness": 0.0199,
+        "fluctuation": 0.6288,
+        "pitchHz": 1568.42,
+        "pitchStrength": 0.9946,
+        "pitchDirection": 9.99,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -8.39,
+          "truePeakDb": -8.39,
+          "momentaryMaxLufs": -19,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "relic-discovered",
+      "seed": 260937,
+      "trimDb": -11.84,
+      "renderKey": "305d8a78ec092de7c73ad925dd83f0a54c92658cd756ec983c12fe5e8e3b494e",
+      "features": {
+        "durationSec": 1.412,
+        "samplePeakDb": 1.08,
+        "truePeakDb": 1.09,
+        "dcOffset": -0.000006,
+        "clippedSamples": 84,
+        "momentaryMaxLufs": -7.16,
+        "shortTermMaxLufs": -15.91,
+        "integratedLufs": -10.06,
+        "integratedReliable": true,
+        "attackSec": 0.003,
+        "energyLengthSec": 0.437,
+        "tailSec": 0.55,
+        "crestDb": 12.51,
+        "centroidHz": 876.5,
+        "centroidPeakHz": 683.9,
+        "flatness": 0,
+        "bands": [
+          -77.21,
+          -66.23,
+          -53.81,
+          -0.2,
+          -24.78,
+          -13.83,
+          -34.78,
+          -71.93
+        ],
+        "sharpness": 1.3677,
+        "roughness": 0.0039,
+        "fluctuation": 0.1556,
+        "pitchHz": 440.07,
+        "pitchStrength": 0.9345,
+        "pitchDirection": -7.02,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -10.76,
+          "truePeakDb": -10.75,
+          "momentaryMaxLufs": -19,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "comet-blaster",
+      "seed": 261026,
+      "trimDb": -5.56,
+      "renderKey": "11cc7bdea9660757e9fda2f5fda94d8b8570fccf2399c9b644f00ab12dab5f54",
+      "features": {
+        "durationSec": 0.885,
+        "samplePeakDb": 0.46,
+        "truePeakDb": 0.48,
+        "dcOffset": -0.000419,
+        "clippedSamples": 12,
+        "momentaryMaxLufs": -12.44,
+        "shortTermMaxLufs": -21.19,
+        "integratedLufs": -15.01,
+        "integratedReliable": false,
+        "attackSec": 0.005,
+        "energyLengthSec": 0.382,
+        "tailSec": 0.425,
+        "crestDb": 15.49,
+        "centroidHz": 435.8,
+        "centroidPeakHz": 436.4,
+        "flatness": 0.0001,
+        "bands": [
+          -13.7,
+          -6.43,
+          -4.33,
+          -4.93,
+          -14.6,
+          -24.41,
+          -38.31,
+          -54.92
+        ],
+        "sharpness": 0.9672,
+        "roughness": 0.0063,
+        "fluctuation": 0.2256,
+        "pitchHz": 155.69,
+        "pitchStrength": 0.8652,
+        "pitchDirection": -13.05,
+        "voicedFraction": 0.9677,
+        "delivered": {
+          "samplePeakDb": -5.1,
+          "truePeakDb": -5.08,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "asteroid-burst",
+      "seed": 261059,
+      "trimDb": -8.36,
+      "renderKey": "ee4b68a8d04292a875b22c93d690b8274eb7a3145753980e7a438211b3b56fbe",
+      "features": {
+        "durationSec": 2.292,
+        "samplePeakDb": 3.78,
+        "truePeakDb": 3.81,
+        "dcOffset": 0.000556,
+        "clippedSamples": 589,
+        "momentaryMaxLufs": -7.64,
+        "shortTermMaxLufs": -16.37,
+        "integratedLufs": -11.81,
+        "integratedReliable": true,
+        "attackSec": 0.004,
+        "energyLengthSec": 0.845,
+        "tailSec": 1.172,
+        "crestDb": 18.32,
+        "centroidHz": 359.2,
+        "centroidPeakHz": 376.5,
+        "flatness": 0.0134,
+        "bands": [
+          -8.6,
+          -1.51,
+          -13.82,
+          -13.58,
+          -16.44,
+          -15.54,
+          -20.6,
+          -29.13
+        ],
+        "sharpness": 1.5493,
+        "roughness": 0.0133,
+        "fluctuation": 0.0216,
+        "pitchHz": 133.45,
+        "pitchStrength": 0.6446,
+        "pitchDirection": -11.65,
+        "voicedFraction": 0.4286,
+        "delivered": {
+          "samplePeakDb": -4.58,
+          "truePeakDb": -4.55,
+          "momentaryMaxLufs": -16,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "airlock-breath",
+      "seed": 260970,
+      "trimDb": 3.53,
+      "renderKey": "4e421289064b25096564a959c21aabfa529f0f750ff1f5e9631490330f46d694",
+      "features": {
+        "durationSec": 0.55,
+        "samplePeakDb": -9.48,
+        "truePeakDb": -9.44,
+        "dcOffset": -0.000048,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -21.53,
+        "shortTermMaxLufs": -30.27,
+        "integratedLufs": -21.78,
+        "integratedReliable": false,
+        "attackSec": 0.129,
+        "energyLengthSec": 0.451,
+        "tailSec": 0.494,
+        "crestDb": 17.38,
+        "centroidHz": 2244.2,
+        "centroidPeakHz": 2079,
+        "flatness": 0.2369,
+        "bands": [
+          -19.4,
+          -14.73,
+          -10.21,
+          -6.46,
+          -5.12,
+          -7.34,
+          -10.97,
+          -14.25
+        ],
+        "sharpness": 2.0344,
+        "roughness": 0.1322,
+        "fluctuation": 1.1596,
+        "pitchHz": 0,
+        "pitchStrength": 0.2319,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -5.95,
+          "truePeakDb": -5.91,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "subterranean",
+      "seed": 420,
+      "trimDb": 7.14,
+      "renderKey": "71bb597cd2d3b88ea2cbb883bc1a72a91c8811d90770f257de8dda7854a18ed5",
+      "features": {
+        "durationSec": 0.9,
+        "samplePeakDb": -11.13,
+        "truePeakDb": -11.13,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -25.14,
+        "shortTermMaxLufs": -32.75,
+        "integratedLufs": -27.76,
+        "integratedReliable": false,
+        "attackSec": 0.073,
+        "energyLengthSec": 0.835,
+        "tailSec": 0.848,
+        "crestDb": 18.67,
+        "centroidHz": 556.4,
+        "centroidPeakHz": 564,
+        "flatness": 0.0014,
+        "bands": [
+          -16.3,
+          -13.29,
+          -1.74,
+          -7.26,
+          -12.55,
+          -18.32,
+          -34.03,
+          -41.36
+        ],
+        "sharpness": 1.1966,
+        "roughness": 0.3733,
+        "fluctuation": 0.0795,
+        "pitchHz": 86.86,
+        "pitchStrength": 0.7807,
+        "pitchDirection": -4.52,
+        "voicedFraction": 0.6548,
+        "delivered": {
+          "samplePeakDb": -3.99,
+          "truePeakDb": -3.99,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "titanium-rain",
+      "seed": 1108,
+      "trimDb": -4.15,
+      "renderKey": "509281d9307372f29dcca2b31affefcc4b90013e05a93e60e51ab1743eb48abf",
+      "features": {
+        "durationSec": 2.282,
+        "samplePeakDb": -2.51,
+        "truePeakDb": -2.51,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -13.85,
+        "shortTermMaxLufs": -22.52,
+        "integratedLufs": -18.84,
+        "integratedReliable": true,
+        "attackSec": 0.004,
+        "energyLengthSec": 0.919,
+        "tailSec": 1.268,
+        "crestDb": 22.21,
+        "centroidHz": 3636.3,
+        "centroidPeakHz": 3681,
+        "flatness": 0.0396,
+        "bands": [
+          -74.86,
+          -57.86,
+          -37.98,
+          -28.87,
+          -9.04,
+          -2.31,
+          -6.14,
+          -13.66
+        ],
+        "sharpness": 2.7707,
+        "roughness": 0.022,
+        "fluctuation": 0.0279,
+        "pitchHz": 0,
+        "pitchStrength": 0.4103,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -6.66,
+          "truePeakDb": -6.66,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "sharpness-warn",
+            "message": "sharpness 2.7707 acum is above 2.2; darken it, or tag the patch \"bright\" if that is the point"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    }
+  ],
+  "encoded": {
+    "integratedLufs": -24.33834007174703,
+    "truePeakDb": -1.6880642435359898,
+    "durationSec": 94.365
+  },
+  "project": {
+    "schema": "beeps/project@1",
+    "scale": {
+      "root": "C",
+      "mode": "majorPentatonic",
+      "snap": true
+    },
+    "targetLoudness": -18,
+    "musicLoudness": -20,
+    "sampleRate": 48000
+  }
+}

@@ -1,0 +1,66 @@
+/* Extend the real audition booth; its palette, pads, transport and typography remain shared. */
+a { color: inherit; text-underline-offset: 3px; }
+.plate { padding-top: 18px; padding-bottom: 18px; justify-content: space-between; }
+.prompt { font-size: clamp(76px, 13vw, 150px); line-height: .87; margin-top: 13px; }
+.period { color: var(--signal); }
+.meta { line-height: 2; }
+.intro { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; padding: 22px 0 10px; }
+.intro p { margin: 0 0 12px; max-width: 530px; }
+.intro .lede { font: 600 clamp(24px, 3vw, 34px)/1.14 var(--display); }
+.transport { grid-template-columns: 1fr auto; top: 8px; border: 1px solid var(--groove); }
+.np-label { display: flex; align-items: center; gap: 8px; }
+.modes { grid-column: 1 / -1; }
+.volume { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-left: auto; }
+input[type=range] { accent-color: var(--signal); width: 95px; }
+.deckkey.big { background: var(--signal); color: white; }
+#status:empty { display: none; }
+#status { grid-column: 1 / -1; font-size: 13px; }
+.session { display: grid; grid-template-columns: 1fr 260px; gap: 16px 22px; }
+.monitor { position: relative; background: #11191c; border-radius: 10px; padding: 14px 16px 10px; color: #b5d4ce; min-width: 0; }
+.monitor-label, .monitor-scale { display: flex; justify-content: space-between; font: 10px/1.4 var(--mono); letter-spacing: .05em; }
+.monitor canvas { width: 100%; height: 118px; display: block; }
+.monitor-scale { opacity: .65; font-size: 9px; }
+.chapters { grid-row: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.chapters button { min-height: 36px; }
+.scene-note { grid-column: 2; grid-row: 1 / 3; padding: 4px 0; }
+.eyebrow { font: 11px/1.5 var(--mono); color: var(--ink-soft); }
+.scene-note h2 { font: 800 36px/1 var(--display); text-transform: uppercase; margin: 9px 0; }
+.scene-note p { margin: 8px 0; font-size: 14px; }
+.scene-note .facts { font-size: 10px; line-height: 1.7; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+.section-heading h2 { font: 800 42px/1 var(--display); text-transform: uppercase; margin: 6px 0 0; }
+.badge { border: 1px solid var(--ink); border-radius: 5px; padding: 6px 9px; font: 10px/1.4 var(--mono); white-space: nowrap; }
+.sound-bench { margin-top: 42px; }
+.bench-intro { max-width: 750px; font-size: 15px; }
+.pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pad { padding: 10px; }
+.pad .face { aspect-ratio: 1.65; background: #10181d; display: block; width: 100%; }
+.face img { width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: .85; }
+.face .pad-number { position: absolute; top: 7px; left: 8px; font: 11px/1 var(--mono); color: white; background: #111b; padding: 5px; border-radius: 4px; }
+.face .play-glyph { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); color: white; text-shadow: 0 1px 9px black; font-size: 26px; }
+.pad .sound-name { font-size: 17px; }
+.pad .sound-purpose { font-size: 12px; min-height: 3.9em; }
+.pad .facts { font-size: 9px; }
+.pad a { font-size: 11px; }
+.liner { margin-top: 36px; border-top: 1px solid var(--groove); padding: 18px 0; }
+.liner summary { font-size: 14px; color: var(--ink); }
+.liner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; font-size: 14px; padding: 14px 0; }
+.liner h2 { font: 800 25px/1.1 var(--display); text-transform: uppercase; }
+a.toggle { display: inline-block; text-decoration: none; font-size: 12px; line-height: 1.5; }
+footer { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; border-top: 2px solid var(--ink); padding-top: 16px; margin-top: 18px; font-size: 12px; }
+button:disabled { cursor: wait; opacity: .5; }
+@media(max-width:720px) {
+  .intro { grid-template-columns: 1fr; gap: 4px; }
+  .plate .meta { font-size: 9px; }
+  .session { grid-template-columns: 1fr; }
+  .scene-note { grid-column: 1; grid-row: 3; padding: 10px 0 0; }
+  .scene-note h2 { font-size: 30px; }
+  .pads { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .liner-grid { grid-template-columns: 1fr; gap: 6px; }
+  .badge { font-size: 8px; }
+  .section-heading h2 { font-size: 34px; }
+  .transport { top: 0; padding: 12px; }
+  .volume { margin-left: 5px; }
+  .strip .band span { display: none; }
+  .pad .sound-purpose { min-height: 0; }
+}
