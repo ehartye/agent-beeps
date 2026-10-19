@@ -15,8 +15,10 @@ pipelines, listening UI and build/store rather than introducing parallel systems
 - [x] Isolate feat/hybrid-audio from1accc6a; npm ci;33 focused baseline tests pass.
 - [x] Inspect current decoder, graph, pipeline, cue and build boundaries; write the design.
 - [x] Task1: canonical codec, bounded decode, immutable import/preparation and resolver.
-- [ ] Task2: strict sample source, synchronous graph preflight/buffers, async cue preparation,
-  offline host transport and real runtime parity (including changed-source negative control).
+- [ ] Task2A: strict sample source, synchronous graph preflight/buffers and async browser
+  cue preparation with verified local hashing, including native and HTTP LAN checks.
+- [ ] Task2B: production offline host transport, project render context and real runtime
+  parity (including a changed-source negative control).
 - [ ] Task3: CLI import/prepare/bundle/sync, actual project sample context at all render entry
   points, existing audition preloading with cancellation guards and sample-aware lint.
 - [ ] Task4: portable cue assets in standalone export/build/lock/verify/store/fetch/budgets.

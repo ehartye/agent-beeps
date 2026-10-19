@@ -32,7 +32,7 @@ Bound decoded duration and reject excess channels/frames before allocating PCM f
 
 Store under `.agent-beeps/samples/`: `objects/<hex>.wav`, `originals/<hex>.bin`,
 `imports/<receipt-id>.json`, and `recipes/<recipe-id>.json`. Object writes are immutable: an
-existing object must match its ID, never silently overwrite corrupt content. Import receipts
+existing object must match its ID, never silently overwrite corrupt content. All files
 are published only after complete staged writes. Exclusive atomic publication prevents
 interrupted writes from poisoning a final name and verifies any competing writer's bytes.
 Filesystems without the required hard-link publication support fail clearly with `E_STORE`;
