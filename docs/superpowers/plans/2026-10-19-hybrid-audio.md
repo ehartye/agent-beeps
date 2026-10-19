@@ -19,8 +19,10 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   cue preparation with verified local hashing, including native and HTTP LAN checks.
 - [x] Task2B: production offline host transport, project render context and real runtime
   parity (including a changed-source negative control).
-- [ ] Task3: CLI import/prepare/bundle/sync, existing audition preloading with cancellation
-  guards and sample-aware lint (project render context is established in Task2B).
+- [ ] Task3A: CLI import/prepare/bundle/sync, explicit preparation-history portability and
+  replay after relocation (project render context is established in Task2B).
+- [ ] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
+  actual sample-only/hybrid set playback in the current UI.
 - [ ] Task4: portable cue assets in standalone export/build/lock/verify/store/fetch/budgets.
 - [ ] Task5: licensed public hybrid study in existing booth, actual measured comparisons,
   portable downloads, provenance and desktop/mobile/subpath browser verification.
@@ -87,9 +89,23 @@ across variants; fresh operations still reject missing/corrupt objects before wa
 Production/runtime tap parity, changed-content controls and actual CLI render/measure/export/
 runtime check/parity/perf/look/live are verified. Portable cue delivery remains Task4.
 
-Task3 tests first: CLI roundtrip sample-only/hybrid import ->prepare ->new/set ->render ->bundle
-->sync in relocated project; corrupt bundle writes nothing; current audition plays both and
-Stop/selection change cancels pending loads. Use actual HTTP/auth routes and existing UI.
+Task3A tests first: CLI roundtrip sample-only/hybrid import ->prepare ->new ->render ->bundle
+->sync in relocated project; corrupt bundle or destination immutable object writes nothing.
+Defaults export prepared dependencies only. Explicit --include-preparation exports matching
+receipts and normalized source closure, never original files/import receipts/generated paths.
+Replay saved recipes/receipts through CLI after original removal; verify exact output identity.
+CLI seconds round to nearest48k frame and durable recipe controls remain explicit integers.
+Preflight requested patch-name conflicts and receipt identity before preparation publication.
+Bundle validates strict manifest/file closure and containment; fresh-directory publication or
+identical repeat avoids leftover outtakes. A small pure preparation helper may be factored
+from Task1 so sync/receipt validation can recompute output before destination writes; preserve
+existing arithmetic and all Task1 tests. Existing patch-only sync retains its contract.
+
+Task3B tests first: normal sets contain sample-only and hybrid candidates; current audition
+plays both and Stop/selection change cancels pending loads. Use actual HTTP/auth routes and
+the existing UI. Prepared fades must not trigger a declarative amp attack warning, while a
+measured abrupt sample onset still receives the applicable craft warning. No fabricated owner
+judgement or duplicate listening application.
 
 Task4 tests first: runtime-only/both outputs contain cue-owned samples; verify detects deleted,
 tampered, mismatched and escaping dependencies; warm build cannot hide bad source; store/fetch

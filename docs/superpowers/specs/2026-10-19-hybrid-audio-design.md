@@ -96,15 +96,27 @@ Checks establish identity against the supplied manifest, not authentication of a
 ## Authoring and portable source exchange
 
 Expose `beeps sample import`, `prepare`, `bundle`, and `sync` through the normal JSON CLI.
-Prepare accepts seconds in CLI controls, converts explicitly to integer 48 kHz frames, stores
-the resulting recipe, and optionally creates a named sample-only patch. That patch has a
+Prepare accepts seconds in CLI controls, rounds to the nearest integer 48 kHz frame, reports
+and stores the resulting complete recipe, and optionally creates a named sample-only patch.
+It also accepts an explicit saved frame recipe or preparation receipt through `--recipe`,
+without combining it with source/seconds controls. Validate a receipt's identity and expected
+output before publishing files. The named patch has a
 neutral amp so preparation fades are not applied twice. Lint keeps measured onset checks;
 declarative amp assumptions must not falsely classify an already prepared source as a click.
 
 A source bundle contains `patches/*.json`, `samples/<hex>.wav` and `samples.json`. Bundle
-includes only prepared dependencies by default, never private originals. Sync validates the
-entire manifest, byte hashes and patch dependency closure before writing imported objects
-and project patches. Relocation requires this ordinary CLI operation, not an external script.
+includes only prepared dependencies by default, never originals, normalized outtakes or
+import receipts. Explicit `--include-preparation` additionally carries matching preparation
+receipts in `recipes/<hex>.json` and their normalized source closure, so saved recipes can
+be replayed after relocation. This mode may contain untrimmed normalized recordings and is
+an explicit author choice. Generated original paths and timestamps stay out of both modes.
+Sync validates the entire manifest, byte hashes, canonical bounds, patch dependency closure
+and any preparation/source closure before writing imported objects and project patches.
+For included receipts it recomputes recipe/output identity from retained source bytes.
+Preflight destination immutable objects/receipts too; invalid input changes nothing.
+Bundle publication uses a fresh output directory (or an identical idempotent repeat), so
+reusing a prior preparation bundle cannot silently leave private outtakes in a later default
+export. Relocation requires ordinary CLI operations, not an external script.
 The existing patch-only sync retains its current contract. Imported patches then work in
 ordinary sets and the current listening UI, including procedural layer edits.
 
