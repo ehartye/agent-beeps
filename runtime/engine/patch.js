@@ -4,6 +4,7 @@ import { buildLayer, validateLayerEnvelopes } from './layer.js';
 import { buildDcBlocker, buildDelay, buildLimiter, buildReverb, busFor, delayTail, REVERB_PRESETS } from './fx.js';
 import { variantPatch } from './variation.js';
 import { sumInto } from './sum.js';
+import { sampleBuffer } from './sources.js';
 
 export { ENGINE_VERSION } from './version.js';
 
@@ -42,21 +43,26 @@ export function patchLength(p) {
 /**
  * @param {BaseAudioContext} ctx
  * @param {Patch} patch  a parsed patch (defaults filled)
- * `hold` (runtime path): no layer schedules its release; the returned `release(at)` does, for every layer, and returns
- * when the voice is silent (the effect tails excluded). The returned `nodes` are references into the graph, for live inputs.
+ * `hold` (runtime path): procedural layers wait for the returned `release(at)`; finite sample layers automatically
+ * start their authored amp release at source exhaustion. An earlier release replaces that schedule. The returned
+ * `nodes` are references into the graph, for live inputs. Lifetimes use the engine's existing amp/fx tail conventions.
  * `reverb` (runtime path): a shared reverb bus (or buses by preset) the voice sends to instead of building a convolver of its
  * own. The send carries the loudness trim, so the wet signal is as loud as it would have been inside the voice; it bypasses the
  * voice's limiter and the authored tap, and the voice's `end` no longer includes a reverb tail (the bus rings on by itself).
  * `dispose()` stops every source and cuts the voice from its output and sends: the graph is then unreachable and collectable.
  * @param {{ destination?: AudioNode, when?: number, seed?: number, variant?: number, trimDb?: number,
- *           scale?: Scale, authoredTap?: AudioNode, limiter?: boolean, hold?: boolean, reverb?: ReverbBuses }} [opts]
+ *           scale?: Scale, authoredTap?: AudioNode, limiter?: boolean, hold?: boolean, reverb?: ReverbBuses,
+ *           samples?: Readonly<Record<string, AudioBuffer>> }} [opts]
  * @returns {{ end: number, authored: GainNode, release: (at: number) => number, dispose: () => void, nodes: PatchNodes }}
  */
 export function buildPatch(ctx, patch, opts = {}) {
-  const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true, hold = false, reverb } = opts;
+  const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true, hold = false, reverb, samples } = opts;
   const { patch: p, pitchRatio } = variantPatch(patch, variant, seed);
-  // A later invalid FM layer must not leave an earlier held source running when construction throws.
-  for (const layer of p.layers) validateLayerEnvelopes(layer, { when, scale, pitchRatio });
+  // A missing sample or invalid later envelope must not leave an earlier source running.
+  for (const layer of p.layers) {
+    validateLayerEnvelopes(layer, { when, scale, pitchRatio });
+    sampleBuffer(layer.source, samples);
+  }
 
   const mix = ctx.createGain();
   const authored = ctx.createGain();
@@ -71,7 +77,7 @@ export function buildPatch(ctx, patch, opts = {}) {
   // Each layer gets its own output; they are summed into the mix in layer order.
   const layerOuts = p.layers.map((layer, i) => {
     const out = ctx.createGain();
-    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out, hold, pitchRatio });
+    const r = buildLayer(ctx, layer, { when, duration: p.duration, seed: seed + i * 7919, scale, out, hold, pitchRatio, samples });
     built.push(r);
     end = Math.max(end, r.end);
     return out;
@@ -122,7 +128,8 @@ export function buildPatch(ctx, patch, opts = {}) {
     release(at) {
       let silent = at;
       for (const b of built) silent = Math.max(silent, b.release(at));
-      return silent + tail;
+      // Finite held sample layers may already be releasing or finished when stop arrives.
+      return (hold ? Math.min(silent, end) : silent) + tail;
     },
     dispose() {
       const now = ctx.currentTime;

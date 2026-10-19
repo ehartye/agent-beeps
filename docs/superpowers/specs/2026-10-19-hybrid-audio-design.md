@@ -70,7 +70,14 @@ AudioBuffers. Network/loading happens before the existing synchronous `build`/`s
 Pass prepared buffers explicitly in graph options. Preflight all sample dependencies before
 any patch layer starts, alongside the existing envelope preflight. Each voice gets its own
 AudioBufferSourceNode; shared AudioBuffers remain immutable. Disposing one voice cannot stop
-another voice using the same buffer. Natural sample end cannot be prolonged by held amp.
+another voice using the same buffer. A held amp cannot prolong the source PCM beyond its
+natural end. Graph lifetime still preserves supported processing: nonheld sample layers use
+the ordinary authored amp off/release lifetime; held sample layers automatically release
+their amp at natural source end and retain that release plus patch effect tails. An earlier
+explicit stop replaces the pending release without changing the preceding attack; a later
+stop cannot restart it. This follows the engine's existing amp/effect lifetime conventions,
+not an estimate of arbitrary IIR decay. Native parity tests must let end callbacks dispatch
+before rendering finishes, so premature disposal cannot hide behind fast offline rendering.
 
 Offline render transport carries verified canonical source bytes to the same browser parser.
 The runtime voice, live audition and offline renderer use the same source graph and buffers.

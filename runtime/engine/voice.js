@@ -12,12 +12,13 @@
 import { buildPatch } from './patch.js';
 import { ENGINE_VERSION } from './version.js';
 import { applyParams, clampInput, defaultParams, isLiveTarget, makeLive, targetsOf } from './params.js';
+import { validateSampleManifest } from './samples.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('./params.js').RuntimeBlock} RuntimeBlock */
 /** @typedef {import('./layer.js').Scale} Scale */
 /** @typedef {import('./fx.js').ReverbBuses} ReverbBuses */
-/** @typedef {{ schema: 'beeps/runtime-cue@1', id: string, engine: string, seed: number, trimDb: number, scale?: Scale, patch: Patch }} Cue */
+/** @typedef {{ schema: 'beeps/runtime-cue@1', id: string, engine: string, seed: number, trimDb: number, scale?: Scale, patch: Patch, assets?: import('./samples.js').SampleAssetManifest }} Cue */
 
 export const CUE_SCHEMA = 'beeps/runtime-cue@1';
 
@@ -33,6 +34,7 @@ export function parseCue(value, { allowEngineMismatch = false } = {}) {
   if (!c || c.schema !== CUE_SCHEMA) throw new TypeError(`not a ${CUE_SCHEMA} file`);
   if (typeof c.id !== 'string' || !Number.isFinite(c.seed) || !Number.isFinite(c.trimDb) || !c.patch || c.patch.schema !== 'beeps/patch@1') throw new TypeError(`${CUE_SCHEMA}: needs id, seed, trimDb and a beeps/patch@1 patch`);
   if (c.engine !== ENGINE_VERSION && !allowEngineMismatch) throw new Error(`cue "${c.id}" was built with engine ${c.engine}, this runtime is engine ${ENGINE_VERSION}: rebuild the audio (beeps build) or pass { allowEngineMismatch: true }`);
+  validateSampleManifest(c.patch, c.assets);
   return c;
 }
 
@@ -46,16 +48,17 @@ const isCue = (/** @type {any} */ x) => x?.schema === CUE_SCHEMA;
  * @property {number} [trimDb]     loudness trim in dB (default: the cue's measured trim, else 0)
  * @property {Scale | null} [scale]  pitched sources snap to it when its `snap` is true. Default: the cue's project scale; null: none
  * @property {boolean} [limiter]   the transparent safety clipper on the voice's output (default true)
- * @property {boolean} [hold]      sound until stopped instead of ending at the patch's duration (default: the patch's xRuntime.hold)
+ * @property {boolean} [hold]      hold amp envelopes until stopped; finite samples automatically start their authored release at source exhaustion (default: xRuntime.hold)
  * @property {AudioNode} [tap]     also receive the signal before the trim and limiter (the parity harness uses it)
  * @property {ReverbBuses} [reverb]  a shared reverb bus (see createReverbBus) to send to instead of a convolver of the voice's own
+ * @property {Readonly<Record<string, AudioBuffer>>} [samples] immutable, verified prepared sample buffers
  * @property {() => void} [onEnded]  called once when the voice is finished: ended on its own, stopped or disposed
  */
 
 /**
  * @typedef {object} Voice
  * @property {boolean} started
- * @property {number | undefined} end  context time the voice is silent, effect tails included; Infinity while a hold voice is held; undefined before start
+ * @property {number | undefined} end  engine amp/fx lifetime, effect tails included; Infinity for held procedural sources; held samples include authored release after source exhaustion; undefined before start
  * @property {(at?: number) => Voice} start
  * @property {(input: string, value: number, at?: number, tau?: number) => void} set
  * @property {(at?: number, fade?: number) => number} stop
@@ -166,7 +169,7 @@ export function build(ctx, out, source, opts = {}) {
       const applied = applyParams(patch, vals);
       built = buildPatch(ctx, applied.patch, {
         destination: out, when: t0, seed, variant: opts.variant ?? 0, trimDb: trimDb + applied.trimDeltaDb, scale,
-        limiter: opts.limiter ?? true, hold, authoredTap: opts.tap, reverb: opts.reverb,
+        limiter: opts.limiter ?? true, hold, authoredTap: opts.tap, reverb: opts.reverb, samples: opts.samples,
       });
       endAt = built.end;
       live = liveInputs(built);
