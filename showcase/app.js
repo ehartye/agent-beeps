@@ -78,19 +78,21 @@ async function play(at) {
 }
 async function strike(index) {
   if (!session) return;
-  const item = session.pads[index];
+  return strikeSound(session.pads[index], `[data-pad="${index}"]`, session.scale);
+}
+async function strikeSound(item, selector, scale, feedback = status) {
   const request = ++padRequest;
   try {
     await initAudio();
     if (request !== padRequest) return;
     stopPad();
     musicLevel(.32);
-    voice = buildPatch(ctx, item.patch, { destination:sfxGain, when:ctx.currentTime + .012, seed:item.seed, variant:0, trimDb:item.trimDb, scale:session.scale });
-    $(`[data-pad="${index}"]`).classList.add('playing');
+    voice = buildPatch(ctx, item.patch, { destination:sfxGain, when:ctx.currentTime + .012, seed:item.seed, variant:0, trimDb:item.trimDb, scale });
+    $(selector).classList.add('playing');
     voiceTimer = setTimeout(stopPad, (voice.end - ctx.currentTime + .06) * 1000);
-    status(`${item.title} · synthesized live`);
+    feedback(`${item.title} · synthesized live`);
     draw();
-  } catch (error) { stopPad(); status(`Could not play this patch. ${error.message}`); }
+  } catch (error) { stopPad(); feedback(`Could not play this patch. ${error.message}`); }
 }
 let padRequest = 0;
 function paint() {
@@ -243,3 +245,36 @@ for(const button of document.querySelectorAll('[data-take]')) button.onclick=asy
   if(playing)try {await Promise.all([initAudio(),touch.play()]);}catch(error){if(request===takeRequest)$('#touch-status').textContent=`Press Play to continue. ${error.message}`;}
 };
 void load();
+async function loadFlux(){
+  const feedback=text=>{$('#flux-status').textContent=text;};
+  try {
+    const response=await fetch('./media/flux-session.json');
+    if(!response.ok)throw new Error(`Study returned ${response.status}`);
+    const study=await response.json();
+    for(const c of study.cases){
+      const card=document.createElement('article');card.className='pad';card.dataset.fluxCase=c.id;
+      const face=document.createElement('div');face.className='face';
+      const img=document.createElement('img');img.src=c.takes.shaped.look;img.alt=`Waveform and spectrum of ${c.title} with its index envelope`;img.loading='lazy';face.append(img);card.append(face);
+      const title=document.createElement('h3');title.className='sound-name';title.textContent=c.title;card.append(title);
+      const description=document.createElement('p');description.className='sound-purpose';description.textContent=c.description;card.append(description);
+      const row=document.createElement('div');row.className='row';
+      for(const [take,label]of [['static','A · Static'],['shaped','B · Envelope']]){
+        const item=c.takes[take];
+        const button=document.createElement('button');button.className='toggle';button.textContent=label;button.dataset.fluxTake=take;
+        button.setAttribute('aria-label',`Play ${c.title}: ${take==='static'?'static index':'index envelope'}`);
+        button.onclick=()=>strikeSound({...item,title:`${c.title} / ${label}`},`[data-flux-case="${c.id}"]`,study.scale,feedback);
+        row.append(button);
+      }
+      card.append(row);
+      const recipes=document.createElement('div');
+      for(const [take,label]of [['static','Static patch'],['shaped','Envelope patch']]){
+        const a=document.createElement('a');a.href=`./recipes/${c.takes[take].patch.name}.json`;a.textContent=label+' ↗';a.target='_blank';a.rel='noopener';recipes.append(a);
+        if(take==='static')recipes.append(document.createTextNode(' · '));
+      }
+      card.append(recipes);
+      $('#flux-pads').append(card);
+    }
+    feedback('Choose A or B. Each press builds the patch in your browser.');
+  } catch(error){feedback(`The synthesis study could not load. Reload to retry. ${error.message}`);}
+}
+void loadFlux();

@@ -40,12 +40,12 @@ describe('input hash', () => {
       expect(plan.parts.export).toBe(sha256(canonicalJson(original)).slice(0, 12));
     }
     // Full versioned identities, independent of installed browser metadata. Song identities
-    // move with native-expression pipeline 7; the historical export components above do not.
-    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '2', pipeline: 2, songPipeline: 7, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
-      blip: 'sha256:e39c5c2829b5029e8497a6aa95214e6e9c108c52c153701d88c98bc6b75a4b4d',
-      coin: 'sha256:2717b0a023c2d9bdbc23e670953ab3808b2ffd71da5ba9c74822e4a96e7b4344',
-      plain: 'sha256:a57828da4ce53a088d8458f2cfd03fc878fdd7f85700329c80ad371858502d34',
-      theme: 'sha256:3ab34366f2730b41d7e070a7f9d6ec763e13c6a2de8d7e6c342bef0389a72574',
+    // move with envelope-capable engine 3; the historical export components above do not.
+    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '3', pipeline: 2, songPipeline: 7, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
+      blip: 'sha256:6f64231c0c417d222b286930bc2341da38d80e3d6548f163e875824c2e3742fc',
+      coin: 'sha256:c19bc2c18be07e4b2a53695bfd8c17e49187b29b40c86ddc237da90d496134b1',
+      plain: 'sha256:da797bd3e07d8cb27399e0eaef8031e74d867ba9cde285109354a7ea4064cac7',
+      theme: 'sha256:489dd9556953a7484066272cdaf667ae2c30669b69794bd98ee3437adf6f0c5a',
     });
   });
 

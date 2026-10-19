@@ -1,0 +1,74 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "flux-arc-static",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty"
+  ],
+  "duration": 0.7,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C3",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1
+          },
+          {
+            "ratio": 1.414,
+            "index": 5
+          },
+          {
+            "ratio": 3.97,
+            "index": 0.8
+          }
+        ],
+        "algorithm": [
+          [
+            2,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "gainDb": -8,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.3,
+        "sustain": 0.12,
+        "release": 0.13
+      },
+      "highpass": 70
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -28,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.025,
+        "sustain": 0,
+        "release": 0.02
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 2000,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "meta": {
+    "description": "Arc: modulator index stays at its peak."
+  }
+}

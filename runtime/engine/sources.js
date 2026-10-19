@@ -1,6 +1,7 @@
 // Sound sources: each patch source type becomes a small group of Web Audio nodes.
 import { mulberry32, noiseSamples } from './rng.js';
 import { sumInto, sumNodes } from './sum.js';
+import { scheduleEnvelope, validateEnvelope, validateEnvelopeSchedule } from './envelope.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Source} Source */
 /**
@@ -172,12 +173,29 @@ export function grainBuffer(ctx, src, seed, length) {
 }
 
 /**
+ * Preflight authored source envelopes with the actual played pitch and onset, before any source starts.
+ * @param {Source} src
+ * @param {{ pitchHz: number, when: number }} options
+ */
+export function validateSourceEnvelopes(src, { pitchHz, when }) {
+  if (src.type !== 'fm') return;
+  for (const op of src.operators) if (op.indexEnv !== undefined) validateEnvelope(op.indexEnv);
+  for (const [from, to] of src.algorithm) {
+    if (from >= src.operators.length || to >= src.operators.length || from === to) continue;
+    const env = src.operators[from].indexEnv;
+    if (env !== undefined) validateEnvelopeSchedule(env, { when, scale: src.operators[from].index * pitchHz * src.operators[to].ratio });
+  }
+}
+
+/**
  * @param {BaseAudioContext} ctx
  * @param {Source} src
  * @param {{ pitchHz: number, seed: number, length: number }} opts  length = seconds the source may sound
  * @returns {BuiltSource}
  */
 export function buildSource(ctx, src, { pitchHz, seed, length }) {
+  // Runtime mappings can combine independently; reject every actual FM curve before creating source nodes.
+  if (src.type === 'fm') validateSourceEnvelopes(src, { pitchHz, when: 0 });
   const mix = ctx.createGain();
   /** @type {AudioScheduledSourceNode[]} */
   const nodes = [];
@@ -226,7 +244,10 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     for (const [from, to] of src.algorithm) {
       if (from >= ops.length || to >= ops.length || from === to) continue;
       const depth = ctx.createGain();
-      depth.gain.value = src.operators[from].index * pitchHz * src.operators[to].ratio;
+      const peak = src.operators[from].index * pitchHz * src.operators[to].ratio;
+      depth.gain.value = peak;
+      const env = src.operators[from].indexEnv;
+      if (env) onStart.push(t => scheduleEnvelope(depth.gain, env, { when: t, scale: peak }));
       mods[to].push(ops[from].connect(depth));
     }
     mods.forEach((m, i) => sumInto(ctx, m, ops[i].frequency));
