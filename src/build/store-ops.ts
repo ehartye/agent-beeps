@@ -1,21 +1,18 @@
 // `beeps store push|pull|status` and `beeps ci export`: the lock's assets against a store.
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { validateDeliveredAsset } from '../runtime/inventory.ts';
+import { readDeliveredFile } from '../runtime/delivery.ts';
 import { BeepsError } from '../errors.ts';
 import { bundleDir } from '../bundle.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { atomicWrite, readLock, type Lock, type LockAsset } from './lock.ts';
 import type { BuildConfig } from './config.ts';
-import { packAsset, sha256Hex, storeName, unpackAsset, type Store } from './store.ts';
+import { packAsset, storeName, unpackAsset, type Store } from './store.ts';
 
-const outputsOk = (out: string, a: LockAsset): { ok: boolean; problem?: string } => {
-  for (const f of a.outputs) {
-    const p = join(out, f.file);
-    if (!existsSync(p)) return { ok: false, problem: `${f.file} is missing` };
-    const b = readFileSync(p);
-    if (b.length !== f.bytes || sha256Hex(b) !== f.sha256) return { ok: false, problem: `${f.file} does not match the lock` };
-  }
-  return { ok: true };
+const outputsOk = (out: string, id: string, a: LockAsset): { ok: boolean; problem?: string } => {
+  try { validateDeliveredAsset(id, a, file => readDeliveredFile(out, file)); return { ok: true }; }
+  catch (e) { return { ok: false, problem: (e as Error).message }; }
 };
 
 function requireLock(cfg: BuildConfig): Lock {
@@ -38,10 +35,12 @@ export async function storePush(cfg: BuildConfig, store: Store, only?: string[])
   const pushed: string[] = [], existing: string[] = [], skipped: { id: string; problem: string }[] = [];
   for (const [id, a] of pick(lock, only)) {
     const name = storeName(a.inputHash);
-    if (await store.has(name)) { existing.push(id); continue; }
-    const v = outputsOk(cfg.out, a);
+    const v = outputsOk(cfg.out, id, a);
+    // Keep lookup diagnostics even for missing local outputs; local integrity still gates every result and upload.
+    const inStore = await store.has(name);
     if (!v.ok) { skipped.push({ id, problem: `${v.problem}: build it first` }); continue; }
-    if (await store.put(name, packAsset(id, a.inputHash, a.outputs, f => readFileSync(join(cfg.out, f)))) === 'stored') pushed.push(id); else existing.push(id);
+    if (inStore) { existing.push(id); continue; }
+    if (await store.put(name, packAsset(id, a.inputHash, a.outputs, f => readDeliveredFile(cfg.out, f)!)) === 'stored') pushed.push(id); else existing.push(id);
   }
   return { store: store.spec, pushed, existing, skipped, ok: skipped.length === 0, ...diagnostics(store) };
 }
@@ -51,15 +50,14 @@ export async function storePull(cfg: BuildConfig, store: Store, only?: string[])
   const lock = requireLock(cfg);
   const pulled: string[] = [], present: string[] = [], missing: string[] = [], problems: { id: string; problem: string }[] = [];
   for (const [id, a] of pick(lock, only)) {
-    if (outputsOk(cfg.out, a).ok) { present.push(id); continue; }
+    if (outputsOk(cfg.out, id, a).ok) { present.push(id); continue; }
     const bytes = await store.get(storeName(a.inputHash));
     if (!bytes) { missing.push(id); continue; }
     try {
-      const { files } = unpackAsset(bytes, { inputHash: a.inputHash, outputs: a.outputs });
-      for (const f of a.outputs) {
-        const d = files.get(f.file)!;
-        if (d.length !== f.bytes || sha256Hex(d) !== f.sha256) throw new BeepsError('E_STORE', `${f.file} does not match the lock`);
-      }
+      const { manifest, files } = unpackAsset(bytes, { inputHash: a.inputHash, outputs: a.outputs });
+      if (manifest.id !== id) throw new BeepsError('E_STORE', `store entry owner ${manifest.id} does not match ${id}`);
+      validateDeliveredAsset(id, { ...a, outputs: manifest.outputs }, file => files.get(file));
+      validateDeliveredAsset(id, a, file => files.get(file));
       for (const f of a.outputs) atomicWrite(join(cfg.out, f.file), files.get(f.file)!);
       pulled.push(id);
     } catch (e) { problems.push({ id, problem: (e as Error).message }); }
@@ -72,7 +70,7 @@ export async function storeStatus(cfg: BuildConfig, store: Store | undefined, on
   const lock = requireLock(cfg);
   const rows: { id: string; inputHash: string; local: string | undefined; store?: string }[] = [];
   for (const [id, a] of pick(lock, only)) {
-    const v = outputsOk(cfg.out, a);
+    const v = outputsOk(cfg.out, id, a);
     rows.push({ id, inputHash: a.inputHash.slice(0, 19), local: v.ok ? 'ok' : v.problem, ...(store ? { store: (await store.has(storeName(a.inputHash))) ? 'present' : 'missing' } : {}) });
   }
   const count = (f: (r: (typeof rows)[number]) => boolean) => rows.filter(f).length;

@@ -172,6 +172,9 @@ export function songTail(song, instruments, events) {
  * @returns {{ end: number, length: number, sections: ReturnType<typeof compileSong>['sections'], advance: (t: number) => number, release: (now: number) => number, graph: AudioNode[] | undefined, done: () => boolean }}
  */
 export function buildSong(ctx, song, instruments, opts = {}) {
+  for (const [track, patch] of Object.entries(instruments)) if (patch.layers.some(l => l.source.type === 'sample')) {
+    throw new Error(`track "${track}": sample instruments are not supported in songs`);
+  }
   const { destination = ctx.destination, when = 0, lazy = false, only, retain = false } = opts;
   const playing = only ? new Set(only) : undefined;
   const c = compileSong(song);

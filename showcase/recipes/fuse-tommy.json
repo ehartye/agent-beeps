@@ -1,0 +1,46 @@
+{
+  "schema": "beeps/fuse-study@1",
+  "seed": 607,
+  "burstGroupsSec": [
+    [
+      0.04,
+      1.32
+    ],
+    [
+      1.46,
+      2.26
+    ],
+    [
+      2.46,
+      3.26
+    ],
+    [
+      3.6,
+      4.42
+    ],
+    [
+      4.6,
+      5.66
+    ]
+  ],
+  "takes": [
+    {
+      "id": "recording",
+      "title": "Tommy recording",
+      "description": "The complete original Tommy-gun sequence: five bursts and the room between them.",
+      "patch": "fuse-tommy-recording"
+    },
+    {
+      "id": "procedural",
+      "title": "Tommy body",
+      "description": "Five fading noise beds add low pulsing weight at the recorded burst groups.",
+      "patch": "fuse-tommy-procedural"
+    },
+    {
+      "id": "hybrid",
+      "title": "Tommy hybrid",
+      "description": "The complete Tommy-gun recording meets its designed body, with the original shot rhythm preserved.",
+      "patch": "fuse-tommy-hybrid"
+    }
+  ]
+}

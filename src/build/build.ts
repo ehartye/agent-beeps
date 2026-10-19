@@ -1,8 +1,10 @@
 // `beeps build`: render + export + compress + bundle only the assets whose input hash differs from the committed lock, or whose
 // outputs are missing or no longer match it. Everything else is left byte for byte alone.
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { samplePaths } from '../samples/store.ts';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
+import { canonicalJson } from '../hash.ts';
 import { bundleDir, catalogText } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { exportPatchVariants, exportSongAssets } from '../export-assets.ts';
@@ -12,7 +14,10 @@ import { loadSong } from '../music.ts';
 import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import { parseProject } from '../schema/project.ts';
 import { renderAndMeasure } from '../render/pipeline.ts';
-import { cueFile, cueText, makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
+import { makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
+import { cueSources, writeCueDelivery, readDeliveredFile } from '../runtime/delivery.ts';
+import { validateDeliveredAsset } from '../runtime/inventory.ts';
+import { assertOutputNames, isDeliveredSampleFile, isDeliveredCueFile, sampleFile } from '../runtime/dependencies.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
 import { planAsset, type Encoder, type Planned } from './plan.ts';
@@ -105,10 +110,11 @@ function staleReasons(plan: Planned, entry: LockAsset | undefined, out: string, 
     const changed = entry.parts ? (Object.keys(plan.parts) as (keyof Planned['parts'])[]).filter(k => entry.parts![k] !== plan.parts[k]) : [];
     reasons.push(`inputs changed${changed.length ? ` (${changed.join(', ')})` : ''}: ${entry.inputHash.slice(0, 19)} -> ${plan.inputHash.slice(0, 19)}`);
   }
-  for (const o of entry.outputs) {
-    const f = join(out, o.file);
-    if (!existsSync(f)) { reasons.push(`output missing: ${o.file}`); continue; }
-    if (statSync(f).size !== o.bytes || sha256File(f).sha256 !== o.sha256) reasons.push(`output modified: ${o.file}`);
+  try { validateDeliveredAsset(plan.recipe.id, { ...entry, delivery: plan.ships }, file => readDeliveredFile(out, file)); }
+  catch (e) {
+    const message = (e as Error).message;
+    const file = entry.outputs.find(o => message === `${o.file} is missing` || message === `${o.file} does not match the lock`)?.file;
+    reasons.push(file ? `output ${message.endsWith(' is missing') ? 'missing' : 'modified'}: ${file}` : `output invalid: ${message}`);
   }
   return reasons;
 }
@@ -130,16 +136,32 @@ function listOutputs(dir: string): OutputRef[] {
     .map(file => ({ file, ...sha256File(join(dir, file)) }));
 }
 
-/** Copies the asset's staged files into the output directory, atomically per file, leaving files whose bytes already match alone. */
-function install(out: string, stage: string, outputs: OutputRef[], previous: OutputRef[] | undefined): void {
+/** Select only owned reserved sources and canonical owner cues for retirement. */
+function retirementFiles(owner: string, previous: readonly OutputRef[], keep: readonly OutputRef[] = []): string[] {
+  assertOutputNames(previous);
+  const kept = new Set(keep.map(o => o.file));
+  // A corrupt/missing old cue cannot authorize deletion. The canonical output byte
+  // hash is its source ID, so re-derive the exact owner/content name from the lock.
+  return previous.filter(o => {
+    if (kept.has(o.file)) return false;
+    if (isDeliveredSampleFile(o.file)) return o.file === sampleFile(owner, `sha256:${o.sha256}`);
+    if (isDeliveredCueFile(o.file)) return o.file === `${owner}.runtime.json`;
+    return true;
+  }).map(o => o.file);
+}
+
+/** Copies staged outputs atomically per file, then retires previously owned outputs. */
+function install(owner: string, out: string, stage: string, outputs: OutputRef[], previous: OutputRef[] | undefined): void {
+  assertOutputNames(outputs);
+  const retire = retirementFiles(owner, previous ?? [], outputs);
   mkdirSync(out, { recursive: true });
   for (const o of outputs) {
     const dest = join(out, o.file);
-    if (existsSync(dest) && statSync(dest).size === o.bytes && sha256File(dest).sha256 === o.sha256) continue;
+    const current = readDeliveredFile(out, o.file);
+    if (current && current.length === o.bytes && sha256Hex(current) === o.sha256) continue;
     atomicWrite(dest, readFileSync(join(stage, o.file)));
   }
-  const keep = new Set(outputs.map(o => o.file));
-  for (const o of previous ?? []) if (!keep.has(o.file)) rmSync(join(out, o.file), { force: true });
+  for (const file of retire) rmSync(join(out, file), { force: true });
 }
 
 export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<BuildReport> {
@@ -196,7 +218,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   const removed = !o.only && lock ? Object.keys(lock.assets).filter(id => !recipes.some(r => r.id === id)) : [];
   for (const id of removed) stale.push({ id, reasons: ['removed from the recipes: its outputs and lock entry will be deleted'] });
 
-  const estimate = estimateBytes(plans, lock, delivery);
+  const estimate = estimateBytes(plans, lock, delivery, deliveryRec);
   const catalogDrift = catalogDriftOf(cfg.out, unchanged.length === plans.length);
   const driftLines = [...(stale.length ? [] : drift), ...catalogDrift];
   const report = (over: Partial<BuildReport>): BuildReport => ({
@@ -230,11 +252,14 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       if (!bytes) continue;
       const expectOutputs = prior && prior.inputHash === pl.inputHash ? prior.outputs : undefined;
       const { manifest, files } = unpackAsset(bytes, { inputHash: pl.inputHash, outputs: expectOutputs });
+      if (manifest.id !== id) throw new BeepsError('E_STORE', `store entry owner ${manifest.id} does not match ${id}`);
+      validateDeliveredAsset(id, { outputs: manifest.outputs, delivery: pl.ships }, file => files.get(file));
+      if (expectOutputs) validateDeliveredAsset(id, { outputs: expectOutputs, delivery: pl.ships }, file => files.get(file));
       const sdir = join(stage, `${id}.pull`);
       rmSync(sdir, { recursive: true, force: true }); mkdirSync(sdir, { recursive: true });
       for (const [f, data] of files) atomicWrite(join(sdir, f), data);
       o.hooks?.beforeInstall?.(id);
-      install(cfg.out, sdir, manifest.outputs, prior?.outputs);
+      install(id, cfg.out, sdir, manifest.outputs, prior?.outputs);
       rmSync(sdir, { recursive: true, force: true });
       commit(id, { role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) });
       o.hooks?.afterInstall?.(id);
@@ -284,7 +309,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
 
   // 3. Assets removed from the recipes.
   for (const id of removed) {
-    for (const f of lock!.assets[id].outputs) rmSync(join(cfg.out, f.file), { force: true });
+    for (const file of retirementFiles(id, lock!.assets[id].outputs)) rmSync(join(cfg.out, file), { force: true });
     delete next.assets[id];
   }
   const changed = built.length + pulled.length + removed.length > 0;
@@ -300,20 +325,27 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   return report({ built, pulled, removed, pushed, catalogWritten, unchanged, stale: [], drift: [], ok: true });
 }
 
-function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Delivery): BuildReport['estimate'] {
+function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Delivery, deliveryRec: Record<string, unknown>): BuildReport['estimate'] {
   let total = 0, fresh = 0;
   const oldKbps = (lock?.delivery.kbps ?? {}) as Record<string, number>;
+  const encodingIdentity = ({ kbps: _rates, preset: _preset, ...encoding }: Record<string, unknown>) => canonicalJson(encoding);
+  const sameEncoding = !!lock && encodingIdentity(lock.delivery) === encodingIdentity(deliveryRec);
   for (const pl of plans) {
     const prior = lockedAsset(lock, pl.recipe.id);
     if (!prior) { total += pl.estimateBytes; fresh++; continue; }
-    const bytes = prior.outputs.reduce((s, f) => s + f.bytes, 0);
-    // A bitrate change scales the locked size by the ratio: arithmetic, no rendering.
+    // Locked bytes describe the old content and delivery mode. Source, duration,
+    // export or mode changes must budget the current plan before replacing anything.
+    const sameContent = prior.parts && (['renders', 'export', 'runtime', 'toolchain'] as const).every(k => prior.parts![k] === pl.parts[k]);
+    if (prior.inputHash !== pl.inputHash && !(sameContent && sameEncoding)) { total += pl.estimateBytes; continue; }
+    const fixed = prior.outputs.filter(f => !/\.(ogg|mp3)$/.test(f.file)).reduce((s, f) => s + f.bytes, 0);
+    const encoded = prior.outputs.filter(f => /\.(ogg|mp3)$/.test(f.file)).reduce((s, f) => s + f.bytes, 0);
+    // Only encoded baked audio scales: canonical sources, cues and sidecars stay fixed.
     const was = oldKbps[pl.recipe.role], now = delivery.kbps?.[pl.recipe.role];
-    total += was && now && was !== now ? Math.ceil(bytes * now / was) : bytes;
+    total += fixed + (was && now && was !== now ? Math.ceil(encoded * now / was) : encoded);
   }
   // Assets outside --only still count against the budget at their locked size.
   if (lock) for (const [id, a] of Object.entries(lock.assets)) if (!plans.some(pl => pl.recipe.id === id)) total += a.outputs.reduce((s, f) => s + f.bytes, 0);
-  return { totalBytes: total, newAssets: fresh, basis: 'locked sizes of existing assets, scaled by any bitrate change; duration x bitrate x 1.1 for new ones' };
+  return { totalBytes: total, newAssets: fresh, basis: 'locked bytes for unchanged assets, scaling only encoded audio for bitrate-only changes; current duration x bitrate x 1.1 plus runtime sources and cue bytes for new or changed assets' };
 }
 
 function catalogDriftOf(out: string, allUnchanged: boolean): string[] {
@@ -357,7 +389,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     // Runtime only: nothing is exported or encoded. The one render is the trim measurement (a cache hit when the patch was baked before).
     const patch = loadPatch(p, r.source);
     if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
-    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders });
+    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
     if (!m.ok) throw new BeepsError('E_RENDER', m.error);
     trimDb = m.trimDb;
   }
@@ -365,7 +397,8 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     const patch = loadPatch(p, r.source);
     if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
     mkdirSync(from, { recursive: true });
-    atomicWrite(join(from, cueFile(r.id)), cueText(makeCue(patch, p.project, r.seed, trimDb!)));
+    const sources = cueSources(patch, r.id, samplePaths(p).objects);
+    writeCueDelivery(from, makeCue(patch, p.project, r.seed, trimDb!, sources.assets), sources);
   }
   const outputs = listOutputs(from);
   if (baked) {
@@ -380,7 +413,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   }
   o.hooks?.afterBuild?.(r.id);
   o.hooks?.beforeInstall?.(r.id);
-  install(cfg.out, from, outputs, prior?.outputs);
+  install(r.id, cfg.out, from, outputs, prior?.outputs);
   rmSync(sdir, { recursive: true, force: true });
   return { role: r.role, source: r.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
 }
@@ -395,8 +428,8 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
   for (const pl of plans) {
     const a = lockedAsset(lock, pl.recipe.id);
     if (!a) continue;
-    const bad = a.outputs.filter(f => !existsSync(join(cfg.out, f.file)) || sha256File(join(cfg.out, f.file)).sha256 !== f.sha256);
-    if (bad.length) { log(`adopt: ${pl.recipe.id}: ${bad[0].file} does not match the lock; it will be rebuilt`); continue; }
+    try { validateDeliveredAsset(pl.recipe.id, { ...a, delivery: pl.ships }, file => readDeliveredFile(cfg.out, file)); }
+    catch (e) { log(`adopt: ${pl.recipe.id}: ${(e as Error).message}; it will be rebuilt`); continue; }
     assets[pl.recipe.id] = { ...a, role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
     adopted.push(pl.recipe.id);
   }

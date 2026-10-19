@@ -11,6 +11,7 @@ import { BeepsError } from '../errors.ts';
 import { openProject, type OpenProject } from '../project.ts';
 import { readKit } from '../kit.ts';
 import { setCandidatePatch } from '../sets.ts';
+import { patchSampleIds, readSampleObject, samplePaths, type ResolvedSample } from '../samples/store.ts';
 import { RUNTIME_DIR } from '../render/host.ts';
 import { beepsHome } from '../taste/verdicts.ts';
 import { nextDuel } from '../taste/select.ts';
@@ -20,7 +21,7 @@ import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readRev
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 5;
+export const SERVER_API = 6;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -157,16 +158,33 @@ export class AuditionServer {
     throw new BeepsError('E_NOT_FOUND', `no session ${id} in registered projects`);
   }
 
-  sessionPayload(p: OpenProject, id: string) {
+  sessionPayload(p: OpenProject, id: string, objects = new Map<string, ResolvedSample>()) {
     const session = readSession(p, id);
     const state = foldSession(session, readEvents(p, id));
     const model = loadModel(p);
     const { x } = tasteVectors(state.candidates.map(c => c.raw));
     const vec = new Map(state.candidates.map((c, i) => [c.index, x[i]]));
     const next = state.stage === 'duel' ? nextDuel(state.shortlist.map(index => ({ index, x: vec.get(index)! })), model, state.duels) : [];
+    // Memoize only within this payload: every new HTTP operation verifies current object bytes.
+    const withAssets = (patch: ReturnType<typeof setCandidatePatch>) => {
+      const ids = patchSampleIds(patch);
+      if (!ids.length) return { patch };
+      const assets = Object.fromEntries(ids.map(asset => {
+        if (!objects.has(asset)) {
+          try { objects.set(asset, readSampleObject(samplePaths(p).objects, asset)); }
+          catch (e) {
+            // Local store diagnostics include authoring paths. HTTP exposes only code and asset.
+            throw new BeepsError(e instanceof BeepsError ? e.code : 'E_SERVER', `cannot load audition sample asset ${asset}`);
+          }
+        }
+        const s = objects.get(asset)!;
+        return [asset, { file: `${asset.slice(7)}.wav`, sampleRate: s.sampleRate, channels: s.channels, frames: s.frames, bytes: s.bytes }];
+      }));
+      return { patch, assets };
+    };
     const kit = session.context.kit ? readKit(p.paths.root).sounds.flatMap(s => {
       const file = join(p.paths.patches, `${s.name}.json`);
-      return existsSync(file) ? [{ name: s.name, family: s.family, trimDb: s.trimDb ?? 0, seed: s.seed ?? 1, patch: JSON.parse(readFileSync(file, 'utf8')) }] : [];
+      return existsSync(file) ? [{ name: s.name, family: s.family, trimDb: s.trimDb ?? 0, seed: s.seed ?? 1, ...withAssets(JSON.parse(readFileSync(file, 'utf8'))) }] : [];
     }) : [];
     return {
       session: { id: session.id, prompt: session.prompt, family: session.family, archetype: session.archetype, mode: session.mode, flow: session.flow, context: session.context, createdAt: session.createdAt },
@@ -175,7 +193,7 @@ export class AuditionServer {
         index: c.index, name: c.name, seed: c.seed, trimDb: c.trimDb, round: c.round,
         words: distinctWords(c, state.candidates.filter(o => o.round === c.round)),
         look: `/api/session/${id}/look/${c.index}`,
-        patch: setCandidatePatch(p, c.setId, c.name),
+        ...withAssets(setCandidatePatch(p, c.setId, c.name)),
       })),
       next, kit, bed: session.context.bed ? BED_PATCH : null, scale: p.project.scale,
     };
@@ -231,6 +249,16 @@ export class AuditionServer {
     if (dm) return this.deliveryRoute(req, res, dm[1], dm[2], dm[3], dm[4]);
     const am = /^\/api\/album\/([a-z0-9-]+)(?:\/(event|wav|look)(?:\/(\d+))?)?$/.exec(path);
     if (am) return this.albumRoute(req, res, am[1], am[2], am[3]);
+    const asset = /^\/api\/session\/([a-z0-9-]+)\/assets\/([0-9a-f]{64})\.wav$/.exec(path);
+    if (asset && req.method === 'GET') {
+      const p = this.findSession(asset[1]);
+      const objects = new Map<string, ResolvedSample>();
+      this.sessionPayload(p, asset[1], objects);
+      const sample = objects.get(`sha256:${asset[2]}`);
+      if (!sample) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'no session asset' } });
+      res.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' });
+      return res.end(sample.wav);
+    }
     const m = /^\/api\/session\/([a-z0-9-]+)(?:\/(event|reveal|look)(?:\/(\d+))?)?$/.exec(path);
     if (!m) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'unknown endpoint' } });
     const [, id, action, arg] = m;

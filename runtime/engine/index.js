@@ -9,3 +9,4 @@ export { defaultParams, clampInput, MACROS } from './params.js';
 export { setNoiseCacheLimit, noiseCacheStats, NOISE_CACHE_BYTES } from './sources.js';
 export { REVERB_PRESETS } from './fx.js';
 export { ENGINE_VERSION } from './version.js';
+export { loadCueAssets } from './samples.js';

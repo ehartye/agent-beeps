@@ -3,7 +3,7 @@
 // function) or through the runtime voice (`build` from the package entry), in an OfflineAudioContext shaped exactly like the
 // renderer's, and returns the delivered and authored taps. It also times graph builds and counts what they create.
 import { patchLength } from './engine/patch.js';
-import { renderOfflinePcm, tapContext, renderTaps, toBase64 } from './engine/offline.js';
+import { renderOfflinePcm, tapContext, renderTaps, toBase64, prepareEncodedSamples } from './engine/offline.js';
 import { applyParams } from './engine/params.js';
 import { build, createReverbBus, noiseCacheStats, setNoiseCacheLimit } from './engine/index.js';
 
@@ -19,11 +19,12 @@ async function run(spec) {
   // The baked reference of a given input value is the patch with every binding applied as a fixed number.
   const { patch: applied, trimDeltaDb } = applyParams(spec.patch, params, true);
   if (spec.kind === 'baked') {
-    return pack(await renderOfflinePcm(applied, { seed: spec.seed, variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb + trimDeltaDb }));
+    return pack(await renderOfflinePcm(applied, { seed: spec.seed, variant: spec.variant, scale: spec.scale, trimDb: spec.trimDb + trimDeltaDb, sampleWavs: spec.sampleWavs }));
   }
   const hold = spec.patch.xRuntime?.hold === true;
   const t = tapContext(patchLength(applied));
-  const opts = { seed: spec.seed, params, variant: spec.variant, scale: spec.scale ?? null, trimDb: spec.trimDb, tap: t.authored };
+  const samples = prepareEncodedSamples(t.ctx, spec.patch, spec.sampleWavs);
+  const opts = { seed: spec.seed, params, variant: spec.variant, scale: spec.scale ?? null, trimDb: spec.trimDb, tap: t.authored, samples };
   if (spec.reverbBus) opts.reverb = createReverbBus(t.ctx, t.delivered, { preset: spec.reverbBus });
   const v = build(t.ctx, t.delivered, spec.patch, opts).start(0);
   if (hold) v.stop(spec.patch.duration);
@@ -53,6 +54,8 @@ async function perf(spec, n) {
     };
   }
   const ctx = spec.realtime ? new AudioContext({ sampleRate: SR, latencyHint: 'interactive' }) : new OfflineAudioContext(2, SR, SR);
+  // Prepared once per context, before timing any voice. Warm builds share immutable PCM.
+  const samples = prepareEncodedSamples(ctx, spec.patch, spec.sampleWavs);
   if (spec.realtime && ctx.state !== 'running') await ctx.resume().catch(() => {});
   const out = ctx.createGain();
   out.connect(ctx.destination);
@@ -60,7 +63,7 @@ async function perf(spec, n) {
   if (spec.noiseLimit !== undefined) setNoiseCacheLimit(spec.noiseLimit === 'inf' ? Infinity : spec.noiseLimit);
   let n0 = 0;
   const sd = () => (spec.varySeed ? spec.seed + n0++ : spec.seed);
-  const make = () => build(ctx, out, spec.patch, { params, seed: sd(), variant: spec.variant, scale: spec.scale ?? null, trimDb: spec.trimDb, reverb: bus }).start();
+  const make = () => build(ctx, out, spec.patch, { params, seed: sd(), variant: spec.variant, scale: spec.scale ?? null, trimDb: spec.trimDb, reverb: bus, samples }).start();
   const times = [];
   let first = 0, warm;
   for (let i = 0; i < n; i++) {

@@ -2,6 +2,7 @@
 // measured loudness trims, and records only explicit judgements as verdicts.
 import { buildPatch } from '../engine/patch.js';
 import { createPicker } from '../engine/variation.js';
+import { loadCueAssets } from '../engine/index.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const h = (tag, attrs = {}, ...kids) => {
@@ -31,6 +32,7 @@ let pollTimer = null;
 
 // ---------- audio ----------
 let ctx = null, master = null, speaker = null, analyser = null, playGroup = null, bedTimer = null, bedGain = null;
+let playGeneration = 0, playAbort = null;
 const pickers = new Map();
 const SPEAKERS = {
   full: [],
@@ -66,6 +68,9 @@ function setSpeaker(mode) {
 }
 
 function stopAll() {
+  playGeneration++;
+  playAbort?.abort();
+  playAbort = null;
   if (playGroup) { playGroup.gain.setTargetAtTime(0, ctx.currentTime, 0.01); const g = playGroup; setTimeout(() => g.disconnect(), 200); playGroup = null; }
   document.querySelectorAll('.pad.playing').forEach(p => p.classList.remove('playing'));
   $('#led').classList.remove('on');
@@ -73,40 +78,57 @@ function stopAll() {
 
 function candidate(index) { return data.candidates.find(c => c.index === index); }
 
-function playPatch(patch, trimDb, when, seed, group, kind = 'candidate') {
+function playPatch(patch, trimDb, when, seed, group, samples, scale, kind = 'candidate') {
   const key = `${kind}:${patch.name}`; // a kit sound and a candidate may share a name
   if (!pickers.has(key)) pickers.set(key, createPicker(patch, seed));
   const variant = pickers.get(key).next();
-  return buildPatch(ctx, patch, { destination: group, when, seed, variant, trimDb, scale: data.scale });
+  return buildPatch(ctx, patch, { destination: group, when, seed, variant, trimDb, samples, scale });
 }
 
 /** Play a candidate: once, ×5 at 0.4 s, or ×75, optionally interleaved with the kit. */
 async function play(index, { count = repeat, pad = null } = {}) {
-  audio();
-  if (ctx.state !== 'running') await ctx.resume();
   stopAll();
-  const c = candidate(index);
-  lastPlayed = index;
-  playGroup = ctx.createGain();
-  playGroup.connect(master);
-  const kit = withKit ? data.kit : [];
-  let t = ctx.currentTime + 0.05;
-  let end = t;
-  for (let i = 0; i < count; i++) {
-    if (kit.length) {
-      const k = kit[i % kit.length];
-      end = Math.max(end, playPatch(k.patch, k.trimDb, t, k.seed ?? 1, playGroup, 'kit').end);
-      t += 0.5;
+  const generation = playGeneration, controller = new AbortController();
+  playAbort = controller;
+  const current = () => generation === playGeneration && !controller.signal.aborted;
+  const c = candidate(index), kit = withKit ? data.kit.slice(0, count) : [], scale = data.scale;
+  const mode = `${count}${withKit ? '+kit' : ''}`;
+  try {
+    audio();
+    if (ctx.state !== 'running') { await ctx.resume(); if (!current()) return null; }
+    const prepared = new Map();
+    const baseURL = new URL(`/api/session/${id}/assets/`, location.href);
+    const fetcher = (url, init) => fetch(url, { ...init, headers: { 'x-beeps-token': token } });
+    for (const source of [c, ...kit]) {
+      const samples = await loadCueAssets(ctx, source, { baseURL, fetcher, signal: controller.signal });
+      if (!current()) return null;
+      prepared.set(source, samples);
     }
-    end = Math.max(end, playPatch(c.patch, c.trimDb, t, c.seed ?? 1, playGroup).end);
-    t += 0.4;
-  }
-  const el = pad ?? document.querySelector(`.pad[data-index="${index}"]`);
-  if (el) { el.classList.add('playing'); scope(el, end); }
-  $('#led').classList.add('on');
-  const g = playGroup;
-  setTimeout(() => { if (playGroup === g) { el?.classList.remove('playing'); $('#led').classList.remove('on'); } }, (end - ctx.currentTime) * 1000 + 50);
-  send({ type: 'play', index, mode: `${count}${withKit ? '+kit' : ''}` }, true);
+    lastPlayed = index;
+    playGroup = ctx.createGain();
+    playGroup.connect(master);
+    let t = ctx.currentTime + 0.05;
+    let end = t;
+    for (let i = 0; i < count; i++) {
+      if (kit.length) {
+        const k = kit[i % kit.length];
+        end = Math.max(end, playPatch(k.patch, k.trimDb, t, k.seed ?? 1, playGroup, prepared.get(k), scale, 'kit').end);
+        t += 0.5;
+      }
+      end = Math.max(end, playPatch(c.patch, c.trimDb, t, c.seed ?? 1, playGroup, prepared.get(c), scale).end);
+      t += 0.4;
+    }
+    const el = pad ?? document.querySelector(`.pad[data-index="${index}"]`);
+    if (el) { el.classList.add('playing'); scope(el, end); }
+    $('#led').classList.add('on');
+    const g = playGroup;
+    setTimeout(() => { if (playGroup === g) { el?.classList.remove('playing'); $('#led').classList.remove('on'); } }, (end - ctx.currentTime) * 1000 + 50);
+    send({ type: 'play', index, mode }, true);
+    return generation;
+  } catch (e) {
+    if (current()) { stopAll(); toast(`Could not play: ${e.message}`); }
+    return null;
+  } finally { if (current()) playAbort = null; }
 }
 
 /** Live oscilloscope sweeping across the pad's spectrogram face while it sounds. */
@@ -381,8 +403,9 @@ document.addEventListener('keydown', async e => {
       e.preventDefault();
       const { left, right } = duelSides;
       const len = patch => (patch.duration ?? 0.3) + Math.max(...patch.layers.map(l => l.amp.release ?? 0.05)) + 0.25;
-      await play(left, { count: 1 });
-      setTimeout(() => { if (duelSides?.right === right) play(right, { count: 1 }); }, Math.min(3000, len(candidate(left).patch) * 1000));
+      const generation = await play(left, { count: 1 });
+      if (generation == null || generation !== playGeneration) return;
+      setTimeout(() => { if (generation === playGeneration && duelSides?.right === right) play(right, { count: 1 }); }, Math.min(3000, len(candidate(left).patch) * 1000));
     }
     if (e.key === 'ArrowLeft') buttons[0].click();
     if (e.key === 'ArrowDown') buttons[1].click();

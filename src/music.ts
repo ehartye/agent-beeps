@@ -120,6 +120,9 @@ export function resolveInstruments(p: OpenProject, song: Song): Record<string, P
     return r.patch;
   };
   const instruments = Object.fromEntries(Object.entries(song.tracks).map(([track, t]) => [track, fromSpec(t.instrument, `/tracks/${track}/instrument`, typeof t.instrument === 'string' ? t.instrument : track)]));
+  for (const [track, patch] of Object.entries(instruments)) if (patch.layers.some(l => l.source.type === 'sample')) {
+    throw new BeepsError('E_SCHEMA', 'sample instruments are not supported in songs', { pointer: `/tracks/${track}/instrument` });
+  }
   const { events } = compileSong(song);
   const issue = songPerformanceIssues(song, instruments, events)[0];
   if (issue) throw new BeepsError('E_SCHEMA', issue.message, { pointer: issue.pointer });

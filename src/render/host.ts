@@ -8,12 +8,13 @@ import { BeepsError } from '../errors.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Song } from '../schema/song.ts';
 import type { Scale } from '../schema/project.ts';
+import type { EncodedSampleWavs } from '../samples/transport.ts';
 
 export const RUNTIME_DIR = join(import.meta.dirname, '..', '..', 'runtime');
 
 const MIME: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
 
-export interface RenderOpts { seed?: number; variant?: number; trimDb?: number; scale?: Scale }
+export interface RenderOpts { seed?: number; variant?: number; trimDb?: number; scale?: Scale; sampleWavs?: EncodedSampleWavs }
 export interface RenderItem { patch: Patch; opts: RenderOpts }
 export interface Pcm { sampleRate: number; delivered: Float32Array[]; authored: Float32Array[] }
 export type RenderResult = ({ ok: true } & Pcm) | { ok: false; error: string };
@@ -141,8 +142,13 @@ export async function openRenderHost(): Promise<RenderHost> {
     url,
     async render(items) {
       const out: RenderResult[] = [];
-      for (let i = 0; i < items.length; i += 12) { // bounded batches keep page memory flat
-        const batch = items.slice(i, i + 12);
+      for (let i = 0; i < items.length;) {
+        // Sample jobs carry up to eight 3.84 MB WAVs: keep one in flight. Pure batches retain their old bound.
+        const sampled = (item: RenderItem) => item.patch.layers.some(l => l.source.type === 'sample') || Object.keys(item.opts.sampleWavs ?? {}).length > 0;
+        let end = i + 1;
+        if (!sampled(items[i])) while (end < items.length && end < i + 12 && !sampled(items[end])) end++;
+        const batch = items.slice(i, end);
+        i = end;
         const raw = await page.evaluate(b => (window as any).beepsRender(b), batch) as any[];
         for (const r of raw) {
           if (r.error) out.push({ ok: false, error: r.error });

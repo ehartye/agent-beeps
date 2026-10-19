@@ -1,5 +1,5 @@
 // One layer: source → drive → filter → tremolo → amp envelope → pan → layer gain → out.
-import { buildSource, validateSourceEnvelopes } from './sources.js';
+import { buildSource, sampleBuffer, validateSourceEnvelopes } from './sources.js';
 import { noteToHz, snapToScale } from './notes.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Layer} Layer */
@@ -73,23 +73,25 @@ export function envelopeAt(amp, t) {
 }
 
 /**
- * `hold` (runtime path only): the layer does not schedule its own release. It sounds until the returned
- * `release(at)` is called, which schedules exactly what the default path schedules at `when + duration`.
+ * `hold` (runtime path only): procedural layers wait for `release(at)`. Finite sample layers instead
+ * start their authored amp release at source exhaustion; an earlier `release(at)` replaces that schedule.
  * The returned `nodes` are references to nodes the graph already contains (no node is added for them), so a
  * runtime can automate a live input. Without `hold` the graph, its events and their order are unchanged.
  * @param {BaseAudioContext} ctx
  * @param {Layer} layer
  * `pitchRatio` is a pitch offset applied after the scale has chosen the note (a variant's detune): the scale decides which
- * note a sound is, the offset moves it from there. Sources without a pitch (noise, grains, metal) are not moved by it.
- * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode, hold?: boolean, pitchRatio?: number }} opts
+ * note a sound is, the offset moves it from there. Unpitched sources, including samples, are not moved by it.
+ * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode, hold?: boolean, pitchRatio?: number, samples?: Readonly<Record<string, AudioBuffer>> }} opts
  * @returns {{ end: number, release: (at: number) => number, stop: (t: number) => void, nodes: LayerNodes }}
  */
-export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1 }) {
+export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1, samples }) {
   const { when: t0, pitchHz: base } = resolveLayerSource(layer, { when, scale, pitchRatio });
   const { attack, decay, sustain, release } = layer.amp;
   const off = Math.max(t0 + Math.min(attack, 0.002), when + duration);
   const end = off + release;
-  const built = buildSource(ctx, layer.source, { pitchHz: base, seed, length: end - t0 });
+  const prepared = sampleBuffer(layer.source, samples);
+  const naturalEnd = prepared ? t0 + prepared.length / prepared.sampleRate : Infinity;
+  const built = buildSource(ctx, layer.source, { pitchHz: base, seed, length: end - t0, samples });
 
   // Pitch envelope: every frequency param follows, keeping its ratio to the fundamental.
   if (layer.pitchEnv?.length) {
@@ -137,13 +139,19 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
   if (attack > 0) amp.gain.linearRampToValueAtTime(1, t0 + attack);
   else amp.gain.setValueAtTime(1, t0);
   if (decay > 0 && sustain < 1) amp.gain.setTargetAtTime(sustain, t0 + attack, decay / 3);
-  /** The release: hold the analytic level at `at`, then fall linearly to silence. Returns when the voice is silent. */
-  const scheduleRelease = (/** @type {number} */ at) => {
-    amp.gain.setValueAtTime(envelopeAt(layer.amp, at - t0), at);
+  /** Release from the analytic level. A finite held sample replaces future amp events;
+   * reconstruct an interrupted attack endpoint so cancellation preserves its earlier ramp.
+   */
+  const scheduleRelease = (/** @type {number} */ at, replace = false) => {
+    const level = envelopeAt(layer.amp, at - t0);
+    if (replace) amp.gain.cancelScheduledValues(at);
+    if (replace && at > t0 && at <= t0 + attack) amp.gain.linearRampToValueAtTime(level, at);
+    else amp.gain.setValueAtTime(level, at);
     amp.gain.linearRampToValueAtTime(0, at + release);
     return at + release;
   };
   if (!hold) scheduleRelease(off);
+  else if (prepared) scheduleRelease(naturalEnd, true);
   node = node.connect(amp);
 
   // Opt-in second filter, after the envelope: the envelope is what leaves a short low burst with a
@@ -175,6 +183,7 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
     }
     lfo.start(t0);
     if (!hold) lfo.stop(end);
+    else if (prepared) lfo.stop(naturalEnd + release);
     lfoNode = lfo;
   }
 
@@ -194,9 +203,15 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
   built.start(t0);
   if (!hold) built.stop(end + 0.01);
   return {
-    end: hold ? Infinity : end,
+    // Exhaustion only ends the source: pre-amp filters can still sound. Keep authored
+    // amp/fx lifetimes, including the existing post-amp HP/drive cleanup convention;
+    // this does not estimate arbitrary filter decay. A held sample releases at exhaustion.
+    end: hold ? (prepared ? naturalEnd + release : Infinity) : end,
     release(at) {
-      const silent = scheduleRelease(Math.max(at, t0 + Math.min(attack, 0.002)));
+      const releaseAt = Math.max(at, t0 + Math.min(attack, 0.002));
+      // Once the automatic release has started, a later stop must not restart it.
+      if (hold && prepared && releaseAt >= naturalEnd) return naturalEnd + release;
+      const silent = scheduleRelease(releaseAt, hold && !!prepared);
       built.stop(silent + 0.01);
       lfoNode?.stop(silent);
       return silent;

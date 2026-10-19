@@ -5,6 +5,8 @@ import { chromium } from 'playwright';
 import { serveShowcase } from './showcase-server.mjs';
 import { parsePatch } from '../src/schema/patch.ts';
 import { songOrThrow } from '../src/music.ts';
+import { checkFuseFiles, testFuse } from './test-fuse.mjs';
+import { testTransport } from './test-showcase-transport.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const site=resolve(root,'_site');
@@ -20,6 +22,7 @@ songOrThrow(JSON.parse(readFileSync(resolve(site,'recipes/matter.json'),'utf8'))
 const study=JSON.parse(readFileSync(resolve(site,'media/touch-quality.json'),'utf8'));
 const flux=JSON.parse(readFileSync(resolve(site,'media/flux-session.json'),'utf8'));
 const fluxQuality=JSON.parse(readFileSync(resolve(site,'media/flux-quality.json'),'utf8'));
+const fuse=checkFuseFiles(root,site);
 assert.equal(flux.cases.length,3);assert.equal(fluxQuality.reports.length,6);
 for(const c of flux.cases){
   for(const take of Object.values(c.takes)){
@@ -54,12 +57,12 @@ try {
   await page.waitForFunction(()=>document.querySelectorAll('[data-flux-take]').length===6);
   assert.equal(await page.locator('[data-scene]').count(),9);
   assert.equal(await page.locator('#audio').evaluate(a=>a.paused),true,'no autoplay');
-  await page.getByRole('button',{name:'Play reel',exact:true}).click();
+  await page.locator('#matter-play').click();
   await page.waitForFunction(()=>document.querySelector('#audio').currentTime>.1);
   await page.getByRole('button',{name:'06 Iron',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#audio').currentTime>=45);
   assert.equal(await page.locator('#scene-title').textContent(),'Iron');
-  await page.getByRole('button',{name:'Pause reel',exact:true}).click();
+  await page.getByRole('button',{name:'Pause Matter',exact:true}).click();
   assert.equal(await page.locator('#audio').evaluate(a=>a.paused),true);
   await page.locator('#np-strip').focus();await page.keyboard.press('Home');
   await page.waitForFunction(()=>document.querySelector('#audio').currentTime<2);
@@ -74,7 +77,7 @@ try {
   await page.getByRole('button',{name:'A · Plain',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#touch-audio').readyState>=1&&document.querySelector('#touch-audio').currentTime>=5);
   assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused),true,'switching a paused take stays paused');
-  await page.getByRole('button',{name:'Play reel',exact:true}).click();
+  await page.locator('#matter-play').click();
   assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused),true,'reel pauses comparison');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused&&a.currentTime===0),true,'stop resets comparison');
@@ -94,7 +97,8 @@ try {
   }
   await page.keyboard.press('Escape');assert.equal(await page.locator('.pad.playing').count(),0);
   assert.equal(await page.locator('#audio').evaluate(a=>a.paused&&a.currentTime===0),true);
-  await page.getByRole('button',{name:'Repeat reel'}).click();
+  await page.locator('#matter-play').click();await page.locator('#stop').click();
+  await page.getByRole('button',{name:'Repeat Matter'}).click();
   assert.equal(await page.locator('#audio').evaluate(a=>a.loop),true);
   // Independently render every shipped live patch in the browser: finite, non-silent, no overload.
   const signals=await page.evaluate(async()=>{
@@ -129,13 +133,23 @@ try {
     return reports;
   });
   for(const s of fluxSignals)assert.ok(s.finite&&s.energy>0&&s.peak>.001&&s.peak<1,`${s.name}: healthy signal`);
+  const fuseSignals=await testFuse(page,server,fuse,artifact);
+  await testTransport(browser,server);
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:resolve(artifact,'desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
+  for(const take of fuse.cases.flatMap(c=>c.takes)){
+    await page.getByRole('button',{name:`Play Fuse: ${take.title}`,exact:true}).click();
+    await page.waitForFunction(title=>document.querySelector('#fuse-status').textContent.includes(`${title} · playing`),take.title);
+  }
+  await page.keyboard.press('Escape');
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:resolve(artifact,'mobile.png'),fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile fits viewport');
-  await page.getByRole('button',{name:'Play reel',exact:true}).click();
+  await page.locator('#fuse').evaluate(el=>el.scrollIntoView());
+  assert.ok(await page.evaluate(()=>document.querySelector('#fuse').getBoundingClientRect().top>=document.querySelector('.transport').getBoundingClientRect().bottom),'Fuse anchor clears the sticky transport');
+  await page.screenshot({path:resolve(artifact,'mobile-fuse.png')});
+  await page.locator('#matter-play').click();
   await page.waitForFunction(()=>!document.querySelector('#audio').paused);
   await page.getByRole('button',{name:'Stop all audio'}).click();
   await page.locator('#liner').evaluate(d=>{d.open=true;});
@@ -147,5 +161,5 @@ try {
   await failed.goto(`${server.url}/agent-beeps/`);
   await failed.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));
   assert.equal(await failed.locator('#play').isDisabled(),true);
-  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals},null,2));
+  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','nine live Fuse cues, all recording/hybrid source negative controls, actual5/1 gun groups, cross-row cancellation, licensed originals and portable metal downloads','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals,fuseSignals},null,2));
 } finally {await browser.close();server.server.close();}

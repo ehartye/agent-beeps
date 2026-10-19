@@ -120,8 +120,9 @@ const Metal = z.strictObject({
   bands: z.tuple([z.number().positive().max(24000), z.number().positive().max(24000)]).default([3440, 7100]),
 });
 
-export const SOURCE_TYPES = ['osc', 'noise', 'fm', 'additive', 'modal', 'grains', 'metal', 'voice'] as const;
-const Source = z.discriminatedUnion('type', [Osc, Noise, Fm, Additive, Modal, Grains, Metal, Voice]);
+const Sample = z.strictObject({ type: z.literal('sample'), asset: z.string().regex(/^sha256:[0-9a-f]{64}$/, 'sample asset must be sha256:<64 lowercase hex digits>') });
+export const SOURCE_TYPES = ['osc', 'noise', 'fm', 'additive', 'modal', 'grains', 'metal', 'voice', 'sample'] as const;
+const Source = z.discriminatedUnion('type', [Osc, Noise, Fm, Additive, Modal, Grains, Metal, Voice, Sample]);
 
 const PitchPoint = z.strictObject({ at: z.number().min(0).max(10), to: Pitch, curve: z.enum(['linear', 'exp', 'step']).default('exp') });
 
@@ -137,6 +138,10 @@ const Layer = z.strictObject({
   lfo: z.strictObject({ target: z.enum(['pitch', 'gain', 'cutoff']), rate: z.number().positive().max(200), depth: z.number().min(0) }).optional(),
   drive: z.number().min(0).max(1).optional(),
   pan: z.number().min(-1).max(1).optional(),
+}).superRefine((layer, ctx) => {
+  if (layer.source.type !== 'sample') return;
+  if (layer.pitchEnv !== undefined) ctx.addIssue({ code: 'custom', path: ['pitchEnv'], message: 'sample sources are unpitched: pitchEnv is not supported' });
+  if (layer.lfo?.target === 'pitch') ctx.addIssue({ code: 'custom', path: ['lfo', 'target'], message: 'sample sources are unpitched: pitch LFO is not supported' });
 });
 
 /**

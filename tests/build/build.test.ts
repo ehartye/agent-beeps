@@ -365,9 +365,9 @@ describe.skipIf(!ok)('beeps build', () => {
     expect(readLock(fx.path('audio.lock.json'))!.assets.blip).toEqual(baseLock().assets.blip);
     const half = await runBuild(base.cfg({ kbps: { sfx: 36 } }), { check: true });
     const full = await runBuild(base.cfg(), { check: true });
-    const sfxBytes = ['blip', 'coin'].flatMap(id => baseLock().assets[id].outputs).reduce((s, o) => s + o.bytes, 0);
-    expect(full.estimate.totalBytes - half.estimate.totalBytes).toBeGreaterThan(sfxBytes * 0.45);
-    expect(full.estimate.totalBytes - half.estimate.totalBytes).toBeLessThan(sfxBytes * 0.55);
+    const encodedBytes = ['blip', 'coin'].flatMap(id => baseLock().assets[id].outputs).filter(o => /\.(ogg|mp3)$/.test(o.file)).reduce((s, o) => s + o.bytes, 0);
+    // The sidecars stay fixed when only the encoded baked bitrate is halved.
+    expect(full.estimate.totalBytes - half.estimate.totalBytes).toBeCloseTo(encodedBytes / 2, -1);
   }, 120000);
 });
 

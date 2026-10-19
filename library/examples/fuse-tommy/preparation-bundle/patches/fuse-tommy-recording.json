@@ -1,0 +1,35 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-tommy-recording",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty",
+    "gunshot"
+  ],
+  "duration": 5.974833333333334,
+  "layers": [
+    {
+      "source": {
+        "type": "sample",
+        "asset": "sha256:9289d7025a431875ec57008a535fd47eb4b7fc70ced175ea84574c14a5a6af43"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0
+      }
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "The complete original Tommy-gun sequence: five bursts and the room between them."
+  }
+}

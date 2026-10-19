@@ -4,7 +4,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CUE_SCHEMA, type Cue } from '../../runtime/engine/index.js';
+import { CUE_SCHEMA, type Cue, type SampleAssetManifest } from '../../runtime/engine/index.js';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { BeepsError } from '../errors.ts';
 import { canonicalJson, sha256 } from '../hash.ts';
@@ -25,8 +25,8 @@ export const wantsBaked = (d: Delivery) => d !== 'runtime';
 /** `<id>.runtime.json`: next to the baked files, and not matching their sidecar names (`*.wav.json`, `*.ogg.json`). */
 export const cueFile = (id: string) => `${id}.runtime.json`;
 
-export function makeCue(patch: Patch, project: Project, seed: number, trimDb: number): Cue {
-  return { schema: CUE_SCHEMA, id: patch.name, engine: ENGINE_VERSION, seed, trimDb, scale: project.scale, patch };
+export function makeCue(patch: Patch, project: Project, seed: number, trimDb: number, assets?: SampleAssetManifest): Cue {
+  return { schema: CUE_SCHEMA, id: patch.name, engine: ENGINE_VERSION, seed, trimDb, scale: project.scale, patch, ...(assets && Object.keys(assets).length ? { assets } : {}) };
 }
 
 /** The cue as written: canonical JSON (sorted keys), one line, LF, so equal cues are equal bytes. */
@@ -38,9 +38,9 @@ export function cueText(cue: Cue): string {
 export const runtimePart = (patch: Patch): string => sha256(canonicalJson({ schema: CUE_SCHEMA, patch }));
 
 /** Measure the baked pipeline's loudness trim for each patch at its seed (variant 0, input defaults) and make its cue. */
-export async function cuesFor(host: RenderHost, patches: Patch[], project: Project, { seeds = {}, rendersDir = join(mkdtempSync(join(tmpdir(), 'beeps-renders-')), 'renders') }: { seeds?: Record<string, number>; rendersDir?: string } = {}): Promise<Cue[]> {
+export async function cuesFor(host: RenderHost, patches: Patch[], project: Project, { seeds = {}, rendersDir = join(mkdtempSync(join(tmpdir(), 'beeps-renders-')), 'renders'), sampleObjectsDir }: { seeds?: Record<string, number>; rendersDir?: string; sampleObjectsDir?: string } = {}): Promise<Cue[]> {
   const items = patches.map(patch => ({ patch, seed: seeds[patch.name] ?? 1, variant: 0 }));
-  const out = await renderAndMeasure(host, items, { project, rendersDir });
+  const out = await renderAndMeasure(host, items, { project, rendersDir, sampleObjectsDir });
   return out.map((o, i) => {
     if (!o.ok) throw new BeepsError('E_RENDER', `${o.patchName}: ${o.error}`);
     return makeCue(patches[i], project, items[i].seed, o.trimDb);

@@ -16,6 +16,8 @@ import { readWav } from '../src/audio/wav.ts';
 import { integrated, truePeakDb } from '../src/measure/loudness.ts';
 import { renderExpression } from './render-expression.mjs';
 import { renderFlux } from './render-flux.mjs';
+import { renderFuse } from './render-fuse.mjs';
+import { renderHeavyFuse } from './render-fuse-heavy.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const media=resolve(root,'showcase/media');
@@ -82,8 +84,11 @@ try {
   write(resolve(media,'quality.json'),{song:{renderKey:reel.key,features:reel.features,lint},pads:padReports,encoded:{integratedLufs:session.loudnessLufs,truePeakDb:peak,durationSec:session.durationSec},project:project.project});
   await renderExpression(host,project);
   await renderFlux(host,project);
+  await renderFuse(host,project);
+  await renderHeavyFuse(host,project);
   const {readdirSync}=await import('node:fs');
-  const files=['showcase/project.json',...readdirSync(media).filter(f=>f!=='manifest.json').map(f=>`showcase/media/${f}`),...readdirSync(recipes).map(f=>`showcase/recipes/${f}`),...readdirSync(resolve(root,'runtime/engine')).filter(f=>f.endsWith('.js')).map(f=>`runtime/engine/${f}`)];
+  const fuseFiles=['library/examples/fuse','library/examples/fuse-tommy','library/examples/fuse-m16'].flatMap(fuse=>readdirSync(resolve(root,fuse),{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>resolve(e.parentPath,e.name).slice(root.length+1).replaceAll('\\','/'))).sort();
+  const files=['showcase/project.json',...readdirSync(media).filter(f=>f!=='manifest.json').map(f=>`showcase/media/${f}`),...readdirSync(recipes).map(f=>`showcase/recipes/${f}`),...fuseFiles,...readdirSync(resolve(root,'runtime/engine')).filter(f=>f.endsWith('.js')).map(f=>`runtime/engine/${f}`)];
   write(resolve(media,'manifest.json'),{schema:'beeps/showcase-assets@1',files:Object.fromEntries(files.map(p=>[p,hash(resolve(root,p))]))});
   console.log(JSON.stringify({duration:session.durationSec,lufs:session.loudnessLufs,peak,warnings:lint.warnings,padWarnings:padReports.map(p=>({name:p.name,warnings:p.lint.warnings}))},null,2));
 } finally {await host.close();}

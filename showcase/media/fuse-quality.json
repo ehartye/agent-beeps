@@ -1,0 +1,181 @@
+{
+  "schema": "beeps/fuse-quality@1",
+  "comparison": "Individually leveled max-momentary comparisons; relative layer balance in the hybrid differs from solo playback.",
+  "ownerListening": "pending",
+  "reports": [
+    {
+      "name": "fuse-recording",
+      "renderKey": "9ff1c54fe043759997203e14e15eb355f818828e11a30cced7007e7584866b39",
+      "seed": 607,
+      "trimDb": 2.78,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.013903418205512,
+      "truePeakDb": -1.6971563739979656,
+      "features": {
+        "durationSec": 0.37,
+        "samplePeakDb": -4.49,
+        "truePeakDb": -4.48,
+        "dcOffset": -0.00025,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -27.79,
+        "shortTermMaxLufs": -36.54,
+        "integratedLufs": -27.79,
+        "integratedReliable": false,
+        "attackSec": 0.001,
+        "energyLengthSec": 0.165,
+        "tailSec": 0.166,
+        "crestDb": 20.67,
+        "centroidHz": 1431.7,
+        "centroidPeakHz": 1399.2,
+        "flatness": 0.0003,
+        "bands": [
+          -22.13,
+          -29.79,
+          -35.19,
+          -34.19,
+          -2.64,
+          -13.2,
+          -7.89,
+          -45.51
+        ],
+        "sharpness": 1.458,
+        "roughness": 0.0115,
+        "fluctuation": 0.8903,
+        "pitchHz": 213.1,
+        "pitchStrength": 0.906,
+        "pitchDirection": 0,
+        "voicedFraction": 0.8333,
+        "delivered": {
+          "samplePeakDb": -1.709012059019033,
+          "truePeakDb": -1.6971563739979656,
+          "momentaryMaxLufs": -25.013903418205512,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "fuse-procedural",
+      "renderKey": "48883214ed6c29e660f7874fe1077c9095145b6f45515b06b24b5e2c58a4da3c",
+      "seed": 607,
+      "trimDb": -15.839237267695895,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.01000002172351,
+      "truePeakDb": -12.306422918744577,
+      "features": {
+        "durationSec": 2.222,
+        "samplePeakDb": 3.53,
+        "truePeakDb": 3.53,
+        "dcOffset": 0,
+        "clippedSamples": 671,
+        "momentaryMaxLufs": -9.17,
+        "shortTermMaxLufs": -17.92,
+        "integratedLufs": -13.09,
+        "integratedReliable": true,
+        "attackSec": 0.007,
+        "energyLengthSec": 0.576,
+        "tailSec": 1.042,
+        "crestDb": 18.44,
+        "centroidHz": 207.1,
+        "centroidPeakHz": 246.4,
+        "flatness": 0,
+        "bands": [
+          -5.06,
+          -4.41,
+          -5.18,
+          -18.53,
+          -40.07,
+          -43.51,
+          -50.73,
+          -52.78
+        ],
+        "sharpness": 0.9043,
+        "roughness": 0.0132,
+        "fluctuation": 0.0281,
+        "pitchHz": 65.45,
+        "pitchStrength": 0.9613,
+        "pitchDirection": -10.83,
+        "voicedFraction": 0.9524,
+        "delivered": {
+          "samplePeakDb": -12.306637579541755,
+          "truePeakDb": -12.306422918744577,
+          "momentaryMaxLufs": -25.01000002172351,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "fuse-hybrid",
+      "renderKey": "7fe516adf5e588d82b23fb2896d5051a078b1c2eaf31897f83815d74a286a763",
+      "seed": 607,
+      "trimDb": -5.436655325207948,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.010000201732467,
+      "truePeakDb": -10.28381224186955,
+      "features": {
+        "durationSec": 2.222,
+        "samplePeakDb": -4.85,
+        "truePeakDb": -4.85,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -19.57,
+        "shortTermMaxLufs": -28.29,
+        "integratedLufs": -24.57,
+        "integratedReliable": true,
+        "attackSec": 0.019,
+        "energyLengthSec": 0.793,
+        "tailSec": 1.191,
+        "crestDb": 20.88,
+        "centroidHz": 304.8,
+        "centroidPeakHz": 569.5,
+        "flatness": 0.0003,
+        "bands": [
+          -4.9,
+          -8.8,
+          -6.97,
+          -6.15,
+          -26.9,
+          -29.92,
+          -31.76,
+          -44.3
+        ],
+        "sharpness": 1.1198,
+        "roughness": 0.0245,
+        "fluctuation": 0.0223,
+        "pitchHz": 65.46,
+        "pitchStrength": 0.9926,
+        "pitchDirection": -1.45,
+        "voicedFraction": 0.9667,
+        "delivered": {
+          "samplePeakDb": -10.28381224186955,
+          "truePeakDb": -10.28381224186955,
+          "momentaryMaxLufs": -25.010000201732467,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    }
+  ]
+}

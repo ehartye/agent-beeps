@@ -234,7 +234,8 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
     const floor = c.num('attack-floor');
     const quiet = c.param<number>('attack-floor', 'quietLayerGainDb');
     patch.layers.forEach((layer, i) => {
-      if (layer.amp.attack < floor && layer.gainDb > quiet) {
+      // Prepared recordings can carry their fade in PCM; the measured onset still applies.
+      if (layer.source.type !== 'sample' && layer.amp.attack < floor && layer.gainDb > quiet) {
         c.add('attack-floor', `layer ${i} attack ${layer.amp.attack} s is under ${floor} s (clicks at onset); lengthen it, lower the layer to gainDb ${quiet} or below, or set meta.intent to "click"`, `/layers/${i}/amp/attack`);
       }
     });

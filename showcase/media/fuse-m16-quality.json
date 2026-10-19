@@ -1,0 +1,196 @@
+{
+  "schema": "beeps/fuse-quality@1",
+  "comparison": "Individually leveled max-momentary comparisons; hybrid layer balance differs from solo playback.",
+  "ownerListening": "pending",
+  "reports": [
+    {
+      "name": "fuse-m16-recording",
+      "renderKey": "568111e3213dd83d329a443efd116d883681836709acbc4de336b0936bc018c7",
+      "seed": 607,
+      "trimDb": -5.609142256183622,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.00999948755596,
+      "truePeakDb": -15.420651247578556,
+      "features": {
+        "durationSec": 5.5563,
+        "samplePeakDb": -9.81,
+        "truePeakDb": -9.81,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -19.4,
+        "shortTermMaxLufs": -20.75,
+        "integratedLufs": -20.8,
+        "integratedReliable": true,
+        "attackSec": 0.01,
+        "energyLengthSec": 5.47,
+        "tailSec": 5.504,
+        "crestDb": 16.43,
+        "centroidHz": 756.6,
+        "centroidPeakHz": 748,
+        "flatness": 0.0052,
+        "bands": [
+          -16.67,
+          -9.91,
+          -7.1,
+          -3.08,
+          -8.56,
+          -13.56,
+          -26.68,
+          -29.78
+        ],
+        "sharpness": 1.3788,
+        "roughness": 0.0675,
+        "fluctuation": 0.0635,
+        "pitchHz": 0,
+        "pitchStrength": 0.3747,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -15.420651247578556,
+          "truePeakDb": -15.420651247578556,
+          "momentaryMaxLufs": -25.00999948755596,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "tail-ceiling",
+            "message": "tail 5.504 s exceeds the 2 s ceiling for family \"foley\" (5.47 s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "fuse-m16-procedural",
+      "renderKey": "31f4146ce28667c524b84c9710b83eb1e5fa0f168487b0656cbfb820dc483ec7",
+      "seed": 607,
+      "trimDb": -14.924332527145822,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.01000020554447,
+      "truePeakDb": -12.891382412940438,
+      "features": {
+        "durationSec": 6.0113,
+        "samplePeakDb": 2.02,
+        "truePeakDb": 2.03,
+        "dcOffset": 0,
+        "clippedSamples": 109,
+        "momentaryMaxLufs": -10.09,
+        "shortTermMaxLufs": -15.98,
+        "integratedLufs": -15.91,
+        "integratedReliable": true,
+        "attackSec": 0.008,
+        "energyLengthSec": 5.313,
+        "tailSec": 5.52,
+        "crestDb": 22.83,
+        "centroidHz": 428.5,
+        "centroidPeakHz": 384.3,
+        "flatness": 0.0094,
+        "bands": [
+          -7.51,
+          -6.46,
+          -4.8,
+          -7.8,
+          -12.59,
+          -18.2,
+          -24.37,
+          -31.23
+        ],
+        "sharpness": 1.3747,
+        "roughness": 0.0497,
+        "fluctuation": 0.0485,
+        "pitchHz": 0,
+        "pitchStrength": 0.218,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -12.904562922092353,
+          "truePeakDb": -12.891382412940438,
+          "momentaryMaxLufs": -25.01000020554447,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "tail-ceiling",
+            "message": "tail 5.52 s exceeds the 2 s ceiling for family \"foley\" (5.313 s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "name": "fuse-m16-hybrid",
+      "renderKey": "54a23d0cb1fb02255885603977579b4f7b5ff3a40da48b5c2f9a31fa9f5ee2a7",
+      "seed": 607,
+      "trimDb": -8.826494756736292,
+      "loudnessTargetLufs": -25.01,
+      "momentaryMaxLufs": -25.009999955025958,
+      "truePeakDb": -14.724303521383774,
+      "features": {
+        "durationSec": 6.0113,
+        "samplePeakDb": -5.92,
+        "truePeakDb": -5.9,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -16.18,
+        "shortTermMaxLufs": -19.2,
+        "integratedLufs": -19.54,
+        "integratedReliable": true,
+        "attackSec": 0.004,
+        "energyLengthSec": 5.459,
+        "tailSec": 5.535,
+        "crestDb": 18.58,
+        "centroidHz": 658.3,
+        "centroidPeakHz": 501.3,
+        "flatness": 0.0085,
+        "bands": [
+          -12.17,
+          -8.27,
+          -6.26,
+          -4.1,
+          -9.46,
+          -14.54,
+          -25.53,
+          -30.13
+        ],
+        "sharpness": 1.3769,
+        "roughness": 0.0534,
+        "fluctuation": 0.0539,
+        "pitchHz": 0,
+        "pitchStrength": 0.3075,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -14.747121707226361,
+          "truePeakDb": -14.724303521383774,
+          "momentaryMaxLufs": -25.009999955025958,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "tail-ceiling",
+            "message": "tail 5.535 s exceeds the 2 s ceiling for family \"foley\" (5.459 s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    }
+  ]
+}

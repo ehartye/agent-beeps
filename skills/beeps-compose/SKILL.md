@@ -1,7 +1,7 @@
 ---
 name: beeps-compose
-description: Compose procedural game and UI sounds with agent-beeps - generate diverse candidates from archetypes, author or edit JSON patches, render, measure and look at them, and export loudness-matched WAVs.
-when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, when the owner supplies a recording or clip to match or reproduce, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
+description: Compose procedural or recorded-source hybrid game and UI sounds with agent-beeps - generate diverse candidates from archetypes, author or edit JSON patches, render, measure and look at them, and export loudness-matched WAVs.
+when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, when the owner supplies a recording or clip to match, reproduce or combine with synthesis, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
 ---
 
 # Compose sounds
@@ -17,6 +17,16 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
 1. `beeps capabilities --no-schema` - source types, archetypes, refine directions and short notes.
 2. `beeps taste show` - what this owner has preferred so far (skip nothing marked `strong`).
 3. The beeps-craft skill when choosing a synthesis method or checking a sound "feels right".
+
+## Recorded-source or hybrid SFX
+
+For a recording used in a patch, read [hybrid sources](references/hybrid-sources.md) directly.
+Import → prepare a named sample patch → edit/add procedural layers → save → render/lint/look →
+**bundle the final edited patch**. A bundle made before the edit is stale. Default to prepared-only;
+`--include-preparation` also shares normalized source snapshots, possibly with outtakes, never
+original encoded imports, import receipts or private paths. For native playback, resume in the user
+gesture, await `loadCueAssets`, then build a fresh voice per play; cancel obsolete pending work.
+Keep ordinary procedural work on the generate path below; songs/music remain beeps-music.
 
 ## Generate first, author second
 

@@ -1,0 +1,33 @@
+{
+  "schema": "beeps/public-source@1",
+  "title": "M16 automatic rifle shots",
+  "creator": "USC Cinema / Sunset Editorial Collection (CS_USC)",
+  "sourceUrl": "https://archive.org/details/SSE_Library_GUNS/AUTOMATIC/GUNAuto_M16%20automatic%20rifle%20shots_CS_USC.wav",
+  "audioUrl": "https://archive.org/download/SSE_Library_GUNS/AUTOMATIC/GUNAuto_M16%20automatic%20rifle%20shots_CS_USC.wav",
+  "archiveItem": "SSE_Library_GUNS",
+  "archiveMember": "AUTOMATIC/GUNAuto_M16 automatic rifle shots_CS_USC.wav",
+  "sourceEncoding": "Internet Archive original WAV, not a preview transcode",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "licenseEvidence": "The Internet Archive item metadata supplies the CC0 license URL; its member SHA1 matches the selected original WAV.",
+  "original": {
+    "sha256": "612213e122b3efc5122f29ecc78fc4bd6968380ab1c68e38f4225a28878f1161",
+    "sha1": "befbac2e5a7dd9c0de5addf9da9614bd22317a9d",
+    "bytes": 794224
+  },
+  "normalization": {
+    "sampleRate": 48000,
+    "sourceSampleRate": 48000,
+    "channels": 1,
+    "frames": 264304,
+    "asset": "sha256:3eb0f894e29937804bbb43909f3065a9f328233dd7ed853917f7121ac195169c",
+    "decoder": {
+      "name": "ffmpeg",
+      "ffmpeg": "6.1.1-essentials_build-www.gyan.dev",
+      "libavcodec": "libavcodec60.31.102"
+    }
+  },
+  "history": "The archive item describes sound effects from USC Cinema and/or the Sunset Editorial Collection. The original archive member title is retained.",
+  "derivative": "1 recorded burst group, 5.5063 seconds, with native shots, gaps and room tails. Preparation uses source frames 0–264304, a 240-frame fade in, 1920-frame fade out and unity gain. A DC blocker removes offset. Pulsing low noise supplies designed weight, not an exact shot reconstruction. Runtime cues use separately measured listening trims.",
+  "scope": "CC0 recording and preparation derivatives. No unlisted firearm model or caliber, modern field-recording provenance, creator endorsement or owner listening approval is claimed."
+}

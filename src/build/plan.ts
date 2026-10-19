@@ -19,7 +19,9 @@ import type { Delivery, Recipe } from './config.ts';
 import type { Toolchain } from './lock.ts';
 import { BeepsError } from '../errors.ts';
 import { admitAssetId } from '../export-manifest.ts';
-import { deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
+import { cueText, makeCue, deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
+import { cueSources } from '../runtime/delivery.ts';
+import { samplePaths } from '../samples/store.ts';
 
 export interface Planned {
   recipe: Recipe;
@@ -44,8 +46,11 @@ const withoutSongPipeline = ({ songPipeline: _songs, ...rest }: Toolchain): Omit
 export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, toolchain: Toolchain, encoder: Encoder | undefined): Planned {
   let renders: string[], variants = 1, layers = false, seconds: number, runtime: string | undefined;
   let ships: AssetDelivery = 'baked';
+  let runtimeBytes = 0;
   if (recipe.kind === 'patch') {
     const patch = loadPatch(p, recipe.source);
+    // Verify actual source bytes even for baked-only, before any warm/check/adopt reuse.
+    const sources = cueSources(patch, recipe.id, samplePaths(p).objects);
     admitAssetId(recipe.id, patch.name);
     ships = deliveryOf(patch, recipe.delivery);
     if (wantsRuntime(ships) && patch.name !== recipe.id) {
@@ -53,7 +58,11 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     }
     // A runtime-only asset needs one render (variant 0 at the input defaults) to measure its trim; the game makes variants itself.
     variants = wantsBaked(ships) ? (recipe.variants ?? patch.variation?.variants ?? 1) : 1;
-    if (wantsRuntime(ships)) runtime = runtimePart(patch);
+    if (wantsRuntime(ships)) {
+      runtime = runtimePart(patch);
+      // Reserve 32 bytes for the unknown measured trim's numeric representation.
+      runtimeBytes = [...sources.files.values()].reduce((n, b) => n + b.length, 0) + Buffer.byteLength(cueText(makeCue(patch, p.project, recipe.seed, 0, sources.assets))) + 32;
+    }
     renders = Array.from({ length: variants }, (_, v) => patchRenderKey(patch, p.project, recipe.seed, v));
     seconds = patch.duration * variants;
   } else {
@@ -80,11 +89,11 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     toolchain: sha256(canonicalJson(recipe.kind === 'patch' ? withoutSongPipeline(toolchain) : toolchain)),
     ...(runtime ? { runtime } : {}),
   };
-  const bytes = !wantsBaked(ships) ? 8192 : delivery.format === 'wav' ? seconds * 48000 * 4 : (seconds * rate(recipe.role) * 1000) / 8;
+  const bytes = !wantsBaked(ships) ? 0 : delivery.format === 'wav' ? seconds * 48000 * 4 : (seconds * rate(recipe.role) * 1000) / 8;
   return {
     recipe, variants, layers, ships,
     inputHash: `sha256:${sha256(canonicalJson({ schema: 'beeps-input@1', ...parts }))}`,
     parts: { delivery: h12(parts.delivery), export: h12(parts.export), renders: h12(parts.renders), toolchain: h12(parts.toolchain), ...(runtime ? { runtime: h12(runtime) } : {}) },
-    estimateBytes: Math.ceil(bytes * 1.1),
+    estimateBytes: Math.ceil(bytes * 1.1) + runtimeBytes,
   };
 }

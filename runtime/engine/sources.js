@@ -187,15 +187,32 @@ export function validateSourceEnvelopes(src, { pitchHz, when }) {
   }
 }
 
+/** Prepared buffers are immutable and content-verified by the caller (normally loadCueAssets).
+ * Validate dimensions before any graph allocation, without copying or rehashing PCM per voice.
+ * @param {Source} src
+ * @param {Readonly<Record<string, AudioBuffer>>} [samples]
+ * @returns {AudioBuffer | undefined}
+ */
+export function sampleBuffer(src, samples) {
+  if (src.type !== 'sample') return undefined;
+  const buffer = samples && Object.hasOwn(samples, src.asset) ? samples[src.asset] : undefined;
+  if (!buffer) throw new Error(`missing prepared sample buffer: ${src.asset}`);
+  if (buffer.sampleRate !== 48000) throw new RangeError(`sample ${src.asset} must be 48 kHz`);
+  if (buffer.numberOfChannels !== 1 && buffer.numberOfChannels !== 2) throw new RangeError(`sample ${src.asset} must have 1 or 2 channels`);
+  if (!Number.isSafeInteger(buffer.length) || buffer.length < 1 || buffer.length > 480000) throw new RangeError(`sample ${src.asset} frames must be in 1..480000`);
+  return buffer;
+}
+
 /**
  * @param {BaseAudioContext} ctx
  * @param {Source} src
- * @param {{ pitchHz: number, seed: number, length: number }} opts  length = seconds the source may sound
+ * @param {{ pitchHz: number, seed: number, length: number, samples?: Readonly<Record<string, AudioBuffer>> }} opts  length = seconds the source may sound
  * @returns {BuiltSource}
  */
-export function buildSource(ctx, src, { pitchHz, seed, length }) {
+export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
   // Runtime mappings can combine independently; reject every actual FM curve before creating source nodes.
   if (src.type === 'fm') validateSourceEnvelopes(src, { pitchHz, when: 0 });
+  const prepared = sampleBuffer(src, samples);
   const mix = ctx.createGain();
   /** @type {AudioScheduledSourceNode[]} */
   const nodes = [];
@@ -211,7 +228,13 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
   /** @type {AudioNode[]} */
   const parts = [];
 
-  if (src.type === 'osc') {
+  if (src.type === 'sample') {
+    const s = ctx.createBufferSource();
+    s.buffer = /** @type {AudioBuffer} */ (prepared);
+    // Native defaults: finite one-shot, playbackRate 1, detune 0. Never expose pitch automation.
+    parts.push(s);
+    nodes.push(s);
+  } else if (src.type === 'osc') {
     const voices = src.unison?.voices ?? 1;
     const spread = src.unison?.detuneCents ?? 0;
     for (let i = 0; i < voices; i++) {

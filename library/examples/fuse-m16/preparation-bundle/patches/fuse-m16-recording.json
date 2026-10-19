@@ -1,0 +1,35 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-m16-recording",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty",
+    "gunshot"
+  ],
+  "duration": 5.506333333333333,
+  "layers": [
+    {
+      "source": {
+        "type": "sample",
+        "asset": "sha256:74230ec00955264fdc2c8526d7a688a53f8e0e89430776f1a7a283d6ef6bec0f"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0
+      }
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "One sustained automatic-rifle burst and its full natural room tail, from the original M16 file."
+  }
+}

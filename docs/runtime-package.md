@@ -1,7 +1,7 @@
 # The slim runtime package
 
-A game that plays beeps patches live imports `runtime/engine/index.js`, which reaches 13 files (plus the schema types) and needs no
-dependency at all (its types borrow the schema's, which are `zod`'s). Installing `agent-beeps` itself from git would
+A game that plays beeps patches live imports `runtime/engine/index.js`, whose engine import closure needs no
+run-time dependency (its types borrow the schema's, which are `zod`'s). Installing `agent-beeps` itself from git would
 also install every dependency of the CLI (playwright, commander, ffmpeg-static), because npm installs a git
 dependency's whole `dependencies` list and cannot install a subdirectory of a repository.
 
@@ -17,7 +17,7 @@ Every file is byte-identical to its source; only `package.json` and `README.md` 
 
 | Entry | Import | What it is | Run-time dependencies |
 |---|---|---|---|
-| `.` | `agent-beeps-runtime` | `build`, `parseCue`, `createReverbBus`, `defaultParams`, `createPicker`, `patchLength`, cache limits, `ENGINE_VERSION`, with `.d.ts` | none |
+| `.` | `agent-beeps-runtime` | `build`, `parseCue`, `loadCueAssets`, `createReverbBus`, `defaultParams`, `createPicker`, `patchLength`, cache limits, `ENGINE_VERSION`, with `.d.ts` | none |
 | `./schema` | `agent-beeps-runtime/schema` | `parsePatch`, `PatchSchema`, `runtimeIssues`: validate raw patch JSON and its `xRuntime` bindings (TypeScript source; use a bundler or runner that accepts `.ts`) | `zod` |
 
 Most games load **cues** (`<id>.runtime.json`, written by `beeps build`), which are already parsed, and never import
@@ -28,6 +28,26 @@ Most games load **cues** (`<id>.runtime.json`, written by `beeps build`), which 
 anything but `zod`), if a stale or hand-edited copy is not reported, and it installs the generated tree as a dependency to
 check that it imports in Node, builds the same graph as the repository, bundles, and type-checks a consumer (and rejects a
 consumer that misuses the API).
+
+## Prepared sample loading
+
+Engine 4 supports procedural and recorded-source hybrid cues. Parse the cue, resume the context
+inside the play gesture, await `loadCueAssets(ctx, cue, { baseURL: cueURL, signal })`, then create a
+fresh `build(ctx, out, cue, { samples }).start()` per play. `build` remains synchronous and performs
+no I/O. Stop/replacement must abort pending work and invalidate its generation before a late load
+can start a voice. Cache verified immutable buffers for the cue/context, never a started voice.
+The [complete handler](runtime.md#playing-it) also appears in the generated package README.
+
+The loader checks the exact closure, bounded byte counts, content hashes and canonical WAV metadata,
+including on HTTP LAN origins without WebCrypto. It has no automatic buffer cache. Ship the cue's
+prepared source files at their declared relative URLs under the same static subpath. The package
+contains the loader and source graph, not your recordings, CLI, source-import tools or song renderer.
+
+Prepared sources are finite, unpitched, 48 kHz mono/stereo one-shots of 1–480000 frames (up to ten
+seconds); the patch limit remains eight layers. Sample pitch envelopes/pitch LFOs, loops/stretching
+and song sample instruments are unsupported. Gain/cutoff LFOs remain supported. The authoring CLI
+accepts originals up to 64 MiB and normalized snapshots up to 120 seconds. Attenuation cannot repair
+an already clipped source. [Authoring, replay and privacy](../skills/beeps-compose/references/hybrid-sources.md).
 
 ## The `runtime` branch
 

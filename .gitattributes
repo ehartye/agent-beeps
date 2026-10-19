@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.png binary
 *.wav binary
+# Preserve the upstream license exactly, including its original line endings.
+library/examples/fuse/LICENSE.txt binary

@@ -1,0 +1,33 @@
+{
+  "schema": "beeps/public-source@1",
+  "title": "Tommy gun busts; machine gun",
+  "creator": "USC Cinema / Sunset Editorial Collection (CS_USC)",
+  "sourceUrl": "https://archive.org/details/SSE_Library_GUNS/AUTOMATIC/GUNAuto_Tommy%20gun%20busts%3B%20machine%20gun_CS_USC.wav",
+  "audioUrl": "https://archive.org/download/SSE_Library_GUNS/AUTOMATIC/GUNAuto_Tommy%20gun%20busts%3B%20machine%20gun_CS_USC.wav",
+  "archiveItem": "SSE_Library_GUNS",
+  "archiveMember": "AUTOMATIC/GUNAuto_Tommy gun busts; machine gun_CS_USC.wav",
+  "sourceEncoding": "Internet Archive original WAV, not a preview transcode",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "licenseEvidence": "The Internet Archive item metadata supplies the CC0 license URL; its member SHA1 matches the selected original WAV.",
+  "original": {
+    "sha256": "0d382110caed1ede30dd5a198042072978c56243148c4a893f2e81baa1830d20",
+    "sha1": "4313c4d8fb184971df51997daf29f2be99caef8d",
+    "bytes": 861694
+  },
+  "normalization": {
+    "sampleRate": 48000,
+    "sourceSampleRate": 48000,
+    "channels": 1,
+    "frames": 286792,
+    "asset": "sha256:6db4dc9cc03452a9b79d3c996b489ee7179e8ec8e30a367820b15101deab2cfc",
+    "decoder": {
+      "name": "ffmpeg",
+      "ffmpeg": "6.1.1-essentials_build-www.gyan.dev",
+      "libavcodec": "libavcodec60.31.102"
+    }
+  },
+  "history": "The archive item describes sound effects from USC Cinema and/or the Sunset Editorial Collection. The original archive member title is retained.",
+  "derivative": "5 recorded burst groups, 5.9748 seconds, with native shots, gaps and room tails. Preparation uses source frames 0–286792, a 240-frame fade in, 1920-frame fade out and unity gain. A DC blocker removes offset. Pulsing low noise supplies designed weight, not an exact shot reconstruction. Runtime cues use separately measured listening trims.",
+  "scope": "CC0 recording and preparation derivatives. No unlisted firearm model or caliber, modern field-recording provenance, creator endorsement or owner listening approval is claimed."
+}

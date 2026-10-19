@@ -21,10 +21,13 @@ const ok = (await chromiumAvailable()) && hasFfmpeg;
 describe('fetch.mjs source', () => {
   it('imports only Node built-ins', () => {
     const src = readFileSync(join(import.meta.dirname, '..', '..', 'runtime', 'ci', 'fetch.mjs'), 'utf8');
-    const specs = [...src.matchAll(/^import .* from '([^']+)'/gm)].map(m => m[1]);
+    const specs = [...src.matchAll(/^import .* from ['"]([^'"]+)['"]/gm)].map(m => m[1]);
     expect(specs.length).toBeGreaterThan(2);
     for (const s of specs) expect(s, s).toMatch(/^node:/);
-    expect(src).not.toMatch(/require\(|import\(/);
+    expect(src.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/require\(|import\(/);
+    const checked = spawnSync(process.execPath, ['scripts/build-ci-fetch.mjs', '--check'], { cwd: join(import.meta.dirname, '../..'), encoding: 'utf8', windowsHide: true });
+    expect(checked.status, checked.stderr).toBe(0);
+    expect(src.match(/\/\*beeps:defaults\*\/ \{\}/g)).toHaveLength(1);
   });
 });
 

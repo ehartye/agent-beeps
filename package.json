@@ -1,9 +1,9 @@
 {
   "name": "agent-beeps",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "type": "module",
-  "description": "Procedural sound composer for coding agents: Web Audio patches rendered in Chromium, measured, linted, auditioned by the owner, and ranked by a learned taste model",
+  "description": "Procedural and recorded-source hybrid SFX plus game music for coding agents: editable Web Audio patches, deterministic sample preparation, verified delivery, measurement and owner auditions",
   "engines": {
     "node": ">=24"
   },
@@ -26,7 +26,9 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@noble/hashes": "2.4.0",
     "@types/node": "26.6.2",
+    "rolldown": "1.2.11",
     "typescript": "7.0.2",
     "vitest": "5.0.1"
   },

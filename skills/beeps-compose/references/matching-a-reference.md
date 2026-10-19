@@ -13,6 +13,15 @@ WAV (16-bit or float) is read directly; MP3, Ogg, FLAC and 24-bit WAV go through
 Everything is analysed at 48 kHz: a 24 kHz or 44.1 kHz file is resampled and `sourceSampleRate` says what it was (a 24 kHz preview has
 nothing above 12 kHz, so do not chase that band).
 
+## Use a recording as material
+
+Matching by synthesis and using the licensed recording itself are different authoring choices.
+For recorded contact detail plus an editable procedural body, read [hybrid sources](hybrid-sources.md)
+directly. Import and prepare a named sample patch, add/edit procedural layers, save, render/lint/look,
+then bundle the final edit. Prepared-only bundles are the default; explicit preparation bundles also
+share normalized snapshots and replay recipes, potentially with outtakes, never original imports,
+import receipts or private paths. Attenuating a clipped recording does not restore its transient.
+
 ## What an analysis holds
 
 - `features`: the `measure` set (peaks, LUFS, crest, centroid, sharpness, roughness, clipping). Loudness is trimmed away in a patch, so
@@ -42,9 +51,11 @@ Detected events can include a tail ring or an echo at the end of a clip: look at
 Change two or three things per round and run `compare` again; a lever pulled twice overshoots (a longer low thump fixed the tail and
 pushed 60-125 Hz up 8 dB).
 
-## A burst of repeating events is a song, not a patch
+## Scheduling repeated procedural events
 
-A patch has at most 8 layers and no repeat. Make the single event a patch (`meta.intent: "click"` for a transient, tags `bright` and
+A patch has at most 8 layers and no repeat scheduler. A prepared sample can contain an already
+recorded burst of up to ten seconds, but sample loops/stretching and song sample instruments are
+unsupported. To schedule repeated **procedural** events, make the single event a patch (`meta.intent: "click"` for a transient, tags `bright` and
 `gritty` for a gunshot, `fx.dcBlock: true` for a heavy low end), then play it from a `beeps/song@1`:
 
 - `tracks.x`: the patch, `"fixed": true` so written notes only time it, `humanize` 0.3-0.4 for timing and velocity looseness.

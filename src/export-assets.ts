@@ -1,5 +1,6 @@
 // Export a patch or a song as delivered WAVs (+ the portable sidecar). The CLI export commands and `beeps build` share this,
 // so a build writes exactly the files `beeps export --manifest` and `beeps song export --manifest` write.
+import { samplePaths } from './samples/store.ts';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { toMono, trimTail } from './audio/post.ts';
 import { basename, dirname } from 'node:path';
@@ -47,7 +48,7 @@ function manifestIdentity(o: { manifest: boolean; manifestId?: string }, sourceI
 /** Every variant 0..n-1 of a patch as `<stem>.<i>.wav`, and (with `manifest`) one sidecar `<dest>.json` listing them. */
 export async function exportPatchVariants(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; n: number; role: ExportRole; manifest: boolean; manifestId?: string; post?: ExportPost }) {
   const identity = manifestIdentity(o, patch.name);
-  const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), { project: p.project, rendersDir: p.paths.renders });
+  const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
   const ok = outs.map(r => { if (!r.ok) throw new BeepsError('E_RENDER', r.error); return r; });
   const stem = o.dest.replace(/\.wav$/i, '');
   mkdirSync(dirname(o.dest), { recursive: true });
@@ -62,7 +63,7 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
 
 /** One variant of a patch as `dest`. */
 export async function exportPatchOne(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; variant: number; role: ExportRole; manifest: boolean; post?: ExportPost }) {
-  const [r] = await renderAndMeasure(host, [{ patch, seed: o.seed, variant: o.variant }], { project: p.project, rendersDir: p.paths.renders });
+  const [r] = await renderAndMeasure(host, [{ patch, seed: o.seed, variant: o.variant }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
   if (!r.ok) throw new BeepsError('E_RENDER', r.error);
   mkdirSync(dirname(o.dest), { recursive: true });
   const post = deliver(r.wavPath, o.dest, o.post);

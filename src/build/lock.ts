@@ -12,6 +12,7 @@ import { EXPORT_PIPELINE_VERSION } from '../export-manifest.ts';
 import { SAMPLE_RATE } from '../hash.ts';
 import type { Delivery } from './config.ts';
 import type { OutputRef } from './store.ts';
+import { assertOutputNames } from '../runtime/dependencies.ts';
 
 export const LOCK_SCHEMA = 'beeps/build-lock@1';
 /** The hashing scheme of `inputHash`. A lock written by another tool (a game's own wrapper) says so and is adopted, not trusted. */
@@ -92,6 +93,8 @@ export function readLock(path: string): Lock | undefined {
     if (typeof a?.inputHash !== 'string' || !Array.isArray(a.outputs) || a.outputs.some((o: any) => typeof o?.file !== 'string' || !/^[0-9a-f]{64}$/.test(o?.sha256 ?? '') || typeof o?.bytes !== 'number')) {
       throw new BeepsError('E_LOCK', `${path}: asset "${id}" needs inputHash and outputs [{file, sha256 (64 hex), bytes}]`, { pointer: `/assets/${id}` });
     }
+    try { assertOutputNames(a.outputs); }
+    catch (e) { throw new BeepsError('E_LOCK', `${path}: asset "${id}": ${(e as Error).message}`, { pointer: `/assets/${id}/outputs` }); }
   }
   return { keyScheme: KEY_SCHEME, delivery: {}, toolchain: {}, ...raw } as Lock;
 }

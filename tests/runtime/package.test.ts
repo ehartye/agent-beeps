@@ -43,7 +43,7 @@ describe('what the package ships', () => {
 
   it('ships the engine entry, the voice, the schema and their closure, and none of the harness, songs or the CLI', () => {
     const keys = [...(generate() as Map<string, unknown>).keys()];
-    expect(keys).toEqual(expect.arrayContaining(['package.json', 'LICENSE', 'README.md', 'runtime/engine/index.js', 'runtime/engine/index.d.ts', 'runtime/engine/voice.js', 'runtime/engine/patch.js', 'src/schema/patch.ts']));
+    expect(keys).toEqual(expect.arrayContaining(['package.json', 'LICENSE', 'README.md', 'runtime/engine/index.js', 'runtime/engine/index.d.ts', 'runtime/engine/voice.js', 'runtime/engine/patch.js', 'runtime/engine/samples.js', 'runtime/engine/sample-wav.js', 'runtime/engine/sample-hash.js', 'src/schema/patch.ts']));
     const banned = ['runtime/engine/offline.js', 'runtime/engine/song.js', 'runtime/engine/sequence.js', 'runtime/engine/chords.js'];
     for (const b of banned) expect(keys, b).not.toContain(b);
     expect(keys.filter(k => k.startsWith('src/') && k !== 'src/schema/patch.ts')).toEqual([]);
@@ -93,7 +93,7 @@ describe('the generated package as an installed dependency', () => {
   it('imports in Node and builds the graph the repository builds', async () => {
     const dir = install();
     const pkg = (await import(pathToFileURL(join(dir, 'node_modules', 'agent-beeps-runtime', 'runtime', 'engine', 'index.js')).href)) as typeof import('../../runtime/engine/index.js');
-    expect(Object.keys(pkg).sort()).toEqual(['CUE_SCHEMA', 'ENGINE_VERSION', 'MACROS', 'NOISE_CACHE_BYTES', 'REVERB_PRESETS', 'build', 'clampInput', 'createPicker', 'createReverbBus', 'defaultParams', 'noiseCacheStats', 'parseCue', 'patchLength', 'setNoiseCacheLimit']);
+    expect(Object.keys(pkg).sort()).toEqual(['CUE_SCHEMA', 'ENGINE_VERSION', 'MACROS', 'NOISE_CACHE_BYTES', 'REVERB_PRESETS', 'build', 'clampInput', 'createPicker', 'createReverbBus', 'defaultParams', 'loadCueAssets', 'noiseCacheStats', 'parseCue', 'patchLength', 'setNoiseCacheLimit']);
     const p = example('engine-drone');
     const a = new FakeContext();
     pkg.build(asCtx(a), a.createGain() as never, p, { params: { speed: 0.9 }, seed: 5, trimDb: -9.4 }).start();
@@ -122,12 +122,16 @@ console.log(JSON.stringify({ ok: r.ok, shape: typeof PatchSchema }));
     const dir = install();
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'ESNext', moduleResolution: 'bundler', target: 'ES2022', lib: ['ES2022', 'DOM'], noEmit: true, skipLibCheck: true, allowImportingTsExtensions: true, types: [] }, include: ['good.ts'] }));
     writeFileSync(join(dir, 'good.ts'), `
-import { build, createReverbBus, parseCue, setNoiseCacheLimit, type Voice, type ReverbBus } from 'agent-beeps-runtime';
+import { build, createReverbBus, parseCue, setNoiseCacheLimit, loadCueAssets, type SampleAssetSource, type SampleAssetManifest, type SampleBuffers, type LoadCueAssetsOptions, type Voice, type ReverbBus } from 'agent-beeps-runtime';
 import { parsePatch } from 'agent-beeps-runtime/schema';
 declare const ctx: AudioContext;
 const bus: ReverbBus = createReverbBus(ctx, ctx.destination, { preset: 'hall', returnDb: -3 });
 const cue = parseCue(JSON.parse('{}'));
-const v: Voice = build(ctx, ctx.destination, cue, { seed: 3, params: { speed: 0.4 }, reverb: bus, onEnded: () => {} });
+const manifest: SampleAssetManifest | undefined = cue.assets;
+const source: SampleAssetSource = { patch: cue.patch, assets: manifest };
+const loading: LoadCueAssetsOptions = { baseURL: new URL('http://lan.test/audio/cue.runtime.json'), signal: new AbortController().signal, fetcher: fetch };
+const samples: SampleBuffers = await loadCueAssets(ctx, source, loading);
+const v: Voice = build(ctx, ctx.destination, cue, { seed: 3, params: { speed: 0.4 }, samples, reverb: bus, onEnded: () => {} });
 v.start(ctx.currentTime + 0.1).set('speed', 0.9, ctx.currentTime, 0.05);
 const silentAt: number = v.stop();
 const end: number | undefined = v.end;

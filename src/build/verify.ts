@@ -13,6 +13,8 @@ import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { parsePatch } from '../schema/patch.ts';
 import { checkParity, type EngineName, type ParityCheck } from '../runtime/harness.ts';
 import type { Cue } from '../runtime/cue.ts';
+import { assertCueInventory, assertOutputNames, validateDeliveredDependencies } from '../runtime/dependencies.ts';
+import { readDeliveredFile } from '../runtime/delivery.ts';
 
 export interface StaticInfo { format: 'opus' | 'mp3' | 'wav' | 'unknown'; frames?: number; channels?: number; sampleRate?: number; encoder?: string; delay?: number; padding?: number }
 export interface StaticResult { info: StaticInfo; problems: string[] }
@@ -89,27 +91,43 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
   let files = 0, checkedStatic = 0;
   const loops: string[] = [];
   const tracked = new Set<string>();
+  // In-memory locks bypass readLock. Validate the complete inventory before accessing
+  // any output file, not merely when each name is reached in the read loop.
+  try { for (const asset of Object.values(lock.assets)) assertOutputNames(asset.outputs); }
+  catch (e) { return { ok: false, lock: typeof o.lock === 'string' ? o.lock : '(in memory)', out, assets: Object.keys(lock.assets).length, files, checkedStatic, problems: [{ problem: (e as Error).message }], warnings }; }
   for (const [id, asset] of Object.entries(lock.assets)) {
+    try { assertCueInventory(id, asset.outputs, { requiresCue: asset.delivery === 'runtime' || asset.delivery === 'both' }); }
+    catch (e) { problems.push({ asset: id, problem: (e as Error).message }); }
     const expects = new Map<string, Expect>();
     const intact = new Set<string>();
+    const delivered = new Map<string, Buffer>();
+    const cues: { file: string; cue: Cue }[] = [];
     for (const f of asset.outputs) {
       files++;
       tracked.add(f.file);
-      const full = join(out, f.file);
-      if (!existsSync(full)) { problems.push({ asset: id, file: f.file, problem: 'missing' }); continue; }
-      const buf = readFileSync(full);
+      let buf: Buffer | undefined;
+      try { buf = readDeliveredFile(out, f.file); } catch (e) { problems.push({ asset: id, file: f.file, problem: (e as Error).message }); continue; }
+      if (!buf) { problems.push({ asset: id, file: f.file, problem: 'missing' }); continue; }
       if (buf.length !== f.bytes) { problems.push({ asset: id, file: f.file, problem: `${buf.length} bytes, lock says ${f.bytes}` }); continue; }
       if (sha256Hex(buf) !== f.sha256) { problems.push({ asset: id, file: f.file, problem: `sha256 ${sha256Hex(buf).slice(0, 12)}, lock says ${f.sha256.slice(0, 12)}` }); continue; }
       intact.add(f.file);
-      if (/.runtime.json$/.test(f.file)) { cueProblems(id, f.file, buf, problems); continue; }
+      delivered.set(f.file, buf);
+      if (/\.runtime\.json$/.test(f.file)) { const cue = cueProblems(id, f.file, buf, problems); if (cue) cues.push({ file: f.file, cue }); continue; }
       if (/\.(wav|ogg|mp3)\.json$/.test(f.file)) {
         const m = ExportManifestSchema.safeParse(safeJson(buf));
         if (!m.success) { problems.push({ asset: id, file: f.file, problem: `not a beeps/audio-asset@1 sidecar (${m.error.issues[0].message})` }); continue; }
-        for (const [k, v] of sidecarExpectations(f.file, m.data)) expects.set(k, v);
+        const entries = sidecarExpectations(f.file, m.data);
+        try { assertOutputNames([...entries.keys()].map(file => ({ file }))); }
+        catch (e) { problems.push({ asset: id, file: f.file, problem: (e as Error).message }); continue; }
+        for (const [k, v] of entries) expects.set(k, v);
         if (m.data.loop) for (const k of sidecarExpectations(f.file, m.data).keys()) loops.push(k);
         const frames = m.data.durationSec * m.data.sampleRate;
         if (Math.abs(frames - Math.round(frames)) > 1e-3) problems.push({ asset: id, file: f.file, problem: `durationSec ${m.data.durationSec} is not a whole number of frames at ${m.data.sampleRate} Hz` });
       }
+    }
+    for (const { file, cue } of cues) {
+      try { validateDeliveredDependencies(id, cue, asset.outputs, name => delivered.get(name)); }
+      catch (e) { problems.push({ asset: id, file, problem: (e as Error).message }); }
     }
     for (const f of asset.outputs) {
       if (!/\.(ogg|mp3|wav)$/i.test(f.file) || !intact.has(f.file)) continue; // a file that fails its hash is reported once, not also as a bad header
@@ -134,7 +152,7 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
 }
 
 /** A runtime cue in the output: the right schema and engine, the id of its asset, and a patch that still parses (xRuntime included). */
-function cueProblems(asset: string, file: string, buf: Buffer, problems: VerifyProblem[]): void {
+function cueProblems(asset: string, file: string, buf: Buffer, problems: VerifyProblem[]): Cue | undefined {
   const add = (problem: string) => problems.push({ asset, file, problem });
   let cue: Cue;
   try { cue = parseCue(safeJson(buf), { allowEngineMismatch: true }); } catch (e) { add((e as Error).message); return; }
@@ -142,15 +160,17 @@ function cueProblems(asset: string, file: string, buf: Buffer, problems: VerifyP
   if (cue.id !== asset) add(`cue id "${cue.id}" is not the asset id "${asset}"`);
   const p = parsePatch(cue.patch);
   if (!p.ok) add(`the patch in the cue no longer parses: ${p.issues[0].pointer} ${p.issues[0].message}`);
+  return cue;
 }
 
 /** The cues a lock's runtime-shipping assets point at, read from the output directory (those that exist and parse). */
 export function lockedCues(lock: Lock, out: string): Cue[] {
   const cues: Cue[] = [];
+  for (const asset of Object.values(lock.assets)) assertOutputNames(asset.outputs);
   for (const asset of Object.values(lock.assets)) {
     for (const f of asset.outputs) {
-      if (!/.runtime.json$/.test(f.file) || !existsSync(join(out, f.file))) continue;
-      try { cues.push(parseCue(JSON.parse(readFileSync(join(out, f.file), 'utf8')), { allowEngineMismatch: true })); } catch { /* reported by verifyOutputs */ }
+      if (!/\.runtime\.json$/.test(f.file)) continue;
+      try { const bytes = readDeliveredFile(out, f.file); if (bytes) cues.push(parseCue(JSON.parse(bytes.toString('utf8')), { allowEngineMismatch: true })); } catch { /* reported by verifyOutputs */ }
     }
   }
   return cues;
@@ -164,8 +184,15 @@ export function lockedCues(lock: Lock, out: string): Cue[] {
 export async function verifyParity(o: { lock: string | Lock; out: string; engines: EngineName[] }): Promise<{ parity: ParityCheck; problems: VerifyProblem[]; warnings: string[] }> {
   const lock = typeof o.lock === 'string' ? readLock(o.lock) : o.lock;
   if (!lock) throw new BeepsError('E_NOT_FOUND', `no lock at ${o.lock}`);
+  const verified = verifyOutputs({ lock, out: o.out, catalog: false });
+  if (!verified.ok) return { parity: { engines: [], verdicts: [] }, problems: verified.problems, warnings: verified.warnings };
   const cues = lockedCues(lock, resolve(o.out)).filter(c => c.engine === ENGINE_VERSION);
-  const parity = await checkParity(cues, o.engines);
+  const sampleWavs: Record<string, string> = {};
+  for (const cue of cues) {
+    const sources = validateDeliveredDependencies(cue.id, cue, lock.assets[cue.id].outputs, name => readDeliveredFile(resolve(o.out), name));
+    for (const [id, bytes] of Object.entries(sources)) sampleWavs[id] = Buffer.from(bytes).toString('base64');
+  }
+  const parity = await checkParity(cues, o.engines, { sampleWavs });
   const problems: VerifyProblem[] = [], warnings: string[] = [];
   for (const v of parity.verdicts) if (!v.ok) for (const pr of v.problems) problems.push({ asset: v.cue, problem: `parity (${v.engine}, ${v.mode}): ${pr}` });
   for (const e of parity.engines) if (e.status !== 'ok') warnings.push(`${e.engine}: ${e.status === 'no-web-audio' ? 'no OfflineAudioContext in this build, so parity was not checked there' : e.version}`);
@@ -196,6 +223,7 @@ function catalogProblems(out: string, lock: Lock, tracked: Set<string>, problems
   for (const [id, a] of Object.entries(assets)) {
     ids.add(id);
     for (const f of [a.file, ...(a.variants ?? []).map(v => v.file), ...(a.layers ?? []).map(l => l.file)]) {
+      try { assertOutputNames([{ file: f }]); } catch (e) { problems.push({ asset: id, file: f, problem: (e as Error).message }); continue; }
       if (!tracked.has(f) && !existsSync(join(out, f))) problems.push({ asset: id, file: f, problem: 'listed in index.json but missing' });
     }
   }

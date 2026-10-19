@@ -1,3 +1,4 @@
+import { samplePaths } from '../samples/store.ts';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
@@ -68,7 +69,7 @@ export function registerPatchCommands(program: Command, io: Io) {
         const n = opts.variants ? patch.variation?.variants ?? 1 : 1;
         return Array.from({ length: n }, (_, variant) => ({ patch, seed: opts.seed, variant }));
       });
-      const out = await withHost(host => renderAndMeasure(host, items, { project: p.project, rendersDir: p.paths.renders }));
+      const out = await withHost(host => renderAndMeasure(host, items, { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
       io.emit({ renders: out.map(outcomeJson) });
       if (out.some(o => !o.ok)) process.exitCode = 1;
     });
@@ -79,7 +80,7 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--variant <n>', 'variant index', int, 0)
     .action(async (ref: string, opts: { seed: number; variant: number }) => {
       const p = openProject(io.projectDir());
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed: opts.seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders }));
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed: opts.seed, variant: opts.variant }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       io.emit({ name: o.patch.name, key: o.key, trimDb: o.trimDb, features: o.features });
     });
@@ -92,7 +93,7 @@ export function registerPatchCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const patches = refs.map(r => loadPatch(p, r));
       await withHost(async host => {
-        const out = await renderAndMeasure(host, patches.map(patch => ({ patch, seed: opts.seed })), { project: p.project, rendersDir: p.paths.renders });
+        const out = await renderAndMeasure(host, patches.map(patch => ({ patch, seed: opts.seed })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
         const failed = out.find(o => !o.ok);
         if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
         const rendered = out as Rendered[];
