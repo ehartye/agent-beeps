@@ -45,16 +45,35 @@ const Osc = z.strictObject({
 /** Opt-in decorrelated stereo: true is full width, a number 0..1 is partial (channel correlation sqrt(1-width)). Absent: mono, as before. */
 const Stereo = z.union([z.boolean(), z.number().min(0).max(1)]);
 const Noise = z.strictObject({ type: z.literal('noise'), color: z.enum(['white', 'pink', 'brown']).default('white'), stereo: Stereo.optional() });
+const IndexEnvelope = z.array(z.tuple([
+  z.number().min(0).max(10), z.number().min(0).max(1), z.enum(['linear', 'step', 'exp']).optional(),
+])).min(1).max(64).superRefine((points, ctx) => {
+  if (points[0] && points[0][0] !== 0) ctx.addIssue({ code: 'custom', path: [0, 0], message: 'an index envelope must start at time 0' });
+  for (let i = 1; i < points.length; i++) {
+    if (points[i][0] <= points[i - 1][0]) ctx.addIssue({ code: 'custom', path: [i, 0], message: 'envelope times must be strictly increasing' });
+    if (points[i][2] === 'exp' && (points[i - 1][1] <= 0 || points[i][1] <= 0)) {
+      ctx.addIssue({ code: 'custom', path: [i, 2], message: 'an exponential segment requires positive scales at both endpoints' });
+    }
+  }
+});
 const Fm = z.strictObject({
   type: z.literal('fm'),
   pitch: Pitch,
   operators: z.array(z.strictObject({
     ratio: z.number().positive().max(32),
     index: z.number().min(0).max(50).default(1),
+    /** Multiplies the peak index by normalized breakpoints [seconds, scale, arrival curve?]. */
+    indexEnv: IndexEnvelope.optional(),
     wave: Wave.default('sine'),
   })).min(2).max(4),
   /** Edges [from, to]: operator `from` modulates the frequency of operator `to`. Operator 0 is the audible carrier. */
   algorithm: z.array(z.tuple([z.number().int().min(0).max(3), z.number().int().min(0).max(3)])).min(1),
+}).superRefine((source, ctx) => {
+  source.operators.forEach((op, i) => {
+    if (op.indexEnv && !source.algorithm.some(([from, to]) => from === i && to < source.operators.length && from !== to)) {
+      ctx.addIssue({ code: 'custom', path: ['operators', i, 'indexEnv'], message: 'an index envelope requires an outgoing modulation edge' });
+    }
+  });
 });
 const Additive = z.strictObject({
   type: z.literal('additive'),

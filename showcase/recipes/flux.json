@@ -1,0 +1,29 @@
+{
+  "schema": "beeps/flux-study@1",
+  "cases": [
+    {
+      "id": "alloy",
+      "title": "Alloy",
+      "seed": 73,
+      "description": "A bright, inharmonic strike settles into a softer ringing body.",
+      "static": "flux-alloy-static",
+      "shaped": "flux-alloy-shaped"
+    },
+    {
+      "id": "arc",
+      "title": "Arc",
+      "seed": 307,
+      "description": "A short discharge flares, folds inward, then spits one last bright edge.",
+      "static": "flux-arc-static",
+      "shaped": "flux-arc-shaped"
+    },
+    {
+      "id": "pulse-core",
+      "title": "Pulse core",
+      "seed": 1109,
+      "description": "A low machine tone turns through discrete changes of harmonic pressure.",
+      "static": "flux-pulse-core-static",
+      "shaped": "flux-pulse-core-shaped"
+    }
+  ]
+}

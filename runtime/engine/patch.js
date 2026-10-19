@@ -1,6 +1,6 @@
 // The one entry point: patch JSON → Web Audio graph on any BaseAudioContext.
 // Games, the audition page and the offline renderer all call this, so what is measured is what plays.
-import { buildLayer } from './layer.js';
+import { buildLayer, validateLayerEnvelopes } from './layer.js';
 import { buildDcBlocker, buildDelay, buildLimiter, buildReverb, busFor, delayTail, REVERB_PRESETS } from './fx.js';
 import { variantPatch } from './variation.js';
 import { sumInto } from './sum.js';
@@ -55,6 +55,8 @@ export function patchLength(p) {
 export function buildPatch(ctx, patch, opts = {}) {
   const { destination = ctx.destination, when = 0, seed = 1, variant = 0, trimDb = 0, scale, authoredTap, limiter = true, hold = false, reverb } = opts;
   const { patch: p, pitchRatio } = variantPatch(patch, variant, seed);
+  // A later invalid FM layer must not leave an earlier held source running when construction throws.
+  for (const layer of p.layers) validateLayerEnvelopes(layer, { when, scale, pitchRatio });
 
   const mix = ctx.createGain();
   const authored = ctx.createGain();

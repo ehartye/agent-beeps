@@ -1,0 +1,48 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "flux-pulse-core-static",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty"
+  ],
+  "duration": 1.6,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C2",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1
+          },
+          {
+            "ratio": 3.03,
+            "index": 5.5
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "gainDb": -9,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0,
+        "sustain": 0.75,
+        "release": 0.14
+      },
+      "highpass": 40
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "meta": {
+    "description": "Pulse core: modulator index stays at its peak."
+  }
+}

@@ -35,6 +35,7 @@ contents. No tokens, `.agent-beeps` state, node modules or source WAVs are publi
 
 `scripts/compose-showcase.mjs` is the authored arrangement; it writes `recipes/matter.json`.
 It also runs `scripts/compose-expression.mjs`, which writes the Touch library song and both A/B recipes.
+`scripts/compose-flux.mjs` writes the six Flux library patches and downloadable comparison recipes.
 Edit that script and run `npm run showcase:compose`, or edit the JSON directly and skip composition.
 `showcase/project.json` pins the render settings independently of a developer's local project.
 
@@ -120,3 +121,25 @@ retuning warning threshold of their library patches. These are continuously tune
 instruments. Register-overlap checks remain listening prompts: the short, offbeat key voicings
 leave room under the longer lead gestures; bass fills briefly touch the keys' lower register.
 Signal checks and the spectrogram do not establish musical preference. Owner listening is pending.
+
+## Flux: an FM timbre study
+
+[Compare the live patches](https://ehartye.github.io/agent-beeps/#flux). Alloy, Arc and Pulse core
+each compare a static modulator index against a breakpoint index envelope. Within a pair, the
+oscillators, pitch, amp, effects and seed are identical; only the index curve and measured playback
+trim differ. The shaped take's waveform and spectrum appear on the card. Both recipes are downloadable.
+
+`scripts/render-flux.mjs` runs inside `showcase:render`. It measures the normal patch render, then
+renders both takes again at a common max-momentary target of −22 LUFS (or lower if necessary).
+The matching tolerance is 0.2 LU and the ceiling is −1 dBTP. The comparison target is explicit in
+`media/flux-quality.json`; lint and preview images use the actual comparison delivery. These are
+short effects, so matching uses max-momentary loudness rather than integrated loudness.
+
+All six patches are synthesized live through the existing engine, master volume and safety curve.
+New strikes replace the previous voice; Stop and Escape dispose it. Browser checks play all six
+takes and render them offline to verify finite, nonzero signals and audible-signal differences.
+The study demonstrates timbre automation; it makes no physical-material or listening-approval claim.
+
+Engine capability version 3 requires rebuilding older audio locks/cues. The envelope module is
+included in the site's verified dependency manifest. Existing recipes without envelopes retain
+their previous synthesis behavior.

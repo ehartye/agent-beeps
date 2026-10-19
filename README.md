@@ -193,6 +193,19 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.15.0
+
+FM operators now have optional normalized breakpoint envelopes for their modulation index:
+linear ramps, steps and exponential decays, independent of the audible amp envelope. The reusable
+browser scheduler is the foundation; FM depth is its first application. [Authoring reference](skills/beeps-compose/references/patch-format.md#fm-index-envelopes).
+
+[Hear Flux](https://ehartye.github.io/agent-beeps/#flux): three pairs synthesized live in the existing
+booth, with measured max-momentary loudness matching. Download the static and shaped recipes.
+
+Engine 3 prevents an older runtime from silently accepting an enveloped cue. Rebuild audio
+locks/cues on upgrade; legacy patch PCM and golden graphs are unchanged. Recorded/hybrid asset
+preparation, source resolution and delivery are a separate workflow.
+
 ## What changed in 0.14.0
 
 Notes can carry their own pitch and brightness curves. Tracks can map performed velocity to an

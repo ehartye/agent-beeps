@@ -1,5 +1,5 @@
 // One layer: source → drive → filter → tremolo → amp envelope → pan → layer gain → out.
-import { buildSource } from './sources.js';
+import { buildSource, validateSourceEnvelopes } from './sources.js';
 import { noteToHz, snapToScale } from './notes.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Layer} Layer */
@@ -27,6 +27,24 @@ const db = (/** @type {number} */ x) => 10 ** (x / 20);
 export function resolvePitch(p, scale) {
   const hz = noteToHz(p);
   return scale?.snap ? snapToScale(hz, scale) : hz;
+}
+
+/**
+ * Shared pitch/onset resolution for preflight and graph construction. It has no random draws or audio side effects.
+ * @param {Layer} layer
+ * @param {{ when: number, scale?: Scale, pitchRatio?: number }} options
+ */
+function resolveLayerSource(layer, { when, scale, pitchRatio = 1 }) {
+  const src = layer.source;
+  return { when: when + layer.start, pitchHz: 'pitch' in src ? resolvePitch(src.pitch, scale) * pitchRatio : 440 };
+}
+
+/**
+ * @param {Layer} layer
+ * @param {{ when: number, scale?: Scale, pitchRatio?: number }} options
+ */
+export function validateLayerEnvelopes(layer, options) {
+  if (layer.source.type === 'fm') validateSourceEnvelopes(layer.source, resolveLayerSource(layer, options));
 }
 
 /** Soft-clip curve tanh(kx)/tanh(k). @param {number} drive 0..1 */
@@ -67,12 +85,10 @@ export function envelopeAt(amp, t) {
  * @returns {{ end: number, release: (at: number) => number, stop: (t: number) => void, nodes: LayerNodes }}
  */
 export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1 }) {
-  const t0 = when + layer.start;
+  const { when: t0, pitchHz: base } = resolveLayerSource(layer, { when, scale, pitchRatio });
   const { attack, decay, sustain, release } = layer.amp;
   const off = Math.max(t0 + Math.min(attack, 0.002), when + duration);
   const end = off + release;
-  const src = /** @type {any} */ (layer.source);
-  const base = 'pitch' in src ? resolvePitch(src.pitch, scale) * pitchRatio : 440;
   const built = buildSource(ctx, layer.source, { pitchHz: base, seed, length: end - t0 });
 
   // Pitch envelope: every frequency param follows, keeping its ratio to the fundamental.

@@ -37,8 +37,8 @@ describe('song render key', () => {
     expect(songRenderKey(s, instruments, { target, fixedTrim: -3 })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, fixedTrim: -3 }));
     // A change here re-renders every approved song. Recorded before solo-by-filter existed (engine 1:
     // e8159013...357e); re-recorded for engine 2, whose fixed-order sums make renders bit-exact (84ac...c219),
-    // then pipeline 6 (reproducible graphs), and pipeline 7 (native expressive performance).
-    expect(songRenderKey(s, instruments, { target })).toBe('32d8650939d62c9afc1aae3a73b047446c0c9aaf39ac2166f6812ee85c10826e');
+    // then pipeline 6, pipeline 7, and engine 3's envelope cue capability.
+    expect(songRenderKey(s, instruments, { target })).toBe('df30bb54655e1841d42b5ee675cbb4f0206ebd5dce6d4a75b40399800e096cdb');
   });
 
   it('treats an empty track list as no filter', () => {

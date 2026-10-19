@@ -1,0 +1,67 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "flux-alloy-static",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty"
+  ],
+  "duration": 0.85,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C4",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1
+          },
+          {
+            "ratio": 2.76,
+            "index": 3.2
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "gainDb": -7,
+      "amp": {
+        "attack": 0.005,
+        "decay": 0.45,
+        "sustain": 0,
+        "release": 0.2
+      },
+      "highpass": 80
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C3"
+      },
+      "gainDb": -20,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.1
+      },
+      "highpass": 40
+    }
+  ],
+  "fx": {
+    "dcBlock": true,
+    "reverb": {
+      "preset": "room",
+      "sendDb": -22
+    }
+  },
+  "meta": {
+    "description": "Alloy: modulator index stays at its peak."
+  }
+}

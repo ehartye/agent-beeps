@@ -38,12 +38,39 @@
 |---|---|---|
 | `osc` | `wave` sine/square/sawtooth/triangle, `pitch`, `unison {voices, detuneCents}` | blips, coins, lasers, tones |
 | `noise` | `color` white/pink/brown, `stereo` | whooshes, impacts, rumble, wide beds |
-| `fm` | `pitch`, `operators [{ratio, index, wave}]`, `algorithm [[from,to]]` (0 = carrier) | bells, metallic tones, growls |
+| `fm` | `pitch`, `operators [{ratio, index, wave, indexEnv?}]`, `algorithm [[from,to]]` (0 = carrier) | bells, metallic tones, growls |
 | `additive` | `pitch`, `partials [[ratio, gainDb, decaySec]]` | bells, chimes, realistic tones |
 | `modal` | `pitch`, `modes [[ratio, q, gainDb]]`, `exciter` impulse/noiseBurst | struck wood, glass, metal, clicks |
 | `grains` | `rate` per s, `grainDecay`, `center`, `q`, `rateEnd`, `stereo` | shakers, rain, debris, crackle |
 | `voice` | `pitch` (f0), `formants [[hz, q, gainDb]]` (2-4), `tilt`, `jitterCents`, `vibrato {rate, cents}`, `tremolo {rate, depth}`, `breath` | animal calls, creature vocals, grunts, hisses, huffs |
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
+
+### FM index envelopes
+
+`index` sets an operator's peak modulation depth. Optional `indexEnv` multiplies that depth by
+normalized breakpoints, letting the spectrum change independently of the audible amp envelope:
+
+```json
+{"type":"fm","pitch":"C4","operators":[{"ratio":1},
+ {"ratio":2.76,"index":4,"indexEnv":[[0,0],[0.006,1],[0.15,0.2,"exp"],[0.6,0]]}],
+ "algorithm":[[1,0]]}
+```
+
+- Points are `[seconds, scale, arrivalCurve?]`, relative to the layer's onset. Times are finite,
+  start at 0, increase strictly, and stay in 0–10 seconds; scales are 0–1. Use 1–64 points.
+- `linear` is the default arrival; `step` holds then jumps; `exp` interpolates exponentially
+  and needs positive scales at both ends. Use linear segments to reach or leave zero.
+- The final scale holds. Held voices keep the same onset clock; releasing the amp does not
+  restart the index envelope. Points after the source stops are inaudible.
+- Only operators with outgoing modulation edges can use `indexEnv`. The audible carrier's
+  index alone has no effect. Each outgoing edge follows its operator's curve.
+- Static `xRuntime` bindings and song `velocityInput` mappings on `index` scale the whole curve.
+  Bound curve values/times are checked again at actual runtime values before automation.
+- Without `indexEnv`, the fixed-index graph is unchanged. Engine 3 is required for enveloped
+  cues; rebuild locks/cues when updating. High ratios/indices can still alias; this adds no
+  oversampling or anti-alias guarantee. Compare at matched loudness and inspect the spectrum.
+
+The [Flux study](https://ehartye.github.io/agent-beeps/#flux) demonstrates three static/shaped pairs.
 
 `noise` and `grains` are mono by default. `stereo: true` (or a width 0..1; correlation between the
 channels is sqrt(1 - width)) gives each channel its own seeded noise: deterministic, the left channel
