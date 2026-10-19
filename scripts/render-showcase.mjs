@@ -14,6 +14,7 @@ import { lintSong } from '../src/song-lint.ts';
 import { parseProject } from '../src/schema/project.ts';
 import { readWav } from '../src/audio/wav.ts';
 import { integrated, truePeakDb } from '../src/measure/loudness.ts';
+import { renderExpression } from './render-expression.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const media=resolve(root,'showcase/media');
@@ -78,6 +79,7 @@ try {
     sections:reel.features.sections,arc:reel.features.arc,scale:project.project.scale,pads};
   write(resolve(media,'session.json'),session);
   write(resolve(media,'quality.json'),{song:{renderKey:reel.key,features:reel.features,lint},pads:padReports,encoded:{integratedLufs:session.loudnessLufs,truePeakDb:peak,durationSec:session.durationSec},project:project.project});
+  await renderExpression(host,project);
   const {readdirSync}=await import('node:fs');
   const files=['showcase/project.json',...readdirSync(media).filter(f=>f!=='manifest.json').map(f=>`showcase/media/${f}`),...readdirSync(recipes).map(f=>`showcase/recipes/${f}`),...readdirSync(resolve(root,'runtime/engine')).filter(f=>f.endsWith('.js')).map(f=>`runtime/engine/${f}`)];
   write(resolve(media,'manifest.json'),{schema:'beeps/showcase-assets@1',files:Object.fromEntries(files.map(p=>[p,hash(resolve(root,p))]))});

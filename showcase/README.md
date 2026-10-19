@@ -34,6 +34,7 @@ contents. No tokens, `.agent-beeps` state, node modules or source WAVs are publi
 ## Revise the audio
 
 `scripts/compose-showcase.mjs` is the authored arrangement; it writes `recipes/matter.json`.
+It also runs `scripts/compose-expression.mjs`, which writes the Touch library song and both A/B recipes.
 Edit that script and run `npm run showcase:compose`, or edit the JSON directly and skip composition.
 `showcase/project.json` pins the render settings independently of a developer's local project.
 
@@ -97,3 +98,25 @@ These checks establish signal health and arrangement evidence. They do not estab
 approval or acoustic realism. The owner remains the judge by ear.
 
 Project architecture and roadmap are maintained in the agent-beeps wiki.
+
+## Touch: an expression study
+
+[Compare the takes](https://ehartye.github.io/agent-beeps/#touch). Eight bars at 92 BPM, 23.94 seconds
+including release and room tails. The plain take is derived from the expressive score with the
+lead's curves and `velocityInput` removed; pitches, velocities, timing, backing and instruments
+are identical. Both use the same rendering engine. The single player preserves position and
+pause state when switching, and shares the booth's volume and spectrum monitor.
+The composer embeds the four stock backing instruments as patch snapshots, so the downloads
+keep the same sound even when a recipient has local overrides or a different library version.
+
+`scripts/render-expression.mjs` runs inside `showcase:render`, reuses the measured song pipeline,
+then matches both deliveries to a common attainable loudness before encoding. Decoded MP3s are
+within 0.01 LU, about −21 LUFS integrated, with peaks below −8.8 dBTP. Exact results and looks live
+in `media/touch-quality.json` and `media/touch*.png`. The peak ceiling and 0.2 LU matching tolerance
+are enforced on every render; the website tests also verify byte-range seeking and take switching.
+
+No lint errors. The keys span F3–E5 and the sine bass A1–D3, intentionally crossing the one-octave
+retuning warning threshold of their library patches. These are continuously tuned FM/oscillator
+instruments. Register-overlap checks remain listening prompts: the short, offbeat key voicings
+leave room under the longer lead gestures; bass fills briefly touch the keys' lower register.
+Signal checks and the spectrogram do not establish musical preference. Owner listening is pending.

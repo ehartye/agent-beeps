@@ -17,10 +17,18 @@ assert.ok(session.truePeakDb<=-1,'encoded audio peak ceiling');
 assert.ok(session.durationSec>=90 && session.durationSec<100);
 for(const p of session.pads)assert.ok(parsePatch(p.patch).ok,`${p.title}: parsed patch`);
 songOrThrow(JSON.parse(readFileSync(resolve(site,'recipes/matter.json'),'utf8')),'matter');
+const study=JSON.parse(readFileSync(resolve(site,'media/touch-quality.json'),'utf8'));
+assert.equal(study.bars,8);
+assert.ok(Math.abs(study.takes[0].encoded.integratedLufs-study.takes[1].encoded.integratedLufs)<.2,'A/B matched within 0.2 LU');
+for(const take of study.takes){assert.ok(take.encoded.truePeakDb<=-1);songOrThrow(JSON.parse(readFileSync(resolve(site,`recipes/${take.name}.json`),'utf8')),take.name);}
 // Serve the exact output under the GitHub project-site prefix, catching accidental root paths.
 const server=await serveShowcase({prefix:'/agent-beeps'});
 const range=await fetch(`${server.url}/agent-beeps/media/matter.mp3`,{headers:{Range:'bytes=0-99'}});
 assert.equal(range.status,206);assert.equal((await range.arrayBuffer()).byteLength,100);
+for(const name of ['touch','touch-plain']){
+  const response=await fetch(`${server.url}/agent-beeps/media/${name}.mp3`,{headers:{Range:'bytes=0-99'}});
+  assert.equal(response.status,206);assert.equal((await response.arrayBuffer()).byteLength,100);
+}
 const invalid=await fetch(`${server.url}/agent-beeps/media/matter.mp3`,{headers:{Range:'bytes=999999999-'}});
 assert.equal(invalid.status,416);
 const browser=await chromium.launch({headless:true});
@@ -43,6 +51,20 @@ try {
   await page.locator('#np-strip').focus();await page.keyboard.press('Home');
   await page.waitForFunction(()=>document.querySelector('#audio').currentTime<2);
   await page.getByRole('button',{name:'Stop all audio'}).click();
+  await page.locator('#touch-audio').evaluate(a=>a.play());
+  await page.waitForFunction(()=>document.querySelector('#touch-audio').currentTime>.15);
+  await page.locator('#touch-audio').evaluate(a=>{a.currentTime=5;});
+  await page.getByRole('button',{name:'B · Expressive',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('#touch-audio').currentTime>=5&&!document.querySelector('#touch-audio').paused);
+  assert.equal(await page.locator('#audio').evaluate(a=>a.paused),true,'comparison pauses reel');
+  await page.locator('#touch-audio').evaluate(a=>a.pause());
+  await page.getByRole('button',{name:'A · Plain',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('#touch-audio').readyState>=1&&document.querySelector('#touch-audio').currentTime>=5);
+  assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused),true,'switching a paused take stays paused');
+  await page.getByRole('button',{name:'Play reel',exact:true}).click();
+  assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused),true,'reel pauses comparison');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#touch-audio').evaluate(a=>a.paused&&a.currentTime===0),true,'stop resets comparison');
   for(let i=0;i<8;i++){
     await page.locator('.pad .face').nth(i).click();
     await page.waitForFunction(title=>document.querySelector('#status').textContent.includes(title),session.pads[i].title);
@@ -86,5 +108,5 @@ try {
   await failed.goto(`${server.url}/agent-beeps/`);
   await failed.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));
   assert.equal(await failed.locator('#play').isDisabled(),true);
-  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals},null,2));
+  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals},null,2));
 } finally {await browser.close();server.server.close();}

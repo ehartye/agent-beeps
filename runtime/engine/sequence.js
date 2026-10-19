@@ -6,6 +6,8 @@ import { mulberry32 } from './rng.js';
 
 /** @typedef {import('../../src/schema/song.ts').Song} Song */
 /** @typedef {import('../../src/schema/song.ts').SongPattern} SongPattern */
+/** @typedef {[number, number, ('linear' | 'step')?]} ExpressionPoint */
+/** @typedef {{ pitch?: ExpressionPoint[], brightness?: ExpressionPoint[] }} NoteExpression */
 /**
  * @typedef {object} NoteEvent
  * @property {string} track
@@ -15,6 +17,7 @@ import { mulberry32 } from './rng.js';
  * @property {number} vel    0..1
  * @property {number} pan    -1..1 offset added to the track pan
  * @property {string} pattern  the pattern that played it
+ * @property {NoteExpression} [expression] note-local curves, with offsets in seconds
  */
 /** @typedef {{ gainDb?: number, cutoff?: number, pan?: number, sends?: { reverb?: number, delay?: number } }} MixValues */
 /** @typedef {MixValues & { time: number, end: number, from?: MixValues, ramp: boolean }} MixPoint */
@@ -109,7 +112,7 @@ function arpOrder(notes, shape, rand) {
  * @param {Song} song
  * @param {SongPattern} p
  * @param {() => number} rand
- * @returns {{ beat: number, len: number, dur: number | null, midi: number | null, vel: number, voice?: number, voices?: number, strum?: number }[]}
+ * @returns {{ beat: number, len: number, dur: number | null, midi: number | null, vel: number, voice?: number, voices?: number, strum?: number, expression?: NoteExpression }[]}
  */
 export function patternEvents(song, p, rand) {
   const beats = p.bars * song.meter;
@@ -127,7 +130,10 @@ export function patternEvents(song, p, rand) {
   const hitLen = (/** @type {number} */ holds, /** @type {number} */ step) => (holds - 1) * step + (p.hitBeats ?? step);
   const plays = (/** @type {{ chance?: number }} */ h) => h.chance === undefined || rand() < h.chance;
   if (kind === 'notes') {
-    for (const [beat, note, len, vel] of /** @type {any[]} */ (p.notes)) push(beat, len, noteToMidi(note), vel ?? 1);
+    for (const n of /** @type {NonNullable<SongPattern['notes']>} */ (p.notes)) {
+      if (Array.isArray(n)) push(n[0], n[2], noteToMidi(n[1]), n[3] ?? 1);
+      else push(n.at, n.beats, noteToMidi(n.note), n.vel ?? 1, n.expression ? { expression: n.expression } : {});
+    }
   } else if (kind === 'steps') {
     const { steps, hits } = parseSteps(/** @type {string} */ (p.steps));
     const step = 1 / p.stepsPerBeat;
@@ -192,6 +198,41 @@ export function patternEvents(song, p, rand) {
 }
 
 /**
+ * Clip a curve at the performed hold, then convert relative beat offsets to seconds.
+ * The arriving point determines the segment shape; its final value holds through release.
+ * @param {NoteExpression} expression
+ * @param {number} hold beats
+ * @param {number} spb
+ * @returns {NoteExpression}
+ */
+function compileExpression(expression, hold, spb) {
+  /** @type {NoteExpression} */
+  const out = {};
+  for (const key of /** @type {const} */ (['pitch', 'brightness'])) {
+    const curve = expression[key];
+    if (!curve) continue;
+    /** @type {ExpressionPoint[]} */
+    const points = [];
+    for (let i = 0; i < curve.length; i++) {
+      const [at, value, arrival] = curve[i];
+      if (at <= hold + EPS) {
+        const seconds = Math.min(at, hold) * spb;
+        points.push(arrival === undefined ? [seconds, value] : [seconds, value, arrival]);
+        if (Math.abs(at - hold) <= EPS) break;
+      }
+      else {
+        const [previousAt, previousValue] = curve[i - 1];
+        const boundary = arrival === 'step' ? previousValue : previousValue + (value - previousValue) * (hold - previousAt) / (at - previousAt);
+        points.push(arrival === undefined ? [hold * spb, boundary] : [hold * spb, boundary, arrival]);
+        break;
+      }
+    }
+    out[key] = points;
+  }
+  return out;
+}
+
+/**
  * @param {Song} song
  * @returns {{ spb: number, length: number, sections: { name: string, start: number, end: number, bars: number }[], events: NoteEvent[], mix: Record<string, MixPoint[]> }}
  */
@@ -200,6 +241,8 @@ export function compileSong(song) {
   const sixteenth = spb / 4;
   /** @type {NoteEvent[]} */
   const events = [];
+  /** @type {Map<NoteEvent, { source: NoteExpression, hold: number, end: number }>} */
+  const gestures = new Map();
   /** @type {Record<string, MixPoint[]>} */
   const mix = {};
   const sections = [];
@@ -233,7 +276,10 @@ export function compileSong(song) {
           if (swing && Math.abs(at * 4 - Math.round(at * 4)) < 1e-6 && Math.round(at * 4) % 2 === 1) time += swing * sixteenth;
           time += e.strum ?? 0;
           const pan = e.voices && e.voices > 1 ? t.spread * ((2 * /** @type {number} */ (e.voice)) / (e.voices - 1) - 1) : 0;
-          events.push({ track, time, dur: e.dur === null ? null : Math.min(e.dur, room) * spb, midi: e.midi, vel: e.vel, pan, pattern: pname });
+          const hold = e.dur === null ? null : Math.min(e.dur, room);
+          const event = { track, time, dur: hold === null ? null : hold * spb, midi: e.midi, vel: e.vel, pan, pattern: pname };
+          events.push(event);
+          if (e.expression && e.dur !== null) gestures.set(event, { source: e.expression, hold: e.dur, end });
         }
         pos += p.bars * song.meter;
       }
@@ -266,6 +312,15 @@ export function compileSong(song) {
     e.time = Math.max(0, e.time + (r() * 2 - 1) * 0.012 * h);
     e.vel = Math.max(0, Math.min(1, e.vel * (1 + (r() * 2 - 1) * 0.2 * h)));
   }
+  // A gesture ends with its performed hold. Swing and humanization can move a late onset
+  // beyond its nominal room, so clip after both without changing legacy note timing or RNG.
+  const discarded = new Set();
+  for (const [event, gesture] of gestures) {
+    const duration = Math.min(gesture.hold * spb, gesture.end - event.time);
+    if (duration <= 0) { discarded.add(event); continue; }
+    event.dur = duration;
+    event.expression = compileExpression(gesture.source, duration / spb, spb);
+  }
   events.sort((a, b) => a.time - b.time);
-  return { spb, length: beat * spb, sections, events, mix };
+  return { spb, length: beat * spb, sections, events: discarded.size ? events.filter(e => !discarded.has(e)) : events, mix };
 }

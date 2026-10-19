@@ -8,6 +8,7 @@ import { sumInto, sumNodes } from './sum.js';
  * @property {AudioNode} output
  * @property {{ param: AudioParam, ratio: number }[]} pitch   frequency params that follow the pitch envelope
  * @property {AudioParam[]} detune                            cent-valued params for pitch LFOs
+ * @property {AudioParam[]} expressionDetune                  note gestures, including modal resonators
  * @property {(t: number) => void} start
  * @property {(t: number) => void} stop
  */
@@ -184,6 +185,8 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
   const pitch = [];
   /** @type {AudioParam[]} */
   const detune = [];
+  /** Modal pitch LFO behavior stays unchanged; note gestures can move the resonators' detune. @type {AudioParam[]} */
+  const modalDetune = [];
   /** @type {((t: number) => void)[]} */
   const onStart = [];
   /** Signals summed into `mix` in this order (never connected to it directly: see sum.js). */
@@ -259,6 +262,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
       g.gain.value = db(gainDb) * q * 4;
       parts.push(exciter.connect(bp).connect(g));
       pitch.push({ param: bp.frequency, ratio });
+      modalDetune.push(bp.detune);
     }
   } else if (src.type === 'grains') {
     const s = ctx.createBufferSource();
@@ -377,6 +381,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length }) {
     output: mix,
     pitch,
     detune,
+    expressionDetune: src.type === 'modal' ? modalDetune : detune,
     start: t => { for (const f of onStart) f(t); for (const n of nodes) n.start(t); },
     stop: t => { for (const n of nodes) n.stop(t); },
   };

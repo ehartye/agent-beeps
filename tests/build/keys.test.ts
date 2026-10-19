@@ -39,12 +39,13 @@ describe('input hash', () => {
       const original = { id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants: plan.variants, layers: plan.layers };
       expect(plan.parts.export).toBe(sha256(canonicalJson(original)).slice(0, 12));
     }
-    // Captured from unmodified b672196 before the feature: full identities, independent of installed browser metadata.
-    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '2', pipeline: 2, songPipeline: 6, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
+    // Full versioned identities, independent of installed browser metadata. Song identities
+    // move with native-expression pipeline 7; the historical export components above do not.
+    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '2', pipeline: 2, songPipeline: 7, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
       blip: 'sha256:e39c5c2829b5029e8497a6aa95214e6e9c108c52c153701d88c98bc6b75a4b4d',
       coin: 'sha256:2717b0a023c2d9bdbc23e670953ab3808b2ffd71da5ba9c74822e4a96e7b4344',
-      plain: 'sha256:fc0d5b9745ac9cf4ac7f8f505c1fed7922e81cfa2fe22c82fd80bf6c2f1e71d4',
-      theme: 'sha256:2a34a6d212ab39a1ed6b2be3c4acb35f5beb603c907453177c4a0d40e29876a1',
+      plain: 'sha256:a57828da4ce53a088d8458f2cfd03fc878fdd7f85700329c80ad371858502d34',
+      theme: 'sha256:3ab34366f2730b41d7e070a7f9d6ec763e13c6a2de8d7e6c342bef0389a72574',
     });
   });
 

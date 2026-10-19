@@ -3,6 +3,7 @@ import { buildLimiter } from './engine/fx.js';
 
 const $ = selector => document.querySelector(selector);
 const audio = $('#audio');
+const touch = $('#touch-audio');
 const clock = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 const sceneCopy = [
   ['Glass', 'A struck overtone hangs in the air. A few grains of dust answer.', 'ADDITIVE PARTIALS / POISSON GRAINS'],
@@ -32,6 +33,7 @@ function initAudio() {
     sfxGain = ctx.createGain();
     const safety = buildLimiter(ctx);
     ctx.createMediaElementSource(audio).connect(musicGain).connect(safety);
+    ctx.createMediaElementSource(touch).connect(musicGain);
     sfxGain.connect(safety);
     safety.connect(master).connect(analyser).connect(ctx.destination);
   }
@@ -52,12 +54,14 @@ function stopAll() {
   ++playRequest;
   audio.pause();
   audio.currentTime = 0;
+  ++takeRequest; touch.pause(); touch.currentTime = 0;
   stopPad();
   status('');
   paint();
 }
 async function play(at) {
   if (!session) return;
+  touch.pause();
   const request = ++playRequest;
   try {
     // Both are requested within the user gesture, including Safari's media permission.
@@ -124,7 +128,7 @@ function draw() {
     g.clearRect(0,0,w,h);
     g.strokeStyle = '#b5d4ce18'; g.lineWidth = 1;
     for(let y=30;y<h;y+=40) {g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
-    const active = analyser && (!audio.paused || voice);
+    const active = analyser && (!audio.paused || !touch.paused || voice);
     if (active) {
       analyser.getByteFrequencyData(bins);
       const count=100;
@@ -136,7 +140,7 @@ function draw() {
         g.fillStyle=i>74?'#ffae42':'#91c5ba';
         g.fillRect(i*w/count,h-v*(h-10),w/count-3,Math.max(1,v*(h-10)));
       }
-      $('#meter-label').textContent = voice ? 'LIVE PATCH + OUTPUT' : 'REEL OUTPUT';
+      $('#meter-label').textContent = voice ? 'LIVE PATCH + OUTPUT' : !touch.paused ? 'TOUCH / PERFORMANCE STUDY' : 'REEL OUTPUT';
     } else {
       g.strokeStyle='#91c5ba55';g.beginPath();g.moveTo(0,h-2);g.lineTo(w,h-2);g.stroke();
       $('#meter-label').textContent='AWAITING SIGNAL';
@@ -210,9 +214,32 @@ audio.addEventListener('waiting',()=>{$('#transport-state').textContent='Bufferi
 audio.addEventListener('playing',()=>{$('#transport-state').textContent='Playing';});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){++padRequest;stopAll();return;}
-  if(e.target.closest('button,input,a,[role="slider"],summary')||e.repeat||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.target.closest('button,input,a,audio,[role="slider"],summary')||e.repeat||e.ctrlKey||e.metaKey||e.altKey)return;
   if(e.key===' '){e.preventDefault();$('#play').click();}
   if(/^[1-8]$/.test(e.key)){e.preventDefault();void strike(Number(e.key)-1);}
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animation);animation=0;}else draw();});
+let takeRequest = 0;
+const takeCopy = {
+  'touch-plain': 'A · Plain: velocity changes loudness.',
+  touch: 'B · Expressive: tone, attack, pitch and brightness follow the performance.',
+};
+touch.addEventListener('play',async()=>{
+  ++playRequest; audio.pause(); stopPad();
+  try { await initAudio(); draw(); } catch(error) { touch.pause(); $('#touch-status').textContent=`Playback could not start. ${error.message}`; }
+});
+touch.addEventListener('error',()=>{$('#touch-status').textContent='This take could not load. Choose a take to retry.';});
+for(const button of document.querySelectorAll('[data-take]')) button.onclick=async()=>{
+  const request=++takeRequest,position=touch.currentTime,playing=!touch.paused;
+  touch.pause();
+  for(const b of document.querySelectorAll('[data-take]'))b.setAttribute('aria-pressed',String(b===button));
+  $('#touch-status').textContent=takeCopy[button.dataset.take];
+  touch.src=`./media/${button.dataset.take}.mp3`;
+  touch.onloadedmetadata=()=>{
+    if(request!==takeRequest)return;
+    touch.currentTime=Math.min(position,Math.max(0,touch.duration-.01));
+  };
+  // Request playback within the click gesture; metadata restores the position before audio advances.
+  if(playing)try {await Promise.all([initAudio(),touch.play()]);}catch(error){if(request===takeRequest)$('#touch-status').textContent=`Press Play to continue. ${error.message}`;}
+};
 void load();

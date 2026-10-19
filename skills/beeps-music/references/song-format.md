@@ -88,6 +88,7 @@ plays from (`song-written-pitch`), with these fixes. `range`/`sounds` follow `fi
 | `transpose` | semitones (-48..48) the track sounds above the written note; default 0 |
 | `fixed` | `true`: the instrument always sounds at its own pitch (plus `transpose`); written notes only time the hits |
 | `humanize` | 0-1: seeded timing (to 12 ms) and velocity (to ±20%) looseness |
+| `velocityInput` | optional instrument `xRuntime` input name; maps performed velocity to its declared range at note onset (see Expressive notes) |
 | `spread` | 0-1: chord voices fan across the stereo field |
 | `swing` | this track's swing (overrides the song's) |
 | `highpass` | track highpass (Hz): trims an instrument's low layers without editing it |
@@ -96,7 +97,7 @@ plays from (`song-written-pitch`), with these fixes. `range`/`sounds` follow `fi
 
 | kind | fields | notes |
 |---|---|---|
-| `notes` | `[[beat, note, beats, vel?], ...]` | melodies, drones, one-off hits |
+| `notes` | tuples `[beat, note, beats, vel?]` or objects `{at, note, beats, vel?, expression?}`; forms can mix | melodies, drones, one-off hits; objects add per-note expression |
 | `chords` | `progression`, `octave` (4), `voicing` lead\|spread\|close\|drop2\|open, `slash` (true), `rhythm` steps, `strum` s | voice-led chords; `rhythm` restrikes, else each chord holds. A slash chord (`G/F`) adds its bass note below the voicing unless `slash: false`, so one progression can feed the bass and the pads. `drop2` and `open` widen the voicing |
 | `arp` | `progression`, `rate` notes/beat (2), `shape` up\|down\|updown\|random\|converge, `octaves`, `octave`, `rhythm`, `slash` (false) | the note order restarts on each chord; each `rhythm` character is one arp step (at `rate`) and the mask keeps counting across chords |
 | `bass` | `progression`, `octave` (2), `rhythm` steps, `tones` [0 root, 1 third, 2 fifth...] | slash chords put their bass note first |
@@ -112,6 +113,91 @@ longer hits; each `_` still adds a step.
 Chord qualities: (none) maj m min 5 dim aug sus sus2 sus4 6 m6 6/9 69 m6/9 7 maj7 M7 m7 mmaj7 m7b5
 dim7 7sus4 7sus2 7b9 add9 madd9 add11 maj7#11 9 maj9 m9 9sus4 11 m11 maj11 13 m13 maj13, plus `/bass`.
 Songs never snap to the project scale: the notes you write are the notes that play.
+
+## Expressive notes
+
+Object notes use `at` (beat from the pattern start), `note` (such as `D4`), `beats` (authored
+length, greater than 0 and at most 64), and optional `vel` (0–1, default 1). Existing tuple notes
+keep their behavior. Add `expression.pitch`, `expression.brightness`, or both to an object note:
+
+```json
+{"at": 0, "note": "D4", "beats": 2, "vel": 0.7,
+ "expression": {"pitch": [[0, -2], [0.25, 0]],
+                "brightness": [[0, -1], [1, 0.5], [2, 0, "step"]]}}
+```
+
+- Each point is `[beatOffset, value, arrivalCurve?]`. Offsets are beats from this note's onset,
+  not seconds or pattern positions. A curve has 1–64 points, starts at offset 0, uses strictly
+  increasing offsets and finite values, and ends within the authored `beats` length.
+- `pitch` is a semitone offset from the played pitch, limited to −24…24. It affects the
+  instrument's pitched layers and preserves their pitch envelopes and LFOs. The instrument
+  must contain a pitched source.
+  `song check` pitch ranges and register warnings use written notes and static instrument spans;
+  they do not include gestures or velocity-dependent retuning. Inspect the rendered spectrum too.
+- `brightness` is an octave offset, limited to −4…4: `1` doubles filter frequency and `-1`
+  halves it. It affects existing **layer filters**, preserving their filter envelopes and
+  LFOs; the track's `cutoff` is separate. At least one layer filter must exist.
+- The optional third value describes arrival at that point. `linear` (the default) ramps from
+  the previous value; `step` holds the previous value until this point, then jumps. The first
+  point sets the initial value immediately. Values are interpolated in semitones or octaves.
+- Numeric `gate` and section ends shorten the actual hold. Curves are clipped there, using the
+  interpolated value for a linear segment or the held value for a step segment. The last value
+  holds through release. Gate does not stretch the curve's times. `gate: "patch"` cannot be
+  used with expression, and an empty `expression: {}` is invalid.
+
+### Velocity changes tone and envelopes
+
+Set a track's `velocityInput` to a declared, bound input in its instrument's `xRuntime` block.
+The final velocity, including pattern scaling and humanization, maps 0–1 across the input's
+`min`…`max` range at note onset. Ordinary velocity output gain still applies. This also works
+with generated chords, arps, bass and step patterns; explicit curves belong to object notes.
+
+Bindings use the existing runtime rules: the authored patch is the value at the input's
+`default`, and the binding applies a delta from there. For frequency and envelope-time targets,
+the default unit is octaves (`+1` doubles the value); plain numeric targets such as FM index
+add the delta. `live: true` bindings also take the velocity value at onset; this does not make
+velocity a continuous pressure control. All mapped values must remain valid patch values.
+Use layer parameters or output macros. Bindings to `/fx/` are rejected because song effects
+are shared. See [runtime parameter bindings](../../../docs/runtime.md) for target/unit rules.
+
+Save this complete one-bar score as `expressive.json`, then run `beeps song check expressive.json`
+and `beeps song render expressive.json` from an initialized project:
+
+```json
+{
+  "schema": "beeps/song@1", "name": "expressive", "bpm": 90, "loop": false,
+  "instruments": {
+    "reed": {
+      "duration": 1,
+      "layers": [{
+        "source": {"type": "osc", "wave": "sawtooth", "pitch": "D4"},
+        "amp": {"attack": 0.06, "decay": 0.2, "sustain": 0.65, "release": 0.25},
+        "filter": {"type": "lowpass", "cutoff": 1200, "resonanceDb": 0}
+      }],
+      "xRuntime": {
+        "inputs": {"touch": {"min": 0, "max": 1, "default": 0.5}},
+        "bind": [
+          {"input": "touch", "target": "/layers/0/filter/cutoff", "range": [-1, 1]},
+          {"input": "touch", "target": "/layers/0/amp/attack", "range": [0.5, -0.5]}
+        ]
+      }
+    }
+  },
+  "tracks": {"lead": {"instrument": "reed", "velocityInput": "touch", "gainDb": -12}},
+  "patterns": {"phrase": {"bars": 1, "notes": [
+    {"at": 0, "note": "D4", "beats": 2, "vel": 0.45,
+     "expression": {"pitch": [[0, -2], [0.25, 0]], "brightness": [[0, -0.5], [1.5, 0.5]]}},
+    [2.5, "F4", 1, 0.9]
+  ]}},
+  "sections": {"a": {"bars": 1, "play": {"lead": "phrase"}}},
+  "form": ["a"]
+}
+```
+
+The harder second note has a brighter onset and a shorter attack as well as higher velocity
+gain. For an A/B, duplicate the score, remove `velocityInput` and `expression`, and keep notes,
+velocities, instruments and mix identical. Render both, inspect their looks and peaks, then
+compare them in the album at matched listening levels before judging the phrasing.
 
 ## Sections and form
 
