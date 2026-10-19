@@ -1,5 +1,6 @@
 // Generate a candidate set: oversample an archetype, render and measure everything, drop lint
 // failures, then pick a diverse subset by farthest-point selection in taste-feature space.
+import { samplePaths } from './samples/store.ts';
 import { join } from 'node:path';
 import { getArchetype, loadArchetypes, sampleArchetype, type Archetype } from './archetypes.ts';
 import { lintPatch } from './lint.ts';
@@ -85,7 +86,7 @@ export async function generate(host: RenderHost, p: OpenProject, opts: { archety
   const members = familyMembers(a);
   const per = Math.ceil((count * 4) / members.length);
   const samples = members.flatMap((m, k) => sampleArchetype(m, seed + k * 1009, per));
-  const pool = usable(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders }), p);
+  const pool = usable(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }), p);
   const steering = promptDirections(opts.prompt);
   const set = await finishSet(host, p, selectDiverse(p, pool, count, steering), { archetype: a.name, family: a.family, prompt: opts.prompt ?? null, parent: null, idPrefix: a.name });
   return { ...set, steering };

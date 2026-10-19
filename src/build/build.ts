@@ -1,5 +1,6 @@
 // `beeps build`: render + export + compress + bundle only the assets whose input hash differs from the committed lock, or whose
 // outputs are missing or no longer match it. Everything else is left byte for byte alone.
+import { samplePaths } from '../samples/store.ts';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
@@ -357,7 +358,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     // Runtime only: nothing is exported or encoded. The one render is the trim measurement (a cache hit when the patch was baked before).
     const patch = loadPatch(p, r.source);
     if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
-    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders });
+    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
     if (!m.ok) throw new BeepsError('E_RENDER', m.error);
     trimDb = m.trimDb;
   }

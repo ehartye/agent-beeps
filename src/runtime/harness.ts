@@ -9,6 +9,10 @@ import { applyParams } from '../../runtime/engine/params.js';
 import type { Cue } from './cue.ts';
 import type { Scale } from '../schema/project.ts';
 import { diffTap, featureDelta, featuresOf, type FeatureKey, type Pcm, type TapDiff } from './compare.ts';
+import { selectSampleWavs, type EncodedSampleWavs } from '../samples/transport.ts';
+import { sampleId } from '../samples/store.ts';
+import { readSampleWav } from '../../runtime/engine/sample-wav.js';
+import { writeWav } from '../audio/wav.ts';
 
 export type Kind = 'baked' | 'runtime';
 export type EngineName = 'chromium' | 'firefox' | 'webkit';
@@ -37,6 +41,7 @@ export interface ParityCase {
 export interface Spec {
   kind: Kind; patch: Cue['patch']; params: Record<string, number>; seed: number; variant: number; scale?: Scale; trimDb: number;
   reverbBus?: string; live?: { at: number; input: string; value: number; tau: number }[];
+  sampleWavs?: EncodedSampleWavs;
 }
 
 export interface CaseReport {
@@ -44,8 +49,9 @@ export interface CaseReport {
   case: string;
   /** The runtime voice against the bake, same browser. */
   runtime: { delivered: TapDiff; authored: TapDiff; features: Record<FeatureKey, number> };
-  /** Negative control: the runtime voice at seed + 1 against the bake. It must differ, or the comparison proves nothing. */
+  /** Negative control: changed recorded PCM for sample cues, otherwise seed + 1. */
   control: TapDiff;
+  controlKind: 'sample-content' | 'seed';
   /** SHA-256 prefix of the delivered samples over fresh-page repeats of each kind: how many distinct renders came out. */
   distinct: Record<Kind, number>;
   /** The bake rendered by the production render host equals the bake rendered by this harness (chromium only). */
@@ -120,8 +126,9 @@ async function session(browser: Browser, url: string) {
   return { open, run };
 }
 
-const specOf = (cue: Cue, c: ParityCase, kind: Kind, scale: Scale | undefined): Spec => ({
+const specOf = (cue: Cue, c: ParityCase, kind: Kind, scale: Scale | undefined, sampleWavs?: EncodedSampleWavs): Spec => ({
   kind, patch: cue.patch, params: c.params, seed: c.seed, variant: c.variant,
+  sampleWavs: selectSampleWavs(cue.patch, sampleWavs),
   scale: c.scale === 'none' ? (scale ? { ...scale, snap: false } : undefined) : scale, trimDb: cue.trimDb, ...(c.reverbBus ? { reverbBus: c.reverbBus } : {}),
 });
 
@@ -135,7 +142,25 @@ export interface EngineReport {
   vsChromium?: { cue: string; case: string; baked: TapDiff; runtime: TapDiff; runtimeFeatures: Record<FeatureKey, number> }[];
 }
 
-export interface ParityOptions { cues: Cue[]; engines: EngineName[]; runs: number; cases?: (cue: Cue) => ParityCase[] }
+export interface SampleTransportOptions { sampleWavs?: EncodedSampleWavs }
+export interface ParityOptions extends SampleTransportOptions { cues: Cue[]; engines: EngineName[]; runs: number; cases?: (cue: Cue) => ParityCase[] }
+
+/** Change actual content and its identity together, never smuggle changed bytes under the original hash. */
+function negativeControl(spec: Spec): { spec: Spec; kind: CaseReport['controlKind'] } {
+  const entries = Object.entries(spec.sampleWavs ?? {});
+  if (!entries.length) return { spec: { ...spec, seed: spec.seed + 1 }, kind: 'seed' };
+  const replacements = new Map<string, string>(), wavs: Record<string, string> = {};
+  for (const [id, encoded] of entries) {
+    const decoded = readSampleWav(Buffer.from(encoded, 'base64'));
+    const nonzero = decoded.channels.some(c => c.some(x => x !== 0));
+    const channels = decoded.channels.map(c => Float32Array.from(c, (x, i) => nonzero ? -x : 0.125 * Math.cos(i * 2 * Math.PI * 220 / 48000)));
+    const wav = writeWav(channels, 48000, { bits: 32 }), changed = sampleId(wav);
+    replacements.set(id, changed); wavs[changed] = wav.toString('base64');
+  }
+  const patch = structuredClone(spec.patch);
+  for (const l of patch.layers) if (l.source.type === 'sample') l.source.asset = replacements.get(l.source.asset)!;
+  return { spec: { ...spec, patch, sampleWavs: wavs }, kind: 'sample-content' };
+}
 
 export async function runParity(o: ParityOptions): Promise<EngineReport[]> {
   const st = stage();
@@ -161,22 +186,23 @@ export async function runParity(o: ParityOptions): Promise<EngineReport[]> {
           for (const c of (o.cases ?? defaultCases)(cue)) {
             // A bus case compares against a bake with the voice's own reverb: same sound, different summing, so not bit-exact.
             const baked: Pcm[] = [], runtime: Pcm[] = [];
-            for (let i = 0; i < o.runs; i++) { baked.push(await run(specOf(cue, c, 'baked', cue.scale))); runtime.push(await run(specOf(cue, c, 'runtime', cue.scale))); }
+            for (let i = 0; i < o.runs; i++) { baked.push(await run(specOf(cue, c, 'baked', cue.scale, o.sampleWavs))); runtime.push(await run(specOf(cue, c, 'runtime', cue.scale, o.sampleWavs))); }
             const key = `${cue.id}|${c.label}`;
             if (engine === 'chromium') chromiumBaked.set(key, baked[0]);
             const refF = featuresOf(baked[0]);
-            const control = diffTap(baked[0].delivered, (await run({ ...specOf(cue, { ...c, reverbBus: undefined }, 'runtime', cue.scale), seed: c.seed + 1 })).delivered);
+            const negative = negativeControl(specOf(cue, { ...c, reverbBus: undefined }, 'runtime', cue.scale, o.sampleWavs));
+            const control = diffTap(baked[0].delivered, (await run(negative.spec)).delivered);
             let hostEqualsHarness: boolean | undefined;
             if (host) {
               const { patch: applied, trimDeltaDb } = applyParams(cue.patch, c.params, true);
-              const scale = specOf(cue, c, 'baked', cue.scale).scale;
-              const [r] = await host.render([{ patch: applied, opts: { seed: c.seed, variant: c.variant, scale, trimDb: cue.trimDb + trimDeltaDb } }]);
+              const scale = specOf(cue, c, 'baked', cue.scale, o.sampleWavs).scale;
+              const [r] = await host.render([{ patch: applied, opts: { seed: c.seed, variant: c.variant, scale, trimDb: cue.trimDb + trimDeltaDb, sampleWavs: selectSampleWavs(applied, o.sampleWavs) } }]);
               hostEqualsHarness = r.ok && diffTap(r.delivered, baked[0].delivered).bitExact && diffTap(r.authored, baked[0].authored).bitExact;
             }
             const rt = { delivered: diffTap(baked[0].delivered, runtime[0].delivered), authored: diffTap(baked[0].authored, runtime[0].authored), features: featureDelta(refF, featuresOf(runtime[0])) };
             const expect = c.expect ?? 'exact';
             report.cases.push({
-              cue: cue.id, case: c.label, control, expect, pass: judge(expect, rt),
+              cue: cue.id, case: c.label, control, controlKind: negative.kind, expect, pass: judge(expect, rt),
               runtime: rt,
               distinct: { baked: new Set(baked.map(hash)).size, runtime: new Set(runtime.map(hash)).size },
               ...(hostEqualsHarness === undefined ? {} : { hostEqualsHarness }),
@@ -224,7 +250,7 @@ export interface ParityCheck {
  * loudness within CROSS_BROWSER.loudnessLu and spectral centroid within CROSS_BROWSER.centroidHz. An engine that cannot render
  * offline audio is reported, never passed.
  */
-export async function checkParity(cues: Cue[], engines: EngineName[]): Promise<ParityCheck> {
+export async function checkParity(cues: Cue[], engines: EngineName[], { sampleWavs }: SampleTransportOptions = {}): Promise<ParityCheck> {
   const st = stage();
   const site = await serveStatic(st.dir);
   const out: ParityCheck = { engines: [], verdicts: [] };
@@ -242,8 +268,8 @@ export async function checkParity(cues: Cue[], engines: EngineName[]): Promise<P
         out.engines.push({ engine, version: browser.version(), status: 'ok' });
         for (const cue of cues) {
           const c: ParityCase = { label: 'defaults', params: {}, variant: 0, seed: cue.seed };
-          const baked = await run(specOf(cue, c, 'baked', cue.scale));
-          const runtime = await run(specOf(cue, c, 'runtime', cue.scale));
+          const baked = await run(specOf(cue, c, 'baked', cue.scale, sampleWavs));
+          const runtime = await run(specOf(cue, c, 'runtime', cue.scale, sampleWavs));
           if (engine === 'chromium') chromiumBaked.set(cue.id, baked);
           const problems: string[] = [];
           if (engine === 'chromium') {
@@ -266,14 +292,14 @@ export async function checkParity(cues: Cue[], engines: EngineName[]): Promise<P
 }
 
 /** Time voice builds (cold and warm) and count the nodes and buffers they create, in one browser. */
-export interface PerfOptions { memory?: boolean; n?: number; engine?: EngineName; realtime?: boolean; varySeed?: boolean; bus?: boolean; dispose?: boolean; noiseLimit?: number | 'inf' }
+export interface PerfOptions extends SampleTransportOptions { memory?: boolean; n?: number; engine?: EngineName; realtime?: boolean; varySeed?: boolean; bus?: boolean; dispose?: boolean; noiseLimit?: number | 'inf' }
 export interface PerfRow { cue: string;
   /** AudioBuffers still alive in the page after a garbage collection, counted through the DevTools protocol (Runtime.queryObjects): the direct leak instrument. Only with `memory`. */
   liveAudioBuffers?: { count: number; mb: number };
   /** AudioNodes still alive after a garbage collection (the context's own nodes included): a graph that is not freed shows here. Only with `memory`. */
   liveAudioNodes?: number; ctxState?: string; firstMs: number; medianMs: number; p95Ms: number; maxMs: number; warmCounts: Record<string, number>; n: number; noiseCache: { entries: number; bytes: number; limit: number } }
 
-export async function runPerf(cues: Cue[], { n = 60, engine = 'chromium', realtime = false, varySeed = false, bus = false, dispose = false, noiseLimit, memory = false }: PerfOptions = {}): Promise<PerfRow[]> {
+export async function runPerf(cues: Cue[], { n = 60, engine = 'chromium', realtime = false, varySeed = false, bus = false, dispose = false, noiseLimit, memory = false, sampleWavs }: PerfOptions = {}): Promise<PerfRow[]> {
   const st = stage();
   const site = await serveStatic(st.dir);
   const browser = await launch(engine, [...(realtime ? ['--autoplay-policy=no-user-gesture-required'] : []), ...(memory ? ['--js-flags=--expose-gc'] : [])]);
@@ -285,7 +311,7 @@ export async function runPerf(cues: Cue[], { n = 60, engine = 'chromium', realti
       const pg = await ctx.newPage();
       await pg.goto(`${site.url}/index.html`);
       await pg.waitForFunction(() => (window as any).ready === true);
-      const spec = { patch: cue.patch, params: {}, seed: cue.seed, variant: 0, scale: cue.scale, trimDb: cue.trimDb, realtime, varySeed, dispose, noiseLimit, keepOpen: memory, ...(bus && cue.patch.fx?.reverb ? { bus: cue.patch.fx.reverb.preset } : {}) };
+      const spec = { patch: cue.patch, params: {}, seed: cue.seed, variant: 0, scale: cue.scale, trimDb: cue.trimDb, sampleWavs: selectSampleWavs(cue.patch, sampleWavs), realtime, varySeed, dispose, noiseLimit, keepOpen: memory, ...(bus && cue.patch.fx?.reverb ? { bus: cue.patch.fx.reverb.preset } : {}) };
       const settle = async () => { await pg.evaluate(async () => { (window as any).gc?.(); await new Promise(r => setTimeout(r, 300)); (window as any).gc?.(); }); };
       if (memory) await settle();
       const r = await pg.evaluate(([s, count]) => (window as any).perf(s, count), [spec, n] as const) as Omit<PerfRow, 'cue'>;
@@ -329,7 +355,7 @@ const pickFeatures = (p: Pcm) => { const f = featuresOf(p); return { momentaryMa
 const maxStep = (c: Float32Array, from: number, to: number) => { let m = 0; for (let i = Math.max(1, from); i < Math.min(c.length, to); i++) m = Math.max(m, Math.abs(c[i] - c[i - 1])); return m; };
 
 /** Move a live input mid-note and compare with static bakes of the two input values. Chromium only. */
-export async function runLive(cue: Cue, move: { input: string; to: number; at?: number; tau?: number }): Promise<LiveReport> {
+export async function runLive(cue: Cue, move: { input: string; to: number; at?: number; tau?: number }, { sampleWavs }: SampleTransportOptions = {}): Promise<LiveReport> {
   const decl = cue.patch.xRuntime!.inputs[move.input];
   if (!decl) throw new Error(`the patch declares no input "${move.input}"`);
   const at = move.at ?? 0.5, tau = move.tau ?? 0.03;
@@ -339,7 +365,7 @@ export async function runLive(cue: Cue, move: { input: string; to: number; at?: 
   const browser = await launch('chromium');
   try {
     const { run } = await session(browser, site.url);
-    const base = { patch: cue.patch, seed: cue.seed, variant: 0, scale: noSnap, trimDb: cue.trimDb };
+    const base = { patch: cue.patch, seed: cue.seed, variant: 0, scale: noSnap, trimDb: cue.trimDb, sampleWavs: selectSampleWavs(cue.patch, sampleWavs) };
     const bakeFrom = await run({ ...base, kind: 'baked', params: { [move.input]: decl.default } });
     const bakeTo = await run({ ...base, kind: 'baked', params: { [move.input]: move.to } });
     const live = await run({ ...base, kind: 'runtime', params: {}, live: [{ at, input: move.input, value: move.to, tau }] });
@@ -361,13 +387,13 @@ export async function runLive(cue: Cue, move: { input: string; to: number; at?: 
 }
 
 /** Render one cue at given inputs through the baked path and the runtime voice in one browser (fresh page each), for looks and spot checks. */
-export async function renderKinds(cue: Cue, params: Record<string, number>, { engine = 'chromium' as EngineName, variant = 0, seed = cue.seed, noSnap = false } = {}): Promise<Record<Kind, Pcm>> {
+export async function renderKinds(cue: Cue, params: Record<string, number>, { engine = 'chromium' as EngineName, variant = 0, seed = cue.seed, noSnap = false, sampleWavs }: SampleTransportOptions & { engine?: EngineName; variant?: number; seed?: number; noSnap?: boolean } = {}): Promise<Record<Kind, Pcm>> {
   const st = stage();
   const site = await serveStatic(st.dir);
   const browser = await launch(engine);
   try {
     const { run } = await session(browser, site.url);
     const c: ParityCase = { label: 'look', params, variant, seed, ...(noSnap ? { scale: 'none' as const } : {}) };
-    return { baked: await run(specOf(cue, c, 'baked', cue.scale)), runtime: await run(specOf(cue, c, 'runtime', cue.scale)) };
+    return { baked: await run(specOf(cue, c, 'baked', cue.scale, sampleWavs)), runtime: await run(specOf(cue, c, 'runtime', cue.scale, sampleWavs)) };
   } finally { await browser.close(); site.server.close(); st.cleanup(); }
 }

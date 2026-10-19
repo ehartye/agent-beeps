@@ -9,6 +9,7 @@ import { measure, type Features } from '../measure/index.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
+import { createSampleWavSnapshot, type EncodedSampleWavs } from '../samples/transport.ts';
 
 /** Loudness offsets (LU re project target) by family: quiet UI, fuller impacts. */
 export const FAMILY_OFFSETS: Record<string, number> = {
@@ -73,7 +74,7 @@ export function customLoudnessOffset(patch: Patch, project: Project): number | u
   return d === 0 ? undefined : d;
 }
 
-export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], { project, rendersDir }: { project: Project; rendersDir: string }): Promise<RenderOutcome[]> {
+export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], { project, rendersDir, sampleObjectsDir }: { project: Project; rendersDir: string; sampleObjectsDir?: string }): Promise<RenderOutcome[]> {
   const scale = project.scale;
   const keyed = items.map(i => {
     const seed = i.seed ?? 1, variant = i.variant ?? 0;
@@ -82,7 +83,11 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   });
   const out: RenderOutcome[] = new Array(items.length);
   const misses: number[] = [];
+  const samples: EncodedSampleWavs[] = [];
+  const sampleSnapshot = createSampleWavSnapshot(sampleObjectsDir);
   keyed.forEach((k, i) => {
+    try { samples[i] = sampleSnapshot(k.patch); }
+    catch (e) { out[i] = { ok: false, patchName: k.patch.name, error: (e as Error).message }; return; }
     const meta = join(k.dir, 'meta.json');
     if (existsSync(meta) && existsSync(join(k.dir, 'delivered.wav')) && existsSync(join(k.dir, 'look.png'))) {
       const m = JSON.parse(readFileSync(meta, 'utf8'));
@@ -92,7 +97,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   if (!misses.length) return out;
 
   // Pass 1: authored tap (trim does not touch it) → features and trim.
-  const pass1 = await host.render(misses.map(i => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale } })));
+  const pass1 = await host.render(misses.map(i => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale, sampleWavs: samples[i] } })));
   const trims: number[] = [];
   const limited: boolean[] = [];
   const features: (Features | undefined)[] = [];
@@ -113,7 +118,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
 
   // Pass 2: delivered tap with the trim applied through the real limiter.
   const live = misses.map((i, j) => ({ i, j })).filter(({ j }) => features[j]);
-  const pass2 = await host.render(live.map(({ i, j }) => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale, trimDb: trims[j] } })));
+  const pass2 = await host.render(live.map(({ i, j }) => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale, trimDb: trims[j], sampleWavs: samples[i] } })));
   const looks: { i: number; mono: Float32Array; f: Features }[] = [];
   pass2.forEach((r, n) => {
     const { i, j } = live[n];

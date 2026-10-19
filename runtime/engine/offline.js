@@ -1,6 +1,7 @@
 // Offline render in the browser: the delivered (trimmed, limited) stereo mix and the authored
 // (pre-trim, pre-limiter) stereo tap, rendered together into one 4-channel OfflineAudioContext.
 import { buildPatch, patchLength } from './patch.js';
+import { prepareSampleWavs } from './samples.js';
 
 export const SAMPLE_RATE = 48000;
 const PAD = 0.05;
@@ -13,6 +14,22 @@ export function toBase64(f) {
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(s);
+}
+
+/** Decode bounded canonical base64 transport, then verify the entire closure before graph construction.
+ * @param {BaseAudioContext} ctx @param {Patch} patch
+ * @param {Readonly<Record<string,string>>} [encoded]
+ */
+export function prepareEncodedSamples(ctx, patch, encoded = {}) {
+  const wavs = Object.fromEntries(Object.entries(encoded).map(([id, text]) => {
+    // A repeated regex group over the maximum 5.12 MB base64 string overflows V8's stack.
+    // A single invalid-character scan and explicit suffix checks keep validation linear and bounded.
+    if (typeof text !== 'string' || text.length > Math.ceil((44 + 480000 * 2 * 4) / 3) * 4 || text.length % 4 || /[^A-Za-z0-9+/=]/.test(text)) throw new TypeError(`invalid bounded sample WAV base64 transport: ${id}`);
+    const padding = text.indexOf('=');
+    if (padding !== -1 && (padding < text.length - 2 || !['=', '=='].includes(text.slice(padding)))) throw new TypeError(`invalid sample WAV base64 padding: ${id}`);
+    return [id, Uint8Array.from(atob(text), c => c.charCodeAt(0))];
+  }));
+  return prepareSampleWavs(ctx, patch, wavs);
 }
 
 /**
@@ -56,11 +73,12 @@ export async function renderTaps(ctx) {
 
 /**
  * @param {Patch} patch
- * @param {{ seed?: number, variant?: number, trimDb?: number, scale?: import('./layer.js').Scale }} [opts]
+ * @param {{ seed?: number, variant?: number, trimDb?: number, scale?: import('./layer.js').Scale, sampleWavs?: Readonly<Record<string,string>> }} [opts]
  */
 export async function renderOfflinePcm(patch, opts = {}) {
   const { ctx, delivered, authored } = tapContext(patchLength(patch));
-  buildPatch(ctx, patch, { ...opts, destination: delivered, authoredTap: authored });
+  const samples = prepareEncodedSamples(ctx, patch, opts.sampleWavs);
+  buildPatch(ctx, patch, { ...opts, samples, destination: delivered, authoredTap: authored });
   return renderTaps(ctx);
 }
 

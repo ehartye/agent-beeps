@@ -1,3 +1,4 @@
+import { samplePaths } from '../samples/store.ts';
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { Command } from 'commander';
@@ -54,7 +55,7 @@ export async function createSet(p: OpenProject, patches: Patch[], opts: { prompt
   const dup = names.find((n, i) => names.indexOf(n) !== i);
   if (dup) throw new BeepsError('E_USAGE', `patch name "${dup}" appears twice`, { hint: 'candidate names must be unique within a set' });
   return withHost(async host => {
-    const out = await renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders });
+    const out = await renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
     const failed = out.find(o => !o.ok);
     if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
     const rendered = out.filter((o): o is Extract<typeof o, { ok: true }> => o.ok) as Rendered[];
@@ -75,7 +76,7 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
   const siblings = siblingsOf(p, patches, own);
   // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
   const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
-  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
+  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
   const text = new Map(loadRules().map(r => [r.id, r.statement]));
   const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
@@ -162,7 +163,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .action(async (ref: string, opts: { priority?: number }) => {
       const p = openProject(io.projectDir());
       const patch = loadPatch(p, ref);
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch }], { project: p.project, rendersDir: p.paths.renders }));
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       const k = addToKit(readKit(p.paths.root), { name: patch.name, family: patch.family, priority: opts.priority ?? patch.meta?.priority ?? 3, trimDb: o.trimDb });
       writeKit(p.paths.root, k);
@@ -180,7 +181,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const k = readKit(p.paths.root);
       const patches = k.sounds.map(s => loadPatch(p, s.name));
-      const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders }));
+      const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
       const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority }] : []));
       const siblings = siblingsOf(p, patches);
       io.emit({ kit: lintKit(members, p.project), sounds: members.map(m => ({ name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }) })) });
@@ -247,7 +248,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
         if (dir) found.push({ name: i.name, path: join(dir, `${i.name}.json`), rating: i.rating as 'up' | 'down' }); else missing.push(i.name);
       }
       if (!found.length) throw new BeepsError('E_NOT_FOUND', 'none of the rated sounds has a patch file', { hint: `pass --patches <dir>; looked in ${dirs.join(', ') || 'nowhere (no patchDir in the file)'}; not found: ${missing.join(', ')}` });
-      const outs = await withHost(host => renderAndMeasure(host, found.map(f => ({ patch: loadPatch(p, f.path) })), { project: p.project, rendersDir: p.paths.renders }));
+      const outs = await withHost(host => renderAndMeasure(host, found.map(f => ({ patch: loadPatch(p, f.path) })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }));
       const sounds: RatedSound[] = [];
       outs.forEach((o, i) => { if (o.ok) sounds.push({ name: found[i].name, family: o.patch.family, raw: featureVector(o.features as unknown as Features), rating: found[i].rating }); else missing.push(found[i].name); });
       const session = `import-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;

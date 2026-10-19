@@ -20,13 +20,15 @@ import { cueFile, cuesFor, cueText, makeCue, type Cue } from '../runtime/cue.ts'
 import { diffTap, featuresOf } from '../runtime/compare.ts';
 import { renderKinds, runLive, runParity, runPerf, type EngineName } from '../runtime/harness.ts';
 import { withHost, int } from './shared.ts';
+import { samplePaths } from '../samples/store.ts';
+import { createSampleWavSnapshot, resolveSampleWavs, resolveSamplesForPatches } from '../samples/transport.ts';
 
 const list = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean);
 const inf = (_k: string, v: unknown) => (v === -Infinity ? '-inf' : v === Infinity ? 'inf' : v);
 
 interface Common { projectFile?: string; kit?: string; seed?: number }
 
-function context(io: Io, refs: string[], o: Common): { project: Project; patches: Patch[]; seeds: Record<string, number> } {
+function context(io: Io, refs: string[], o: Common): { project: Project; patches: Patch[]; seeds: Record<string, number>; sampleObjectsDir?: string } {
   const root = findProjectRoot(io.projectDir());
   const open = root ? openProject(root) : undefined;
   const project = o.projectFile ? parseProject(readJsonFile(o.projectFile)) : open?.project ?? defaultProject();
@@ -37,7 +39,7 @@ function context(io: Io, refs: string[], o: Common): { project: Project; patches
   });
   const kit = o.kit ? (readJsonFile(o.kit) as { sounds: { name: string; seed: number }[] }).sounds : [];
   const seeds = Object.fromEntries(patches.map(p => [p.name, o.seed ?? kit.find(k => k.name === p.name)?.seed ?? 1]));
-  return { project, patches, seeds };
+  return { project, patches, seeds, sampleObjectsDir: open ? samplePaths(open).objects : undefined };
 }
 
 const needsInputs = (patches: Patch[], what: string) => {
@@ -56,8 +58,8 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .description('write <out>/<id>.runtime.json for each patch: the parsed patch, its seed, the project scale and the loudness trim the baked pipeline measures, which is what a game loads with parseCue (beeps build writes the same files)')
     .requiredOption('--out <dir>', 'where the cue files go')
     .action(async (refs: string[], o: Common & { out: string }) => {
-      const { project, patches, seeds } = context(io, refs, o);
-      const cues = await withHost(host => cuesFor(host, patches, project, { seeds }));
+      const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
+      const cues = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
       mkdirSync(resolve(o.out), { recursive: true });
       for (const cue of cues) writeFileSync(join(resolve(o.out), cueFile(cue.id)), cueText(cue));
       io.emit({ out: resolve(o.out), engine: ENGINE_VERSION, cues: cues.map(c => ({ id: c.id, file: cueFile(c.id), seed: c.seed, trimDb: c.trimDb, inputs: Object.keys(c.patch.xRuntime?.inputs ?? {}) })) });
@@ -66,7 +68,7 @@ export function registerRuntimeCommands(program: Command, io: Io) {
   common(rt.command('check <refs...>'))
     .description('lint the patch where the runtime path can take it: render each patch with every input at its default, at each end alone and with all inputs at min and at max, and run the craft rules on each. Findings the default does not have are the runtime path\'s own')
     .action(async (refs: string[], o: Common) => {
-      const { project, patches, seeds } = context(io, refs, o);
+      const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
       needsInputs(patches, 'runtime check');
       const rendersDir = join(mkdtempSync(join(tmpdir(), 'beeps-rt-check-')), 'renders');
       // The baked pipeline re-trims every render to the project's loudness target, which would hide the one thing a runtime input
@@ -90,9 +92,10 @@ export function registerRuntimeCommands(program: Command, io: Io) {
             return { c, trimDeltaDb, patch: { ...bare, name: i === 0 ? patch.name : `${patch.name}-c${i}` } as Patch };
           });
           const seed = seeds[patch.name];
-          const rendered = await renderAndMeasure(host, variants.map(v => ({ patch: v.patch, seed })), { project, rendersDir });
+          const rendered = await renderAndMeasure(host, variants.map(v => ({ patch: v.patch, seed })), { project, rendersDir, sampleObjectsDir });
           const baseTrim = rendered[0].ok ? rendered[0].trimDb : 0;
-          const fixed = await host.render(variants.map(v => ({ patch: v.patch, opts: { seed, scale: project.scale, trimDb: baseTrim + v.trimDeltaDb } })));
+          const samples = createSampleWavSnapshot(sampleObjectsDir);
+          const fixed = await host.render(variants.map(v => ({ patch: v.patch, opts: { seed, scale: project.scale, trimDb: baseTrim + v.trimDeltaDb, sampleWavs: samples(v.patch) } })));
           const levels = fixed.map(r => {
             if (!r.ok) return undefined;
             const m = measure({ sampleRate: r.sampleRate, authored: r.delivered, delivered: r.delivered });
@@ -138,9 +141,9 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .description('are the cues in <dir> current? Each cue\'s engine version, seed, scale and patch against the patch and the engine now, and its loudness trim against a fresh measurement (--no-trim skips the render). Exit 1 on any drift')
     .option('--no-trim', 'do not re-measure the loudness trim')
     .action(async (dir: string, refs: string[], o: Common & { trim: boolean }) => {
-      const { project, patches, seeds } = context(io, refs, o);
+      const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
       const problems: string[] = [];
-      const fresh = o.trim ? await withHost(host => cuesFor(host, patches, project, { seeds })) : undefined;
+      const fresh = o.trim ? await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir })) : undefined;
       for (const [i, patch] of patches.entries()) {
         const file = join(resolve(dir), cueFile(patch.name));
         if (!existsSync(file)) { problems.push(`${patch.name}: ${cueFile(patch.name)} is not in the folder`); continue; }
@@ -161,9 +164,9 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .option('--engines <list>', 'chromium,firefox,webkit', list, ['chromium'])
     .option('--runs <n>', 'fresh-page repeats per path, to count distinct outputs', int, 3)
     .action(async (refs: string[], o: Common & { engines: string[]; runs: number }) => {
-      const { project, patches, seeds } = context(io, refs, o);
-      const cues = await withHost(host => cuesFor(host, patches, project, { seeds }));
-      const reports = await runParity({ cues, engines: o.engines as EngineName[], runs: o.runs });
+      const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
+      const cues = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
+      const reports = await runParity({ cues, engines: o.engines as EngineName[], runs: o.runs, sampleWavs: resolveSamplesForPatches(patches, sampleObjectsDir) });
       console.log(JSON.stringify({ reports }, inf, 2));
       const bad = reports.some(r => r.cases.some(c => c.distinct.baked > 1 || c.distinct.runtime > 1 || c.control.bitExact || !c.pass || c.hostEqualsHarness === false));
       if (bad) process.exitCode = 1;
@@ -178,9 +181,9 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .option('--plays <count>', 'shorthand for --n <count> --vary-seed with every voice disposed at once: a long session of fresh seeds, with the noise cache\'s state at the end', int)
     .option('--unbounded', 'lift the noise cache bound (the behaviour before it existed), to measure what it saves')
     .action(async (refs: string[], o: Common & { n: number; realtime?: boolean; varySeed?: boolean; bus?: boolean; plays?: number; unbounded?: boolean }) => {
-      const { project, patches, seeds } = context(io, refs, o);
-      const cues = await withHost(host => cuesFor(host, patches, project, { seeds }));
-      io.emit({ perf: await runPerf(cues, { n: o.plays ?? o.n, realtime: o.realtime || o.plays !== undefined, varySeed: o.varySeed || o.plays !== undefined, bus: o.bus, dispose: o.plays !== undefined, noiseLimit: o.unbounded ? 'inf' : undefined, memory: o.plays !== undefined }) });
+      const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
+      const cues = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
+      io.emit({ perf: await runPerf(cues, { sampleWavs: resolveSamplesForPatches(patches, sampleObjectsDir), n: o.plays ?? o.n, realtime: o.realtime || o.plays !== undefined, varySeed: o.varySeed || o.plays !== undefined, bus: o.bus, dispose: o.plays !== undefined, noiseLimit: o.unbounded ? 'inf' : undefined, memory: o.plays !== undefined }) });
     });
 
   common(rt.command('look <ref>'))
@@ -190,10 +193,10 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .option('--variant <n>', 'variant', int, 0)
     .requiredOption('--out <dir>', 'where baked.png and runtime.png go')
     .action(async (ref: string, o: Common & { set: string[]; snap: boolean; variant: number; out: string }) => {
-      const { project, patches, seeds } = context(io, [ref], o);
+      const { project, patches, seeds, sampleObjectsDir } = context(io, [ref], o);
       const params = Object.fromEntries(o.set.map(kv => { const [k, v] = kv.split('='); return [k, Number(v)]; }));
-      const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds }));
-      const r = await renderKinds(cue, params, { variant: o.variant, noSnap: !o.snap });
+      const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
+      const r = await renderKinds(cue, params, { variant: o.variant, noSnap: !o.snap, sampleWavs: resolveSampleWavs(cue.patch, sampleObjectsDir) });
       mkdirSync(resolve(o.out), { recursive: true });
       const files: Record<string, string> = {};
       await withHost(async host => {
@@ -216,9 +219,9 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .option('--at <sec>', 'when it moves', Number, 0.5)
     .option('--tau <sec>', 'smoothing time constant', Number, 0.03)
     .action(async (ref: string, o: Common & { input: string; to: number; at: number; tau: number }) => {
-      const { project, patches, seeds } = context(io, [ref], o);
-      const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds }));
+      const { project, patches, seeds, sampleObjectsDir } = context(io, [ref], o);
+      const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
       if (!cue.patch.xRuntime) throw new BeepsError('E_USAGE', `${cue.id} declares no xRuntime inputs`);
-      io.emit({ live: await runLive(cue, { input: o.input, to: o.to, at: o.at, tau: o.tau }) });
+      io.emit({ live: await runLive(cue, { input: o.input, to: o.to, at: o.at, tau: o.tau }, { sampleWavs: resolveSampleWavs(cue.patch, sampleObjectsDir) }) });
     });
 }

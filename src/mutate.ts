@@ -1,6 +1,7 @@
 // Refine by ear: nudge parameters (jsfxr/bfxr style: each numeric parameter has a 50 % chance of a
 // small nudge; waveforms and structure never change), render, and keep the mutations that move the
 // measured features in the direction the owner asked for, favouring what their taste model likes.
+import { samplePaths } from './samples/store.ts';
 import { mulberry32 } from '../runtime/engine/rng.js';
 import { noteToHz } from '../runtime/engine/notes.js';
 import { getArchetype, type Archetype } from './archetypes.ts';
@@ -106,8 +107,8 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
     if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) continue; // unchanged: not a variation
     kids.push({ ...child, name: `${base}-m${tag}-${i + 1}` });
   }
-  const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], { project: p.project, rendersDir: p.paths.renders });
-  const pool = usable(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders }), p);
+  const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
+  const pool = usable(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }), p);
   const pv = parentR.ok ? featureVector(parentR.features) : null;
   const model = loadModel(p);
   const scored = pool.map(r => {

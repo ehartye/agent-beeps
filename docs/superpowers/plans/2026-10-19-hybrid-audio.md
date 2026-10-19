@@ -17,7 +17,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
 - [x] Task1: canonical codec, bounded decode, immutable import/preparation and resolver.
 - [x] Task2A: strict sample source, synchronous graph preflight/buffers and async browser
   cue preparation with verified local hashing, including native and HTTP LAN checks.
-- [ ] Task2B: production offline host transport, project render context and real runtime
+- [x] Task2B: production offline host transport, project render context and real runtime
   parity (including a changed-source negative control).
 - [ ] Task3: CLI import/prepare/bundle/sync, existing audition preloading with cancellation
   guards and sample-aware lint (project render context is established in Task2B).
@@ -77,6 +77,15 @@ a callback-dispatched resonant-filter tail truncation; its exact native reproduc
 preserves identical PCM. Independent quality review approved with166tests/10files, no skips.
 All546 existing graph goldens remain unchanged. Production render transport, cache/source
 context and harness integration remain Task2B; this checkpoint is not a hybrid release.
+
+Task2B verification: coordinator31tests/7files pass with no skips, typecheck and whitespace
+checks pass. Independent spec review approved with72tests/11files and unchanged546goldens;
+independent quality approved with29tests/6files, no skips, plus malformed-transport probes.
+Native maximum10second stereo transport and exact PCM pass after a real V8 regex stack
+overflow regression was fixed. Per-operation snapshots bound duplicate source transport
+across variants; fresh operations still reject missing/corrupt objects before warm caches.
+Production/runtime tap parity, changed-content controls and actual CLI render/measure/export/
+runtime check/parity/perf/look/live are verified. Portable cue delivery remains Task4.
 
 Task3 tests first: CLI roundtrip sample-only/hybrid import ->prepare ->new/set ->render ->bundle
 ->sync in relocated project; corrupt bundle writes nothing; current audition plays both and
