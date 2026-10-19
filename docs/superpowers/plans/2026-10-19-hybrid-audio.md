@@ -19,7 +19,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   cue preparation with verified local hashing, including native and HTTP LAN checks.
 - [x] Task2B: production offline host transport, project render context and real runtime
   parity (including a changed-source negative control).
-- [ ] Task3A: CLI import/prepare/bundle/sync, explicit preparation-history portability and
+- [x] Task3A: CLI import/prepare/bundle/sync, explicit preparation-history portability and
   replay after relocation (project render context is established in Task2B).
 - [ ] Task3B: existing audition preloading with cancellation guards, sample-aware lint and
   actual sample-only/hybrid set playback in the current UI.
@@ -100,6 +100,16 @@ Bundle validates strict manifest/file closure and containment; fresh-directory p
 identical repeat avoids leftover outtakes. A small pure preparation helper may be factored
 from Task1 so sync/receipt validation can recompute output before destination writes; preserve
 existing arithmetic and all Task1 tests. Existing patch-only sync retains its contract.
+
+Task3A verification: coordinator53tests/6files pass with ffmpeg enabled and no skips;
+typecheck and whitespace checks pass. Independent spec review approved, including actual
+directory/dangling-link named-patch CLI reproductions and normal forced replacement. Fresh
+quality review approved with39tests/3files and no skips. The complete real CLI sample-only
+and hybrid relocation chains produce identical rendered WAVs. Exact raw-byte patch hashes,
+destination/ancestor preflight and immutable publication-winner checks reject the reproduced
+integrity failures before reporting success or publishing preparation files. Default bundles
+retain only prepared dependencies; explicit preparation bundles replay saved recipes after
+original removal. Existing audition and delivered runtime dependencies remain Tasks3B/4.
 
 Task3B tests first: normal sets contain sample-only and hybrid candidates; current audition
 plays both and Stop/selection change cancels pending loads. Use actual HTTP/auth routes and

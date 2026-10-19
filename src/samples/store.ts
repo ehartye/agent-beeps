@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, linkSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { linkSync, lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { BeepsError } from '../errors.ts';
@@ -69,11 +69,27 @@ export function resolvePatchSamples(patch: SamplePatchShape, objectsDir: string)
 
 /** Preflight all immutable destinations before a multi-file operation writes anything. */
 export function verifyImmutableFile(path: string, bytes: Uint8Array): void {
-  if (existsSync(path) && (statSync(path).size !== bytes.byteLength || !readFileSync(path).equals(bytes))) throw new BeepsError('E_VERIFY', `immutable sample store file differs: ${path}`);
+  matchesImmutableFile(path, bytes);
+}
+
+function matchesImmutableFile(path: string, bytes: Uint8Array, required = false): boolean {
+  let entry;
+  try { entry = lstatSync(path); }
+  catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT' && !required) return false;
+    throw new BeepsError('E_VERIFY', `cannot verify immutable sample store file: ${path}`);
+  }
+  // lstat sees occupied names even when they are dangling links. Never follow a link as a winner.
+  if (!entry.isFile() || entry.isSymbolicLink()) throw new BeepsError('E_VERIFY', `immutable sample store destination is not a regular file: ${path}`);
+  let actual;
+  try { actual = entry.size === bytes.byteLength ? readFileSync(path) : undefined; }
+  catch { throw new BeepsError('E_VERIFY', `cannot read immutable sample store file: ${path}`); }
+  if (!actual?.equals(bytes)) throw new BeepsError('E_VERIFY', `immutable sample store file differs: ${path}`);
+  return true;
 }
 
 export function writeImmutableFile(path: string, bytes: Uint8Array): void {
-  if (existsSync(path)) { verifyImmutableFile(path, bytes); return; }
+  if (matchesImmutableFile(path, bytes)) return;
   mkdirSync(dirname(path), { recursive: true });
   const staged = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
   try {
@@ -82,7 +98,7 @@ export function writeImmutableFile(path: string, bytes: Uint8Array): void {
     // Copying to the destination is not a safe fallback: a failed copy could expose partial bytes.
     try { linkSync(staged, path); }
     catch (e) {
-      if ((e as NodeJS.ErrnoException).code === 'EEXIST') { verifyImmutableFile(path, bytes); return; }
+      if ((e as NodeJS.ErrnoException).code === 'EEXIST') { matchesImmutableFile(path, bytes, true); return; }
       throw new BeepsError('E_STORE', `cannot atomically publish immutable sample file ${path}: ${(e as Error).message}`, { hint: 'the sample store filesystem must support hard links' });
     }
   } finally { rmSync(staged, { force: true }); }

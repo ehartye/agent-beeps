@@ -85,11 +85,29 @@ export interface SamplePreparedReceipt extends AudioMetadata {
 }
 export interface PreparedSample extends AudioMetadata { recipeId: SampleId; outputId: SampleId; objectPath: string; recipePath: string; receipt: SamplePreparedReceipt }
 
-export function prepareSample(project: ProjectLocation, input: unknown): PreparedSample {
-  const recipe = parseSamplePrep(input), paths = samplePaths(project);
-  const source = readSampleObject(paths.objects, recipe.source, { maxFrames: SOURCE_MAX_FRAMES });
-  if (recipe.endFrame > source.frames) throw new BeepsError('E_SCHEMA', `sample crop end exceeds source length ${source.frames}`, { pointer: '/endFrame' });
-  const pcm = readSampleWav(source.wav, { maxFrames: SOURCE_MAX_FRAMES });
+const PreparedReceiptSchema = z.strictObject({
+  schema: z.literal('beeps/sample-prepared@1'), recipeId: z.string().regex(SAMPLE_ID_PATTERN), recipe: SamplePrepSchema,
+  outputId: z.string().regex(SAMPLE_ID_PATTERN), sampleRate: z.literal(48000), channels: z.union([z.literal(1), z.literal(2)]),
+  frames: z.number().int().min(1).max(PREPARED_MAX_FRAMES), bytes: z.number().int().min(48).max(44 + PREPARED_MAX_FRAMES * 8),
+});
+
+export function parseSamplePreparedReceipt(input: unknown): SamplePreparedReceipt {
+  const r = PreparedReceiptSchema.safeParse(input);
+  if (!r.success) throw new BeepsError('E_SCHEMA', `invalid sample preparation receipt: ${r.error.issues[0].message}`, { pointer: `/${r.error.issues[0].path.join('/')}` });
+  if (r.data.recipeId !== `sha256:${sha256(canonicalJson(r.data.recipe))}`) throw new BeepsError('E_VERIFY', 'sample preparation recipe ID mismatch');
+  if (r.data.frames !== r.data.recipe.endFrame - r.data.recipe.startFrame || r.data.bytes !== 44 + r.data.frames * r.data.channels * 4) throw new BeepsError('E_VERIFY', 'sample preparation receipt metadata mismatch');
+  return r.data as SamplePreparedReceipt;
+}
+
+/** Pure replay used by preparation and portable-bundle preflight; publishes no files. */
+export function prepareSampleWav(input: unknown, sourceWav: Buffer): { wav: Buffer; receipt: SamplePreparedReceipt } {
+  const expected = (input as { schema?: unknown } | null)?.schema === 'beeps/sample-prepared@1' ? parseSamplePreparedReceipt(input) : undefined;
+  const recipe = expected?.recipe ?? parseSamplePrep(input);
+  if (sampleId(sourceWav) !== recipe.source) throw new BeepsError('E_VERIFY', 'sample preparation source hash mismatch');
+  let pcm;
+  try { pcm = readSampleWav(sourceWav, { maxFrames: SOURCE_MAX_FRAMES }); }
+  catch (e) { throw new BeepsError('E_SCHEMA', `invalid preparation source WAV: ${(e as Error).message}`); }
+  if (recipe.endFrame > pcm.frames) throw new BeepsError('E_SCHEMA', `sample crop end exceeds source length ${pcm.frames}`, { pointer: '/endFrame' });
   const frames = recipe.endFrame - recipe.startFrame, gain = 10 ** (recipe.gainDb / 20);
   const channels = pcm.channels.map(channel => {
     const out = channel.slice(recipe.startFrame, recipe.endFrame);
@@ -105,8 +123,17 @@ export function prepareSample(project: ProjectLocation, input: unknown): Prepare
   });
   const wav = writeWav(channels, 48000, { bits: 32 }), outputId = sampleId(wav), recipeId: SampleId = `sha256:${sha256(canonicalJson(recipe))}`;
   const metadata = { sampleRate: 48000 as const, channels: channels.length as 1 | 2, frames, bytes: wav.length };
-  const objectPath = join(paths.objects, `${outputId.slice(7)}.wav`), recipePath = join(paths.recipes, `${recipeId.slice(7)}.json`);
   const receipt: SamplePreparedReceipt = { schema: 'beeps/sample-prepared@1', recipeId, recipe, outputId, ...metadata };
+  if (expected && canonicalJson(expected) !== canonicalJson(receipt)) throw new BeepsError('E_VERIFY', 'sample preparation output or metadata differs from receipt');
+  return { wav, receipt };
+}
+
+export function prepareSample(project: ProjectLocation, input: unknown): PreparedSample {
+  const recipe = (input as { schema?: unknown } | null)?.schema === 'beeps/sample-prepared@1' ? parseSamplePreparedReceipt(input).recipe : parseSamplePrep(input);
+  const paths = samplePaths(project), source = readSampleObject(paths.objects, recipe.source, { maxFrames: SOURCE_MAX_FRAMES });
+  const { wav, receipt } = prepareSampleWav(input, source.wav), { recipeId, outputId, sampleRate, channels, frames, bytes } = receipt;
+  const metadata = { sampleRate, channels, frames, bytes };
+  const objectPath = join(paths.objects, `${outputId.slice(7)}.wav`), recipePath = join(paths.recipes, `${recipeId.slice(7)}.json`);
   commitFiles([{ path: objectPath, bytes: wav }, { path: recipePath, bytes: jsonBytes(receipt) }]);
   return { recipeId, outputId, objectPath, recipePath, receipt, ...metadata };
 }

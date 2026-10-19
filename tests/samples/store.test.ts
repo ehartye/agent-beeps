@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { writeWav, readWav } from '../../src/audio/wav.ts';
 import { decodeAudio } from '../../src/audio/decode.ts';
-import { patchSampleIds, readSampleObject, resolvePatchSamples, sampleId, samplePaths, writeSampleObject } from '../../src/samples/store.ts';
+import { patchSampleIds, readSampleObject, resolvePatchSamples, sampleId, samplePaths, verifyImmutableFile, writeSampleObject } from '../../src/samples/store.ts';
 import { findFfmpeg } from '../../src/compress.ts';
 
 // Real filesystem operations with fault injection only at the write/publication boundaries.
@@ -155,6 +155,27 @@ describe('verified sample objects', () => {
     fsFault.failPublishCode = 'ENOTSUP';
     expect(() => writeSampleObject(objects, bytes)).toThrowError(expect.objectContaining({ code: 'E_STORE' }));
     expect(readdirSync(objects)).toEqual([]);
+  });
+  it('rejects a dangling link instead of treating the occupied immutable name as absent', () => {
+    const objects = dir(), bytes = wav(), path = join(objects, `${sampleId(bytes).slice(7)}.wav`), target = join(objects, 'target');
+    mkdirSync(target); symlinkSync(target, path, process.platform === 'win32' ? 'junction' : 'dir'); rmSync(target, { recursive: true });
+    expect(existsSync(path)).toBe(false); expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    expect(() => verifyImmutableFile(path, bytes)).toThrowError(expect.objectContaining({ code: 'E_VERIFY' }));
+    expect(() => writeSampleObject(objects, bytes)).toThrowError(expect.objectContaining({ code: 'E_VERIFY' }));
+    expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    expect(readdirSync(objects)).toEqual([`${sampleId(bytes).slice(7)}.wav`]);
+  });
+  it('requires an actual matching publication winner after EEXIST, including a dangling racing link', () => {
+    const objects = dir(), bytes = wav(), path = join(objects, `${sampleId(bytes).slice(7)}.wav`);
+    fsFault.failPublishCode = 'EEXIST';
+    expect(() => writeSampleObject(objects, bytes)).toThrowError(expect.objectContaining({ code: 'E_VERIFY' }));
+    expect(readdirSync(objects)).toEqual([]);
+    fsFault.beforePublish = (_staged, destination) => {
+      const target = join(objects, 'target'); mkdirSync(target); symlinkSync(target, destination, process.platform === 'win32' ? 'junction' : 'dir'); rmSync(target, { recursive: true });
+    };
+    expect(() => writeSampleObject(objects, bytes)).toThrowError(expect.objectContaining({ code: 'E_VERIFY' }));
+    expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    expect(readdirSync(objects)).toEqual([`${sampleId(bytes).slice(7)}.wav`]);
   });
 });
 
