@@ -229,7 +229,7 @@ export async function testFuse(page, server, study, artifact) {
     }
     if(control==='Escape')await probe.keyboard.press('Escape');
     if(control==='Touch')await probe.locator('#touch-audio').evaluate(a=>a.play());
-    if(control==='reel')await probe.getByRole('button',{name:'Play reel',exact:true}).click();
+    if(control==='reel')await probe.locator('#matter-play').click();
     if(control==='pad')await probe.getByRole('button',{name:'Play Crystal switch',exact:true}).click();
     if(control==='Flux')await probe.getByRole('button',{name:'Play Alloy: index envelope',exact:true}).click();
     // Wait until the replacement has started before counting native sources.

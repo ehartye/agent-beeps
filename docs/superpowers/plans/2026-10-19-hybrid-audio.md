@@ -32,7 +32,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   Recording / procedural body / hybrid comparisons use actual matched levels, provenance,
   portable metal downloads and desktop/mobile/subpath browser verification. The owner's
   later selection removes the extra indoor-machine-gun row from the public inventory.
-- [ ] Task5C: make the existing live equalizer the sticky panel and give its shared transport
+- [x] Task5C: make the existing live equalizer the sticky panel and give its shared transport
   play/pause and previous/next behavior for the active Matter, bench, Touch, Flux or Fuse
   section. Preserve true pause position, native source playback, cancellation and source PCM.
 - [ ] Task6: capability/version identity, legacy compatibility, full regression tests,
@@ -231,3 +231,53 @@ stop/skip while paused, natural completion and errors. Keep the source PCM/cues/
 Run the existing booth suite plus the new transport coverage. Inspect desktop and390px layouts,
 sticky equalizer while scrolled, accurate accessible control labels, no duplicate canvas,
 no overflow, no browser exceptions and no missing subpath assets.
+
+Task5C verification: independent spec and quality approved after native regressions fixed
+focused-Space retriggering and rejected media resume falsely reporting Playing. The combined
+native suite verifies all collections, actual context/media clocks frozen for3200ms, unchanged
+source starts on resume, retry at the saved position, delayed work cancellation and foreground
+ownership. Root independently verified the focused Tommy Space path with exactly one source
+start and inspected actual desktop/390px sticky-spectrum playback and pause. All150 baseline
+hashes remain exact; typecheck and whitespace pass. The full booth/DSP/archive run passed before
+the final event/state corrections; scoped combined native/status/cases checks pass afterward,
+with the final broad release run in Task6. No owner listening approval is inferred.
+
+## Task6: release identity, documentation and delivery
+
+Release the reviewed hybrid capability as package/plugin0.16.0 and engine4. Keep player3:
+the existing baked-player contract has not changed. Update package-lock identity fields,
+plugin/local-marketplace descriptors and capability metadata without dependency churn.
+Regenerate `runtime/ci/fetch.mjs` through `scripts/build-ci-fetch.mjs --write`; its check must
+pass, its project-default marker must remain exact, and its standalone Node20 contract holds.
+
+Document sample import, deterministic preparation, the final hybrid edit and portable exchange
+in README, runtime/package/build-store documentation and a direct compose/ship skill reference.
+The correct order is import, prepare a named sample patch, add/edit procedural layers, save,
+render/lint/look, then bundle the final edited patch. Prepared-only is the default; explicit
+preparation bundles add the normalized source and replay recipe, never original imports or
+private local paths. Preserve both Codex and Claude installation routes, with and without the
+Hartye marketplace. Replace the README's obsolete no-sample claim and retain historical notes.
+
+Browser examples explicitly resume the context within a user gesture, asynchronously load
+verified assets with `loadCueAssets`, then build a fresh voice per play. Stop/replacement must
+cancel pending work; cache verified buffers rather than already-started voices. Update the
+generated runtime-package README as well as the checked-in guide. State actual limits: eight
+layers; prepared48k mono/stereo sources up to480000frames; normalized inputs up to120seconds;
+originals up to64MiB; finite unpitched one-shots. Sample pitch envelopes or pitch LFOs, looping, stretching
+and song sample instruments remain unsupported. Attenuating a clipped recording does not
+restore its original transient. Preserve ordinary procedural and music skill routing.
+
+Regenerate every public runtime cue, quality receipt and manifest through the production
+render path with engine4. Legacy procedural PCM must remain bit-exact, while cue metadata and
+render identities change. Run focused version/capability/package/generator checks, typecheck,
+the bounded full suite, native showcase coverage and the legacy-PCM comparison. Evaluate the
+updated skills with an honest paired with/without probe against the saved pre-edit baseline.
+Independent spec, quality and final integration reviews precede publication.
+
+Rebase the unpublished source branch onto latest main, push a PR and squash merge after checks.
+Verify Pages deployment and the live three-row/nine-take booth plus contextual transport.
+Publish the runtime branch append-only from the clean merged checkout and verify its exported
+API/version. Update only agent-beeps in the central Hartye marketplace using its isolated
+release worktree, PR and squash merge. Update and merge the wiki's as-built architecture,
+roadmap and delivery evidence; preserve raw sources and distinguish measured checks from owner
+listening approval. Retain worktrees and evidence; never force-push or claim preview as release.
