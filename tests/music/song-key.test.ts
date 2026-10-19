@@ -31,14 +31,14 @@ const instruments = { pad: patchOf(PAD), hat: patchOf(HAT) };
 const target = -20;
 
 describe('song render key', () => {
-  it('is unchanged for a full render, so approved mixes keep their cached audio', () => {
+  it('pins the full-render identity to the current song pipeline', () => {
     // The formula full renders used before solo-by-filter existed.
     expect(songRenderKey(s, instruments, { target })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION }));
     expect(songRenderKey(s, instruments, { target, fixedTrim: -3 })).toBe(renderKey({ song: s, instruments }, { kind: 'song', target, pipeline: SONG_PIPELINE_VERSION, fixedTrim: -3 }));
     // A change here re-renders every approved song. Recorded before solo-by-filter existed (engine 1:
     // e8159013...357e); re-recorded for engine 2, whose fixed-order sums make renders bit-exact (84ac...c219),
-    // and for song pipeline 6, which makes song renders reproducible (nodes kept alive, bus channel counts pinned).
-    expect(songRenderKey(s, instruments, { target })).toBe('6db559f26f98c326c0bd9447d4d6dee442363abbb5653dcf829ff4baeda46e70');
+    // then pipeline 6 (reproducible graphs), and pipeline 7 (native expressive performance).
+    expect(songRenderKey(s, instruments, { target })).toBe('32d8650939d62c9afc1aae3a73b047446c0c9aaf39ac2166f6812ee85c10826e');
   });
 
   it('treats an empty track list as no filter', () => {

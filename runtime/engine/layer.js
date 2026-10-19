@@ -12,6 +12,7 @@ import { noteToHz, snapToScale } from './notes.js';
  * @property {OscillatorNode | undefined} lfo
  * @property {{ param: AudioParam, ratio: number }[]} pitch
  * @property {AudioParam[]} detune
+ * @property {AudioParam[]} expressionDetune
  * @property {number} baseHz
  */
 /** @typedef {{ root: string, mode: 'chromatic'|'major'|'minor'|'dorian'|'majorPentatonic'|'minorPentatonic'|'blues', snap: boolean }} Scale */
@@ -189,6 +190,6 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
       built.stop(t);
       lfoNode?.stop(t);
     },
-    nodes: { gain, pan: panNode, filter, lfo: lfoNode, pitch: built.pitch, detune: built.detune, baseHz: base },
+    nodes: { gain, pan: panNode, filter, lfo: lfoNode, pitch: built.pitch, detune: built.detune, expressionDetune: built.expressionDetune, baseHz: base },
   };
 }

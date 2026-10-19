@@ -23,6 +23,11 @@ Songs render to loopable, loudness-matched WAVs, are linted against cited
 music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
 holds a 13-track example library; `library/instruments/` holds 25 instrument patches.
 
+For expressive phrasing, notes can carry pitch bends and brightness curves, and tracks can map
+velocity to an instrument's tone and envelopes as well as volume.
+[Expressive notes and a working score](skills/beeps-music/references/song-format.md#expressive-notes)
+use the same song renderer and listening workflow.
+
 [`library/sounds/sci-fi/`](library/sounds/sci-fi/) contains 18 approved effects across Expedition,
 Arcade and Oddities, with purpose labels, playback seeds and measured kit levels.
 
@@ -187,6 +192,16 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.14.0
+
+Notes can carry their own pitch and brightness curves. Tracks can map performed velocity to an
+instrument's `xRuntime` input, shaping tone, FM index or envelopes as well as loudness. Existing
+note tuples still work. [Author expressive notes](skills/beeps-music/references/song-format.md#expressive-notes),
+or hear [Touch: eight bars, two performances](https://ehartye.github.io/agent-beeps/#touch).
+
+Song pipeline 7 invalidates cached song renders; rebuild song locks with the new toolchain.
+The sound-effect engine version remains 2. MIDI/MPE import and live controller input are future work.
 
 ## What changed in 0.13.1
 

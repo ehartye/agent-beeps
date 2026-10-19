@@ -89,3 +89,4 @@ const song={schema:'beeps/song@1',name:'matter',title:'Matter',description:'A mi
 mkdirSync(resolve(root,'showcase/recipes'),{recursive:true});
 writeFileSync(resolve(root,'showcase/recipes/matter.json'),JSON.stringify(song,null,2)+'\n');
 console.log('Wrote Matter: 48 bars, 128 BPM, D minor → D Dorian, nine scenes.');
+await import('./compose-expression.mjs');

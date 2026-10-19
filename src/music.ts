@@ -10,6 +10,8 @@ import { setPointer } from './pointer.ts';
 import type { Patch } from './schema/patch.ts';
 import { instrumentSpan } from '../runtime/engine/song.js';
 import { hzToMidi, noteToHz } from '../runtime/engine/notes.js';
+import { compileSong } from '../runtime/engine/sequence.js';
+import { songPerformanceIssues, velocityPatch } from '../runtime/engine/expression.js';
 
 export const LIBRARY_DIR = join(import.meta.dirname, '..', 'library');
 export const INSTRUMENTS_DIR = join(LIBRARY_DIR, 'instruments');
@@ -117,7 +119,27 @@ export function resolveInstruments(p: OpenProject, song: Song): Record<string, P
     }
     return r.patch;
   };
-  return Object.fromEntries(Object.entries(song.tracks).map(([track, t]) => [track, fromSpec(t.instrument, `/tracks/${track}/instrument`, typeof t.instrument === 'string' ? t.instrument : track)]));
+  const instruments = Object.fromEntries(Object.entries(song.tracks).map(([track, t]) => [track, fromSpec(t.instrument, `/tracks/${track}/instrument`, typeof t.instrument === 'string' ? t.instrument : track)]));
+  const { events } = compileSong(song);
+  const issue = songPerformanceIssues(song, instruments, events)[0];
+  if (issue) throw new BeepsError('E_SCHEMA', issue.message, { pointer: issue.pointer });
+  for (const [track, t] of Object.entries(song.tracks)) {
+    if (!t.velocityInput) continue;
+    // Combined nonlinear bindings can peak between the input endpoints. Validate the values
+    // actually played, including accents and humanization, rather than just min and max.
+    const velocities = new Set(events.filter(e => e.track === track).map(e => e.vel));
+    for (const velocity of velocities) {
+      const { xRuntime: _runtime, ...realized } = velocityPatch(instruments[track], t, velocity).patch;
+      const result = parsePatch(realized);
+      if (!result.ok) {
+        const first = result.issues[0];
+        throw new BeepsError('E_SCHEMA', `velocity ${velocity} produces an invalid instrument at ${first.pointer}: ${first.message}`, {
+          pointer: `/tracks/${track}/velocityInput`, hint: first.hint,
+        });
+      }
+    }
+  }
+  return instruments;
 }
 
 /**

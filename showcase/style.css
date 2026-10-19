@@ -48,6 +48,9 @@ input[type=range] { accent-color: var(--signal); width: 95px; }
 .liner h2 { font: 800 25px/1.1 var(--display); text-transform: uppercase; }
 a.toggle { display: inline-block; text-decoration: none; font-size: 12px; line-height: 1.5; }
 footer { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; border-top: 2px solid var(--ink); padding-top: 16px; margin-top: 18px; font-size: 12px; }
+#touch-audio { width: 100%; margin-top: 12px; }
+#touch .row { gap: 8px; flex-wrap: wrap; }
+#touch-status { min-height: 2.8em; }
 button:disabled { cursor: wait; opacity: .5; }
 @media(max-width:720px) {
   .intro { grid-template-columns: 1fr; gap: 4px; }

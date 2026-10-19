@@ -1,4 +1,4 @@
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { serveStatic } from '../src/render/host.ts';
 
@@ -9,9 +9,11 @@ export function serveShowcase({host='127.0.0.1',port=0,prefix=''}={}) {
     const url=new URL(req.url,'http://preview');
     if(prefix&&!url.pathname.startsWith(`${prefix}/`)){res.writeHead(404).end();return true;}
     const path=url.pathname.slice(prefix.length);req.url=path+url.search;
-    if(path!=='/media/matter.mp3')return false;
+    if(!/^\/media\/[a-z0-9-]+\.mp3$/.test(path))return false;
     if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return true;}
-    const file=resolve(root,'media/matter.mp3');const size=statSync(file).size;
+    const file=resolve(root,`.${path}`);
+    if(!existsSync(file))return false;
+    const size=statSync(file).size;
     let start=0,end=size-1;
     if(req.headers.range){
       const match=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);

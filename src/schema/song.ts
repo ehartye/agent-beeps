@@ -40,6 +40,8 @@ const Track = z.strictObject({
   fixed: z.boolean().optional().describe('true: play the instrument at its own pitch whatever note is written; the notes only time the hits'),
   /** Seeded timing (up to 12 ms) and velocity (up to ±20%) looseness. */
   humanize: z.number().min(0).max(1).default(0),
+  /** Map the performed velocity across this instrument xRuntime input's range. */
+  velocityInput: z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'camelCase input name').optional(),
   /** Stereo spread for chords: voices fan out across ±spread. */
   spread: z.number().min(0).max(1).default(0),
   /** Swing for this track only (overrides the song's). */
@@ -80,7 +82,34 @@ const Bass = z.strictObject({
   /** Chord-tone indices cycled per hit: 0 root, 1 third, 2 fifth... (the slash bass replaces 0). */
   tones: z.array(z.number().int().min(0).max(6)).min(1).default([0]).describe('chord-tone index per hit, cycled: 0 root (slash bass if any), 1 third, 2 fifth, 3 seventh'),
 });
-const NoteEvent = z.tuple([z.number().min(0), Note, z.number().positive().max(64)]).rest(z.number().min(0).max(1)).describe('[start beat from the pattern start, note name, length in beats, velocity 0-1 (default 1)]');
+const TupleNote = z.tuple([z.number().min(0), Note, z.number().positive().max(64)]).rest(z.number().min(0).max(1)).describe('[start beat from the pattern start, note name, length in beats, velocity 0-1 (default 1)]');
+const expressionCurve = (min: number, max: number) => z.array(z.tuple([
+  z.number().min(0), z.number().min(min).max(max), z.enum(['linear', 'step']).optional(),
+])).min(1).max(64).superRefine((points, ctx) => {
+  if (points[0]?.[0] !== 0) ctx.addIssue({ code: 'custom', path: [0, 0], message: 'an expression curve must start at beat offset 0' });
+  points.forEach((point, i) => {
+    if (i && point[0] <= points[i - 1][0]) ctx.addIssue({ code: 'custom', path: [i, 0], message: 'expression curve beat offsets must strictly increase' });
+  });
+});
+const Expression = z.strictObject({
+  pitch: expressionCurve(-24, 24).optional().describe('semitone offsets; points are [beat offset, value, arrival curve?]'),
+  brightness: expressionCurve(-4, 4).optional().describe('filter octave offsets; points are [beat offset, value, arrival curve?]'),
+}).superRefine((expression, ctx) => {
+  if (!expression.pitch && !expression.brightness) ctx.addIssue({ code: 'custom', message: 'expression needs a pitch or brightness curve' });
+});
+const ObjectNote = z.strictObject({
+  at: z.number().min(0),
+  note: Note,
+  beats: z.number().positive().max(64),
+  vel: z.number().min(0).max(1).optional(),
+  expression: Expression.optional(),
+}).superRefine((note, ctx) => {
+  for (const key of ['pitch', 'brightness'] as const) {
+    const curve = note.expression?.[key];
+    if (curve?.length && curve[curve.length - 1][0] > note.beats) ctx.addIssue({ code: 'custom', path: ['expression', key, curve.length - 1, 0], message: 'expression curve must end within the authored note length' });
+  }
+});
+const NoteEvent = z.union([TupleNote, ObjectNote]);
 
 const Pattern = z.strictObject({
   bars: z.number().min(0.25).max(64).describe('pattern length in bars; it repeats to fill each section that plays it'),
@@ -189,7 +218,11 @@ function crossCheck(s: Song): Issue[] {
       const ref = p[kind]!.progression;
       if (!(ref in s.progressions)) out.push({ pointer: at('patterns', name, kind, 'progression'), message: `no progression "${ref}"`, hint: `progressions: ${Object.keys(s.progressions).join(', ') || '(none defined)'}` });
     }
-    if (kind === 'notes') p.notes!.forEach((n, i) => { if (n[0] >= p.bars * s.meter) out.push({ pointer: at('patterns', name, 'notes', i, 0), message: `beat ${n[0]} is past the pattern's ${p.bars * s.meter} beats` }); });
+    if (kind === 'notes') p.notes!.forEach((n, i) => {
+      const beat = Array.isArray(n) ? n[0] : n.at;
+      if (beat >= p.bars * s.meter) out.push({ pointer: at('patterns', name, 'notes', i, Array.isArray(n) ? 0 : 'at'), message: `beat ${beat} is past the pattern's ${p.bars * s.meter} beats` });
+      if (!Array.isArray(n) && n.expression && p.gate === 'patch') out.push({ pointer: at('patterns', name, 'notes', i, 'expression'), message: 'expressive notes require a held gate; gate "patch" has no held duration' });
+    });
   }
   for (const [name, sec] of Object.entries(s.sections)) {
     for (const [track, ref] of Object.entries(sec.play)) {
@@ -242,7 +275,15 @@ function crossCheck(s: Song): Issue[] {
 export function parseSong(input: unknown): SongResult {
   const r = SongSchema.safeParse(input);
   if (!r.success) {
-    return { ok: false, issues: r.error.issues.map(i => ({ pointer: pointerOf(i.path), message: i.message, ...(i.path.includes('instrument') ? { hint: 'an instrument is a patch name or an inline patch object' } : {}) })) };
+    // A note's form is unambiguous from its input shape; report that branch's precise fields.
+    // In particular, legacy tuple errors retain their original JSON pointers.
+    const issues = r.error.issues.flatMap(i => {
+      if (i.code !== 'invalid_union' || i.path.length !== 4 || i.path[0] !== 'patterns' || i.path[2] !== 'notes') return [i];
+      const note = i.path.reduce<unknown>((value, key) => value && typeof value === 'object' ? (value as Record<PropertyKey, unknown>)[key] : undefined, input);
+      const branch = note && typeof note === 'object' && !Array.isArray(note) ? 1 : 0;
+      return i.errors[branch].map(detail => ({ ...detail, path: [...i.path, ...detail.path] }));
+    });
+    return { ok: false, issues: issues.map(i => ({ pointer: pointerOf(i.path), message: i.message, ...(i.path.includes('instrument') ? { hint: 'an instrument is a patch name or an inline patch object' } : {}) })) };
   }
   const issues = crossCheck(r.data);
   return issues.length ? { ok: false, issues } : { ok: true, song: r.data };

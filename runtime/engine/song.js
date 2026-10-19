@@ -7,6 +7,7 @@ import { compileSong } from './sequence.js';
 import { hzToMidi, noteToHz } from './notes.js';
 import { sumInto, voicePool } from './sum.js';
 import { recordNodes } from './retain.js';
+import { scheduleNoteExpression, songPerformanceIssues, velocityPatch } from './expression.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('../../src/schema/song.ts').Song} Song */
@@ -121,13 +122,29 @@ export function transposePatch(p, semitones, keytrack, duration) {
  * Seconds a song keeps sounding after its form ends: the longest instrument ring plus effect tails.
  * @param {Song} song
  * @param {Record<string, Patch>} instruments by track name
+ * @param {import('./sequence.js').NoteEvent[]} [events] already compiled, when available
  */
-export function songTail(song, instruments) {
+export function songTail(song, instruments, events) {
   let ring = 0;
   for (const p of Object.values(instruments)) {
     const release = Math.max(...p.layers.map(l => l.amp.release));
     // A gate:'patch' event can begin just before the form ends and play its full duration.
     ring = Math.max(ring, release, patchLength(p));
+  }
+  // Onset mappings can extend a release or a patch-duration hit. Use the actual performed
+  // velocities rather than assuming endpoint extrema (several nonlinear bindings can combine).
+  if (Object.values(song.tracks).some(t => t.velocityInput)) {
+    /** @type {Map<string, Set<number>>} */
+    const checked = new Map();
+    for (const e of events ?? compileSong(song).events) {
+      const track = song.tracks[e.track];
+      if (!track.velocityInput) continue;
+      const velocities = checked.get(e.track) ?? new Set();
+      if (velocities.has(e.vel)) continue;
+      velocities.add(e.vel); checked.set(e.track, velocities);
+      const { patch } = velocityPatch(instruments[e.track], track, e.vel);
+      ring = Math.max(ring, patchLength(patch));
+    }
   }
   let fx = 0;
   const r = song.master.reverb;
@@ -158,6 +175,8 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   const { destination = ctx.destination, when = 0, lazy = false, only, retain = false } = opts;
   const playing = only ? new Set(only) : undefined;
   const c = compileSong(song);
+  const issue = songPerformanceIssues(song, instruments, c.events)[0];
+  if (issue) throw new Error(`${issue.pointer}: ${issue.message}`);
   const setup = retain ? recordNodes(ctx) : undefined;
   const master = ctx.createGain();
   master.connect(destination);
@@ -201,6 +220,18 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   // A track's bus is as wide as the widest note it can play, for the whole song, whichever notes happen to be live
   // (and in a solo render too, so a stem sums back to the mix): stereo when a note is spread or its patch is stereo.
   const spread = new Set(c.events.filter(e => e.pan).map(e => e.track));
+  // Onset mappings can pan a layer or widen a source. Include the performed voices when
+  // choosing bus width, while retaining mono pan law for mappings that only change timbre.
+  /** @type {Map<string, Set<number>>} */
+  const widthsChecked = new Map();
+  for (const e of c.events) {
+    const t = song.tracks[e.track], p = instruments[e.track];
+    if (!t.velocityInput || !p || spread.has(e.track) || patchIsStereo(p)) continue;
+    const checked = widthsChecked.get(e.track) ?? new Set();
+    if (checked.has(e.vel)) continue;
+    checked.add(e.vel); widthsChecked.set(e.track, checked);
+    if (patchIsStereo(velocityPatch(p, t, e.vel).patch)) spread.add(e.track);
+  }
   /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, shift: ReturnType<typeof trackShift> }>} */
   const buses = {};
   for (const [name, t] of Object.entries(song.tracks)) {
@@ -295,9 +326,9 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     return cursor - from;
   };
   /** Builds one note's nodes into its track's bus; returns when it falls silent. */
-  const buildNote = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i, /** @type {Patch} */ p, /** @type {typeof buses[string]} */ bus) => {
+  const buildNote = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i, /** @type {Patch} */ p, /** @type {typeof buses[string]} */ bus, trimDeltaDb = 0) => {
     const out = ctx.createGain();
-    out.gain.value = e.vel;
+    out.gain.value = trimDeltaDb ? e.vel * db(trimDeltaDb) : e.vel;
     /** @type {AudioNode} */
     let note = out;
     if (e.pan) {
@@ -310,7 +341,9 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     let end = at;
     const layerOuts = p.layers.map((layer, li) => {
       const lo = ctx.createGain();
-      end = Math.max(end, buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo }).end);
+      const voice = buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo });
+      if (e.expression) scheduleNoteExpression(voice.nodes, e.expression, at);
+      end = Math.max(end, voice.end);
       return lo;
     });
     sumInto(ctx, layerOuts, out);
@@ -323,12 +356,16 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     const t = song.tracks[e.track];
     const shift = bus.shift ? bus.shift(e.midi) : 0;
     const key = `${e.track}:${shift.toFixed(3)}:${e.dur ?? 'patch'}`;
-    let p = voices.get(key);
-    if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }
+    let p = voices.get(key), trimDeltaDb = 0;
+    if (t.velocityInput) {
+      const applied = velocityPatch(instruments[e.track], t, e.vel);
+      p = transposePatch(applied.patch, shift, t.keytrack, e.dur);
+      trimDeltaDb = applied.trimDeltaDb;
+    } else if (!p) { p = transposePatch(instruments[e.track], shift, t.keytrack, e.dur); voices.set(key, p); }
     const recording = retain ? recordNodes(ctx) : undefined;
     let end = when + e.time;
-    try { end = buildNote(e, i, p, bus); } finally { if (recording) held.push({ end, keep: recording.stop() }); }
+    try { end = buildNote(e, i, p, bus, trimDeltaDb); } finally { if (recording) held.push({ end, keep: recording.stop() }); }
   };
   if (!lazy) advance(Infinity);
-  return { end: when + c.length + songTail(song, instruments), length: c.length, sections: c.sections, advance, release, graph, done: () => cursor >= c.events.length };
+  return { end: when + c.length + songTail(song, instruments, c.events), length: c.length, sections: c.sections, advance, release, graph, done: () => cursor >= c.events.length };
 }
