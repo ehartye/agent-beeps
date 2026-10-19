@@ -1,7 +1,7 @@
 ---
 name: beeps-ship
 description: Ship an app's beeps audio - incremental builds with a committed lock, a content-addressed store, a CI that fetches instead of rendering, and the web codec traps (MP3 bitexact delay, WebKit padding, Opus determinism, YAML step names).
-when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio job is slow or re-renders everything, when asked to reduce audio churn or repo size, when choosing a delivery format, or when beeps build, verify, store or fetch.mjs reports a stale, missing, toolchain or sha256 problem.
+when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio job is slow or re-renders everything, when asked to reduce audio churn or repo size, when choosing a delivery format, when shipping recorded-source hybrid SFX or a portable sample bundle, or when beeps build, verify, store or fetch.mjs reports a stale, missing, toolchain or sha256 problem.
 ---
 
 # Ship audio
@@ -69,14 +69,32 @@ Key any Actions cache on the lock's hash
 Add `beeps build --check` (needs ffmpeg for the encoder fingerprint, or trusts the lock's) to the test
 job to fail on stale audio.
 
+## Hybrid sources
+
+Read [hybrid sources](../beeps-compose/references/hybrid-sources.md) directly for the source workflow,
+privacy boundary and native lifecycle. Bundle **after** saving and validating the final hybrid edit;
+`sample sync` restores prepared dependencies before build. Runtime/both outputs include the cue-owned
+prepared WAV closure, locked and fetched with the cue. Budget those fixed bytes separately from encoded
+audio. Baked files use the existing player; source bundles are authoring exchange, not a game catalog.
+
+For baked-player Play/Stop controls, read [the player API](../beeps-compose/references/game-player.md).
+Call `player.unlock()` within the play gesture and give the request a generation token; after
+awaiting unlock, check that it succeeded and the token is still current before `player.play(id)`.
+Stop/replacement increments the generation and stops the current handle, including while its
+`ready` promise is pending. Guard late readiness/status callbacks too, so stopped or replaced work
+cannot start playback or overwrite the current status.
+
 ## Runtime cues
 
 A recipe may add `"delivery": "runtime"` or `"both"` (default `baked`; absent, the patch's `xRuntime.delivery`). `beeps build`
 then writes `<id>.runtime.json` next to the baked files. It is in the lock (`parts.runtime`, `delivery`) and the store like any
 output, a runtime-only asset encodes nothing and ignores bitrate changes, and editing a binding rebuilds the cue and not its bake.
 The game installs only the engine, as `agent-beeps-runtime` (pin a commit of the repo's `runtime` branch;
-`docs/runtime-package.md`), loads the cue with `parseCue` and plays it with `build(ctx, out, cue).start()`, with a shared
-`createReverbBus` when voices have reverb. Add **`beeps verify --parity chromium,firefox`** to a CI job that has the browsers:
+`docs/runtime-package.md`), loads the cue with `parseCue`, resumes the context in a user gesture, awaits
+`loadCueAssets(ctx, cue, { baseURL: cueURL, signal })`, then plays a fresh
+`build(ctx, out, cue, { samples }).start()` per play, with a shared `createReverbBus` when voices have reverb.
+Abort/generation guards prevent Stop or replacement from starting a late load; cache verified buffers,
+not already-started voices. The complete handler is in `docs/runtime.md#playing-it`. Add **`beeps verify --parity chromium,firefox`** to a CI job that has the browsers:
 bit-exact in Chromium, loudness within 1 LU and centroid within 30 Hz in Firefox; WebKit without `OfflineAudioContext` is a
 warning, not a pass. A new engine version makes `parseCue` refuse old cues: rebuild with the toolchain change below. Which
 delivery to pick: `docs/runtime.md`.
@@ -106,7 +124,7 @@ passes with no further renders, and a later re-render of those songs reproduces 
 - **Opus is byte-deterministic** for one WAV and one ffmpeg build (pre-skip and granule position carry
   the length, so every browser trims alike), which is why the lock can pin encoded bytes. A different
   ffmpeg build may change the bytes; the lock pins the build.
-- **Vendored player 3** ends a loop at the catalog's `frames` when a decoder left extra frames and
+- **Vendored player** ends a loop at the catalog's `frames` when a decoder left extra frames and
   reports `W_LOOP_LENGTH` when a decode differs; it cannot recover audio a decoder cut.
 - **YAML**: a workflow step `name:` containing a colon and a space (`name: Audio: fetch`) parses as a
   mapping and the whole workflow fails to load. Quote step names or leave the colon out.

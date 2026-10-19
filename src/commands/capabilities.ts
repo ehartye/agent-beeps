@@ -45,6 +45,22 @@ export function registerCapabilities(program: Command, io: Io) {
         refineDirections: ['brighter', 'darker', 'punchier', 'softer', 'shorter', 'longer', 'less-harsh', 'more-character'],
         tasteFeatures: FEATURE_NAMES,
         errorCodes: ERROR_CODES,
+        samples: {
+          commands: ['sample import', 'sample prepare', 'sample bundle', 'sample sync'],
+          maxLayers: 8,
+          prepared: { sampleRate: 48000, channels: [1, 2], minFrames: 1, maxFrames: 480000 },
+          maxNormalizedSeconds: 120,
+          maxOriginalBytes: 64 * 1024 * 1024,
+          notes: [
+            'Finite, unpitched SFX one-shots: sample pitch envelopes, pitch LFOs, loops, stretching and song sample instruments are unsupported; gain and cutoff LFOs are supported.',
+            'Import retains exact originals and local provenance; prepare crops, linearly fades and applies gain to the retained canonical 48 kHz snapshot, with an integer-frame replay recipe.',
+            'Prepare a named sample patch, edit/add procedural layers, save, render/lint/look, then sample bundle the final edited patch.',
+            'Bundles default to prepared dependencies only. --include-preparation adds required normalized source snapshots and replay recipes, possibly including outtakes; neither mode includes original encoded imports, import receipts or private local paths.',
+            'render, look, measure, lint, export, runtime and build resolve and verify prepared dependencies before cache reuse; source bundles are restored with sample sync, not ordinary patch sync.',
+            'For live cues, resume AudioContext in a user gesture, await loadCueAssets(ctx, cue, {baseURL, signal}), then build(ctx, out, cue, {samples}) with a fresh voice per play. Graph construction stays synchronous and performs no I/O.',
+            'Attenuation and the output true-peak ceiling do not repair a source recording that is already clipped.',
+          ],
+        },
         notes: [
           'Patches never carry a loudness literal: the renderer trims every sound to the project loudness target.',
           'lowpass/highpass take resonanceDb (Chromium treats their Q as dB); bandpass/notch/peaking take q.',
@@ -63,7 +79,7 @@ export function registerCapabilities(program: Command, io: Io) {
           chordQualities: Object.keys(QUALITIES).filter(Boolean),
           patternKinds: ['notes', 'chords', 'arp', 'bass', 'steps'],
           arpShapes: ['up', 'down', 'updown', 'random', 'converge'],
-          notes: ['Songs play patches as instruments (beeps instruments lists the bundled ones, their roots and layer offsets).', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
+          notes: ['Songs play procedural patches as instruments; sample instruments are unsupported (beeps instruments lists the bundled ones, their roots and layer offsets).', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
         },
         ...(opts.schema ? { patchSchema: patchJsonSchema(), songSchema: songJsonSchema() } : {}),
       });

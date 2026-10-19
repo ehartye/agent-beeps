@@ -1,18 +1,23 @@
 # agent-beeps
 
-A procedural sound composer for coding agents. Agents build game and UI sounds as Web Audio
+A sound composer for coding agents. Agents build procedural and recorded-source hybrid game and UI sounds as Web Audio
 patches (JSON), render them in real Chromium, measure what came out (loudness, true peak, attack,
 length, brightness, sharpness, roughness, pitch), check them against cited craft rules, and put a
 diverse set in front of the owner on a listening page served to the local network. The owner keeps,
 duels and refines by ear; every explicit choice trains a taste model that ranks and predicts the next
 set, and every audition scores how well the agent predicted the pick.
 
-No sample files, no AI audio: every sound is a small, editable patch that games can also play live
-through the same engine, with seeded variations so repeated sounds do not fatigue.
+Sounds are editable patches: synthesize them from scratch or combine prepared recordings with
+procedural layers. Games can bake a WAV/Opus file or play the same graph live with verified sample
+buffers. Import and preparation are local; portable bundles share only the source material you select.
 
 **[Listen to Matter →](https://ehartye.github.io/agent-beeps/)** — an original 94-second procedural
 reel in the existing listening booth, with nine scenes and eight effects synthesized live in your
 browser. [Score, patches, measurements and build instructions](showcase/README.md).
+
+[Hear Fuse: recording, procedural body, hybrid](https://ehartye.github.io/agent-beeps/#fuse) ·
+[Metal example](library/examples/fuse/README.md) · [Tommy five-burst example](library/examples/fuse-tommy/README.md) ·
+[M16 sustained-burst example](library/examples/fuse-m16/README.md)
 
 [Install for Codex or Claude Code](#install) · [Workflow](#workflow) · [Commands](#commands)
 
@@ -173,8 +178,8 @@ usually runs `beeps sync <patchDir>`, `beeps kit add` per sound, `beeps lint`, `
 
 ## Sound engine
 
-Seven source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`
-resonators, Poisson `grains`, the 808 `metal` voice), per-layer pitch/amp/filter envelopes, LFO,
+Nine source types (`osc` with unison, `noise`, `fm` operators, `additive` partials, `modal`
+resonators, Poisson `grains`, the 808 `metal` voice, formant `voice`, and prepared `sample`), per-layer pitch/amp/filter envelopes, LFO,
 drive and pan, a generated-impulse reverb and a delay, an opt-in DC blocker (`fx.dcBlock`), and a
 transparent safety clipper. Pitched
 sources snap to the project scale. The engine is plain browser JavaScript
@@ -192,6 +197,34 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.16.0
+
+Recorded sources can now supply the contact detail in a procedural SFX patch. `beeps sample import`
+retains the original and a canonical 48 kHz snapshot; `sample prepare` crops, fades and applies gain
+with a replayable frame recipe. Prepare a named patch, add/edit procedural layers, save and
+render/lint/look, then `sample bundle` the **final edited patch**. `sample sync` restores it elsewhere.
+Bundles default to prepared dependencies only. Explicit `--include-preparation` adds normalized
+source snapshots and replay recipes (possibly including outtakes), never original encoded imports,
+import receipts or private local paths. [Hybrid workflow and limits](skills/beeps-compose/references/hybrid-sources.md).
+
+The limit is eight layers per patch; a prepared source is 1–480000 frames at 48 kHz, mono/stereo
+(up to ten seconds). Imports are at most 64 MiB and normalized snapshots at most 120 seconds.
+Samples are finite, unpitched one-shots: sample pitch envelopes/pitch LFOs, loops, stretching and
+song sample instruments are unsupported. Gain/cutoff LFOs remain available. Attenuation and an output
+true-peak ceiling cannot restore an already clipped recording's transient.
+
+Engine 4 adds verified dependency loading to live cues: resume the context in a user gesture, await
+`loadCueAssets`, then build a fresh voice per play. Build/store/standalone Node 20 fetch carry each
+cue's prepared source closure; baked delivery uses the existing player contract. Rebuild locks/cues
+on upgrade. Legacy procedural PCM and golden graphs are unchanged; render keys and cue metadata
+change. [Runtime API](docs/runtime.md) · [Delivery](docs/build-lock-and-store.md).
+
+[Hear Fuse](https://ehartye.github.io/agent-beeps/#fuse): three rows and nine takes in the existing
+booth, comparing a recording, procedural body and hybrid at measured max-momentary loudness.
+[Metal](library/examples/fuse/README.md), [Tommy five bursts](library/examples/fuse-tommy/README.md)
+and [M16 one sustained burst](library/examples/fuse-m16/README.md) include portable sources and recipes.
+Measurements do not imply owner listening approval.
 
 ## What changed in 0.15.0
 
@@ -447,11 +480,16 @@ pins the cue; `beeps verify --parity` proves the cue plays as its bake (bit-exac
 across browsers). The game installs only the engine, as the generated slim package `agent-beeps-runtime`.
 
 ```js
-import { build, parseCue } from 'agent-beeps-runtime';
-const voice = build(ctx, ctx.destination, parseCue(cueJson), { params: { speed: 0.4 } }).start();
-voice.set('speed', 0.9);
+import { build, parseCue, loadCueAssets } from 'agent-beeps-runtime';
+const cue = parseCue(cueJson);
+// Inside each play button's user-gesture handler:
+await ctx.resume();
+const samples = await loadCueAssets(ctx, cue, { baseURL: cueURL, signal });
+const voice = build(ctx, ctx.destination, cue, { samples }).start(); // fresh on every play
 ```
 
-`beeps runtime export | check | verify | parity | perf | live | look` author and measure it. When to pick which delivery, the
+Stop/replacement must abort pending loads and guard late completions; cache verified buffers, never
+an already-started voice. The complete cancellable handler is in [`docs/runtime.md#playing-it`](docs/runtime.md#playing-it).
+`build` remains synchronous with no I/O. `beeps runtime export | check | verify | parity | perf | live | look` author and measure it. When to pick which delivery, the
 API, the input format, the measured costs and the compatibility notes: [`docs/runtime.md`](docs/runtime.md). The package and its
 `runtime` branch: [`docs/runtime-package.md`](docs/runtime-package.md).

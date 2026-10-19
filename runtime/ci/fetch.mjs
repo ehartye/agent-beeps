@@ -96,7 +96,7 @@ function parseCue(value, { allowEngineMismatch = false } = {}) {
 	const c = value;
 	if (!c || c.schema !== "beeps/runtime-cue@1") throw new TypeError(`not a ${CUE_SCHEMA} file`);
 	if (typeof c.id !== "string" || !Number.isFinite(c.seed) || !Number.isFinite(c.trimDb) || !c.patch || c.patch.schema !== "beeps/patch@1") throw new TypeError(`${CUE_SCHEMA}: needs id, seed, trimDb and a beeps/patch@1 patch`);
-	if (c.engine !== "3" && !allowEngineMismatch) throw new Error(`cue "${c.id}" was built with engine ${c.engine}, this runtime is engine 3: rebuild the audio (beeps build) or pass { allowEngineMismatch: true }`);
+	if (c.engine !== "4" && !allowEngineMismatch) throw new Error(`cue "${c.id}" was built with engine ${c.engine}, this runtime is engine 4: rebuild the audio (beeps build) or pass { allowEngineMismatch: true }`);
 	validateSampleManifest(c.patch, c.assets);
 	return c;
 }

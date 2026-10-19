@@ -12,13 +12,17 @@ anything sounds good.
 
 | | `baked` | `runtime` | `both` |
 |---|---|---|---|
-| You ship | `<id>.<n>.ogg` + sidecar, in the catalog | `<id>.runtime.json` (3 to 8 KB) | both |
+| You ship | `<id>.<n>.ogg` + sidecar, in the catalog | `<id>.runtime.json` plus any prepared sample WAVs | both |
 | The game | plays a file | builds nodes: 0.4 to 10 ms of main-thread time per play | picks per use |
 | Inputs that move while it sounds | none | yes (`live` bindings) | the runtime copy |
 | Size for 18 sounds | 118 KB (Opus 72 kbps) | 10.5 KB gzip including the 7.9 KB engine | both |
 | Variation | declared variants, one file each | any seed, any variant, any input value | both |
 | Browser differences | codec only | graph code: bit-exact in one browser build, features across browsers | both |
 | Works offline in `beeps verify` | sha256 and headers | sha256, schema, engine, `--parity` | all of it |
+
+The size/cost measurements above describe procedural cues. Recorded-source cues also carry their
+prepared WAV bytes and require an explicit asynchronous load before a voice starts. A ten-second
+stereo Float32 source alone is 3840044 bytes; it does not shrink when the baked bitrate drops.
 
 Choose **runtime** when the sound is a function of game state: an engine whose pitch follows speed, an impact whose weight
 follows mass, a tick that gets faster, a creature whose size is a parameter, a sound you would otherwise bake dozens of
@@ -102,32 +106,109 @@ same files by hand.
 
 ## Playing it
 
+The page below has `#play`, `#stop` buttons and a `#status` text element. Set `cueURL` to the
+actual cue location, including your static project subpath. Load/parse the cue before enabling Play.
+
 ```js
-import { build, parseCue, createReverbBus } from 'agent-beeps-runtime';
+import { build, parseCue, loadCueAssets } from 'agent-beeps-runtime';
 
-const reverb = createReverbBus(ctx, master, { preset: 'room' });         // optional, see below
-const cue = parseCue(await (await fetch('/audio/engine-drone.runtime.json')).json());
+const ctx = new AudioContext();
+const out = ctx.destination; // or your master gain
+const playButton = document.querySelector('#play');
+const stopButton = document.querySelector('#stop');
+const status = document.querySelector('#status');
+let cueURL = new URL('/audio/contact-hybrid.runtime.json', location.href);
+let cue = parseCue(await (await fetch(cueURL)).json());
+let generation = 0, pending, voice, cached;
 
-const voice = build(ctx, master, cue, { params: { speed: 0.4 }, reverb }); // plans: no nodes yet
-voice.start();                       // creates the graph, begins now (or voice.start(ctx.currentTime + 0.05))
-voice.set('speed', 0.9);             // live input: time constant 20 ms; set('speed', 0.9, at, tau) to schedule
-voice.stop();                        // held voice: releases with the patch's envelope; any other: 20 ms fade
-voice.dispose();                     // cut now, free the graph
+function stop() {
+  generation++;
+  pending?.abort();
+  pending = undefined;
+  voice?.dispose();
+  voice = undefined;
+  status.textContent = 'Stopped';
+}
+
+playButton.onclick = async () => {
+  stop();
+  const mine = generation;
+  const controller = pending = new AbortController();
+  const selectedCue = cue, baseURL = cueURL;
+  status.textContent = 'Loading';
+  try {
+    await ctx.resume(); // called within this user gesture, before awaiting asset I/O
+    if (mine !== generation || controller.signal.aborted) return;
+    const samples = cached ?? await loadCueAssets(ctx, selectedCue, {
+      baseURL, signal: controller.signal,
+    });
+    if (mine !== generation || controller.signal.aborted) return;
+    cached = samples; // verified immutable buffers, for this cue and context only
+    voice = build(ctx, out, selectedCue, { samples, onEnded() {
+      if (mine === generation) { voice = undefined; status.textContent = 'Stopped'; }
+    } }).start(); // build a fresh voice on EVERY play; a voice starts only once
+    status.textContent = 'Playing';
+  } catch (error) {
+    if (mine === generation && !controller.signal.aborted) {
+      status.textContent = `Playback failed: ${error.message}`;
+    }
+  } finally {
+    if (pending === controller) pending = undefined;
+  }
+};
+stopButton.onclick = stop;
+
+// When selecting another already-fetched cue, cancel the previous play/loading first.
+function selectCue(nextCueJson, nextURL) {
+  stop();
+  cue = parseCue(nextCueJson);
+  cueURL = new URL(nextURL, location.href);
+  cached = undefined;
+}
 ```
+
+`loadCueAssets(ctx, cue, { baseURL, signal, fetcher? })` fetches exactly the cue's prepared-source
+closure, checks bounded byte counts, hashes and canonical WAV metadata, then returns hash-keyed
+`AudioBuffer`s. It works on HTTP LAN origins without WebCrypto. A procedural cue returns an empty
+map. It has no automatic cache: keep verified buffers immutable and cache them only for the current
+cue/context, never a started voice. Abort and generation checks around both `resume()` and the loader
+prevent Stop/replacement from playing obsolete work. Show loading until the voice actually starts.
+
+`build` is synchronous and performs no I/O. It requires the prepared `samples` map for sample layers;
+it does not fetch missing assets or silently fall back to a baked file. For a procedural-only cue,
+`samples` can be omitted. Optional starting inputs still go in `params`, e.g. `{ speed: 0.4 }`;
+`voice.set('speed', 0.9)` moves a declared live input after start.
 
 * `build(ctx, out, patchOrCue, opts)`. `opts`: `seed` (default the cue's), `params` (starting inputs; unknown names throw),
   `variant`, `trimDb` (default the cue's), `scale` (default the cue's project scale; `null` for none), `limiter` (default
-  true), `hold`, `tap`, `reverb`, `onEnded`. A patch must be **parsed** (defaults filled): raw JSON goes through `parsePatch`
+  true), `hold`, `tap`, `reverb`, `onEnded`, `samples` (verified, immutable hash-keyed buffers). A patch must be **parsed** (defaults filled): raw JSON goes through `parsePatch`
   from `agent-beeps-runtime/schema`; a cue already is.
 * `start(at?)` creates every node. That is where the cost is (below); `build` is cheap, and a voice plays once.
 * `set(name, value, at?, tau?)` before `start` takes any input; after it, only inputs whose bindings are all `live` (it
   throws otherwise, and says which). Values outside `[min, max]` are clamped.
 * `stop(at?, fade?)` returns the context time the voice is silent. `end` is that time, effect tails included (a shared bus's
-  tail is not the voice's), `Infinity` while a held voice is held, `undefined` before `start`.
+  tail is not the voice's), `Infinity` while a held procedural voice is held, `undefined` before `start`. Finite sample
+  exhaustion starts its authored release even with `hold`; envelopes and effects can outlast the source.
 * `onEnded` fires once when the voice is over, however it ended. A silent, unconnected `ConstantSourceNode` carries the
   event; it adds nothing to the audio path.
 * `dispose()` stops every source and cuts the voice from its output and sends, so the browser can collect the graph. It is
   not a fade.
+
+### Prepared-source cues (engine 4)
+
+A sample layer is `{ source: { type: 'sample', asset: 'sha256:<64 lowercase hex digits>' }, ... }`.
+The cue's optional `assets` map must be exactly the distinct sample IDs its patch references; every
+entry records a safe relative WAV filename, byte count, 48000 Hz rate, one/two channels and frame count.
+`parseCue` validates that manifest without I/O. `loadCueAssets` verifies the actual files separately;
+`build` uses the resulting buffers through the same source graph as offline renders.
+
+Each prepared source is 1–480000 frames (up to ten seconds), mono/stereo canonical Float32 WAV.
+Imports retain originals up to 64 MiB and normalized source snapshots up to 120 seconds for local
+preparation. The patch has up to eight layers total. Samples are finite, unpitched one-shots;
+pitch envelopes/pitch LFOs on sample layers, sample loops/stretching and song sample instruments
+are unsupported. Gain/cutoff LFOs and ordinary layer processing remain available. Transpose/pitch
+variation affects procedural pitched layers, not sample playback rate. Attenuating an already clipped
+source does not restore its transient. [Authoring and portable exchange](../skills/beeps-compose/references/hybrid-sources.md).
 
 ### A shared reverb bus
 
@@ -171,7 +252,9 @@ when the sound was baked before) to measure its trim.
 The input hash gains a `runtime` part (sha256 of the patch with its `xRuntime` block), only for assets that ship a cue. A
 baked asset's hash is exactly what it was before this existed, so no existing lock goes stale. The part is in the lock as
 `parts.runtime`, with `"delivery": "runtime" | "both"` on the asset and the cue as one of its sha256-pinned outputs, so the
-store, `ci export` and `fetch.mjs` carry cues like any other file. A runtime-only asset ignores bitrate and encoder
+store, `ci export` and `fetch.mjs` carry cues and their exact cue-owned prepared WAV closure.
+The lock pins source bytes/hashes as outputs, budgets their fixed bytes, and verifies them on warm
+checks and fetches too. Authoring originals and preparation snapshots are not runtime outputs. A runtime-only asset ignores bitrate and encoder
 changes. Editing a binding rebuilds that cue and not its bake (`inputs changed (runtime)`).
 
 `beeps verify` checks each cue: schema, engine version (a cue from another engine has a stale trim), id, that its patch
@@ -257,7 +340,7 @@ The bound holds from 1,000 to 10,000 plays; the median build time does not creep
 bound), and `tests/runtime/voice.test.ts` runs 10,000 plays on a recording context.
 
 **Parity, same browser** (35 cases: defaults, variant 2 with another seed, inputs at min, at max, at max with no snapping,
-shared bus). Both Chromium and Firefox: 35 of 35 meet their expectation, 1 distinct output over fresh-page repeats for every
+shared bus). These historical procedural measurements cover no sample assets. Both Chromium and Firefox: 35 of 35 meet their expectation, 1 distinct output over fresh-page repeats for every
 path, the negative control (seed + 1) always differs, and in Chromium the harness bake equals the production render host's bake.
 
 | Case | Chromium | Firefox |

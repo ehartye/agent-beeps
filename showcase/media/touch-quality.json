@@ -5,7 +5,7 @@
   "takes": [
     {
       "name": "touch-plain",
-      "renderKey": "7a73a572271dfa5554bf370a0c4cef841d414e31c22d94a43d0be0beb13840c8",
+      "renderKey": "69a70ef60d14aab24e1542d763a01c5ab4a4535eaddfe726f3654af5d1811f98",
       "features": {
         "durationSec": 23.937,
         "integratedLufs": -20.63,
@@ -110,7 +110,7 @@
     },
     {
       "name": "touch",
-      "renderKey": "6dbf4f456c53a524f79ef4080ef0855db9ced26674ddd6567e3bcc05f1c78639",
+      "renderKey": "f491fb94a1f207fee7f3d275071b818235cfab51c4b6588082b1573ba30654e3",
       "features": {
         "durationSec": 23.937,
         "integratedLufs": -20.26,

@@ -17,6 +17,11 @@ evidence about the signal. The owner's ear grades the sound.
 | Bright, bell-like or growling tones that change over time | `fm` (2–4 operators) | Brightness follows the index, so an index envelope gives a timbre sweep. |
 | Air, impact texture, whooshes | `noise` behind a filter with a cutoff envelope | Band placement and envelope carry most of the character. |
 
+A licensed recording can supply irregular contact detail while procedural layers supply an editable
+body or tail. Use a prepared `sample` layer for that finite, unpitched SFX material; see
+[hybrid sources](../skills/beeps-compose/references/hybrid-sources.md) for the import/preparation,
+final-edit bundling order and privacy boundary. Samples are not song instruments or looping beds.
+
 Layer when one method cannot do both jobs. A `hit` is often a `noise` transient over a `modal` or
 `osc` body. Keep the transient short and quiet (see `attack-floor`).
 
@@ -42,6 +47,11 @@ Layer when one method cannot do both jobs. A `hit` is often a `noise` transient 
 - **Ceilings.** The delivered sound stays at or below −1 dBTP true peak (`true-peak-ceiling`, EBU R
   128) and has no clipped samples (`no-clipping`) or DC offset (`no-dc`). The limiter is a safety
   net. If it works hard, the sound's crest is wrong.
+
+For a recorded-source comparison, match the actual delivered max-momentary loudness and check true
+peak rather than assuming equal layer gains make equal levels. Preparation gain creates headroom;
+it cannot restore a flattened transient or remove distortion from a source that was already clipped.
+The delivered ceiling guards the output and does not certify the original recording as unclipped.
 
 ## 3. Onsets, lengths and tails
 

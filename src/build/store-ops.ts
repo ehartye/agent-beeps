@@ -36,8 +36,10 @@ export async function storePush(cfg: BuildConfig, store: Store, only?: string[])
   for (const [id, a] of pick(lock, only)) {
     const name = storeName(a.inputHash);
     const v = outputsOk(cfg.out, id, a);
+    // Keep lookup diagnostics even for missing local outputs; local integrity still gates every result and upload.
+    const inStore = await store.has(name);
     if (!v.ok) { skipped.push({ id, problem: `${v.problem}: build it first` }); continue; }
-    if (await store.has(name)) { existing.push(id); continue; }
+    if (inStore) { existing.push(id); continue; }
     if (await store.put(name, packAsset(id, a.inputHash, a.outputs, f => readDeliveredFile(cfg.out, f)!)) === 'stored') pushed.push(id); else existing.push(id);
   }
   return { store: store.spec, pushed, existing, skipped, ok: skipped.length === 0, ...diagnostics(store) };

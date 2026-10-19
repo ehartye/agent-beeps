@@ -44,6 +44,28 @@
 | `grains` | `rate` per s, `grainDecay`, `center`, `q`, `rateEnd`, `stereo` | shakers, rain, debris, crackle |
 | `voice` | `pitch` (f0), `formants [[hz, q, gainDb]]` (2-4), `tilt`, `jitterCents`, `vibrato {rate, cents}`, `tremolo {rate, depth}`, `breath` | animal calls, creature vocals, grunts, hisses, huffs |
 | `metal` | `base` Hz, `bands [bp1, bp2]` | hats, cymbals, robots, anvils (808 recipe) |
+| `sample` | `asset: "sha256:<64 lowercase hex digits>"` | prepared recorded contact/detail, finite unpitched SFX |
+
+### Prepared samples (engine 4)
+
+Use `sample import` → `sample prepare --name` → edit/add procedural layers → save → render/lint/look →
+`sample bundle` the final edited patch. Read [hybrid sources](hybrid-sources.md) directly for exact
+commands, replay, privacy and native playback. A source ID names canonical prepared 48 kHz Float32
+WAV bytes in the project store, not a local path or URL. Prepared sources are 1–480000 frames,
+mono/stereo, up to ten seconds; normalized snapshots up to 120 seconds, original imports up to 64 MiB.
+The patch still has at most eight layers total.
+
+The sample plays once at the layer's `start`, with the ordinary amp/filter/gain/pan/effects chain.
+Keep the preparation command's neutral amp for an unchanged recorded contour. Sample layers reject
+`pitchEnv` and `lfo.target: "pitch"`; gain/cutoff LFOs remain valid. Samples do not pitch-shift with
+transpose/variation, loop, stretch or act as song instruments. A held sample exhausts and begins its
+authored release; it cannot become an infinite bed. Attenuation cannot restore already clipped PCM.
+
+Runtime cues carry an exact prepared-source manifest. Resume the context in a user gesture, await
+`loadCueAssets(ctx, cue, { baseURL: cueURL, signal })`, then create a fresh voice with
+`build(ctx, out, cue, { samples })`. Graph construction stays synchronous with no I/O. Cache verified
+buffers rather than started voices; use Stop/replacement abort and generation guards as shown in
+[the runtime guide](../../../docs/runtime.md#playing-it).
 
 ### FM index envelopes
 

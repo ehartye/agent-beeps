@@ -244,7 +244,7 @@ with the final broad release run in Task6. No owner listening approval is inferr
 
 ## Task6: release identity, documentation and delivery
 
-Release the reviewed hybrid capability as package/plugin0.16.0 and engine4. Keep player3:
+Release the reviewed hybrid capability as package/plugin0.16.0 and engine4. Keep player4:
 the existing baked-player contract has not changed. Update package-lock identity fields,
 plugin/local-marketplace descriptors and capability metadata without dependency churn.
 Regenerate `runtime/ci/fetch.mjs` through `scripts/build-ci-fetch.mjs --write`; its check must
@@ -281,3 +281,14 @@ API/version. Update only agent-beeps in the central Hartye marketplace using its
 release worktree, PR and squash merge. Update and merge the wiki's as-built architecture,
 roadmap and delivery evidence; preserve raw sources and distinguish measured checks from owner
 listening approval. Retain worktrees and evidence; never force-push or claim preview as release.
+Task6 source verification: independent spec, quality and final integration reviews approve.
+The final full suite passes119files /1228tests with5existing skips; typecheck and generated
+fetch/package checks pass. Engine4 preserves byte-identical PCM for8pads,6Flux takes and
+full Matter/Touch/Touch-plain mixes against clean main1accc6a;546graph goldens remain unchanged.
+The full native booth, desktop/390px sticky monitor and all9takes pass. Actual staged bytes
+and a fresh Git checkout verify150manifest hashes, the exact608-byte Kenney license, static
+build and relocated portable preparation replay. The first full run exposed two stale engine
+identity pins and a push diagnostic regression; independent old/new hash formulas and unchanged
+CLI warning assertions verify the narrow fixes. Paired skill probes and their limits are retained
+in review evidence. Publication gates above remain operational work; the wiki records their
+verified final source/runtime/Pages/marketplace identities after they land.
