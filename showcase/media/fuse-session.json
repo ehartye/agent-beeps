@@ -1,0 +1,151 @@
+{
+  "schema": "beeps/fuse-study@1",
+  "takes": [
+    {
+      "id": "recording",
+      "title": "Recorded detail",
+      "description": "A prepared metal strike: the hard contact, small scrapes and irregular attack.",
+      "cue": "./media/fuse-recording.runtime.json",
+      "look": "./media/fuse-recording.png",
+      "patch": "./recipes/fuse-recording.json"
+    },
+    {
+      "id": "procedural",
+      "title": "Resonant body",
+      "description": "An inharmonic body, a folding FM resonance and a thinning stereo grain trail.",
+      "cue": "./media/fuse-procedural.runtime.json",
+      "look": "./media/fuse-procedural.png",
+      "patch": "./recipes/fuse-procedural.json"
+    },
+    {
+      "id": "hybrid",
+      "title": "Fused strike",
+      "description": "Recorded contact locks onto the designed body; the short hit becomes a heavy, moving object.",
+      "cue": "./media/fuse-hybrid.runtime.json",
+      "look": "./media/fuse-hybrid.png",
+      "patch": "./recipes/fuse-hybrid.json"
+    }
+  ],
+  "cases": [
+    {
+      "id": "metal",
+      "title": "Metal contact",
+      "takes": [
+        {
+          "id": "recording",
+          "title": "Recorded detail",
+          "description": "A prepared metal strike: the hard contact, small scrapes and irregular attack.",
+          "cue": "./media/fuse-recording.runtime.json",
+          "look": "./media/fuse-recording.png",
+          "patch": "./recipes/fuse-recording.json"
+        },
+        {
+          "id": "procedural",
+          "title": "Resonant body",
+          "description": "An inharmonic body, a folding FM resonance and a thinning stereo grain trail.",
+          "cue": "./media/fuse-procedural.runtime.json",
+          "look": "./media/fuse-procedural.png",
+          "patch": "./recipes/fuse-procedural.json"
+        },
+        {
+          "id": "hybrid",
+          "title": "Fused strike",
+          "description": "Recorded contact locks onto the designed body; the short hit becomes a heavy, moving object.",
+          "cue": "./media/fuse-hybrid.runtime.json",
+          "look": "./media/fuse-hybrid.png",
+          "patch": "./recipes/fuse-hybrid.json"
+        }
+      ]
+    },
+    {
+      "id": "tommy",
+      "title": "Tommy gun · five bursts",
+      "description": "Five complete bursts from the original Tommy-gun file. Hear the recording, a designed low body, and both together. The source keeps its room and cadence; the synthesized body is an interpretation.",
+      "credits": [
+        {
+          "title": "Source: USC Cinema / Sunset Editorial Collection",
+          "url": "https://archive.org/details/SSE_Library_GUNS/AUTOMATIC/GUNAuto_Tommy%20gun%20busts%3B%20machine%20gun_CS_USC.wav"
+        },
+        {
+          "title": "CC0",
+          "url": "./media/fuse-tommy-license.txt"
+        },
+        {
+          "title": "Source & preparation credits",
+          "url": "./media/fuse-tommy-provenance.json"
+        }
+      ],
+      "takes": [
+        {
+          "id": "recording",
+          "title": "Tommy recording",
+          "description": "The complete original Tommy-gun sequence: five bursts and the room between them.",
+          "cue": "./media/fuse-tommy-recording.runtime.json",
+          "look": "./media/fuse-tommy-recording.png",
+          "patch": "./recipes/fuse-tommy-recording.json"
+        },
+        {
+          "id": "procedural",
+          "title": "Tommy body",
+          "description": "Five fading noise beds add low pulsing weight at the recorded burst groups.",
+          "cue": "./media/fuse-tommy-procedural.runtime.json",
+          "look": "./media/fuse-tommy-procedural.png",
+          "patch": "./recipes/fuse-tommy-procedural.json"
+        },
+        {
+          "id": "hybrid",
+          "title": "Tommy hybrid",
+          "description": "The complete Tommy-gun recording meets its designed body, with the original shot rhythm preserved.",
+          "cue": "./media/fuse-tommy-hybrid.runtime.json",
+          "look": "./media/fuse-tommy-hybrid.png",
+          "patch": "./recipes/fuse-tommy-hybrid.json"
+        }
+      ]
+    },
+    {
+      "id": "m16",
+      "title": "M16 rifle · sustained burst",
+      "description": "One sustained M16 rifle burst, followed by its natural room tail. The recording is not repeated. Compare it with the pulsing body and hybrid at the same measured listening level.",
+      "credits": [
+        {
+          "title": "Source: USC Cinema / Sunset Editorial Collection",
+          "url": "https://archive.org/details/SSE_Library_GUNS/AUTOMATIC/GUNAuto_M16%20automatic%20rifle%20shots_CS_USC.wav"
+        },
+        {
+          "title": "CC0",
+          "url": "./media/fuse-m16-license.txt"
+        },
+        {
+          "title": "Source & preparation credits",
+          "url": "./media/fuse-m16-provenance.json"
+        }
+      ],
+      "takes": [
+        {
+          "id": "recording",
+          "title": "M16 recording",
+          "description": "One sustained automatic-rifle burst and its full natural room tail, from the original M16 file.",
+          "cue": "./media/fuse-m16-recording.runtime.json",
+          "look": "./media/fuse-m16-recording.png",
+          "patch": "./recipes/fuse-m16-recording.json"
+        },
+        {
+          "id": "procedural",
+          "title": "M16 body",
+          "description": "A fading low noise bed pulses beneath the sustained burst; it does not recreate individual shots.",
+          "cue": "./media/fuse-m16-procedural.runtime.json",
+          "look": "./media/fuse-m16-procedural.png",
+          "patch": "./recipes/fuse-m16-procedural.json"
+        },
+        {
+          "id": "hybrid",
+          "title": "M16 hybrid",
+          "description": "The original M16 burst and room tail combine with a low synthesized body.",
+          "cue": "./media/fuse-m16-hybrid.runtime.json",
+          "look": "./media/fuse-m16-hybrid.png",
+          "patch": "./recipes/fuse-m16-hybrid.json"
+        }
+      ]
+    }
+  ]
+}

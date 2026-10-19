@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { serveStatic } from '../src/render/host.ts';
 
 /** Local preview mirrors Pages byte ranges; the renderer's minimal server doesn't serve ranges. */
-export function serveShowcase({host='127.0.0.1',port=0,prefix=''}={}) {
-  const root=resolve(import.meta.dirname,'../_site');
+export function serveShowcase({host='127.0.0.1',port=0,prefix='',rootDir=resolve(import.meta.dirname,'../_site')}={}) {
+  const root=resolve(rootDir);
   return serveStatic(root,{host,port,extra:(req,res)=>{
     const url=new URL(req.url,'http://preview');
     if(prefix&&!url.pathname.startsWith(`${prefix}/`)){res.writeHead(404).end();return true;}

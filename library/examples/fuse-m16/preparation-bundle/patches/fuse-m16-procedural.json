@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-m16-procedural",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty",
+    "gunshot"
+  ],
+  "duration": 5.506333333333333,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0.013,
+      "gainDb": 3,
+      "amp": {
+        "attack": 0.008,
+        "decay": 3.228,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 280,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "small",
+      "sendDb": -24
+    },
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "A fading low noise bed pulses beneath the sustained burst; it does not recreate individual shots."
+  }
+}

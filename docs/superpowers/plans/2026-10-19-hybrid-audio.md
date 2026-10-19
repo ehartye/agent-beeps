@@ -27,8 +27,14 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   dependency validation, delivered-byte parity, ownership cleanup and fixed-byte budgets.
 - [x] Task4B: use that validation in store push/pull/status, build --pull and standalone
   zero-dependency CI fetch; prove fetched static runtime and baked-player playback.
-- [ ] Task5: licensed public hybrid study in existing booth, actual measured comparisons,
-  portable downloads, provenance and desktop/mobile/subpath browser verification.
+- [x] Task5A/5B: licensed public hybrid studies in the existing booth: metal contact,
+  the owner-selected CC0 Tommy gun (five bursts), and M16 (one sustained burst and room tail).
+  Recording / procedural body / hybrid comparisons use actual matched levels, provenance,
+  portable metal downloads and desktop/mobile/subpath browser verification. The owner's
+  later selection removes the extra indoor-machine-gun row from the public inventory.
+- [ ] Task5C: make the existing live equalizer the sticky panel and give its shared transport
+  play/pause and previous/next behavior for the active Matter, bench, Touch, Flux or Fuse
+  section. Preserve true pause position, native source playback, cancellation and source PCM.
 - [ ] Task6: capability/version identity, legacy compatibility, full regression tests,
   independent reviews, wiki/docs/catalog, squash merge and hosted verification.
 
@@ -176,3 +182,52 @@ source artifacts and rendered PNGs. Match comparisons by actual delivered max mo
 enforce peaks. Keep existing Matter/Touch/Flux behavior. Run full suite and typecheck once
 source stable, then hosted Pages checks after squash merge. Update wiki as built only when
 verified; retain provenance and real listening status.
+
+Task5A/5B verification: final three-row/nine-take native suite passes, including all six
+recording/hybrid changed-source controls and actual five-burst/one-burst PCM groups. All150
+manifest hashes,43 legacy assets, metal audio/recipes/cues/looks/quality and46 gun artifacts verify.
+Independent spec approved actual original checksums, canonical decode/preparation replay,
+strict portable bundles, delayed fetch/resume cancellation, desktop and390px playback.
+Fresh quality approved controller/compose/render/delivery integration and reran file/portable
+CLI/status/cases tests, typecheck and whitespace checks. The extra indoor row and obsolete
+owned outputs are absent. Intentional long-form tail warnings remain documented. Owner
+listening preferences are not inferred. Task5C and release are still pending.
+
+Pre-commit packaging verification caught two manifest mismatches caused by Git normalizing
+one CRLF in each editable metal README/provenance file. Those files and the test script now
+use LF. The exact upstream Kenney license remains608 bytes with its original SHA256 and a
+narrow binary Git attribute. Both metal archives were repacked: only README/provenance text
+bytes change; parsed provenance, normalized README, every inner bundle entry and license
+remain equivalent/exact. The final gate checks actual staged hashes and a fresh checkout's
+real build and relocated portable CLI flow, rather than trusting only working-tree bytes.
+
+## Task5C: shared equalizer and contextual transport
+
+Owner request: replace the fixed Matter/Glass sticky panel with the equalizer, and give it
+play/pause/skips appropriate to the playing section. Keep the existing booth's visual language.
+Move the single live output `#scope` into the sticky panel; keep Matter's measured timeline,
+seek and scene notes in the Matter body. Show a compact current section/take and actual state.
+Idle copy is neutral; playing another section must never leave Matter/Glass as its title.
+
+Shared controls follow Matter's nine scenes, the eight sound-bench pads, Touch's two takes,
+Flux's six ordered comparisons, or Fuse's nine ordered takes. Previous/next activates that
+section's adjacent item; Touch keeps its musical position when switching A/B. Space follows
+the shared play/pause action. Stop/Esc and master volume retain their global behavior.
+Keep repeat clearly scoped to Matter. Selection comes from playback actions, not scrolling.
+
+Media playback pauses and resumes at its actual position. Live procedural/sample voices must
+also truly pause and resume, preserving native graph position rather than retriggering or
+quietly baking them. The existing shared AudioContext can suspend a live voice; pause any
+concurrent media playheads consistently and restore them on resume. Cancel/recompute the
+wall-clock completion timer around suspension so a paused voice cannot finish in the background.
+Stop, skip or replacement while paused/loading must dispose/cancel obsolete work, and late
+resume/load promises cannot restart it. Retain foreground voice ownership over background
+music events and restore an actually playing background section after the voice finishes.
+
+First demonstrate red with the current fixed transport. Verify actual native playback and
+AudioContext/media time during pause/resume, no second source start when resuming a live voice,
+timer survival across a pause, all section skip mappings, pending-load/resume cancellation,
+stop/skip while paused, natural completion and errors. Keep the source PCM/cues/bundles unchanged.
+Run the existing booth suite plus the new transport coverage. Inspect desktop and390px layouts,
+sticky equalizer while scrolled, accurate accessible control labels, no duplicate canvas,
+no overflow, no browser exceptions and no missing subpath assets.

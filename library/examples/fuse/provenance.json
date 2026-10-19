@@ -1,0 +1,16 @@
+{
+  "schema": "beeps/public-source@1",
+  "creator": "Kenney",
+  "pack": "Impact Sounds 1.0",
+  "sourceUrl": "https://kenney.nl/assets/impact-sounds",
+  "archiveMember": "Audio/impactMetal_heavy_000.ogg",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "licenseEvidence": "The official asset page and included LICENSE.txt identify Creative Commons Zero. The included license is preserved verbatim.",
+  "original": { "sha256": "e07045693e4a2b3d165c424e3dab4c781d9ff8880a386880ac89a51315d7f831", "bytes": 6110 },
+  "archive": { "sha256": "029d734af1582474edf3a694d1b0cebc97c1c152f2f39fa34d4c2bafc5de77f8", "bytes": 800850 },
+  "licenseFile": { "sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db", "bytes": 608 },
+  "normalization": { "sampleRate": 48000, "sourceSampleRate": 44100, "channels": 2, "frames": 7909, "asset": "sha256:142e6ff80425adde0e210abbe49b42a532b5d88a89ad6198265a6ed5d3bd7383", "decoder": { "name": "ffmpeg", "ffmpeg": "6.1.1-essentials_build-www.gyan.dev", "libavcodec": "libavcodec60.31.102" } },
+  "derivative": "Fuse preserves the normalized stereo recording, prepares a full-length crop with a 96-frame fade in, 960-frame fade out and -3 dB gain, then combines that immutable prepared asset with an authored modal/FM/granular body. The delivered runtime cues carry separately measured listening trims.",
+  "scope": "One public-domain audio asset and its preparation derivatives. No Kenney branding, endorsement or owner listening approval is claimed. Subjective owner listening is pending."
+}

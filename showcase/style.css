@@ -55,9 +55,20 @@ footer { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wr
 #flux-pads .face { border-radius: 7px; overflow: hidden; }
 #flux-pads .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
 #flux-pads .sound-purpose { min-height: 4em; }
+#fuse-pads { grid-template-columns: repeat(3,minmax(0,1fr)); }
+#fuse { scroll-margin-top: 240px; }
+#fuse-pads .face { aspect-ratio: 3; }
+#fuse .row { display: flex; gap: 8px; flex-wrap: wrap; }
+#fuse-status { min-height: 1.5em; }
+#fuse-pads .sound-purpose { min-height: 4em; }
+.fuse-case { grid-column: 1 / -1; margin-top: 12px; }
+.fuse-case h3 { margin: 0 0 8px; }
+.fuse-case p { margin: 0; max-width: 76ch; }
 button:disabled { cursor: wait; opacity: .5; }
 @media(max-width:720px) {
   #flux-pads { grid-template-columns: 1fr; }
+  #fuse-pads { grid-template-columns: 1fr; }
+  #fuse-pads .sound-purpose { min-height: 0; }
   #flux-pads .sound-purpose { min-height: 0; }
   .intro { grid-template-columns: 1fr; gap: 4px; }
   .plate .meta { font-size: 9px; }

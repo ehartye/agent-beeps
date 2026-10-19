@@ -1,0 +1,153 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-hybrid",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty"
+  ],
+  "duration": 1.1,
+  "layers": [
+    {
+      "source": {
+        "type": "sample",
+        "asset": "sha256:f982ba2f296c7bfebf01c216345e2e6ca98ffd6ee00157de554ea22352b6b1b5"
+      },
+      "start": 0,
+      "gainDb": -5,
+      "amp": {
+        "attack": 0,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0
+      }
+    },
+    {
+      "source": {
+        "type": "modal",
+        "pitch": "C3",
+        "modes": [
+          [
+            1,
+            95,
+            0
+          ],
+          [
+            2.76,
+            70,
+            -9
+          ],
+          [
+            5.4,
+            48,
+            -16
+          ]
+        ],
+        "exciter": "noiseBurst"
+      },
+      "start": 0.012,
+      "gainDb": 3,
+      "amp": {
+        "attack": 0.006,
+        "decay": 0.8,
+        "sustain": 0,
+        "release": 0.12
+      },
+      "highpass": 65
+    },
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C2",
+        "operators": [
+          {
+            "ratio": 1,
+            "index": 1,
+            "wave": "sine"
+          },
+          {
+            "ratio": 1.414,
+            "index": 2.4,
+            "indexEnv": [
+              [
+                0,
+                0.85
+              ],
+              [
+                0.045,
+                0.35,
+                "exp"
+              ],
+              [
+                0.22,
+                0.04,
+                "exp"
+              ],
+              [
+                0.8,
+                0.004,
+                "exp"
+              ],
+              [
+                1.1,
+                0
+              ]
+            ],
+            "wave": "sine"
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      "start": 0.024,
+      "gainDb": -18,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.62,
+        "sustain": 0,
+        "release": 0.16
+      },
+      "highpass": 55
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 52,
+        "grainDecay": 0.024,
+        "center": 2800,
+        "q": 5,
+        "rateEnd": 0.2,
+        "stereo": true
+      },
+      "start": 0.05,
+      "gainDb": -23,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.85,
+        "sustain": 0,
+        "release": 0.12
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 5500,
+        "resonanceDb": 0
+      }
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "room",
+      "sendDb": -19
+    },
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Recorded contact locks onto the designed body; the short hit becomes a heavy, moving object."
+  }
+}

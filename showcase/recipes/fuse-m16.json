@@ -1,0 +1,30 @@
+{
+  "schema": "beeps/fuse-study@1",
+  "seed": 607,
+  "burstGroupsSec": [
+    [
+      0.013,
+      2.82
+    ]
+  ],
+  "takes": [
+    {
+      "id": "recording",
+      "title": "M16 recording",
+      "description": "One sustained automatic-rifle burst and its full natural room tail, from the original M16 file.",
+      "patch": "fuse-m16-recording"
+    },
+    {
+      "id": "procedural",
+      "title": "M16 body",
+      "description": "A fading low noise bed pulses beneath the sustained burst; it does not recreate individual shots.",
+      "patch": "fuse-m16-procedural"
+    },
+    {
+      "id": "hybrid",
+      "title": "M16 hybrid",
+      "description": "The original M16 burst and room tail combine with a low synthesized body.",
+      "patch": "fuse-m16-hybrid"
+    }
+  ]
+}

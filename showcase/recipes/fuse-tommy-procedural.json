@@ -1,0 +1,155 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-tommy-procedural",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty",
+    "gunshot"
+  ],
+  "duration": 5.974833333333334,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 0.04,
+      "gainDb": 3,
+      "amp": {
+        "attack": 0.008,
+        "decay": 1.472,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 240,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 1.46,
+      "gainDb": 2.6,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.92,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 240,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 2.46,
+      "gainDb": 2.8,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.92,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 240,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 3.6,
+      "gainDb": 2.3,
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.943,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 240,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "start": 4.6,
+      "gainDb": 2.7,
+      "amp": {
+        "attack": 0.008,
+        "decay": 1.219,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 240,
+        "q": 0.5
+      },
+      "highpass": 45,
+      "lfo": {
+        "target": "gain",
+        "rate": 20,
+        "depth": 1
+      },
+      "drive": 0.25
+    }
+  ],
+  "fx": {
+    "reverb": {
+      "preset": "small",
+      "sendDb": -24
+    },
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "oneshot",
+    "description": "Five fading noise beds add low pulsing weight at the recorded burst groups."
+  }
+}

@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 import { serveShowcase } from './showcase-server.mjs';
 import { parsePatch } from '../src/schema/patch.ts';
 import { songOrThrow } from '../src/music.ts';
+import { checkFuseFiles, testFuse } from './test-fuse.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const site=resolve(root,'_site');
@@ -20,6 +21,7 @@ songOrThrow(JSON.parse(readFileSync(resolve(site,'recipes/matter.json'),'utf8'))
 const study=JSON.parse(readFileSync(resolve(site,'media/touch-quality.json'),'utf8'));
 const flux=JSON.parse(readFileSync(resolve(site,'media/flux-session.json'),'utf8'));
 const fluxQuality=JSON.parse(readFileSync(resolve(site,'media/flux-quality.json'),'utf8'));
+const fuse=checkFuseFiles(root,site);
 assert.equal(flux.cases.length,3);assert.equal(fluxQuality.reports.length,6);
 for(const c of flux.cases){
   for(const take of Object.values(c.takes)){
@@ -129,12 +131,21 @@ try {
     return reports;
   });
   for(const s of fluxSignals)assert.ok(s.finite&&s.energy>0&&s.peak>.001&&s.peak<1,`${s.name}: healthy signal`);
+  const fuseSignals=await testFuse(page,server,fuse,artifact);
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:resolve(artifact,'desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
+  for(const take of fuse.cases.flatMap(c=>c.takes)){
+    await page.getByRole('button',{name:`Play Fuse: ${take.title}`,exact:true}).click();
+    await page.waitForFunction(title=>document.querySelector('#fuse-status').textContent.includes(`${title} · playing`),take.title);
+  }
+  await page.keyboard.press('Escape');
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:resolve(artifact,'mobile.png'),fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile fits viewport');
+  await page.locator('#fuse').evaluate(el=>el.scrollIntoView());
+  assert.ok(await page.evaluate(()=>document.querySelector('#fuse').getBoundingClientRect().top>=document.querySelector('.transport').getBoundingClientRect().bottom),'Fuse anchor clears the sticky transport');
+  await page.screenshot({path:resolve(artifact,'mobile-fuse.png')});
   await page.getByRole('button',{name:'Play reel',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('#audio').paused);
   await page.getByRole('button',{name:'Stop all audio'}).click();
@@ -147,5 +158,5 @@ try {
   await failed.goto(`${server.url}/agent-beeps/`);
   await failed.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));
   assert.equal(await failed.locator('#play').isDisabled(),true);
-  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals},null,2));
+  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','nine live Fuse cues, all recording/hybrid source negative controls, actual5/1 gun groups, cross-row cancellation, licensed originals and portable metal downloads','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals,fuseSignals},null,2));
 } finally {await browser.close();server.server.close();}

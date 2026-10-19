@@ -1,0 +1,24 @@
+{
+  "schema": "beeps/fuse-study@1",
+  "seed": 607,
+  "takes": [
+    {
+      "id": "recording",
+      "title": "Recorded detail",
+      "description": "A prepared metal strike: the hard contact, small scrapes and irregular attack.",
+      "patch": "fuse-recording"
+    },
+    {
+      "id": "procedural",
+      "title": "Resonant body",
+      "description": "An inharmonic body, a folding FM resonance and a thinning stereo grain trail.",
+      "patch": "fuse-procedural"
+    },
+    {
+      "id": "hybrid",
+      "title": "Fused strike",
+      "description": "Recorded contact locks onto the designed body; the short hit becomes a heavy, moving object.",
+      "patch": "fuse-hybrid"
+    }
+  ]
+}

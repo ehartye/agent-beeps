@@ -1,0 +1,34 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "fuse-recording",
+  "family": "foley",
+  "tags": [
+    "study",
+    "gritty"
+  ],
+  "duration": 0.32,
+  "layers": [
+    {
+      "source": {
+        "type": "sample",
+        "asset": "sha256:f982ba2f296c7bfebf01c216345e2e6ca98ffd6ee00157de554ea22352b6b1b5"
+      },
+      "start": 0,
+      "gainDb": 0,
+      "amp": {
+        "attack": 0,
+        "decay": 0,
+        "sustain": 1,
+        "release": 0
+      }
+    }
+  ],
+  "fx": {
+    "dcBlock": true
+  },
+  "meta": {
+    "priority": 3,
+    "intent": "click",
+    "description": "A prepared metal strike: the hard contact, small scrapes and irregular attack."
+  }
+}

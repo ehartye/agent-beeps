@@ -1,5 +1,6 @@
 import { buildPatch } from './engine/patch.js';
 import { buildLimiter } from './engine/fx.js';
+import { build, parseCue, loadCueAssets } from './engine/index.js';
 
 const $ = selector => document.querySelector(selector);
 const audio = $('#audio');
@@ -16,7 +17,7 @@ const sceneCopy = [
   ['Bloom', 'A vowel-shaped choir opens the harmony. The minor key catches a warmer light.', 'FORMANT SYNTHESIS / VOICE-LED EXTENDED CHORDS'],
   ['Afterglow', 'One last suspended colour. The glass returns; the world settles back into grains.', 'MOTIF RETURN / NATURAL DECAY'],
 ];
-let session, ctx, master, musicGain, sfxGain, analyser, voice, voiceTimer, sceneIndex = -1, playRequest = 0;
+let session, ctx, master, musicGain, sfxGain, analyser, voice, voiceTimer, voiceFeedback, sceneIndex = -1, playRequest = 0;
 let bins, animation = 0;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const status = text => { $('#status').textContent = text; };
@@ -44,23 +45,33 @@ function musicLevel(value) {
   musicGain.gain.cancelScheduledValues(ctx.currentTime);
   musicGain.gain.setTargetAtTime(value, ctx.currentTime, .045);
 }
-function stopPad() {
+function stopPad(finished = false) {
   clearTimeout(voiceTimer);
   if (voice) { voice.dispose(); voice = null; }
   document.querySelectorAll('.pad.playing').forEach(el => el.classList.remove('playing'));
+  voiceFeedback?.(finished?'finished':'stopped');
+  voiceFeedback=undefined;
   musicLevel(1);
 }
+function cancelPendingPad(){
+  ++padRequest;
+  padAbort?.abort(); padAbort=undefined;
+  if($('#fuse-status').textContent.startsWith('Loading '))$('#fuse-status').textContent='Choose a take to play.';
+}
 function stopAll() {
+  cancelPendingPad();
   ++playRequest;
   audio.pause();
   audio.currentTime = 0;
   ++takeRequest; touch.pause(); touch.currentTime = 0;
   stopPad();
   status('');
+  $('#fuse-status').textContent='Stopped. Choose a take to play.';
   paint();
 }
 async function play(at) {
   if (!session) return;
+  cancelPendingPad();
   touch.pause();
   const request = ++playRequest;
   try {
@@ -81,20 +92,39 @@ async function strike(index) {
   return strikeSound(session.pads[index], `[data-pad="${index}"]`, session.scale);
 }
 async function strikeSound(item, selector, scale, feedback = status) {
-  const request = ++padRequest;
+  cancelPendingPad();
+  const request = padRequest;
+  const controller = padAbort = new AbortController();
+  stopPad();
+  if(item.cue)feedback(`Loading ${item.title}…`);
   try {
     await initAudio();
     if (request !== padRequest) return;
-    stopPad();
+    let cue, samples;
+    if(item.cue){
+      const url=new URL(item.cue,location.href);
+      const response=await fetch(url,{signal:controller.signal});
+      if(!response.ok)throw new Error(`Take returned ${response.status}`);
+      cue=parseCue(await response.json());
+      samples=await loadCueAssets(ctx,cue,{baseURL:url,signal:controller.signal});
+      if(request!==padRequest)return;
+    }
     musicLevel(.32);
-    voice = buildPatch(ctx, item.patch, { destination:sfxGain, when:ctx.currentTime + .012, seed:item.seed, variant:0, trimDb:item.trimDb, scale });
+    voice = cue ? build(ctx,sfxGain,cue,{samples}).start(ctx.currentTime+.012)
+      : buildPatch(ctx, item.patch, { destination:sfxGain, when:ctx.currentTime + .012, seed:item.seed, variant:0, trimDb:item.trimDb, scale });
+    padAbort=undefined;
     $(selector).classList.add('playing');
-    voiceTimer = setTimeout(stopPad, (voice.end - ctx.currentTime + .06) * 1000);
-    feedback(`${item.title} · synthesized live`);
+    voiceFeedback=cue?state=>feedback(`${item.title} · ${state}. Choose a take to play.`):undefined;
+    const playingVoice=voice;
+    voiceTimer = setTimeout(()=>{
+      if(voice!==playingVoice)return;
+      stopPad(true);
+    }, (voice.end - ctx.currentTime + .06) * 1000);
+    feedback(`${item.title} · ${cue?'playing':'synthesized live'}`);
     draw();
-  } catch (error) { stopPad(); feedback(`Could not play this patch. ${error.message}`); }
+  } catch (error) { if(request===padRequest){stopPad();feedback(`Could not play this patch. Press it to retry. ${error.message}`);} }
 }
-let padRequest = 0;
+let padRequest = 0, padAbort;
 function paint() {
   if (!session) return;
   const t = audio.currentTime;
@@ -202,7 +232,7 @@ async function load() {
   } catch(error) {status(`The session could not load. Reload the page to retry. ${error.message}`);$('#spec').textContent='Session unavailable';}
 }
 $('#play').onclick=()=>{if(audio.paused)void play();else{++playRequest;audio.pause();}};
-$('#stop').onclick=()=>{++padRequest;stopAll();};
+$('#stop').onclick=stopAll;
 $('#prev').onclick=()=>play(session.sections[Math.max(0,sceneIndex-1)].start);
 $('#next').onclick=()=>play(session.sections[(sceneIndex+1)%session.sections.length].start);
 $('#repeat').onclick=e=>{audio.loop=!audio.loop;e.currentTarget.setAttribute('aria-pressed',String(audio.loop));};
@@ -215,7 +245,7 @@ audio.addEventListener('error',()=>status('The audio could not load. Check your 
 audio.addEventListener('waiting',()=>{$('#transport-state').textContent='Buffering…';});
 audio.addEventListener('playing',()=>{$('#transport-state').textContent='Playing';});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){++padRequest;stopAll();return;}
+  if(e.key==='Escape'){stopAll();return;}
   if(e.target.closest('button,input,a,audio,[role="slider"],summary')||e.repeat||e.ctrlKey||e.metaKey||e.altKey)return;
   if(e.key===' '){e.preventDefault();$('#play').click();}
   if(/^[1-8]$/.test(e.key)){e.preventDefault();void strike(Number(e.key)-1);}
@@ -227,11 +257,12 @@ const takeCopy = {
   touch: 'B · Expressive: tone, attack, pitch and brightness follow the performance.',
 };
 touch.addEventListener('play',async()=>{
-  ++playRequest; audio.pause(); stopPad();
+  ++playRequest; cancelPendingPad(); audio.pause(); stopPad();
   try { await initAudio(); draw(); } catch(error) { touch.pause(); $('#touch-status').textContent=`Playback could not start. ${error.message}`; }
 });
 touch.addEventListener('error',()=>{$('#touch-status').textContent='This take could not load. Choose a take to retry.';});
 for(const button of document.querySelectorAll('[data-take]')) button.onclick=async()=>{
+  cancelPendingPad();
   const request=++takeRequest,position=touch.currentTime,playing=!touch.paused;
   touch.pause();
   for(const b of document.querySelectorAll('[data-take]'))b.setAttribute('aria-pressed',String(b===button));
@@ -278,3 +309,45 @@ async function loadFlux(){
   } catch(error){feedback(`The synthesis study could not load. Reload to retry. ${error.message}`);}
 }
 void loadFlux();
+async function loadFuse(){
+  const feedback=text=>{$('#fuse-status').textContent=text;};
+  try {
+    const response=await fetch('./media/fuse-session.json');
+    if(!response.ok)throw new Error(`Study returned ${response.status}`);
+    const study=await response.json();
+    const sourceLabels={recording:'RECORDING',procedural:'PURE SYNTHESIS',hybrid:'RECORDING + SYNTHESIS'};
+    const cases=study.cases??[{id:'metal',takes:study.takes}];
+    for(const material of cases){
+      if(material.title){
+        const heading=document.createElement('div');heading.className='fuse-case';
+        const title=document.createElement('h3');title.textContent=material.title;heading.append(title);
+        if(material.description){const p=document.createElement('p');p.textContent=material.description;heading.append(p);}
+        if(material.credits){
+          const credits=document.createElement('p');credits.className='facts';
+          for(const [i,credit]of material.credits.entries()){
+            if(i)credits.append(document.createTextNode(' · '));
+            const link=document.createElement('a');link.href=credit.url;link.textContent=credit.title;credits.append(link);
+          }
+          heading.append(credits);
+        }
+        $('#fuse-pads').append(heading);
+      }
+      for(const take of material.takes){
+      const id=material.id==='metal'?take.id:`${material.id}-${take.id}`;
+      const card=document.createElement('article');card.className='pad';card.dataset.fuseCard=id;
+      const button=document.createElement('button');button.className='face';button.dataset.fuseTake=id;
+      button.setAttribute('aria-label',`Play Fuse: ${take.title}`);
+      const img=document.createElement('img');img.src=take.look;img.alt='';img.loading='lazy';button.append(img);
+      const glyph=document.createElement('span');glyph.className='play-glyph';glyph.textContent='▶';button.append(glyph);
+      button.onclick=()=>strikeSound(take,`[data-fuse-card="${id}"]`,undefined,feedback);card.append(button);
+      for(const [tag,cls,text]of [['h3','sound-name',take.title],['p','sound-purpose',take.description],['span','facts',sourceLabels[take.id]]]){
+        const el=document.createElement(tag);el.className=cls;el.textContent=text;card.append(el);
+      }
+      const link=document.createElement('a');link.href=take.patch;link.textContent='Inspect patch ↗';link.target='_blank';link.rel='noopener';card.append(link);
+      $('#fuse-pads').append(card);
+      }
+    }
+    feedback('Choose a take. The recording and synthesis meet live in your browser.');
+  } catch(error){feedback(`The material study could not load. Reload to retry. ${error.message}`);}
+}
+void loadFuse();
