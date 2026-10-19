@@ -26,6 +26,7 @@ import { BeepsError } from '../errors.ts';
 import { admitAssetId } from '../export-manifest.ts';
 import { cueText, makeCue, deliveryOf, runtimePart, wantsBaked, wantsRuntime, type Delivery as AssetDelivery } from '../runtime/cue.ts';
 import { cueSources } from '../runtime/delivery.ts';
+import { resolveSamplesForPatches } from '../samples/transport.ts';
 import { samplePaths } from '../samples/store.ts';
 
 export interface Planned {
@@ -95,7 +96,9 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
     const song = loadSong(p, recipe.source);
     admitAssetId(recipe.id, song.name);
     layers = !!song.adaptive;
-    renders = [songRenderKey(song, resolveInstruments(p, song), { target: p.project.musicLoudness })];
+    const instruments = resolveInstruments(p, song);
+    resolveSamplesForPatches(Object.values(instruments), samplePaths(p).objects);
+    renders = [songRenderKey(song, instruments, { target: p.project.musicLoudness })];
     seconds = compileSong(song).length * (layers ? Object.keys(song.adaptive!.layers).length + 1 : 1);
   }
   if ((recipe.channels !== undefined || recipe.trimTailDb !== undefined) && (recipe.kind !== 'patch' || !wantsBaked(ships))) {

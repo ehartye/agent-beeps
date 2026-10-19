@@ -56,6 +56,30 @@ means a layer an octave below the written note, which counts toward that part's 
 reaches (a pluck with an octave-up layer shows `sounds` an octave higher at the top): it is not a
 transposition.
 
+### Recorded and hybrid instruments
+
+A patch containing `{"type":"sample","asset":"sha256:..."}` can be an instrument by project
+patch name, inline patch or `{base,set}` override. Prepare/import its actual source objects in
+this project's sample store first; patch JSON alone does not carry recording bytes. See
+[hybrid sources](../../beeps-compose/references/hybrid-sources.md) for import/preparation and exchange.
+
+Every sample-containing track requires `"fixed": true`, including hybrid patches with synth layers.
+Sources play once, at their original rate; notes supply onset, velocity and gates. `root`, nonzero
+track `transpose`, pitch expression and velocity bindings to `/out/transpose` are rejected with the
+track pointer. Pattern transpose changes written note labels only on a fixed track. Keep pitched
+musical parts on separate procedural tracks when they should follow written notes.
+
+`gate: "patch"` retains the patch duration; numeric gates use the performed note length and amp
+release. The recording itself ends naturally if shorter. Prepared sources remain bounded to
+1–480000 frames at 48 kHz, mono/stereo (ten seconds); there is no sample looping, pitch or stretching.
+Layer filters, gain/pan, amp envelopes, supported velocity mappings, brightness expression with a
+filter, song buses and effect sends remain available. Stereo recordings retain both channels.
+
+Song render, solos/stems, adaptive layers, export, build and album use the same verified dependency
+transport. Missing or corrupt source objects fail even when a render/build cache exists. Programmatic
+`renderSong` callers pass an explicit `sampleObjectsDir`; direct browser `buildSong` callers prepare
+verified buffers first and pass `samples`. Graph construction stays synchronous and performs no I/O.
+
 ### Which pitch the instrument plays
 
 A song retunes the instrument to each written note: every pitched layer, pitch envelope and glide

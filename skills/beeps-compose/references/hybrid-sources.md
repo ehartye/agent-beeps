@@ -1,8 +1,8 @@
 # Recorded-source and hybrid SFX
 
 Use a recording for detail synthesis would be costly to recreate, and procedural layers for the
-body, resonance or tail you want to edit. This is the finite SFX path; songs and music remain
-`beeps-music` and cannot use sample instruments. A hybrid patch has up to eight total layers.
+body, resonance or tail you want to edit. This is the finite SFX path; `beeps-music` also sequences these
+patches as fixed, unpitched one-shot instruments. A hybrid patch has up to eight total layers.
 
 ## Import, prepare, edit, validate, then bundle
 
@@ -138,7 +138,8 @@ disposes the old voice; guard late resume/load completions before starting. A vo
 - Prepared sources contain 1–480000 frames at 48 kHz, mono or stereo (up to ten seconds), canonical
   Float32 WAV. Normalized snapshots are at most 120 seconds; original imports at most 64 MiB.
 - Samples play once, unpitched, at their authored onset. Pitch envelopes and pitch LFOs on sample
-  layers, sample loops/stretching and song sample instruments are unsupported. Gain and cutoff
+  layers and sample loops/stretching are unsupported. Sample-containing song tracks require
+  `fixed: true` and reject root, nonzero transpose, pitch expression and velocity transpose mappings. Gain and cutoff
   LFOs, filters, gain, pan, amp envelopes and patch effects remain available. Pitch variation and
   transpose affect procedural pitched layers, not a sample's playback rate.
 - `hold` cannot make a finite sample loop: exhaustion starts its authored release. Patch duration,

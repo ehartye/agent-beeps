@@ -18,7 +18,7 @@ export function toBase64(f) {
 }
 
 /** Decode bounded canonical base64 transport, then verify the entire closure before graph construction.
- * @param {BaseAudioContext} ctx @param {Patch} patch
+ * @param {BaseAudioContext} ctx @param {Pick<Patch, 'layers'>} patch
  * @param {Readonly<Record<string,string>>} [encoded]
  */
 export function prepareEncodedSamples(ctx, patch, encoded = {}) {
@@ -98,15 +98,16 @@ let nextSong = 1;
  * so the returned buffer is exactly one loop long and plays seamlessly on repeat.
  * @param {import('../../src/schema/song.ts').Song} song
  * @param {Record<string, Patch>} instruments
- * @param {{ only?: string[] }} [opts]  only: play just these tracks of the full song (see buildSong)
+ * @param {{ only?: string[], sampleWavs?: Readonly<Record<string,string>> }} [opts]  only: play just these tracks of the full song (see buildSong)
  */
-export async function renderSongOffline(song, instruments, { only } = {}) {
+export async function renderSongOffline(song, instruments, { only, sampleWavs } = {}) {
   const { compileSong } = await import('./sequence.js');
   const { buildSong, songTail } = await import('./song.js');
   const { length: formLength, sections } = compileSong(song);
   const total = Math.ceil((formLength + songTail(song, instruments)) * SAMPLE_RATE);
   const ctx = new OfflineAudioContext(2, total, SAMPLE_RATE);
-  const built = buildSong(ctx, song, instruments, { lazy: true, retain: true, ...(only ? { only } : {}) });
+  const samples = prepareEncodedSamples(ctx, { layers: Object.values(instruments).flatMap(p => p.layers) }, sampleWavs);
+  const built = buildSong(ctx, song, instruments, { samples, lazy: true, retain: true, ...(only ? { only } : {}) });
   // Build notes a window ahead of the render position, suspending at each window edge.
   const WINDOW = 2, AHEAD = 1;
   built.advance(WINDOW + AHEAD);

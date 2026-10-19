@@ -12,7 +12,7 @@ import type { Song } from '../schema/song.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Project } from '../schema/project.ts';
 
-export async function renderLayers(host: RenderHost, song: Song, instruments: Record<string, Patch>, mix: RenderedSong, opts: { project: Project; rendersDir: string }): Promise<Record<string, RenderedSong>> {
+export async function renderLayers(host: RenderHost, song: Song, instruments: Record<string, Patch>, mix: RenderedSong, opts: { project: Project; rendersDir: string; sampleObjectsDir?: string }): Promise<Record<string, RenderedSong>> {
   if (!song.adaptive) throw new BeepsError('E_USAGE', `song "${song.name}" has no adaptive block`);
   const out: Record<string, RenderedSong> = {};
   for (const [name, tracks] of Object.entries(song.adaptive.layers)) {

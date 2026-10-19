@@ -1,6 +1,6 @@
 // Songs: compiled note events played through instrument patches, per-track buses (level, lowpass,
 // pan, sends) and one master reverb and tempo-synced delay. Browser-safe, like the rest of the engine.
-import { buildLayer } from './layer.js';
+import { buildLayer, validateLayerEnvelopes } from './layer.js';
 import { buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
 import { patchLength } from './patch.js';
 import { compileSong } from './sequence.js';
@@ -8,7 +8,8 @@ import { hzToMidi, noteToHz } from './notes.js';
 import { shiftPitchedLayers } from './transpose.js';
 import { sumInto, voicePool } from './sum.js';
 import { recordNodes } from './retain.js';
-import { scheduleNoteExpression, songPerformanceIssues, velocityPatch } from './expression.js';
+import { sampleBuffer } from './sources.js';
+import { preflightVelocityPatch, scheduleNoteExpression, songPerformanceIssues, velocityPatch } from './expression.js';
 import { dbToGain } from './units.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
@@ -38,11 +39,11 @@ const pinned = (node, channels) => {
   return node;
 };
 
-/** Whether any layer of the patch makes a stereo signal by itself: a layer pan, or a noise or grains source with `stereo`. @param {Patch} p */
-export function patchIsStereo(p) {
+/** Whether a layer makes stereo, including a verified stereo sample. @param {Patch} p @param {Readonly<Record<string, AudioBuffer>>} [samples] */
+export function patchIsStereo(p, samples) {
   return p.layers.some(l => {
     const src = /** @type {any} */ (l.source);
-    return (l.pan !== undefined && l.pan !== 0) || src.stereo === true || (typeof src.stereo === 'number' && src.stereo > 0);
+    return (src.type === 'sample' && sampleBuffer(src, samples)?.numberOfChannels === 2) || (l.pan !== undefined && l.pan !== 0) || src.stereo === true || (typeof src.stereo === 'number' && src.stereo > 0);
   });
 }
 
@@ -148,7 +149,8 @@ export function songTail(song, instruments, events) {
  * @param {BaseAudioContext} ctx
  * @param {Song} song
  * @param {Record<string, Patch>} instruments  parsed instrument patch per track
- * @param {{ destination?: AudioNode, when?: number, lazy?: boolean, only?: string[], retain?: boolean }} [opts]
+ * @param {{ destination?: AudioNode, when?: number, lazy?: boolean, only?: string[], retain?: boolean, samples?: Readonly<Record<string, AudioBuffer>> }} [opts]
+ *   samples: explicit immutable, content-verified buffers prepared before graph construction. No I/O occurs here.
  *   only: play just these tracks' notes out of the full song. Every chance roll, arp order and
  *   noise seed is still drawn as in the full song, so solos of the parts sum back to the mix.
  *   lazy: build no notes yet; call `advance(t)` to build every note starting before context time t.
@@ -162,14 +164,35 @@ export function songTail(song, instruments, events) {
  * @returns {{ end: number, length: number, sections: ReturnType<typeof compileSong>['sections'], advance: (t: number) => number, release: (now: number) => number, graph: AudioNode[] | undefined, done: () => boolean }}
  */
 export function buildSong(ctx, song, instruments, opts = {}) {
-  for (const [track, patch] of Object.entries(instruments)) if (patch.layers.some(l => l.source.type === 'sample')) {
-    throw new Error(`track "${track}": sample instruments are not supported in songs`);
-  }
-  const { destination = ctx.destination, when = 0, lazy = false, only, retain = false } = opts;
+  const { destination = ctx.destination, when = 0, lazy = false, only, retain = false, samples } = opts;
   const playing = only ? new Set(only) : undefined;
   const c = compileSong(song);
   const issue = songPerformanceIssues(song, instruments, c.events)[0];
   if (issue) throw new Error(`${issue.pointer}: ${issue.message}`);
+  // Validate the complete closure, including tracks omitted by a solo, before allocating any nodes.
+  for (const name of Object.keys(song.tracks)) {
+    const patch = instruments[name];
+    if (!patch) throw new Error(`track "${name}" has no instrument patch`);
+    for (const layer of patch.layers) {
+      sampleBuffer(layer.source, samples);
+      validateLayerEnvelopes(layer, { when });
+    }
+  }
+  // Realized velocity mappings and retuned source envelopes can fail only at a performed value.
+  // Preflight every event now, so a later invalid voice cannot leave an earlier source running.
+  for (const event of c.events) {
+    const track = song.tracks[event.track], patch = instruments[event.track];
+    const shift = trackShift(track, patch);
+    const applied = velocityPatch(patch, track, event.vel);
+    const performed = transposePatch(applied.patch, shift ? shift(event.midi) : 0, track.keytrack, event.dur);
+    if (track.velocityInput) {
+      preflightVelocityPatch(ctx, performed, { track: event.track, velocity: event.vel, onset: when + event.time, trimDeltaDb: applied.trimDeltaDb });
+    }
+    for (const layer of performed.layers) {
+      sampleBuffer(layer.source, samples);
+      validateLayerEnvelopes(layer, { when: when + event.time });
+    }
+  }
   const setup = retain ? recordNodes(ctx) : undefined;
   const master = ctx.createGain();
   master.connect(destination);
@@ -219,18 +242,18 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   const widthsChecked = new Map();
   for (const e of c.events) {
     const t = song.tracks[e.track], p = instruments[e.track];
-    if (!t.velocityInput || !p || spread.has(e.track) || patchIsStereo(p)) continue;
+    if (!t.velocityInput || !p || spread.has(e.track) || patchIsStereo(p, samples)) continue;
     const checked = widthsChecked.get(e.track) ?? new Set();
     if (checked.has(e.vel)) continue;
     checked.add(e.vel); widthsChecked.set(e.track, checked);
-    if (patchIsStereo(velocityPatch(p, t, e.vel).patch)) spread.add(e.track);
+    if (patchIsStereo(velocityPatch(p, t, e.vel).patch, samples)) spread.add(e.track);
   }
   /** @type {Record<string, { input: GainNode, pool: ReturnType<typeof voicePool>, shift: ReturnType<typeof trackShift> }>} */
   const buses = {};
   for (const [name, t] of Object.entries(song.tracks)) {
     const p = instruments[name];
     if (!p) throw new Error(`track "${name}" has no instrument patch`);
-    const input = pinned(ctx.createGain(), spread.has(name) || patchIsStereo(p) ? 2 : 1);
+    const input = pinned(ctx.createGain(), spread.has(name) || patchIsStereo(p, samples) ? 2 : 1);
     /** @type {AudioNode} */
     let node = input;
     // The instrument's own effects run once per track, not once per note.
@@ -334,7 +357,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     let end = at;
     const layerOuts = p.layers.map((layer, li) => {
       const lo = ctx.createGain();
-      const voice = buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo, tempo: song.bpm });
+      const voice = buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo, tempo: song.bpm, samples });
       if (e.expression) scheduleNoteExpression(voice.nodes, e.expression, at);
       end = Math.max(end, voice.end);
       return lo;

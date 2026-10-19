@@ -216,8 +216,9 @@ entry records a safe relative WAV filename, byte count, 48000 Hz rate, one/two c
 Each prepared source is 1–480000 frames (up to ten seconds), mono/stereo canonical Float32 WAV.
 Imports retain originals up to 64 MiB and normalized source snapshots up to 120 seconds for local
 preparation. The patch has up to eight layers total. Samples are finite, unpitched one-shots;
-pitch envelopes/pitch LFOs on sample layers, sample loops/stretching and song sample instruments
-are unsupported. Gain/cutoff LFOs and ordinary layer processing remain available. Transpose/pitch
+pitch envelopes/pitch LFOs on sample layers, sample loops/stretching
+are unsupported. Song sample instruments require `fixed: true` without root, nonzero transpose,
+pitch expression or velocity transpose mappings. Gain/cutoff LFOs and ordinary layer processing remain available. Transpose/pitch
 variation affects procedural pitched layers, not sample playback rate. Attenuating an already clipped
 source does not restore its transient. [Authoring and portable exchange](../skills/beeps-compose/references/hybrid-sources.md).
 

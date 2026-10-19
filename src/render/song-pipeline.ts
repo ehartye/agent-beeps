@@ -11,18 +11,20 @@ import type { Patch } from '../schema/patch.ts';
 import type { Song } from '../schema/song.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
+import { resolveSamplesForPatches } from '../samples/transport.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
 import { chooseTrim, commit, lookup } from './cache.ts';
 import { countNonFinite, nonFiniteMessage } from '../audio/finite.ts';
 
 /**
  * Bump when song rendering or measurement changes, so cached renders are redone.
+ * 8: verified fixed, unpitched finite sample instruments and dependency preflight before cache reuse.
  * 7: native per-note pitch/brightness gestures and velocity-to-instrument onset mappings.
  * 6: song renders are reproducible. Nodes the page let go of were disposed by Chromium's garbage collector mid-render (a delay's
  * feedback loop, a modal drum's resonators) and bus inputs changed channel count with the live notes (resetting their filters),
  * so the same song rendered several ways. Songs that rendered one way before render the same bits now; the rest settle on one.
  */
-export const SONG_PIPELINE_VERSION = 7;
+export const SONG_PIPELINE_VERSION = 8;
 
 export interface RenderedSong {
   key: string; song: Song; trimDb: number; features: SongFeatures;
@@ -40,10 +42,11 @@ export function songRenderKey(song: Song, instruments: Record<string, Patch>, { 
  * `only` renders the full song but plays just those tracks' notes: stems and adaptive layers, which
  * must line up with and sum back to the mix (same form, loop folding, chance rolls and noise seeds).
  */
-export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim, only: onlyTracks }: { project: Project; rendersDir: string; trimDb?: number; only?: string[] }): Promise<RenderedSong> {
+export async function renderSong(host: RenderHost, song: Song, instruments: Record<string, Patch>, { project, rendersDir, trimDb: fixedTrim, only: onlyTracks, sampleObjectsDir }: { project: Project; rendersDir: string; trimDb?: number; only?: string[]; sampleObjectsDir?: string }): Promise<RenderedSong> {
   // An empty list filters nothing: it is a full render, with the full render's key.
   const only = onlyTracks?.length ? onlyTracks : undefined;
   for (const t of only ?? []) if (!Object.hasOwn(song.tracks, t)) throw new BeepsError('E_USAGE', `no track "${t}"`, { hint: `tracks: ${Object.keys(song.tracks).join(', ')}` });
+  const sampleWavs = resolveSamplesForPatches(Object.values(instruments), sampleObjectsDir);
   const target = project.musicLoudness;
   const key = songRenderKey(song, instruments, { target, fixedTrim, only });
   const dir = join(rendersDir, `song-${key.slice(0, 40)}`);
@@ -52,7 +55,7 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
   if (m) {
     return { key, song, trimDb: m.trimDb, features: m.features, dir, wavPath, lookPath, cached: true };
   }
-  const r = await host.renderSong(song, instruments, only ? { only } : {});
+  const r = await host.renderSong(song, instruments, { ...(only ? { only } : {}), sampleWavs });
   try {
     const authored = await host.pullSong(r.id, r.frames);
     const broken = countNonFinite(authored);

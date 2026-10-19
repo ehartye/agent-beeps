@@ -60,7 +60,8 @@ The patch still has at most eight layers total.
 The sample plays once at the layer's `start`, with the ordinary amp/filter/gain/pan/effects chain.
 Keep the preparation command's neutral amp for an unchanged recorded contour. Sample layers reject
 `pitchEnv` and `lfo.target: "pitch"`; gain/cutoff LFOs remain valid. Samples do not pitch-shift with
-transpose/variation, loop, stretch or act as song instruments. A held sample exhausts and begins its
+transpose/variation, loop or stretch. Song tracks containing a sample require `fixed: true`
+and reject root, nonzero transpose, pitch expression and velocity transpose mappings. A held sample exhausts and begins its
 authored release; it cannot become an infinite bed. Attenuation cannot restore already clipped PCM.
 
 Runtime cues carry an exact prepared-source manifest. Resume the context in a user gesture, await
