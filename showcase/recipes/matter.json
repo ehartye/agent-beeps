@@ -1,0 +1,1594 @@
+{
+  "schema": "beeps/song@1",
+  "name": "matter",
+  "title": "Matter",
+  "description": "A miniature world built from oscillators: struck glass, broken-beat circuitry, double-tracked iron and a formant-choir release.",
+  "tags": [
+    "showcase",
+    "electronic",
+    "cinematic",
+    "gritty"
+  ],
+  "bpm": 128,
+  "loop": false,
+  "progressions": {
+    "colour": [
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "Bbmaj7",
+        4
+      ],
+      [
+        "Gm9",
+        4
+      ],
+      [
+        "A7b9",
+        4
+      ]
+    ],
+    "bloom": [
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "Fmaj9",
+        4
+      ],
+      [
+        "Bbmaj7#11",
+        4
+      ],
+      [
+        "Dm6/9",
+        4
+      ]
+    ]
+  },
+  "instruments": {
+    "glass": {
+      "duration": 0.25,
+      "layers": [
+        {
+          "source": {
+            "type": "additive",
+            "pitch": "D5",
+            "partials": [
+              [
+                1,
+                0,
+                1.4
+              ],
+              [
+                2,
+                -12,
+                0.65
+              ],
+              [
+                2.76,
+                -21,
+                0.3
+              ],
+              [
+                4.07,
+                -27,
+                0.15
+              ]
+            ]
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 1.5,
+            "sustain": 0,
+            "release": 0.5
+          },
+          "highpass": 300
+        }
+      ]
+    },
+    "tine": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "fm",
+            "pitch": "D4",
+            "operators": [
+              {
+                "ratio": 1,
+                "index": 1
+              },
+              {
+                "ratio": 2,
+                "index": 1.8
+              }
+            ],
+            "algorithm": [
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          "amp": {
+            "attack": 0.006,
+            "decay": 0.35,
+            "sustain": 0.12,
+            "release": 0.15
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 3200,
+            "resonanceDb": 0
+          },
+          "highpass": 220
+        }
+      ]
+    },
+    "silk": {
+      "duration": 1,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "triangle",
+            "pitch": "D4",
+            "unison": {
+              "voices": 3,
+              "detuneCents": 9
+            }
+          },
+          "amp": {
+            "attack": 0.3,
+            "decay": 0.5,
+            "sustain": 0.65,
+            "release": 0.7
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 2200,
+            "resonanceDb": 0
+          },
+          "highpass": 240
+        }
+      ]
+    },
+    "rubber": {
+      "duration": 0.3,
+      "layers": [
+        {
+          "source": {
+            "type": "fm",
+            "pitch": "D2",
+            "operators": [
+              {
+                "ratio": 1,
+                "index": 1
+              },
+              {
+                "ratio": 1,
+                "index": 0.8
+              }
+            ],
+            "algorithm": [
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          "amp": {
+            "attack": 0.008,
+            "decay": 0.2,
+            "sustain": 0.2,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 950,
+            "resonanceDb": 0,
+            "env": {
+              "to": 260,
+              "time": 0.2
+            }
+          },
+          "highpass": 38
+        }
+      ]
+    },
+    "kick": {
+      "duration": 0.23,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 55
+          },
+          "pitchEnv": [
+            {
+              "at": 0,
+              "to": 150
+            },
+            {
+              "at": 0.035,
+              "to": 55
+            },
+            {
+              "at": 0.2,
+              "to": 46
+            }
+          ],
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.21,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "highpass": 35
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white",
+            "stereo": false
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.012,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 2600,
+            "q": 0.8
+          },
+          "gainDb": -17
+        }
+      ]
+    },
+    "snare": {
+      "duration": 0.21,
+      "layers": [
+        {
+          "source": {
+            "type": "modal",
+            "pitch": 185,
+            "modes": [
+              [
+                1,
+                14,
+                0
+              ],
+              [
+                1.6,
+                10,
+                -6
+              ],
+              [
+                2.1,
+                8,
+                -14
+              ]
+            ],
+            "exciter": "noiseBurst"
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.15,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "gainDb": -4,
+          "highpass": 120
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white",
+            "stereo": false
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.18,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 2200,
+            "q": 0.65
+          },
+          "gainDb": -9
+        }
+      ]
+    },
+    "hat": {
+      "duration": 0.065,
+      "layers": [
+        {
+          "source": {
+            "type": "metal",
+            "base": 43,
+            "bands": [
+              4200,
+              7700
+            ]
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.055,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 4400,
+            "resonanceDb": 0
+          },
+          "gainDb": 12
+        }
+      ]
+    },
+    "iron": {
+      "duration": 0.2,
+      "layers": [
+        {
+          "source": {
+            "type": "additive",
+            "pitch": "D3",
+            "partials": [
+              [
+                1,
+                -5,
+                0.2
+              ],
+              [
+                2,
+                -18,
+                0.1724137931034483
+              ],
+              [
+                3,
+                -25.604512509375027,
+                0.15151515151515152
+              ],
+              [
+                4,
+                -31,
+                0.13513513513513514
+              ],
+              [
+                5,
+                -35.18506523353571,
+                0.12195121951219512
+              ],
+              [
+                6,
+                -38.60451250937503,
+                0.11111111111111112
+              ],
+              [
+                7,
+                -41.49561398674886,
+                0.10204081632653061
+              ],
+              [
+                8,
+                -44,
+                0.09433962264150944
+              ],
+              [
+                1.5,
+                -10,
+                0.14
+              ],
+              [
+                3,
+                -23,
+                0.11666666666666668
+              ],
+              [
+                4.5,
+                -30.604512509375027,
+                0.10000000000000002
+              ],
+              [
+                6,
+                -36,
+                0.08750000000000001
+              ]
+            ]
+          },
+          "amp": {
+            "attack": 0.005,
+            "decay": 0.12,
+            "sustain": 0.12,
+            "release": 0.06
+          },
+          "drive": 0.65,
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 4800,
+            "resonanceDb": 0,
+            "env": {
+              "to": 1800,
+              "time": 0.11
+            }
+          },
+          "highpass": 110
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "pink",
+            "stereo": false
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.016,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 2400,
+            "q": 0.8
+          },
+          "gainDb": -22
+        }
+      ]
+    },
+    "dust": {
+      "duration": 2,
+      "layers": [
+        {
+          "source": {
+            "type": "grains",
+            "rate": 110,
+            "grainDecay": 0.012,
+            "center": 3800,
+            "q": 2,
+            "rateEnd": 0.05,
+            "stereo": true
+          },
+          "amp": {
+            "attack": 0.08,
+            "decay": 1.8,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 3300,
+            "q": 0.8
+          },
+          "gainDb": 0
+        }
+      ]
+    },
+    "choir": {
+      "duration": 1,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "D4",
+            "formants": [
+              [
+                650,
+                5,
+                0
+              ],
+              [
+                1100,
+                7,
+                -4
+              ],
+              [
+                2900,
+                9,
+                -14
+              ]
+            ],
+            "tilt": 1.9,
+            "jitterCents": 5,
+            "breath": 0.16,
+            "vibrato": {
+              "rate": 4.8,
+              "cents": 7
+            }
+          },
+          "amp": {
+            "attack": 0.35,
+            "decay": 0.8,
+            "sustain": 0.6,
+            "release": 0.8
+          },
+          "highpass": 230,
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 3600,
+            "resonanceDb": 0
+          }
+        }
+      ]
+    },
+    "anvil": {
+      "duration": 0.5,
+      "layers": [
+        {
+          "source": {
+            "type": "modal",
+            "pitch": 170,
+            "modes": [
+              [
+                1,
+                100,
+                0
+              ],
+              [
+                2.76,
+                130,
+                -10
+              ],
+              [
+                5.4,
+                85,
+                -17
+              ],
+              [
+                8.93,
+                70,
+                -22
+              ]
+            ],
+            "exciter": "noiseBurst"
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.6,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "highpass": 90
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "pink",
+            "stereo": false
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.05,
+            "sustain": 0,
+            "release": 0.04
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 2100,
+            "q": 0.8
+          },
+          "gainDb": -14
+        }
+      ]
+    },
+    "air": {
+      "duration": 1,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "pink",
+            "stereo": true
+          },
+          "amp": {
+            "attack": 0.5,
+            "decay": 0.8,
+            "sustain": 0.5,
+            "release": 0.6
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 1400,
+            "q": 0.6,
+            "env": {
+              "to": 4200,
+              "time": 1.8
+            }
+          },
+          "highpass": 450,
+          "gainDb": 0
+        }
+      ]
+    }
+  },
+  "tracks": {
+    "glass": {
+      "instrument": "glass",
+      "gainDb": -8,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9,
+        "delay": -13
+      },
+      "humanize": 0.13
+    },
+    "keys": {
+      "instrument": "tine",
+      "gainDb": -15,
+      "pan": -0.22,
+      "sends": {
+        "reverb": -17,
+        "delay": -20
+      },
+      "humanize": 0.2,
+      "swing": 0.12
+    },
+    "silk": {
+      "instrument": "silk",
+      "gainDb": -18,
+      "spread": 0.75,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "bass": {
+      "instrument": "rubber",
+      "gainDb": -16
+    },
+    "kick": {
+      "instrument": "kick",
+      "gainDb": -16,
+      "fixed": true
+    },
+    "snare": {
+      "instrument": "snare",
+      "gainDb": -5,
+      "fixed": true,
+      "sends": {
+        "reverb": -23
+      },
+      "humanize": 0.08
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": 5,
+      "fixed": true,
+      "pan": 0.23,
+      "humanize": 0.3,
+      "swing": 0.12
+    },
+    "iron-l": {
+      "instrument": "iron",
+      "gainDb": -14,
+      "pan": -0.78,
+      "humanize": 0.23
+    },
+    "iron-r": {
+      "instrument": "iron",
+      "gainDb": -14,
+      "pan": 0.78,
+      "humanize": 0.27
+    },
+    "dust": {
+      "instrument": "dust",
+      "gainDb": 0,
+      "fixed": true,
+      "sends": {
+        "reverb": -15
+      }
+    },
+    "choir": {
+      "instrument": "choir",
+      "gainDb": -14,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -9
+      }
+    },
+    "anvil": {
+      "instrument": "anvil",
+      "gainDb": -8,
+      "fixed": true,
+      "pan": -0.12,
+      "sends": {
+        "reverb": -16
+      }
+    },
+    "air": {
+      "instrument": "air",
+      "gainDb": -4,
+      "fixed": true,
+      "sends": {
+        "reverb": -18
+      }
+    }
+  },
+  "patterns": {
+    "glint": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D5",
+          0.4,
+          0.8
+        ],
+        [
+          1.5,
+          "A5",
+          0.25,
+          0.55
+        ],
+        [
+          3.25,
+          "E5",
+          0.4,
+          0.65
+        ],
+        [
+          6,
+          "F5",
+          0.5,
+          0.7
+        ],
+        [
+          8,
+          "C6",
+          0.4,
+          0.5
+        ],
+        [
+          10.75,
+          "A5",
+          0.3,
+          0.7
+        ],
+        [
+          12,
+          "E5",
+          0.5,
+          0.5
+        ],
+        [
+          14.5,
+          "D5",
+          0.5,
+          0.6
+        ]
+      ]
+    },
+    "hook": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D5",
+          0.7,
+          0.85
+        ],
+        [
+          1.5,
+          "F5",
+          0.35,
+          0.65
+        ],
+        [
+          2.75,
+          "E5",
+          0.5,
+          0.75
+        ],
+        [
+          4.5,
+          "A5",
+          0.6,
+          0.8
+        ],
+        [
+          6,
+          "G5",
+          0.7,
+          0.65
+        ],
+        [
+          8,
+          "E5",
+          1,
+          0.8
+        ],
+        [
+          10.5,
+          "C5",
+          0.4,
+          0.65
+        ],
+        [
+          12,
+          "D5",
+          1.5,
+          0.9
+        ],
+        [
+          15,
+          "A4",
+          0.35,
+          0.5
+        ]
+      ]
+    },
+    "chords": {
+      "bars": 4,
+      "chords": {
+        "progression": "colour",
+        "octave": 4,
+        "voicing": "lead",
+        "rhythm": "..x_ .... ..x_ ...x",
+        "strum": 0.012
+      },
+      "hitBeats": 0.4,
+      "vel": 0.65
+    },
+    "pad": {
+      "bars": 4,
+      "chords": {
+        "progression": "bloom",
+        "octave": 4,
+        "voicing": "open"
+      },
+      "vel": 0.65
+    },
+    "choir": {
+      "bars": 4,
+      "chords": {
+        "progression": "bloom",
+        "octave": 4,
+        "voicing": "lead"
+      },
+      "vel": 0.65
+    },
+    "arp": {
+      "bars": 4,
+      "arp": {
+        "progression": "bloom",
+        "octave": 5,
+        "rate": 2,
+        "shape": "converge",
+        "rhythm": "x..x.x.."
+      },
+      "gate": 0.45,
+      "vel": 0.65
+    },
+    "bass": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D2",
+          0.6,
+          0.9
+        ],
+        [
+          1.75,
+          "D3",
+          0.2,
+          0.6
+        ],
+        [
+          2.5,
+          "A2",
+          0.3,
+          0.7
+        ],
+        [
+          3.5,
+          "C3",
+          0.2,
+          0.55
+        ],
+        [
+          4,
+          "Bb1",
+          0.7,
+          0.85
+        ],
+        [
+          5.5,
+          "F2",
+          0.4,
+          0.75
+        ],
+        [
+          6.75,
+          "A2",
+          0.3,
+          0.6
+        ],
+        [
+          8,
+          "G2",
+          0.5,
+          0.85
+        ],
+        [
+          9.5,
+          "D3",
+          0.25,
+          0.6
+        ],
+        [
+          10.5,
+          "F2",
+          0.5,
+          0.75
+        ],
+        [
+          12,
+          "A1",
+          0.7,
+          0.85
+        ],
+        [
+          13.75,
+          "E2",
+          0.3,
+          0.6
+        ],
+        [
+          14.5,
+          "C#3",
+          0.25,
+          0.6
+        ],
+        [
+          15.5,
+          "A2",
+          0.2,
+          0.65
+        ]
+      ]
+    },
+    "bass-bloom": {
+      "bars": 4,
+      "bass": {
+        "progression": "bloom",
+        "octave": 2
+      },
+      "vel": 0.65
+    },
+    "kick": {
+      "bars": 2,
+      "steps": "X... ..x. .... x... X... ...x ..x. ...."
+    },
+    "snare": {
+      "bars": 2,
+      "steps": ".... X... .... X..o .... X... ..o. X..."
+    },
+    "hat": {
+      "bars": 2,
+      "steps": "..x. o.x. ..x. o.xx ..x. o.x. ..x. o.xo",
+      "vel": 0.7
+    },
+    "euclid": {
+      "bars": 1,
+      "steps": "x(5,16,1)",
+      "vel": 0.6
+    },
+    "stomp": {
+      "bars": 2,
+      "steps": "X.xx ..x. X.xx .... X.xx ..x. X... ..xx",
+      "vel": 0.85
+    },
+    "backbeat": {
+      "bars": 2,
+      "steps": ".... .... X... .... .... .... X... ..oo"
+    },
+    "iron-hat": {
+      "bars": 1,
+      "steps": "X.x. x.x. X.x. x.oo",
+      "vel": 0.6
+    },
+    "sparks": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          0.2,
+          0.8
+        ],
+        [
+          8,
+          "D4",
+          0.2,
+          0.6
+        ]
+      ]
+    },
+    "strike": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D3",
+          0.2,
+          0.7
+        ],
+        [
+          6.5,
+          "D3",
+          0.2,
+          0.45
+        ],
+        [
+          12,
+          "D3",
+          0.2,
+          0.6
+        ]
+      ]
+    },
+    "breath": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          6,
+          0.7
+        ],
+        [
+          10,
+          "D4",
+          4,
+          0.5
+        ]
+      ]
+    },
+    "single-glass": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D5",
+          1,
+          0.7
+        ],
+        [
+          3,
+          "A5",
+          0.5,
+          0.5
+        ],
+        [
+          6,
+          "E6",
+          0.7,
+          0.35
+        ]
+      ]
+    },
+    "last-chord": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D4",
+          6,
+          0.6
+        ],
+        [
+          0,
+          "F4",
+          6,
+          0.5
+        ],
+        [
+          0,
+          "A4",
+          6,
+          0.5
+        ],
+        [
+          0,
+          "E5",
+          6,
+          0.4
+        ]
+      ]
+    },
+    "riff": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D3",
+          0.17,
+          0.9
+        ],
+        [
+          0.5,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          0.75,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          1.5,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          2,
+          "F3",
+          0.17,
+          0.9
+        ],
+        [
+          2.5,
+          "F3",
+          0.17,
+          0.62
+        ],
+        [
+          2.75,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          4,
+          "D3",
+          0.17,
+          0.9
+        ],
+        [
+          4.5,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          4.75,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          5.5,
+          "Eb3",
+          0.17,
+          0.62
+        ],
+        [
+          6,
+          "D3",
+          0.17,
+          0.9
+        ],
+        [
+          7.5,
+          "A3",
+          0.17,
+          0.62
+        ],
+        [
+          7.75,
+          "A3",
+          0.17,
+          0.62
+        ],
+        [
+          8,
+          "Bb3",
+          0.17,
+          0.9
+        ],
+        [
+          8.5,
+          "Bb3",
+          0.17,
+          0.62
+        ],
+        [
+          8.75,
+          "Bb3",
+          0.17,
+          0.62
+        ],
+        [
+          9.5,
+          "Bb3",
+          0.17,
+          0.62
+        ],
+        [
+          10,
+          "A3",
+          0.17,
+          0.9
+        ],
+        [
+          10.5,
+          "A3",
+          0.17,
+          0.62
+        ],
+        [
+          10.75,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          12,
+          "Eb3",
+          0.17,
+          0.9
+        ],
+        [
+          12.5,
+          "Eb3",
+          0.17,
+          0.62
+        ],
+        [
+          12.75,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          13.5,
+          "D3",
+          0.17,
+          0.62
+        ],
+        [
+          14,
+          "D3",
+          0.17,
+          0.9
+        ]
+      ]
+    },
+    "riff-bass": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D2",
+          0.2,
+          0.9
+        ],
+        [
+          0.5,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          0.75,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          1.5,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          2,
+          "F2",
+          0.2,
+          0.9
+        ],
+        [
+          2.5,
+          "F2",
+          0.2,
+          0.62
+        ],
+        [
+          2.75,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          4,
+          "D2",
+          0.2,
+          0.9
+        ],
+        [
+          4.5,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          4.75,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          5.5,
+          "Eb2",
+          0.2,
+          0.62
+        ],
+        [
+          6,
+          "D2",
+          0.2,
+          0.9
+        ],
+        [
+          7.5,
+          "A2",
+          0.2,
+          0.62
+        ],
+        [
+          7.75,
+          "A2",
+          0.2,
+          0.62
+        ],
+        [
+          8,
+          "Bb2",
+          0.2,
+          0.9
+        ],
+        [
+          8.5,
+          "Bb2",
+          0.2,
+          0.62
+        ],
+        [
+          8.75,
+          "Bb2",
+          0.2,
+          0.62
+        ],
+        [
+          9.5,
+          "Bb2",
+          0.2,
+          0.62
+        ],
+        [
+          10,
+          "A2",
+          0.2,
+          0.9
+        ],
+        [
+          10.5,
+          "A2",
+          0.2,
+          0.62
+        ],
+        [
+          10.75,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          12,
+          "Eb2",
+          0.2,
+          0.9
+        ],
+        [
+          12.5,
+          "Eb2",
+          0.2,
+          0.62
+        ],
+        [
+          12.75,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          13.5,
+          "D2",
+          0.2,
+          0.62
+        ],
+        [
+          14,
+          "D2",
+          0.2,
+          0.9
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "glass": {
+      "bars": 4,
+      "play": {
+        "glass": "glint",
+        "dust": "sparks"
+      },
+      "mix": {},
+      "mixScope": "section"
+    },
+    "current": {
+      "bars": 4,
+      "play": {
+        "keys": "chords",
+        "bass": "bass",
+        "hat": "euclid",
+        "glass": "glint"
+      },
+      "mix": {},
+      "mixScope": "section"
+    },
+    "circuit": {
+      "bars": 8,
+      "play": {
+        "glass": "hook",
+        "keys": "chords",
+        "bass": "bass",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "mix": {},
+      "mixScope": "section"
+    },
+    "fracture": {
+      "bars": 4,
+      "play": {
+        "keys": "chords",
+        "bass": "bass",
+        "snare": "snare",
+        "dust": "sparks"
+      },
+      "mix": {
+        "keys": {
+          "cutoff": 1500
+        }
+      },
+      "mixScope": "section"
+    },
+    "pressure": {
+      "bars": 4,
+      "play": {
+        "air": "breath",
+        "anvil": "strike",
+        "iron-l": "riff",
+        "iron-r": "riff"
+      },
+      "mix": {
+        "iron-l": {
+          "gainDb": -12,
+          "cutoff": 4500,
+          "from": {
+            "gainDb": -22,
+            "cutoff": 700
+          }
+        },
+        "iron-r": {
+          "gainDb": -12,
+          "cutoff": 4500,
+          "from": {
+            "gainDb": -22,
+            "cutoff": 700
+          }
+        }
+      },
+      "mixScope": "section",
+      "ramp": true
+    },
+    "iron": {
+      "bars": 8,
+      "play": {
+        "iron-l": "riff",
+        "iron-r": "riff",
+        "bass": "riff-bass",
+        "kick": "stomp",
+        "snare": "backbeat",
+        "hat": "iron-hat",
+        "anvil": "strike"
+      },
+      "mix": {},
+      "mixScope": "section"
+    },
+    "vacuum": {
+      "bars": 4,
+      "play": {
+        "glass": "single-glass",
+        "dust": "sparks",
+        "silk": "last-chord"
+      },
+      "mix": {
+        "silk": {
+          "gainDb": -22
+        }
+      },
+      "mixScope": "section"
+    },
+    "bloom": {
+      "bars": 8,
+      "play": {
+        "choir": "choir",
+        "silk": "pad",
+        "glass": "arp",
+        "bass": "bass-bloom",
+        "kick": "kick",
+        "hat": "euclid"
+      },
+      "mix": {
+        "silk": {
+          "gainDb": -23
+        },
+        "glass": {
+          "gainDb": -16
+        }
+      },
+      "mixScope": "section"
+    },
+    "afterglow": {
+      "bars": 4,
+      "play": {
+        "choir": "last-chord",
+        "glass": "single-glass",
+        "dust": "sparks"
+      },
+      "mix": {
+        "choir": {
+          "gainDb": -17
+        }
+      },
+      "mixScope": "section"
+    }
+  },
+  "form": [
+    "glass",
+    "current",
+    "circuit",
+    "fracture",
+    "pressure",
+    "iron",
+    "vacuum",
+    "bloom",
+    "afterglow"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -8
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.27,
+      "returnDb": -10,
+      "cutoff": 2800
+    }
+  }
+}

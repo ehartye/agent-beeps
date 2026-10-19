@@ -13,7 +13,12 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "showcase:compose": "node scripts/compose-showcase.mjs",
+    "showcase:render": "node scripts/render-showcase.mjs",
+    "showcase:build": "node scripts/build-showcase.mjs",
+    "showcase:test": "node scripts/test-showcase.mjs",
+    "showcase:serve": "node scripts/serve-showcase.mjs"
   },
   "dependencies": {
     "commander": "15.0.0",

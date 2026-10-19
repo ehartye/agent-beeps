@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Matter: an original procedural music and sound-design reel made with agent-beeps. Play the score. Strike the patches. Inspect the ingredients.">
+  <meta name="theme-color" content="#d7dad3">
+  <title>Matter · agent-beeps</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232346ff'/%3E%3Cpath d='M6 16h4l3-8 5 16 3-8h5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./booth/style.css">
+  <link rel="stylesheet" href="./booth/album.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="deck">
+  <header class="plate">
+    <div><div class="brand">agent-beeps · listening booth · vol. 01</div><h1 class="prompt">Matter<span class="period">.</span></h1></div>
+    <div class="meta">A WORLD FROM A WAVE<br><a href="https://github.com/ehartye/agent-beeps">Explore the repository ↗</a></div>
+  </header>
+  <section class="intro" aria-label="About the reel">
+    <p class="lede">Glass. Circuitry. Heavy metal.<br>Then a little room to breathe.</p>
+    <div><p>An original miniature score and a hands-on sound bench. Every tone, impact and breath starts as an editable patch. No recorded samples.</p><p class="facts" id="spec">Loading the session…</p></div>
+  </section>
+
+  <section class="transport" aria-label="Reel transport">
+    <div class="np"><div class="np-label"><span class="led" id="led"></span> <span id="transport-state">Ready when you are</span></div><div class="np-title" id="np-title">Play Matter</div><div class="np-desc" id="np-desc">A journey in nine scenes.</div></div>
+    <div class="controls">
+      <button class="deckkey" id="prev" aria-label="Previous scene" disabled>⏮</button>
+      <button class="deckkey big" id="play" aria-label="Play reel" disabled>▶</button>
+      <button class="deckkey" id="next" aria-label="Next scene" disabled>⏭</button>
+    </div>
+    <div class="group modes"><button class="toggle" id="stop" aria-label="Stop all audio">Stop</button><button class="toggle" id="repeat" aria-pressed="false">Repeat reel</button><label class="volume">Volume <input id="volume" type="range" min="0" max="100" value="75" aria-label="Master volume"></label></div>
+    <div class="scrub"><div class="strip big" id="np-strip" role="slider" tabindex="0" aria-label="Seek in reel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div><div class="clock"><span id="pos">0:00</span><span id="sec">MATTER / ORIGINAL SCORE</span><span id="dur">0:00</span></div></div>
+    <div id="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="session" aria-label="Sound and scenes">
+    <div class="monitor"><div class="monitor-label"><span>OUTPUT / FREQUENCY</span><span id="meter-label">AWAITING SIGNAL</span></div><canvas id="scope" width="1200" height="180" aria-label="Live output spectrum"></canvas><div class="monitor-scale"><span>40 Hz</span><span>250 Hz</span><span>1 kHz</span><span>4 kHz</span><span>16 kHz</span></div></div>
+    <nav class="chapters" id="chapters" aria-label="Jump to a scene"></nav>
+    <div class="scene-note"><span class="eyebrow" id="scene-number">SCENE 01</span><h2 id="scene-title">Glass</h2><p id="scene-detail">A struck overtone hangs in the air. A few grains of dust answer.</p><p class="facts" id="scene-tech">ADDITIVE PARTIALS / POISSON GRAINS</p></div>
+  </section>
+
+  <section class="sound-bench" aria-labelledby="bench-title">
+    <div class="section-heading"><div><div class="brand">02 / Put your hands on it</div><h2 id="bench-title">The sound bench</h2></div><span class="badge">SYNTHESIZED LIVE</span></div>
+    <p class="bench-intro">Strike a pad. Your browser builds the sound from its patch—these aren’t audio files. Try it over the reel; the music steps back while the effect plays.</p>
+    <div class="pads" id="pads"></div>
+    <p class="facts">Keys 1–8 play the pads · Space plays / pauses the reel · Esc stops everything</p>
+  </section>
+
+  <details class="liner look" id="liner"><summary>Open the session notes</summary><div class="liner-grid"><div><h2>Small recipes. Big range.</h2><p>Matter uses thirteen parts, eight synthesis source types, voice-led harmony, seeded timing, stereo double-tracking and a shared effects bus. The score is rendered through the same Web Audio engine that plays the pads.</p><p>The orange line above follows measured loudness. The spectrum monitor follows the actual output. Open the source and change a note, a resonant mode or an entire scene.</p><div class="row"><a class="toggle" href="./recipes/matter.json" download>Download the score ↓</a><a class="toggle" href="./media/matter.mp3" download>Download the reel ↓</a><a class="toggle" href="https://github.com/ehartye/agent-beeps/tree/main/showcase">Session source ↗</a></div></div><div><h2>Room for the transients.</h2><p id="measurements"></p><p>The scenes deliberately change density and level. The effect pads use measured trims, a single-voice limit and the engine’s output safety curve.</p><p class="facts">Music & sound design: composed with agent-beeps. All synthesis is procedural. The public booth stores no votes or listening history.</p></div></div><img id="look" loading="lazy" src="./media/matter.png" alt="Measured waveform, section loudness and spectrogram of Matter"></details>
+  <footer><span class="brand">agent-beeps / made of little things</span><a href="https://github.com/ehartye/agent-beeps">Make something that makes a sound ↗</a></footer>
+</main>
+<audio id="audio" preload="metadata" src="./media/matter.mp3"></audio>
+<noscript><p class="error">The interactive booth needs JavaScript. <a href="./media/matter.mp3">Listen to Matter directly.</a></p></noscript>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
