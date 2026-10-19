@@ -1,7 +1,7 @@
 // `beeps build`: render + export + compress + bundle only the assets whose input hash differs from the committed lock, or whose
 // outputs are missing or no longer match it. Everything else is left byte for byte alone.
 import { samplePaths } from '../samples/store.ts';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
 import { canonicalJson } from '../hash.ts';
@@ -15,7 +15,9 @@ import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render
 import { parseProject } from '../schema/project.ts';
 import { renderAndMeasure } from '../render/pipeline.ts';
 import { makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
-import { cueSources, writeCueDelivery } from '../runtime/delivery.ts';
+import { cueSources, writeCueDelivery, readDeliveredFile } from '../runtime/delivery.ts';
+import { validateDeliveredAsset } from '../runtime/inventory.ts';
+import { assertOutputNames } from '../runtime/dependencies.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
 import { planAsset, type Encoder, type Planned } from './plan.ts';
@@ -108,10 +110,11 @@ function staleReasons(plan: Planned, entry: LockAsset | undefined, out: string, 
     const changed = entry.parts ? (Object.keys(plan.parts) as (keyof Planned['parts'])[]).filter(k => entry.parts![k] !== plan.parts[k]) : [];
     reasons.push(`inputs changed${changed.length ? ` (${changed.join(', ')})` : ''}: ${entry.inputHash.slice(0, 19)} -> ${plan.inputHash.slice(0, 19)}`);
   }
-  for (const o of entry.outputs) {
-    const f = join(out, o.file);
-    if (!existsSync(f)) { reasons.push(`output missing: ${o.file}`); continue; }
-    if (statSync(f).size !== o.bytes || sha256File(f).sha256 !== o.sha256) reasons.push(`output modified: ${o.file}`);
+  try { validateDeliveredAsset(plan.recipe.id, { ...entry, delivery: plan.ships }, file => readDeliveredFile(out, file)); }
+  catch (e) {
+    const message = (e as Error).message;
+    const file = entry.outputs.find(o => message === `${o.file} is missing` || message === `${o.file} does not match the lock`)?.file;
+    reasons.push(file ? `output ${message.endsWith(' is missing') ? 'missing' : 'modified'}: ${file}` : `output invalid: ${message}`);
   }
   return reasons;
 }
@@ -135,10 +138,13 @@ function listOutputs(dir: string): OutputRef[] {
 
 /** Copies the asset's staged files into the output directory, atomically per file, leaving files whose bytes already match alone. */
 function install(out: string, stage: string, outputs: OutputRef[], previous: OutputRef[] | undefined): void {
+  assertOutputNames(outputs);
+  assertOutputNames(previous ?? []);
   mkdirSync(out, { recursive: true });
   for (const o of outputs) {
     const dest = join(out, o.file);
-    if (existsSync(dest) && statSync(dest).size === o.bytes && sha256File(dest).sha256 === o.sha256) continue;
+    const current = readDeliveredFile(out, o.file);
+    if (current && current.length === o.bytes && sha256Hex(current) === o.sha256) continue;
     atomicWrite(dest, readFileSync(join(stage, o.file)));
   }
   const keep = new Set(outputs.map(o => o.file));
@@ -233,6 +239,9 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       if (!bytes) continue;
       const expectOutputs = prior && prior.inputHash === pl.inputHash ? prior.outputs : undefined;
       const { manifest, files } = unpackAsset(bytes, { inputHash: pl.inputHash, outputs: expectOutputs });
+      if (manifest.id !== id) throw new BeepsError('E_STORE', `store entry owner ${manifest.id} does not match ${id}`);
+      validateDeliveredAsset(id, { outputs: manifest.outputs, delivery: pl.ships }, file => files.get(file));
+      if (expectOutputs) validateDeliveredAsset(id, { outputs: expectOutputs, delivery: pl.ships }, file => files.get(file));
       const sdir = join(stage, `${id}.pull`);
       rmSync(sdir, { recursive: true, force: true }); mkdirSync(sdir, { recursive: true });
       for (const [f, data] of files) atomicWrite(join(sdir, f), data);
@@ -406,8 +415,8 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
   for (const pl of plans) {
     const a = lockedAsset(lock, pl.recipe.id);
     if (!a) continue;
-    const bad = a.outputs.filter(f => !existsSync(join(cfg.out, f.file)) || sha256File(join(cfg.out, f.file)).sha256 !== f.sha256);
-    if (bad.length) { log(`adopt: ${pl.recipe.id}: ${bad[0].file} does not match the lock; it will be rebuilt`); continue; }
+    try { validateDeliveredAsset(pl.recipe.id, { ...a, delivery: pl.ships }, file => readDeliveredFile(cfg.out, file)); }
+    catch (e) { log(`adopt: ${pl.recipe.id}: ${(e as Error).message}; it will be rebuilt`); continue; }
     assets[pl.recipe.id] = { ...a, role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
     adopted.push(pl.recipe.id);
   }

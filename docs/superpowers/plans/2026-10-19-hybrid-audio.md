@@ -25,7 +25,7 @@ pipelines, listening UI and build/store rather than introducing parallel systems
   actual sample-only/hybrid set playback in the current UI.
 - [x] Task4A: cue-owned sample delivery in standalone export/build/lock, shared delivered
   dependency validation, delivered-byte parity, ownership cleanup and fixed-byte budgets.
-- [ ] Task4B: use that validation in store push/pull/status, build --pull and standalone
+- [x] Task4B: use that validation in store push/pull/status, build --pull and standalone
   zero-dependency CI fetch; prove fetched static runtime and baked-player playback.
 - [ ] Task5: licensed public hybrid study in existing booth, actual measured comparisons,
   portable downloads, provenance and desktop/mobile/subpath browser verification.
@@ -157,6 +157,16 @@ same canonical semantics, preserving its project-defaults marker. Actually serve
 outputs and engine under a static project subpath, load verified assets and play native
 runtime PCM; the baked game player consumes the normal hybrid export. Neither checkpoint
 alone completes the shipping acceptance; Task4A and Task4B both precede the public release.
+
+Task4B verification: spec and quality approved without outstanding findings. Independent spec
+ran104tests/4files without skips; quality ran50tests/2files without skips. Coordinator's final
+new integration33tests pass, along with typecheck, reproducible generator and whitespace checks.
+The implementer's broader163tests/7files pass with one existing optional Firefox skip. Exported
+single-file fetch actually runs on Node20.20.2 with empty PATH and no ffmpeg. Relocated baked,
+runtime and both delivery survives removal of authoring sources and the store; native static
+project-subpath playback exercises public cue loading and the existing baked player. A changed
+source changes PCM. Invalid dependency closures, owner names, nonregular files and locked byte
+counts fail before installation. Task5 public examples and Task6 release remain pending.
 
 Task5/6: use existing renderer/measurement/looks and current booth styles. Inspect licensed
 source artifacts and rendered PNGs. Match comparisons by actual delivered max momentary and
