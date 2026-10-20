@@ -38,7 +38,7 @@ describe('listening-page feedback to verdicts', () => {
   });
 
   it('accepts what the audition page exports and rejects other json', () => {
-    expect(FeedbackSchema.safeParse({ schema: 'fallow-valley/audition-feedback@1', items: [{ name: 'step-salt', rating: 'up', level: null, note: '' }, { name: 'deny-tool', rating: null, level: 'quieter' }] }).success).toBe(true);
+    expect(FeedbackSchema.safeParse({ schema: 'example-game/audition-feedback@1', items: [{ name: 'step-stone', rating: 'up', level: null, note: '' }, { name: 'deny-tool', rating: null, level: 'quieter' }] }).success).toBe(true);
     expect(FeedbackSchema.safeParse({ schema: 'beeps/patch@1', items: [] }).success).toBe(false);
     expect(FeedbackSchema.safeParse({ schema: 'x/audition-feedback@1', items: [{ name: 'a', rating: 'meh' }] }).success).toBe(false);
   });

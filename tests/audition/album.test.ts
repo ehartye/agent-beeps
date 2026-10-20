@@ -106,7 +106,7 @@ describe('albums', () => {
   });
 
   it('builds LAN links, never localhost', () => {
-    expect(albumUrl({ url: 'http://hal9000:47301', token: 'tok' }, id)).toBe(`http://hal9000:47301/a/${id}?t=tok`);
+    expect(albumUrl({ url: 'http://studio:47301', token: 'tok' }, id)).toBe(`http://studio:47301/a/${id}?t=tok`);
   });
 });
 
@@ -114,13 +114,13 @@ import { rankAddresses } from '../../src/audition/server.ts';
 describe('LAN addresses', () => {
   it('puts the physical LAN first, Tailscale after, and drops virtual adapters', () => {
     const ranked = rankAddresses({
-      Tailscale: [{ family: 'IPv4', address: '100.121.49.34', internal: false }],
+      Tailscale: [{ family: 'IPv4', address: '100.100.0.1', internal: false }],
       'Local Area Connection* 12': [{ family: 'IPv4', address: '192.168.137.1', internal: false }],
-      'Wi-Fi': [{ family: 'IPv4', address: '192.168.1.93', internal: false }],
+      'Wi-Fi': [{ family: 'IPv4', address: '192.168.0.20', internal: false }],
       'Loopback Pseudo-Interface 1': [{ family: 'IPv4', address: '127.0.0.1', internal: true }],
-      'vEthernet (WSL (Hyper-V firewall))': [{ family: 'IPv4', address: '172.22.112.1', internal: false }],
+      'vEthernet (WSL (Hyper-V firewall))': [{ family: 'IPv4', address: '172.20.0.1', internal: false }],
     } as any);
-    expect(ranked.map(r => r.address)).toEqual(['192.168.1.93', '192.168.137.1', '100.121.49.34']);
+    expect(ranked.map(r => r.address)).toEqual(['192.168.0.20', '192.168.137.1', '100.100.0.1']);
     expect(ranked[2].label).toBe('tailscale');
   });
 });

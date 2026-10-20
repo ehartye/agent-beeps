@@ -25,10 +25,10 @@ describe('verifyingDeterminism', () => {
 
   it('fails with E_NONDETERMINISTIC naming the song, the first sample and the size, and frees both renders', async () => {
     const { host, live } = fakeHost([{ differing: 105644, first: 1920000, maxAbs: 0.0588 }]);
-    const err = await verifyingDeterminism(host).renderSong(song({ name: 'mus-desert' }), {}, { only: ['bed'] }).catch(e => e);
+    const err = await verifyingDeterminism(host).renderSong(song({ name: 'song-a' }), {}, { only: ['bed'] }).catch(e => e);
     expect(err).toBeInstanceOf(BeepsError);
     expect(err.code).toBe('E_NONDETERMINISTIC');
-    expect(err.message).toMatch(/mus-desert \(only bed\).*105644 samples.*frame 1920000 \(40\.000 s\).*5\.88e-2/);
+    expect(err.message).toMatch(/song-a \(only bed\).*105644 samples.*frame 1920000 \(40\.000 s\).*5\.88e-2/);
     expect(err.toJson()).toMatchObject({ differingSamples: 105644, firstFrame: 1920000, only: ['bed'] });
     expect(live.size).toBe(0);
   });
