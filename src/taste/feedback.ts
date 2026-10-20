@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { tasteVectors } from '../audition/session.ts';
 import type { Verdict } from './verdicts.ts';
 
-/** What a listening page exports (`fallow-valley/audition-feedback@1` is one; any page that writes this shape works). */
+/** What a listening page exports (`example-game/audition-feedback@1` is one; any page that writes this shape works). */
 export const FeedbackItemSchema = z.object({
   name: z.string().min(1),
   rating: z.enum(['up', 'down']).nullable().optional(),

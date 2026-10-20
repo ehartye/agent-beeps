@@ -33,7 +33,7 @@ Apply `strong` preferences when you write or pick candidates. Treat `weak` as a 
 ## Feed it from a game's own listening page
 
 A game can ship a page where the owner clicks through every sound it makes and gives thumbs, level
-votes and notes (Fallow Valley's `tools/build-audition.mjs`). It exports
+votes and notes (a small build script in the game's `tools/` folder). It exports
 `{ "schema": "<game>/audition-feedback@1", "patchDir": "asset-src/audio/sfx", "items": [{ "name", "rating": "up"|"down"|null, "level", "note" }] }`.
 Run, in the beeps project folder:
 

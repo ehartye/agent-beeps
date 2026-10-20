@@ -13,7 +13,7 @@ anything sounds good.
 | | `baked` | `runtime` | `both` |
 |---|---|---|---|
 | You ship | `<id>.<n>.ogg` + sidecar, in the catalog | `<id>.runtime.json` plus any prepared sample WAVs | both |
-| The game | plays a file | builds nodes: 0.4 to 10 ms of main-thread time per play | picks per use |
+| The game | plays a file | builds nodes: 0.4 to 10 ms of main-thread time per play (desktop-class reference hardware) | picks per use |
 | Inputs that move while it sounds | none | yes (`live` bindings) | the runtime copy |
 | Size for 18 sounds | 118 KB (Opus 72 kbps) | 10.5 KB gzip including the 7.9 KB engine | both |
 | Variation | declared variants, one file each | any seed, any variant, any input value | both |
@@ -27,7 +27,7 @@ stereo Float32 source alone is 3840044 bytes; it does not shrink when the baked 
 Choose **runtime** when the sound is a function of game state: an engine whose pitch follows speed, an impact whose weight
 follows mass, a tick that gets faster, a creature whose size is a parameter, a sound you would otherwise bake dozens of
 variants of. Choose **baked** for everything else: one-shots with no input, sounds with a long tail or heavy noise and grain
-content (building a grain cloud costs about 4 ms and 233 KB), music, and anything that must not cost main-thread time in a
+content (building a grain cloud costs about 4 ms and 233 KB on desktop-class hardware), music, and anything that must not cost main-thread time in a
 busy frame. Choose **both** when a sound has a cheap baked form for the common case and a live form for the interesting one,
 or while you are moving a game from one to the other: `beeps verify --parity` then proves the two stay the same sound.
 
@@ -212,7 +212,7 @@ source does not restore its transient. [Authoring and portable exchange](../skil
 
 ### A shared reverb bus
 
-A patch with `fx.reverb` builds a `ConvolverNode` per voice, about 2 to 4 ms of main-thread time each. A game with many
+A patch with `fx.reverb` builds a `ConvolverNode` per voice, about 2 to 4 ms of main-thread time each on desktop-class hardware. A game with many
 voices sends them to one bus it owns instead:
 
 ```js
@@ -300,9 +300,27 @@ scale snapping, which the bake quantises to a scale degree and a continuous detu
 
 ## Measured
 
-Machine: a Windows desktop (not a phone), Chromium 153.0.8010.12, Firefox 155.0, Playwright WebKit 26.6 (no
-`OfflineAudioContext` on Windows: reported as `no-web-audio`, never passed; Safari is unmeasured). The six example cues in
-`library/sounds/runtime-examples` (`beeps runtime parity`, 35 cases per browser, 3 fresh pages per path).
+Reference hardware: a desktop-class machine (not a phone), driving headless browsers (tool versions: Chromium 153.0.8010.12,
+Firefox 155.0, Playwright WebKit 26.6; that WebKit build has no `OfflineAudioContext`, so it is reported as `no-web-audio`
+and never passed). Phones and Safari are unmeasured. Every millisecond and megabyte below was measured there, on the six
+example cues in `library/sounds/runtime-examples` (`beeps runtime parity`, 35 cases per browser, 3 fresh pages per path).
+
+### Hardware guidelines
+
+Treat the tables as relative costs measured on desktop-class hardware, not as promises for your players' devices.
+
+* **Per-play main-thread budget.** Build cost is main-thread time, paid in the frame that starts the sound. On the desktop
+  reference a bus-sharing cue builds in about 0.3 to 0.5 ms and an unshared reverb or a grain cloud in 2 to 4 ms (table below).
+  A frame at 60 Hz is 16.7 ms: aim to keep the builds that land in one frame to a small fraction of it, spread a burst of
+  voices over several frames, and prefer `baked` for heavy noise or grain content that has to start in a busy frame.
+* **Phones and low-power devices are unmeasured.** Assume every build cost is larger there, by an amount you have to measure
+  yourself, and decide `baked` against `runtime` per cue from that measurement, not from the desktop table.
+* **Memory.** The per-context noise cache is bounded by a byte budget (16 MiB by default). A fresh seed per play stays inside
+  it; unbounded growth is the failure to watch for. On a memory-constrained target lower it with `setNoiseCacheLimit`, and
+  read it back with `noiseCacheStats`.
+* **Profile on your own target.** Run `beeps runtime perf <patches> --vary-seed --bus` for build cost, and `--plays N` for a
+  long session's live-buffer count, then repeat the build timing on the slowest device you support, in the browser you ship,
+  with the audio thread under real load (headless runs use a null sink and cannot show glitching).
 
 **Size** (`node scripts/runtime-size.mjs`, minified, rolldown): the engine (`build`, `createReverbBus`, `parseCue`) is 20.4 KB,
 **7.9 KB gzip**, 7.2 KB brotli; every export 8.4 KB gzip. Adding the 18 sci-fi patches as data brings it to **10.5 KB gzip**
@@ -326,7 +344,7 @@ A fresh seed adds the noise and grain generation (375 KB per noise layer, 233 KB
 
 **Memory, 10,000 plays with a fresh seed each** (`beeps runtime perf --plays 10000`, a running context, every voice
 disposed, a garbage collection before counting; `liveAudioBuffers` is `Runtime.queryObjects` over `AudioBuffer`, not a
-working-set estimate, which this machine's other browsers make useless):
+working-set estimate, which browsers do not report in a comparable way):
 
 | | bounded cache (default) | unbounded (before the fix) |
 |---|---|---|
