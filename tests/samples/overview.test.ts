@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { segmentMono } from '../../src/samples/overview.ts';
+import { overviewAudio, segmentMono } from '../../src/samples/overview.ts';
 import { SR, sine, whiteNoise } from '../helpers/signals.ts';
 
 const DEFAULTS = { gapDb: 40, minGapMs: 200 };
@@ -107,5 +107,72 @@ describe('segmentMono', () => {
     const opts = { gapDb: 40, minGapMs: 255 }; // 26 frames
     expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.75, sine(440, 0.5)]]), opts)).toHaveLength(1); // 250 ms apart
     expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.76, sine(440, 0.5)]]), opts)).toHaveLength(2); // 260 ms apart
+  });
+});
+
+const square = (hz: number, dur: number, amp: number) => Float32Array.from({ length: Math.round(dur * SR) }, (_, i) => (i % Math.round(SR / hz) < SR / hz / 2 ? amp : -amp));
+
+describe('overviewAudio', () => {
+  it('measures each segment and reports exact frames and times', () => {
+    const x = layout(7, [[1, sine(440, 0.5)], [3, sine(2000, 0.5)]]);
+    const o = overviewAudio([x], DEFAULTS);
+    expect(o.view).toEqual({ startFrame: 0, endFrame: 7 * SR, startSec: 0, endSec: 7 });
+    expect(o.segments).toHaveLength(2);
+    const [a, b] = o.segments;
+    expect(a).toMatchObject({ index: 1, startFrame: 47040, endFrame: 72000, startSec: 0.98, endSec: 1.5, durationSec: 0.52, clippedSamples: 0, flags: [] });
+    expect(a.peakDb).toBeCloseTo(-6, 0);
+    expect(a.centroidHz).toBeGreaterThan(300);
+    expect(a.centroidHz).toBeLessThan(600);
+    expect(b.centroidHz).toBeGreaterThan(1500);
+    expect(b.index).toBe(2);
+    expect(o.peakDb).toBeCloseTo(-6, 0);
+    expect(o.arc).toHaveLength(7);
+    expect(o.omitted).toBe(0);
+    expect(o.hints).toEqual([]);
+  });
+
+  it('flags clipped, short and cut-at-ten-seconds segments', () => {
+    const x = layout(30, [[1, square(480, 0.1, 1)], [3, whiteNoise(15, 2, 0.3)]]);
+    const o = overviewAudio([x], DEFAULTS);
+    expect(o.segments[0].flags).toEqual(['clipped', 'short']);
+    expect(o.segments[0].clippedSamples).toBeGreaterThan(0);
+    const cut = o.segments.slice(1);
+    expect(cut.length).toBeGreaterThanOrEqual(2);
+    expect(cut[0].flags).toContain('cutAt10s');
+    expect(cut[cut.length - 1].flags).not.toContain('cutAt10s');
+  });
+
+  it('works inside a view range and keeps source time', () => {
+    const x = layout(7, [[1, sine(440, 0.5)], [3, sine(440, 0.5)], [5, sine(440, 0.5)]]);
+    const o = overviewAudio([x], { ...DEFAULTS, startFrame: 2 * SR, endFrame: 6 * SR });
+    expect(o.view).toMatchObject({ startSec: 2, endSec: 6 });
+    expect(o.segments.map(s => s.startFrame)).toEqual([143040, 239040]);
+    expect(o.arc).toHaveLength(4);
+  });
+
+  it('keeps the 64 loudest of more than 64 segments, in time order, and says so', () => {
+    const parts: [number, Float32Array][] = Array.from({ length: 70 }, (_, i) => [0.1 + i * 0.36, sine(440, 0.06, 0.1 + i * 0.01)]);
+    const o = overviewAudio([layout(26, parts)], DEFAULTS);
+    expect(o.segments).toHaveLength(64);
+    expect(o.omitted).toBe(6);
+    expect(o.segments[0].startSec).toBeCloseTo(2.24, 2); // bursts 0 to 5 are the quietest
+    expect(o.segments.map(s => s.index)).toEqual(Array.from({ length: 64 }, (_, i) => i + 1));
+    expect(o.hints.join(' ')).toMatch(/--min-gap/);
+  });
+
+  it('hints at --gap-db and --min-gap when one continuous sound is cut at ten seconds', () => {
+    const o = overviewAudio([whiteNoise(25, 1, 0.3)], DEFAULTS);
+    expect(o.hints.join(' ')).toMatch(/--gap-db/);
+  });
+
+  it('hints when nothing is audible', () => {
+    const o = overviewAudio([new Float32Array(SR)], DEFAULTS);
+    expect(o.segments).toEqual([]);
+    expect(o.hints.join(' ')).toMatch(/-70 dBFS/);
+  });
+
+  it('measures stereo sources without throwing', () => {
+    const x = layout(3, [[1, sine(440, 0.5)]]);
+    expect(overviewAudio([x, x], DEFAULTS).segments).toHaveLength(1);
   });
 });
