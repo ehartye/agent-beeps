@@ -1,6 +1,7 @@
 // A long recording's overview: where the sound is, cut into natural segments of at most ten seconds, each with the numbers an
 // agent needs to choose a crop for `beeps sample prepare`. Pure: no files, no browser.
 import { mixToMono } from '../audio/mono.ts';
+import { SAMPLE_RATE } from '../hash.ts';
 import { clippedSamples, crestDb } from '../measure/envelope.ts';
 import { findEvents } from '../measure/events.ts';
 import { loudnessArc, momentaryMax, samplePeakDb, weightedPower } from '../measure/loudness.ts';
@@ -8,22 +9,22 @@ import { centroid, spectrum } from '../measure/spectral.ts';
 // Imported for one source of truth on the ten-second limit; this module does no I/O.
 import { PREPARED_MAX_FRAMES } from './store.ts';
 
-export const SR = 48000;
-/** One 10 ms analysis frame. */
-export const FRAME = 480;
+export const SR = SAMPLE_RATE;
+/** Samples in one 10 ms level-analysis window; not a sample frame like `startFrame`. */
+const LEVEL_FRAME = 480;
 const FLOOR_DB = -70;
 const LEAD_FRAMES = 2;      // 20 ms before the first loud frame, so an onset is not clipped
 const MIN_RUN_FRAMES = 5;   // under 50 ms of sound is a click
 const SPLIT_FROM = 6 * SR;  // a ten-second cut is made at the quietest frame 6 to 10 s into the piece
 
 export interface SegmentOptions { gapDb: number; minGapMs: number }
-/** Frames are 48 kHz sample indices into the analysed signal, end-exclusive. */
+/** A cut of the analysed signal: sample frames, end-exclusive. */
 export interface Cut { startFrame: number; endFrame: number; cutAt10s: boolean }
 
 function frameLevels(x: Float32Array): Float64Array {
-  const out = new Float64Array(Math.ceil(x.length / FRAME));
+  const out = new Float64Array(Math.ceil(x.length / LEVEL_FRAME));
   for (let f = 0; f < out.length; f++) {
-    const a = f * FRAME, b = Math.min(x.length, a + FRAME);
+    const a = f * LEVEL_FRAME, b = Math.min(x.length, a + LEVEL_FRAME);
     let e = 0;
     for (let i = a; i < b; i++) e += x[i] * x[i];
     out[f] = 10 * Math.log10(e / (b - a) + 1e-12);
@@ -35,16 +36,30 @@ function frameLevels(x: Float32Array): Float64Array {
 function splitLong(levels: Float64Array, start: number, end: number): Cut[] {
   const out: Cut[] = [];
   while (end - start > PREPARED_MAX_FRAMES) {
-    const lo = Math.ceil((start + SPLIT_FROM) / FRAME);
+    const lo = Math.ceil((start + SPLIT_FROM) / LEVEL_FRAME);
     // the window also stops MIN_RUN_FRAMES short of the end, so the remainder is never under 50 ms
-    const hi = Math.min(Math.floor((start + PREPARED_MAX_FRAMES) / FRAME), Math.floor((end - MIN_RUN_FRAMES * FRAME) / FRAME));
+    const hi = Math.min(Math.floor((start + PREPARED_MAX_FRAMES) / LEVEL_FRAME), Math.floor((end - MIN_RUN_FRAMES * LEVEL_FRAME) / LEVEL_FRAME));
     let at = lo;
     for (let f = lo + 1; f <= hi; f++) if (levels[f] < levels[at]) at = f;
-    out.push({ startFrame: start, endFrame: at * FRAME, cutAt10s: true });
-    start = at * FRAME;
+    out.push({ startFrame: start, endFrame: at * LEVEL_FRAME, cutAt10s: true });
+    start = at * LEVEL_FRAME;
   }
   out.push({ startFrame: start, endFrame: end, cutAt10s: false });
   return out;
+}
+
+/** A stretch of level frames `a` to `b` inclusive. */
+interface Run { a: number; b: number }
+
+/** Stretches of frames at or above `threshold`; a quiet gap of fewer than `minGap` frames does not end one. */
+function findRuns(levels: Float64Array, threshold: number, minGap: number): Run[] {
+  const runs: Run[] = [];
+  for (let f = 0; f < levels.length; f++) {
+    if (levels[f] < threshold) continue;
+    const last = runs[runs.length - 1];
+    if (last && f - last.b - 1 < minGap) last.b = f; else runs.push({ a: f, b: f });
+  }
+  return runs;
 }
 
 /**
@@ -57,22 +72,12 @@ export function segmentMono(x: Float32Array, { gapDb, minGapMs }: SegmentOptions
   for (const v of levels) if (v > top) top = v;
   if (!(top > FLOOR_DB)) return [];
   const threshold = Math.max(top - gapDb, FLOOR_DB), minGap = Math.max(1, Math.ceil(minGapMs / 10));
-  const raw: { a: number; b: number }[] = [];
-  for (let f = 0; f < levels.length; f++) {
-    if (levels[f] < threshold) continue;
-    const last = raw[raw.length - 1];
-    if (last && last.b === f - 1) last.b = f; else raw.push({ a: f, b: f });
-  }
-  const runs: { a: number; b: number }[] = [];
-  for (const r of raw) {
-    const last = runs[runs.length - 1];
-    if (last && r.a - last.b - 1 < minGap) last.b = r.b; else runs.push({ ...r });
-  }
+  const runs = findRuns(levels, threshold, minGap);
   const cuts: Cut[] = [];
   let previousEnd = 0;
   for (const r of runs) {
     if (r.b - r.a + 1 < MIN_RUN_FRAMES) continue;
-    const start = Math.max(previousEnd, (r.a - LEAD_FRAMES) * FRAME), end = Math.min(x.length, (r.b + 1) * FRAME);
+    const start = Math.max(previousEnd, (r.a - LEAD_FRAMES) * LEVEL_FRAME), end = Math.min(x.length, (r.b + 1) * LEVEL_FRAME);
     cuts.push(...splitLong(levels, start, end));
     previousEnd = end;
   }
