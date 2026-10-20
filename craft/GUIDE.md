@@ -190,14 +190,13 @@ says so. The how-to (instrument recipes, riff notation, per-level variation, pit
   gets its weight from a low minor or phrygian root, the flat second, flat sixth, flat seventh and the tritone, a chug that keeps
   going under held chords, a lead that holds long notes lower and darker, and accented sixteenth hats. If a section sounds light
   with the right notes, look at the harmony, melody shape, register and articulation before touching the tone.
-- **Some moods have no melody.** The art direction was a lawless combat-racing game in black, white and red (dark but high
-  energy, like driving for your life, surviving by shooting rivals off your tail), and a listener rejected the lead outright as
-  the wrong mood. A melody over a scored chorus reads as a keytar however it is voiced, and a wailing, siren-like sweep reads as
-  police, the wrong world for a lawless setting. The lead-less, siren-free tracks that followed were well received: the engine and
+- **Some moods have no melody.** The brief was a gritty, high-energy action game (dark but urgent), and a listener rejected the
+  lead outright as the wrong mood. A melody over a scored chorus reads as a keytar however it is voiced, and a wailing, siren-like sweep reads as
+  police, the wrong world for the setting. The lead-less, siren-free tracks that followed were well received: the engine and
   the guns are the music. Constant sixteenth-note chugs work as engine and machine-gun cadence, kick and snare land like gunfire,
   a kick, tom and chug war-drum stomp carries the heavy sections, and junkyard clanks, wind, a low pedal and one static held
   feedback note sit under the quiet parts.
-- **Contrast beats build.** For a black, white and red art direction the lift ends in two beats of silence in every part and the
+- **Contrast beats build.** For a stark, high-contrast brief the lift ends in two beats of silence in every part and the
   chorus lands on the downbeat with a crash; the look image shows a black gap. Atmosphere (wind, a low pedal, junkyard
   clanks, one static feedback note; not a siren) goes under the intro, breakdown and outro only, and needs much more gain than feels right (it measured 18 to 32 LU under the mix before it
   was audible). Stop it a bar or two before the loop point or `song-loop-seam` fires.
@@ -216,5 +215,5 @@ says so. The how-to (instrument recipes, riff notation, per-level variation, pit
   the key with each track's `transpose`, lifting the bass an octave whenever the shift would take it below E1.
 - **What the measurements could not say, and what listeners said.** The tools catch low-end share, seam, hierarchy and inaudible
   parts, not realism or mood. Listeners heard: the first draft (verse and lift good, the rest "too light, whimsical, plucky"); the
-  noir take (the siren "isn't working", the keytar solos the wrong mood); and five lead-less tracks written from the
+  stark take (the siren "isn't working", the keytar solos the wrong mood); and five lead-less tracks written from the
   brief above, which were well received. Nothing here shows what a guitar sounds like to anyone else.

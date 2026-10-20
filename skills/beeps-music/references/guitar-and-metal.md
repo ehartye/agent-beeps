@@ -1,6 +1,6 @@
 # Guitar-driven rock and metal
 
-A worked example: how a gritty combat-racing metal score can be built with beeps, in the order it was done. The reasoning is in
+A worked example: how a gritty action-game metal score can be built with beeps, in the order it was done. The reasoning is in
 `craft/GUIDE.md` section 11. Each part says what was measured and what only a listener can judge: measurements are not a listening verdict.
 
 ## 1. Build the instruments first, and measure them alone
@@ -65,12 +65,12 @@ correct (on the grid, in tune with the bass); the cause was what was written:
   repeat goes up an octave.
 - A smooth additive lead and sustained, stabby open chords in the chorus. Keep the palm-muted chug going under held chords.
 - Bright eighth-note hats. Use accented sixteenths and crash on the first bar of every two.
-- **The mood may want no melody at all.** For a lawless, gritty combat game the listener rejected the lead as the wrong mood. A
-  melody over a scored chorus reads as a keytar however it is voiced. The riff, the drums and the cut carry the section instead: constant sixteenth chugs (engine and machine-gun cadence), kick and
-  snare landing like gunfire, a kick, tom and chug war-drum stomp, a d-beat, junkyard clanks. Ask what the track is for before
+- **The mood may want no melody at all.** For a gritty, high-energy action game the listener rejected the lead as the wrong mood. A
+  melody over a scored chorus reads as a keytar however it is voiced. The riff, the drums and the cut carry the section instead:
+  constant sixteenth chugs (engine and machine-gun cadence), kick and snare landing like gunfire, a kick, tom and chug war-drum stomp, a d-beat, junkyard clanks. Ask what the track is for before
   adding a hook.
 
-## 6. Noir: contrast and atmosphere (black, white and red)
+## 6. Hard contrast and atmosphere
 
 - **Hard cuts.** The last two beats of the lift are silence in every part, and the chorus lands on the downbeat with a crash. The
   look image shows it as a black gap. A cut reads as more violent than any build.

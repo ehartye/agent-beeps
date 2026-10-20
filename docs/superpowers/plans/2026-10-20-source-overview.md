@@ -853,7 +853,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Spec update, full verification, wiki
+### Task 6: Spec update, full verification, knowledge base
 
 **Files:**
 - Modify: `docs/superpowers/specs/2026-10-20-source-overview-design.md`
@@ -878,9 +878,9 @@ git commit -m "docs: align the source overview spec with the build
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 4: Wiki (wiki-master)**
+- [ ] **Step 4: Knowledge base**
 
-Invoke the `wiki-master:wiki-author` skill. Add under `wiki/authored/agent-beeps/`: a design page for the source overview (summarise the spec, link `hybrid-audio-design`), and a backlog item recording the friction that led here (`look` is patch-only, `prepare` cannot suggest windows) with status shipped in 0.17.0 once merged, and the deferred follow-ups from the spec's Out of scope list (`prepare --auto`, ranking, sources over 120 s). Update the agent-beeps overview/architecture pages where they describe the sample workflow. Follow the skill's operation and commit rules.
+Record the design and roadmap in the project's knowledge base: a design page for the source overview (summarise the spec and link the hybrid-audio design), and a backlog item recording the friction that led here (`look` is patch-only, `prepare` cannot suggest windows) with status shipped in 0.17.0 once merged, plus the deferred follow-ups from the spec's Out of scope list (`prepare --auto`, ranking, sources over 120 s). Update the overview and architecture pages where they describe the sample workflow.
 
 - [ ] **Step 5: Hand back for shipping**
 
@@ -890,6 +890,6 @@ Do not push or open a PR without the user: report the commit list, test counts a
 
 ## Self-review
 
-- **Spec coverage:** command and options (T3); sources, 120 s and 64 MiB bounds (T3); view range (T2, T3); `--no-image` (T3); gap rules, merge, click drop, ten-second cuts, cap (T1, T2); output fields and flags (T2, T3); image and footer (T4); skills, capabilities, README, docs, version (T5); wiki (T6); out-of-scope items untouched. Gaps found and recorded: image folder, file `normalizedId`, exact frames, song-look test (header and T6).
+- **Spec coverage:** command and options (T3); sources, 120 s and 64 MiB bounds (T3); view range (T2, T3); `--no-image` (T3); gap rules, merge, click drop, ten-second cuts, cap (T1, T2); output fields and flags (T2, T3); image and footer (T4); skills, capabilities, README, docs, version (T5); knowledge base (T6); out-of-scope items untouched. Gaps found and recorded: image folder, file `normalizedId`, exact frames, song-look test (header and T6).
 - **Placeholders:** none; every code step has code. The two scratch-script steps (T4) are commands to run and judge by eye, with expected outcomes.
 - **Names:** `segmentMono`, `overviewAudio`, `overviewLook`, `sec`, `SR`, `runOverview`, `OverviewRequest`, `Cut`, `OverviewSegment`, `Overview` are used consistently across tasks; `Overview.peakDb` is defined in T2 and used in `overviewLook`; `MAX_ORIGINAL_BYTES` export added in T3 before use.

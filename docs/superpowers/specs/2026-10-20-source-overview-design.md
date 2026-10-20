@@ -36,9 +36,11 @@ Defaults: `--gap-db 40`, `--min-gap 200`. Ranges, all `E_SCHEMA`: `--gap-db` abo
 Deterministic, on a mono mix at 48 kHz in 10 ms RMS frames.
 
 1. A gap is a run of at least `--min-gap` ms whose frames sit at least `--gap-db` below the loudest
-   frame, with an absolute floor of -70 dBFS.
+   frame, with an absolute floor of -70 dBFS. A frame exactly at the threshold counts as sound,
+   not as a gap: only frames strictly below it are quiet.
 2. Segments are the stretches between gaps, extended 20 ms earlier so an onset is not clipped.
-   A segment under 50 ms is dropped as a click.
+   A segment is dropped as a click when its run of loud frames, measured before the 20 ms
+   lead-in is added, is under 50 ms.
 3. A segment over ten seconds is cut at its quietest frame between 6 s and 10 s from its start,
    repeatedly. Every piece except the last carries `cutAt10s`. A source with no gap at all comes out
    as ten second slices with a hint.
@@ -96,8 +98,8 @@ workaround.
   "a recording longer than ten seconds" in `when_to_use`.
 - `src/commands/capabilities.ts`: `sample overview` in the sample commands and a workflow note.
 - `README.md`, `docs/runtime-package.md`: mention it where the ten-second limit is described.
-- Wiki: a design page and a roadmap entry for the friction (`look` is patch-only, `prepare` cannot
-  suggest windows).
+- Knowledge base: record the design and roadmap in the project's knowledge base, including the friction
+  (`look` is patch-only, `prepare` cannot suggest windows).
 - Version 0.17.0, following the release pattern of the previous feature PRs.
 
 ## Tests
