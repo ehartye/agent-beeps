@@ -23,6 +23,35 @@ const study=JSON.parse(readFileSync(resolve(site,'media/touch-quality.json'),'ut
 const flux=JSON.parse(readFileSync(resolve(site,'media/flux-session.json'),'utf8'));
 const fluxQuality=JSON.parse(readFileSync(resolve(site,'media/flux-quality.json'),'utf8'));
 const fuse=checkFuseFiles(root,site);
+// Colony: the kit's own session, recipes and measurements, checked against the library it was rendered from.
+const colony=JSON.parse(readFileSync(resolve(site,'media/colony-session.json'),'utf8'));
+const colonyQuality=JSON.parse(readFileSync(resolve(site,'media/colony-quality.json'),'utf8'));
+const colonyProject=JSON.parse(readFileSync(resolve(root,'library/sounds/colony-sfx/project.json'),'utf8'));
+const readJson=path=>JSON.parse(readFileSync(path,'utf8'));
+assert.equal(colony.schema,'beeps/colony-kit@1');
+assert.ok(colony.scale&&colony.scale.root,'colony session carries the kit scale');
+assert.equal(colony.effects.length,9);assert.equal(colony.tracks.length,7);
+assert.equal(colony.tracks.filter(t=>t.kind==='bed').length,4);assert.equal(colony.tracks.filter(t=>t.kind==='song').length,3);
+for(const e of colony.effects){
+  assert.ok(parsePatch(e.patch).ok,`${e.id}: parsed colony patch`);
+  // The render publishes the schema-normalized patch (defaults filled in) under the renamed colony-<id> name.
+  const library=readJson(resolve(root,`library/sounds/colony-sfx/effects/${e.id}.json`));library.name=`colony-${e.id}`;
+  const parsed=parsePatch(library);assert.ok(parsed.ok,`${e.id}: library effect parses`);
+  const published=readJson(resolve(site,`recipes/colony-${e.id}.json`));
+  assert.deepEqual(published,parsed.patch,`${e.id}: library and downloadable Colony effect recipe agree (renamed)`);
+  assert.deepEqual(e.patch,published,`${e.id}: the live session patch is the downloadable recipe`);
+}
+for(const t of colony.tracks){
+  const file=t.kind==='bed'?`library/sounds/colony-sfx/environments/${t.id}.json`:`library/songs/colony-ambient/${t.id}.json`;
+  const published=readJson(resolve(site,`recipes/colony-${t.id}.json`));
+  songOrThrow(published,t.id);
+  assert.deepEqual(published,readJson(resolve(root,file)),`${t.id}: library and downloadable Colony ${t.kind} recipe agree`);
+  assert.ok(Number.isFinite(t.durationSec)&&t.durationSec>0,`${t.id}: finite duration`);
+  assert.ok(t.truePeakDb<=-1,`${t.id}: encoded true peak ceiling`);
+  assert.ok(Math.abs(t.loudnessLufs-colonyProject.musicLoudness)<=1,`${t.id}: within 1 LU of the kit music loudness`);
+}
+assert.equal(colonyQuality.effects.length,9);assert.equal(colonyQuality.tracks.length,7);
+for(const r of [...colonyQuality.effects,...colonyQuality.tracks])assert.deepEqual(r.lint.errors,[],`${r.id}: no colony lint errors`);
 assert.equal(flux.cases.length,3);assert.equal(fluxQuality.reports.length,6);
 for(const c of flux.cases){
   for(const take of Object.values(c.takes)){
@@ -44,6 +73,10 @@ for(const name of ['touch','touch-plain']){
   const response=await fetch(`${server.url}/agent-beeps/media/${name}.mp3`,{headers:{Range:'bytes=0-99'}});
   assert.equal(response.status,206);assert.equal((await response.arrayBuffer()).byteLength,100);
 }
+for(const t of colony.tracks){
+  const response=await fetch(`${server.url}/agent-beeps/media/colony-${t.id}.mp3`,{headers:{Range:'bytes=0-99'}});
+  assert.equal(response.status,206,`${t.id}: byte range`);assert.equal((await response.arrayBuffer()).byteLength,100);
+}
 const invalid=await fetch(`${server.url}/agent-beeps/media/matter.mp3`,{headers:{Range:'bytes=999999999-'}});
 assert.equal(invalid.status,416);
 const browser=await chromium.launch({headless:true});
@@ -57,6 +90,9 @@ try {
   await page.waitForFunction(()=>document.querySelectorAll('[data-flux-take]').length===6);
   assert.equal(await page.locator('[data-scene]').count(),9);
   assert.equal(await page.locator('#audio').evaluate(a=>a.paused),true,'no autoplay');
+  await page.waitForFunction(()=>document.querySelectorAll('#colony-pads .pad').length===9&&document.querySelectorAll('[data-colony-track]').length===7);
+  assert.equal(await page.locator('#colony-pads .pad').count(),9);assert.equal(await page.locator('[data-colony-track]').count(),7);
+  assert.equal(await page.locator('#colony-audio').evaluate(a=>a.paused&&!a.autoplay),true,'Colony does not autoplay');
   await page.locator('#matter-play').click();
   await page.waitForFunction(()=>document.querySelector('#audio').currentTime>.1);
   await page.getByRole('button',{name:'06 Iron',exact:true}).click();
@@ -161,5 +197,5 @@ try {
   await failed.goto(`${server.url}/agent-beeps/`);
   await failed.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));
   assert.equal(await failed.locator('#play').isDisabled(),true);
-  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','nine live Fuse cues, all recording/hybrid source negative controls, actual5/1 gun groups, cross-row cancellation, licensed originals and portable metal downloads','seek keyboard','all eight live pads','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals,fuseSignals},null,2));
+  console.log(JSON.stringify({passed:true,checks:['project subpath','desktop and mobile','transport','A/B take switching preserves position and pause','matched A/B loudness','six live Flux patches and differing finite offline signals','nine live Fuse cues, all recording/hybrid source negative controls, actual5/1 gun groups, cross-row cancellation, licensed originals and portable metal downloads','seek keyboard','all eight live pads','Colony kit data, recipes equal to the library, byte ranges, nine pads and seven tracks without autoplay','finite audible offline signals','stop','repeat','error state','no browser errors or missing assets'],signals,fluxSignals,fuseSignals},null,2));
 } finally {await browser.close();server.server.close();}

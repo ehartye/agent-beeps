@@ -6,7 +6,8 @@ An original 48-bar score at 128 BPM: 90 seconds of form plus the natural release
 (94.365 seconds delivered). Nine scenes connect glass, broken-beat electronics, a double-tracked
 mechanical riff and a formant choir. Thirteen parts use twelve instrument recipes and all eight
 engine source types. Six effect pads come from the approved sci-fi library; Subterranean adapts
-the creature-growl archetype and Titanium Rain is a new metal/grains patch.
+the creature-growl archetype and Titanium Rain is a new metal/grains patch. Further down the page,
+Touch, Flux, Fuse and Colony are shorter studies that share the same transport.
 
 The page reuses `runtime/audition/style.css` and `album.css` verbatim: the actual booth's palette,
 typography, pads, transport and loudness-strip design. Its public controller is separate from the
@@ -143,3 +144,29 @@ The study demonstrates timbre automation; it makes no physical-material or liste
 Engine capability version 3 requires rebuilding older audio locks/cues. The envelope module is
 included in the site's verified dependency manifest. Existing recipes without envelopes retain
 their previous synthesis behavior.
+
+## Colony: a worked example kit
+
+[Hear the kit](https://ehartye.github.io/agent-beeps/#colony). The page plays the bundled example kit in
+`library/sounds/colony-sfx/` and `library/songs/colony-ambient/`: nine effect pads and seven tracks
+(four ambience beds and three songs).
+
+- **Effects** are synthesized live in the browser from the library recipes, exactly as the sound bench
+  does. No effect audio files are published. Each card links its patch, published as
+  `recipes/colony-<name>.json` (the render renames the patch so recipe names stay unique; the library
+  files are not modified). A strike ducks the playing track and returns it afterwards.
+- **Tracks** are rendered MP3s (`media/colony-<name>.mp3`, about 5 MB in total) played through the
+  shared transport, so Play, Pause, Stop, Escape, volume and the spectrum monitor work as for Matter,
+  and starting a track stops any other music. The meter reads `COLONY / BED` or `COLONY / SONG`.
+  Choosing a track plays it from the start; a repeat is a replay, not a seamless-loop claim.
+- **Settings:** the kit renders against its own project (`library/sounds/colony-sfx/project.json`: its
+  scale and its effect and music loudness targets), not `showcase/project.json`. The session file
+  `media/colony-session.json` carries that scale and the page passes it to the live patches.
+
+`scripts/render-colony.mjs` runs inside `showcase:render`. It rejects lint errors and any delivered
+true peak above −1 dBTP; measurements and looks are in `media/colony-quality.json` and
+`media/colony-*.png`. The manifest hashes the kit's library inputs, so editing anything under
+`library/sounds/colony-sfx/` or `library/songs/colony-ambient/` fails the build until you run
+`npm run showcase:render`. The website tests check the nine patches, that each published recipe equals its
+library file, durations, peaks, loudness against the kit target, byte ranges and the transport cases. As
+with the other studies, these are signal and structure checks, not a claim of listening approval.

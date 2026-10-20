@@ -28,7 +28,7 @@ export async function testTransport(browser, server) {
   const waitTitle=text=>page.waitForFunction(text=>document.querySelector('#np-title').textContent.includes(text),text);
   try {
     await page.goto(`${server.url}/agent-beeps/`);
-    await page.waitForFunction(()=>document.querySelectorAll('[data-fuse-take]').length===9);
+    await page.waitForFunction(()=>document.querySelectorAll('[data-fuse-take]').length===9&&document.querySelectorAll('[data-colony-track]').length===7);
     assert.equal(await page.locator('.transport #scope').count(),1,'the actual output spectrum belongs to the sticky transport');
     assert.equal(await page.locator('canvas').count(),1);
     assert.equal(await page.locator('.session #np-strip').count(),1,'Matter seek stays with its scenes');
@@ -39,22 +39,26 @@ export async function testTransport(browser, server) {
       ['[data-pad="0"] .face','Sound bench / Crystal switch','Sound bench / Energy shard'],
       ['[data-flux-case="alloy"] [data-flux-take="static"]','Flux / Alloy / A · Static','Flux / Alloy / B · Envelope'],
       ['[data-fuse-take="hybrid"]','Fuse / Fused strike','Fuse / Tommy recording'],
+      ['[data-colony-effect="till"]','Colony effects / Soil and steel','Colony effects / A seed tucked in'],
+      ['[data-colony-track="glasshouse"]','Colony music / Glasshouse','Colony music / Canopy'],
     ];
     for(const [selector,first,next]of collections){
       await click(selector);await waitTitle(first);
-      const section=first.split(' / ')[0],unit=section==='Matter'?'scene':section==='Sound bench'?'pad':'take';
+      const section=first.split(' / ')[0],unit=section==='Matter'?'scene':section==='Sound bench'||section==='Colony effects'?'pad':section==='Colony music'?'track':'take';
       assert.equal(await page.locator('#next').getAttribute('aria-label'),`Next ${section} ${unit}`);
       await click('#next');await waitTitle(next);
       await click('#prev');await waitTitle(first);
       await click('#stop');
     }
     const inventory=await page.evaluate(async()=>{
-      const [matter,flux,fuse]=await Promise.all(['session','flux-session','fuse-session'].map(async name=>(await fetch(`./media/${name}.json`)).json()));
+      const [matter,flux,fuse,colony]=await Promise.all(['session','flux-session','fuse-session','colony-session'].map(async name=>(await fetch(`./media/${name}.json`)).json()));
       return [
         ['#matter-play',matter.sections.map(s=>`Matter / ${s.name[0].toUpperCase()+s.name.slice(1)}`)],
         ['[data-pad="0"] .face',matter.pads.map(p=>`Sound bench / ${p.title}`)],
         ['[data-flux-case="alloy"] [data-flux-take="static"]',flux.cases.flatMap(c=>['A · Static','B · Envelope'].map(t=>`Flux / ${c.title} / ${t}`))],
         ['[data-fuse-take="recording"]',fuse.cases.flatMap(c=>c.takes.map(t=>`Fuse / ${t.title}`))],
+        ['[data-colony-effect="till"]',colony.effects.map(e=>`Colony effects / ${e.title}`)],
+        ['[data-colony-track="glasshouse"]',colony.tracks.map(t=>`Colony music / ${t.title}`)],
       ];
     });
     for(const [selector,titles]of inventory){
