@@ -35,6 +35,9 @@ function heat(t) {
 const fmt = (/** @type {number} */ x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '–');
 const mmss = (/** @type {number} */ s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
+/** One section in a look's text list: `name lufs/centroidHz`. Shared by song looks and source overviews. @param {Record<string, any>} s */
+const sectionItem = s => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`;
+
 /**
  * The footer text of a source overview (features carry `source`): the summary line, then the section list on up to two lines,
  * then a marker with the true count when the list was cut. Song looks never call this.
@@ -47,7 +50,7 @@ export function sourceFooter(f, dur) {
   const sectionLines = [''];
   let fitted = 0;
   for (const s of sections) {
-    const item = `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`, last = sectionLines.length - 1;
+    const item = sectionItem(s), last = sectionLines.length - 1;
     if (sectionLines[last] === '') sectionLines[last] = item;
     else if (sectionLines[last].length + 2 + item.length <= 190) sectionLines[last] += `  ${item}`;
     else if (last === 0) sectionLines.push(item);
@@ -289,7 +292,7 @@ export function renderSongLook(channels, f, label) {
     foot.sectionLines.forEach((/** @type {string} */ t, /** @type {number} */ i) => g.fillText(t, 8, ty + 58 + 16 * i));
   } else {
     g.fillText(`${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
-    const secs = (f.sections ?? []).map((/** @type {any} */ s) => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`).join('  ');
+    const secs = (f.sections ?? []).map(sectionItem).join('  ');
     g.fillText(secs.slice(0, 190), 8, ty + 58);
     if (secs.length > 190) g.fillText(secs.slice(190, 380), 8, ty + 74);
   }
