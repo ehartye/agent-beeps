@@ -231,6 +231,24 @@ describe('overviewAudio', () => {
     expect(overviewLook(o).source.peakDb).toBeNull();
   });
 
+  it('says "1 quieter segment omitted" in the singular', () => {
+    const o = overviewAudio([train(65, () => 0.3)], DEFAULTS);
+    expect(o.omitted).toBe(1);
+    expect(o.hints.join(' ')).toMatch(/^1 quieter segment omitted/);
+  });
+
+  it('explains that anti-phase stereo cancels in the mono mix it measures', () => {
+    const left = layout(3, [[1, sine(440, 0.5)]]), right = left.map(v => -v);
+    const o = overviewAudio([left, right], DEFAULTS);
+    expect(o.segments).toEqual([]);
+    expect(o.hints.join(' ')).toMatch(/-70 dBFS in the view \(measured on the mono mix\)/);
+  });
+
+  it('refuses a source with no channels', () => {
+    expect(() => overviewAudio([], DEFAULTS)).toThrow(RangeError);
+    expect(() => overviewAudio([], DEFAULTS)).toThrow('overview needs at least one channel');
+  });
+
   it('measures stereo sources without throwing', () => {
     const x = layout(3, [[1, sine(440, 0.5)]]);
     expect(overviewAudio([x, x], DEFAULTS).segments).toHaveLength(1);

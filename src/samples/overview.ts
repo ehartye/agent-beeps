@@ -121,11 +121,12 @@ export type OverviewOptions = SegmentOptions & { startFrame?: number; endFrame?:
 
 /** Segment the view `[startFrame, endFrame)` of a source and measure each segment. Frames in the result are source frames. */
 export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): Overview {
-  const total = channels[0]?.length ?? 0, v0 = opts.startFrame ?? 0, v1 = opts.endFrame ?? total;
+  if (!channels.length) throw new RangeError('overview needs at least one channel');
+  const v0 = opts.startFrame ?? 0, v1 = opts.endFrame ?? channels[0].length;
   const view = channels.map(c => c.subarray(v0, v1)), x = mixToMono(view);
   let cuts = segmentMono(x, opts);
   const hints: string[] = [];
-  if (!cuts.length) hints.push('no sound above -70 dBFS in the view');
+  if (!cuts.length) hints.push('no sound above -70 dBFS in the view (measured on the mono mix)');
   else if (cuts.length > 1 && cuts.slice(0, -1).every(c => c.cutAt10s)) {
     hints.push(`no gap of ${opts.minGapMs} ms or more, ${opts.gapDb} dB under the loudest frame, splits this sound: the segments are ten-second cuts of one continuous sound; lower --gap-db or --min-gap to look for gaps`);
   }
@@ -135,7 +136,7 @@ export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): 
     const keep = cuts.map((_, i) => i).sort((a, b) => peaks[b] - peaks[a] || a - b).slice(0, MAX_SEGMENTS).sort((a, b) => a - b);
     omitted = cuts.length - MAX_SEGMENTS;
     cuts = keep.map(i => cuts[i]);
-    hints.push(`${omitted} quieter segments omitted: raise --min-gap to merge neighbours, or use --start and --end to look closer`);
+    hints.push(`${omitted} quieter segment${omitted === 1 ? '' : 's'} omitted: raise --min-gap to merge neighbours, or use --start and --end to look closer`);
   }
   const segments = cuts.map((c, i): OverviewSegment => {
     const parts = view.map(ch => ch.subarray(c.startFrame, c.endFrame)), m = x.subarray(c.startFrame, c.endFrame);
