@@ -18,8 +18,8 @@ Two measured facts shape the design:
     or more layers, or a `metal`, unison, `additive`, `modal` or multi-modulator `fm` source, or both reverb and
     delay, differed in 0 to 8 samples per render, all by one 16-bit step. Engine 2 sums every such point through
     a fixed chain of two-input gains (`runtime/engine/sum.js`).
-  - *Songs were still not reproducible (song pipeline 6, 0.10.0).* Measured on Fallow Valley's `mus-desert`
-    rendered 8 times with one input hash: the full mix came out in 5 distinct versions, differing by up to 0.08 of
+  - *Songs were still not reproducible (song pipeline 6, 0.10.0).* Measured on one game's ambient
+    song rendered 8 times with one input hash: the full mix came out in 5 distinct versions, differing by up to 0.08 of
     full scale over up to two seconds, not by a rounding step. Songs are built while the offline context is
     suspended every 2 s, so the page allocates while it renders, and the garbage collector ran at moments that
     changed from run to run. Chromium disposes a node whose JS wrapper has been collected and drops its output
@@ -164,7 +164,7 @@ block (about 25 lines) plus the catalog.
   },
   "delivery": {
     "container": "ogg",
-    "encoder": { "ffmpeg": "6.1.1-essentials_build-www.gyan.dev", "flags": "-map_metadata -1 -c:a libopus -vbr on -application audio -ar 48000 -fflags +bitexact -flags:a +bitexact", "libavcodec": "libavcodec60.31.102" },
+    "encoder": { "ffmpeg": "6.1.1", "flags": "-map_metadata -1 -c:a libopus -vbr on -application audio -ar 48000 -fflags +bitexact -flags:a +bitexact", "libavcodec": "libavcodec60.31.102" },
     "format": "opus",
     "kbps": { "ambience": 48, "mix": 24, "music": 44, "sfx": 72 },
     "preset": "web-universal"

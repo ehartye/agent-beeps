@@ -1,9 +1,9 @@
 {
   "schema": "beeps/patch@1",
-  "name": "stg-door",
+  "name": "col-door",
   "family": "foley",
   "tags": [
-    "space-to-grow",
+    "colony",
     "repeating"
   ],
   "duration": 0.4,
@@ -116,6 +116,6 @@
   "meta": {
     "priority": 3,
     "intent": "oneshot",
-    "description": "Habitat door. A rounded latch and short air seal, ending in a cushioned closing catch; neither a heavy slam nor a UI beep."
+    "description": "Interior door. A rounded latch and short air seal, ending in a cushioned closing catch; neither a heavy slam nor a UI beep."
   }
 }

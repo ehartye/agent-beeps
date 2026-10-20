@@ -39,6 +39,12 @@ describe('beeps CLI', () => {
     expect(r.out.commands.map((c: { name: string }) => c.name)).toContain('render');
   });
 
+  it('lists sample overview in the capabilities', () => {
+    const r = beeps(tmpdir(), 'capabilities');
+    expect(r.status).toBe(0);
+    expect(r.out.samples.commands).toContain('sample overview');
+  });
+
   it('rejects q on a lowpass with a pointer and hint on stderr and exit 1', () => {
     const dir = project();
     const bad: any = coin();

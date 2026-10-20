@@ -33,6 +33,34 @@ function heat(t) {
 }
 
 const fmt = (/** @type {number} */ x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '–');
+const mmss = (/** @type {number} */ s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+/** One section in a look's text list: `name lufs/centroidHz`. Shared by song looks and source overviews. @param {Record<string, any>} s */
+const sectionItem = s => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`;
+
+/**
+ * The footer text of a source overview (features carry `source`): the summary line, then the section list on up to two lines,
+ * then a marker with the true count when the list was cut. Song looks never call this.
+ * @param {Record<string, any>} f @param {number} dur seconds shown
+ */
+export function sourceFooter(f, dur) {
+  const sections = f.sections ?? [], n = sections.length;
+  const line = `${mmss(dur)}  source ${fmt(f.source.startSec, 1)}-${fmt(f.source.endSec, 1)} s  peak ${fmt(f.source.peakDb)} dBFS  ${n} ${n === 1 ? 'segment' : 'segments'}`;
+  // Whole items only, wrapped into at most two lines of 190 characters; a marker says so when some did not fit.
+  const sectionLines = [''];
+  let fitted = 0;
+  for (const s of sections) {
+    const item = sectionItem(s), last = sectionLines.length - 1;
+    if (sectionLines[last] === '') sectionLines[last] = item;
+    else if (sectionLines[last].length + 2 + item.length <= 190) sectionLines[last] += `  ${item}`;
+    else if (last === 0) sectionLines.push(item);
+    else break;
+    fitted++;
+  }
+  if (sectionLines[0] === '') sectionLines.length = 0;
+  if (fitted < n) sectionLines.push(`... ${n} segments in all, see the JSON`);
+  return { line, sectionLines };
+}
 
 /**
  * @param {CanvasRenderingContext2D} g
@@ -255,13 +283,18 @@ export function renderSongLook(channels, f, label) {
 
   // Numbers
   const ty = specY + SSPEC_H;
-  const mmss = (/** @type {number} */ s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   g.fillStyle = '#e8e8f0'; g.font = 'bold 14px sans-serif';
   g.fillText(label, 8, ty + 20);
   g.font = '12px monospace';
-  g.fillText(`${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
-  const secs = (f.sections ?? []).map((/** @type {any} */ s) => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`).join('  ');
-  g.fillText(secs.slice(0, 190), 8, ty + 58);
-  if (secs.length > 190) g.fillText(secs.slice(190, 380), 8, ty + 74);
+  if (f.source) {
+    const foot = sourceFooter(f, dur);
+    g.fillText(foot.line, 8, ty + 40);
+    foot.sectionLines.forEach((/** @type {string} */ t, /** @type {number} */ i) => g.fillText(t, 8, ty + 58 + 16 * i));
+  } else {
+    g.fillText(`${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
+    const secs = (f.sections ?? []).map(sectionItem).join('  ');
+    g.fillText(secs.slice(0, 190), 8, ty + 58);
+    if (secs.length > 190) g.fillText(secs.slice(190, 380), 8, ty + 74);
+  }
   return c.toDataURL('image/png');
 }

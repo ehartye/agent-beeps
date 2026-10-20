@@ -6,7 +6,7 @@ This is sub-project 1 of the delivery work that v1 deferred. The v1 spec (`2026-
 
 ## Why
 
-Games use agent-beeps output as rendered files. Space to Grow's `src/audio.mjs` in room2grow is 83 lines, and it had to hand-build all of the following:
+Games use agent-beeps output as rendered files. One game's `src/audio.mjs` was 83 lines, and it had to hand-build all of the following:
 
 - a voice budget
 - retrigger cooldowns
@@ -17,9 +17,9 @@ Games use agent-beeps output as rendered files. Space to Grow's `src/audio.mjs` 
 
 Every future game would rebuild the same thing.
 
-Space to Grow also used a `DynamicsCompressor` as its limiter. In the v1 measurements, that node shifted level by 1 to 3 dB even when the signal was 40 dB below its threshold.
+That game also used a `DynamicsCompressor` as its limiter. In the v1 measurements, that node shifted level by 1 to 3 dB even when the signal was 40 dB below its threshold.
 
-Most of the owner's games run in the browser (Phaser, React/Vite, three.js), so a Web Audio runtime covers them. The one Unity project keeps using file exports and their manifests.
+Most games run in the browser (Phaser, React/Vite, three.js), so a Web Audio runtime covers them. A Unity project keeps using file exports and their manifests.
 
 ## How the delivery spec splits up
 
@@ -49,7 +49,7 @@ This is a single browser-only ES module. Its only imports are two engine files: 
 const player = createPlayer({ catalog: '/audio/index.json', voices: 8, onError })
 await player.unlock()                        // on a user gesture; queued music/ambience starts here
 player.play('coin', { pan, gainDb })         // -> handle | null (dropped by the voice manager)
-player.music('sproutpost', { fadeSec: 2 })   // crossfade on the music bus; a null id fades out
+player.music('level-theme', { fadeSec: 2 })   // crossfade on the music bus; a null id fades out
 player.ambience('garden', { fadeSec: 2 })
 player.setState('danger', { fadeSec: 1.5, at: 'now' | 'bar' })
 player.setLevel('music' | 'ambience' | 'sfx' | 'master', 0..1)
@@ -177,7 +177,7 @@ The runtime never throws into the game loop. Every problem is reported through `
 
 **Offline null test:** render an adaptive song's layers, sum them, and compare the sum with the full mix. The difference must stay below -60 dB relative to the mix. This proves that layering does not alter the approved mix. It also catches the case where the clipper engaged on the full mix but not on the separate layers.
 
-**Acceptance:** a room2grow PR replaces Space to Grow's `audio.mjs` with the vendored player. It passes when:
+**Acceptance:** a PR to the consuming game replaces its hand-built `audio.mjs` with the vendored player. It passes when:
 
 - the settings behave as before: Off, Soft, Medium or Full per bus, off by default
 - the scenes and the 2-second transitions are unchanged

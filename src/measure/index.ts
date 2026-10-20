@@ -1,3 +1,4 @@
+import { mixToMono } from '../audio/mono.ts';
 import { integrated, momentaryMax, samplePeakDb, shortTermMax, truePeakDb } from './loudness.ts';
 import { attackTime, clippedSamples, crestDb, dcOffset, energyLength, tailLength } from './envelope.ts';
 import { centroid, flatness, logBands, peakCentroid, spectrum } from './spectral.ts';
@@ -18,19 +19,12 @@ export interface Features {
   delivered: { samplePeakDb: number; truePeakDb: number; momentaryMaxLufs: number; clippedSamples: number; peakLimited?: boolean };
 }
 
-const mono = (channels: Float32Array[]): Float32Array => {
-  if (channels.length === 1) return channels[0];
-  const out = new Float32Array(channels[0].length);
-  for (const ch of channels) for (let i = 0; i < out.length; i++) out[i] += ch[i] / channels.length;
-  return out;
-};
-
 const r = (x: number, digits = 4) => (Number.isFinite(x) ? Math.round(x * 10 ** digits) / 10 ** digits : x);
 
 /** Every feature is measured on the authored (pre-trim, pre-limiter) tap; peaks are also reported delivered. */
 export function measure(pcm: PcmTaps): Features {
   const sr = pcm.sampleRate;
-  const x = mono(pcm.authored);
+  const x = mixToMono(pcm.authored);
   const spec = spectrum(x, sr);
   const pitch = pitchTrack(x, sr);
   const int = integrated(pcm.authored, sr);

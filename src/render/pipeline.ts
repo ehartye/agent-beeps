@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderKey } from '../hash.ts';
+import { mixToMono } from '../audio/mono.ts';
 import { writeWav } from '../audio/wav.ts';
 import { measure, type Features } from '../measure/index.ts';
 import type { Patch } from '../schema/patch.ts';
@@ -129,8 +130,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
     mkdirSync(k.dir, { recursive: true });
     writeFileSync(join(k.dir, 'delivered.wav'), writeWav(r.delivered, r.sampleRate));
     writeFileSync(join(k.dir, 'patch.json'), JSON.stringify(k.patch, null, 2));
-    const mono = new Float32Array(r.authored[0].length);
-    for (const ch of r.authored) for (let s = 0; s < mono.length; s++) mono[s] += ch[s] / r.authored.length;
+    const mono = mixToMono(r.authored);
     looks.push({ i, mono, f });
     out[i] = { ok: true, key: k.key, patch: k.patch, seed: k.seed, variant: k.variant, trimDb: trims[j], features: f, dir: k.dir, wavPath: join(k.dir, 'delivered.wav'), lookPath: join(k.dir, 'look.png') };
   });
@@ -151,8 +151,7 @@ export async function contactSheet(host: RenderHost, rendered: Rendered[], label
   const { readWav } = await import('../audio/wav.ts');
   const items = rendered.map((r, n) => {
     const { channels, sampleRate } = readWav(readFileSync(r.wavPath));
-    const mono = new Float32Array(channels[0].length);
-    for (const ch of channels) for (let s = 0; s < mono.length; s++) mono[s] += ch[s] / channels.length;
+    const mono = mixToMono(channels);
     return { mono, sampleRate, features: r.features, label: labels[n] };
   });
   const [png] = await host.looks(items, true);

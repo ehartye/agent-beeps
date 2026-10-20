@@ -1,9 +1,9 @@
 {
   "schema": "beeps/patch@1",
-  "name": "stg-discovery",
+  "name": "col-discovery",
   "family": "confirm",
   "tags": [
-    "space-to-grow"
+    "colony"
   ],
   "duration": 0.96,
   "layers": [
@@ -156,7 +156,7 @@
   "meta": {
     "priority": 2,
     "intent": "oneshot",
-    "description": "Something new in the Almanac. Four soft glass notes unfold upward, with a low warm anchor. Reserve for first discoveries."
+    "description": "A new find. Four soft glass notes unfold upward, with a low warm anchor. Reserve for first discoveries."
   },
   "fx": {
     "reverb": {

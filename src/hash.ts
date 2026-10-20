@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { ENGINE_VERSION } from '../runtime/engine/version.js';
 
-export const SAMPLE_RATE = 48000;
+export const SAMPLE_RATE = 48000 as const;
 
 /** JSON with object keys sorted at every level, so equal patches hash equally. */
 export function canonicalJson(value: unknown): string {

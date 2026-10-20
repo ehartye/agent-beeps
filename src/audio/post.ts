@@ -28,7 +28,7 @@ export function writePcm16({ sampleRate, channels }: Pcm16): Buffer {
 }
 
 /**
- * One channel. Identical channels (every patch without pan, and every one Sector Run exported) keep the left samples
+ * One channel. Identical channels (every patch without pan, and every one a typical game kit exports) keep the left samples
  * exactly, so loudness and peak are unchanged; channels that differ are averaged, which can lower the level.
  */
 export function toMono(wav: Buffer): { wav: Buffer; identical: boolean } {

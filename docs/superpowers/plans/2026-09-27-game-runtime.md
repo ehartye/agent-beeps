@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use h-superpowers:subagent-driven-development, h-superpowers:team-driven-development, or h-superpowers:executing-plans to implement this plan (ask user which approach). Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a vendored, dependency-free Web Audio player that games use to play exported agent-beeps audio. The player adds voice management, mix protection, crossfades and adaptive vertical layers. Space to Grow is then migrated onto it.
+**Goal:** Ship a vendored, dependency-free Web Audio player that games use to play exported agent-beeps audio. The player adds voice management, mix protection, crossfades and adaptive vertical layers. A consuming game is then migrated onto it as the acceptance test.
 
 **Architecture:**
 - **Pure logic in small modules.** These live in `runtime/player/` and are unit-tested with vitest and the existing `FakeContext`: the voice manager, bar timing and the lifecycle queue.
@@ -19,7 +19,7 @@
 1. **The player is vendored as a directory, not a single inlined file.** `beeps player export <dir>` writes `<dir>/beeps-player/{player,engine}/*.js` and keeps the runtime's relative imports. That needs no bundler and has no risk of name collisions. The header and `VERSION.json` still record the versions.
 2. **`song export --layers` is a flag, not `--layers <dir>`.** Layer WAVs are written next to `--wav` as `<stem>.<layer>.wav`, so the sidecar can name them relative to itself.
 3. **Stems and layers render the full song with an `only` track filter.** This was revised during Task 6. Every note, chance roll and noise seed then matches the mix, full-render output and cache keys stay unchanged, and `ENGINE_VERSION` stays 1. The plan's first approach used `soloSong`, which removes plays. That changed the shared random stream: `?` hits, random arps and noise seeds came out differently, and layers nulled at only -23 dB. `song render --only` uses the same filter, with its own solo trim and `loop: false`.
-4. **The player's catalog keys are the asset ids.** It accepts any `{ assets: { <key>: <sidecar> } }`: both `beeps/audio-bundle@1` and the hand-built manifests games already have. Space to Grow keys its assets by game ids such as `music-garden`, which differ from the sidecar ids.
+4. **The player's catalog keys are the asset ids.** It accepts any `{ assets: { <key>: <sidecar> } }`: both `beeps/audio-bundle@1` and the hand-built manifests games already have. A consuming game may key its assets by its own ids such as `music-a`, which differ from the sidecar ids.
 5. **The per-sound instance cap replaces the sound's own oldest instance.** It does not drop the new request. A repeated sound, such as footsteps, keeps sounding current.
 
 **Conventions:**
@@ -49,7 +49,7 @@
 | `tests/helpers/fake-context.ts` (modify) | `decodeAudioData`, `resume`/`suspend`/`state`, `disconnect` |
 | `tests/player/*.test.ts` (create) | the tests below |
 | `skills/beeps-music/SKILL.md`, `skills/beeps-music/references/song-format.md`, `skills/beeps-compose/SKILL.md`, `README.md` (modify) | docs |
-| room2grow `src/audio.mjs`, `tests/audio.test.mjs`, `scripts/build.mjs`, `src/vendor/beeps-player/**` | migration (Task 13) |
+| game `src/audio.mjs`, `tests/audio.test.mjs`, `scripts/build.mjs`, `src/vendor/beeps-player/**` | migration (Task 13) |
 
 ---
 
@@ -2020,19 +2020,19 @@ git commit -m "docs: game player, variants, bundles and adaptive layers"
 
 ---
 
-### Task 14: Migrate Space to Grow onto the player (acceptance)
+### Task 14: Migrate a consuming game onto the player (acceptance)
 
-This happens in a **separate repository**, `C:/Users/ehart/repos/room2grow`. Create a feature branch there first.
+This happens in a **separate repository**, the consuming game's (`<game-repo>`). Create a feature branch there first.
 
-**Files (room2grow):**
+**Files (the game repo):**
 - Create: `src/vendor/beeps-player/**` (generated)
 - Modify: `src/audio.mjs`, `tests/audio.test.mjs` (the harness only), `scripts/build.mjs`
 
 - [ ] **Step 1: Vendor the player**
 
 ```bash
-cd C:/Users/ehart/repos/room2grow && git switch -c feat/beeps-player
-node C:/Users/ehart/repos/agent-beeps/scripts/beeps.mjs player export src/vendor
+cd <game-repo> && git switch -c feat/beeps-player
+node <repo>/scripts/beeps.mjs player export src/vendor
 ```
 
 Expected: `src/vendor/beeps-player/player/player.js` exists.
@@ -2146,7 +2146,7 @@ State this in the PR: the master now uses agent-beeps' safety clipper instead of
   - Runtime layers and bar quantization: Tasks 9 and 10.
   - Errors: Task 10 (unknown asset or state, failed load with one retry, pre-unlock rules, stale tokens).
   - Browser test: Task 12.
-  - Space to Grow acceptance: Task 14.
+  - Consuming-game acceptance: Task 14.
   - Out-of-scope items stay out.
 - **Names used across tasks:**
   - `createVoiceManager().request/release/has/clear/size`

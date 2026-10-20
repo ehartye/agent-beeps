@@ -23,7 +23,7 @@ npm run showcase:build
 npm run showcase:serve
 ```
 
-Open `http://localhost:47320` (or this machine's hostname on the LAN). The preview server supports
+Open `http://localhost:47320` (or the host's name on the LAN). The preview server supports
 MP3 byte ranges; the renderer's minimal static server doesn't. `PORT` overrides 47320.
 
 The `.github/workflows/pages.yml` workflow validates a project-path build in Chromium on pull

@@ -7,6 +7,7 @@ import { openProject, parseOrThrow, readJsonFile, savePatch } from '../project.t
 import { importSample, parseSamplePrep, parseSamplePreparedReceipt, prepareSample, prepareSampleWav } from '../samples/prepare.ts';
 import { readSampleObject, samplePaths, SOURCE_MAX_FRAMES } from '../samples/store.ts';
 import { bundleSamples, syncSampleBundle } from '../samples/bundle.ts';
+import { runOverview } from '../samples/overview-run.ts';
 
 interface PrepareOptions { recipe?: string; start?: string; end?: string; fadeIn?: string; fadeOut?: string; gain?: string; name?: string; family?: string; force?: boolean }
 const number = (text: string, label: string) => {
@@ -69,6 +70,20 @@ export function registerSampleCommands(program: Command, io: Io): void {
       if (patch) preflightNamedPatch(p.paths.dir, p.paths.patches, patch.name, !!options.force);
       const result = prepareSample(p, preview.receipt);
       io.emit({ ...result, ...(patch ? { patch: { name: patch.name, saved: savePatch(p, patch, { force: !!options.force }) } } : {}) });
+    });
+  sample.command('overview <source>').description('image a recording of up to 120 s and list its natural segments (each at most ten seconds, with numbers and a ready prepare command); <source> is a sha256 sample ID or an audio file')
+    .option('--start <seconds>', 'view range start (default 0)').option('--end <seconds>', 'view range end (default the whole source)')
+    .option('--out <png>', 'image path (default .agent-beeps/renders/overviews/<key>.png; required outside a project)')
+    .option('--gap-db <dB>', 'a gap is this far under the loudest frame (default 40)').option('--min-gap <ms>', 'shortest gap that splits segments (default 200)')
+    .option('--no-image', 'JSON only: skip the browser')
+    .action(async (source: string, options: { start?: string; end?: string; out?: string; gapDb?: string; minGap?: string; image: boolean }) => {
+      io.emit(await runOverview({
+        source, projectDir: io.projectDir(), image: options.image, out: options.out,
+        startSec: options.start === undefined ? undefined : number(options.start, '--start'),
+        endSec: options.end === undefined ? undefined : number(options.end, '--end'),
+        gapDb: options.gapDb === undefined ? 40 : number(options.gapDb, '--gap-db'),
+        minGapMs: options.minGap === undefined ? 200 : number(options.minGap, '--min-gap'),
+      }));
     });
   sample.command('bundle <refs...>').description('publish a portable source bundle; default includes only prepared dependencies')
     .requiredOption('--out <directory>', 'fresh output directory (an identical existing bundle is allowed)')

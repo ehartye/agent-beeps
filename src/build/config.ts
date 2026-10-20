@@ -118,7 +118,7 @@ export interface Delivery {
 }
 
 /**
- * Delivery presets. `web-universal`: Ogg Opus at per-role bitrates (the values Fallow Valley ships: music 44, ambience 48, sfx 72, mix 24
+ * Delivery presets. `web-universal`: Ogg Opus at per-role bitrates (the values a shipped game uses: music 44, ambience 48, sfx 72, mix 24
  * kbps; mix is the preview file of an adaptive song, which the player does not load). `web-mp3`: the gapless MP3 fallback.
  * `wav-master`: the exported WAVs themselves.
  */

@@ -556,20 +556,20 @@ describe.skipIf(!hasChromium)('baked delivery identities', () => {
   it('builds a song delivery ID while preserving authored metadata, aligned layers and raw cache', async () => {
     const fx = cloneFixture(base);
     try {
-      fx.write('recipes.json', { ...normalRecipes, 'music-garden': themeRecipe });
+      fx.write('recipes.json', { ...normalRecipes, 'music-a': themeRecipe });
       const cfg = fx.cfg(), p = openBuildProject(cfg), source = readFileSync(fx.path('songs/theme.json')), cached = snapshot(p.paths.renders);
       // Current causal RED: buildOne rejects the real rendered song's authored id "theme".
-      expect((await runBuild(cfg)).built).toEqual(['music-garden']);
-      const side = fx.read('public/audio/music-garden.wav.json'), authored = fx.read('direct/theme/theme.wav.json');
-      const layers = authored.layers.map((layer: { name: string; file: string }) => ({ ...layer, file: layer.file.replace(/^theme/, 'music-garden') }));
-      expect(side).toEqual({ ...authored, id: 'music-garden', file: 'music-garden.wav', layers });
-      for (const file of [authored.file, ...authored.layers.map((layer: { file: string }) => layer.file)]) expect(readFileSync(fx.path(`public/audio/${file.replace(/^theme/, 'music-garden')}`))).toEqual(readFileSync(fx.path(`direct/theme/${file}`)));
+      expect((await runBuild(cfg)).built).toEqual(['music-a']);
+      const side = fx.read('public/audio/music-a.wav.json'), authored = fx.read('direct/theme/theme.wav.json');
+      const layers = authored.layers.map((layer: { name: string; file: string }) => ({ ...layer, file: layer.file.replace(/^theme/, 'music-a') }));
+      expect(side).toEqual({ ...authored, id: 'music-a', file: 'music-a.wav', layers });
+      for (const file of [authored.file, ...authored.layers.map((layer: { file: string }) => layer.file)]) expect(readFileSync(fx.path(`public/audio/${file.replace(/^theme/, 'music-a')}`))).toEqual(readFileSync(fx.path(`direct/theme/${file}`)));
       const lock = readLock(cfg.lock)!;
-      expect(lock.assets['music-garden']).toMatchObject({ source: 'songs/theme.json', role: 'music', parts: { renders: lock.assets.theme.parts!.renders } });
-      expect(lock.assets['music-garden'].parts!.export).not.toBe(lock.assets.theme.parts!.export);
+      expect(lock.assets['music-a']).toMatchObject({ source: 'songs/theme.json', role: 'music', parts: { renders: lock.assets.theme.parts!.renders } });
+      expect(lock.assets['music-a'].parts!.export).not.toBe(lock.assets.theme.parts!.export);
       expect(snapshot(p.paths.renders)).toEqual(cached);
       expect(readFileSync(fx.path('songs/theme.json'))).toEqual(source);
-      expect(fx.read('public/audio/index.json').assets['music-garden']).toMatchObject({ id: 'music-garden', role: 'music', loop: true });
+      expect(fx.read('public/audio/index.json').assets['music-a']).toMatchObject({ id: 'music-a', role: 'music', loop: true });
       expect(verifyOutputs({ lock: cfg.lock, out: cfg.out }).ok).toBe(true);
     } finally { rmSync(fx.dir, { recursive: true, force: true }); }
   });
@@ -580,11 +580,11 @@ describe.skipIf(!hasChromium)('baked delivery identities', () => {
       const p = openBuildProject(fx.cfg()), patch = loadPatch(p, fx.path('sfx/coin.json')), song = loadSong(p, fx.path('songs/theme.json'));
       const sources = JSON.stringify({ patch, song }), cached = snapshot(p.paths.renders);
       const patchOptions = { dest: fx.path('alias/inspect-0.wav'), seed: 11, n: 1, role: 'sfx' as const, manifest: true, manifestId: 'inspect-0' };
-      const songOptions = { dest: fx.path('alias/music-garden.wav'), role: 'music' as const, manifest: true, layers: true, manifestId: 'music-garden' };
+      const songOptions = { dest: fx.path('alias/music-a.wav'), role: 'music' as const, manifest: true, layers: true, manifestId: 'music-a' };
       await exportPatchVariants(cacheOnlyHost, p, patch, patchOptions);
       await exportSongAssets(cacheOnlyHost, p, song, songOptions);
       expect(fx.read('alias/inspect-0.wav.json')).toMatchObject({ id: 'inspect-0', label: 'Coin', renderKey: fx.read('direct/11/coin.wav.json').renderKey });
-      expect(fx.read('alias/music-garden.wav.json')).toMatchObject({ id: 'music-garden', label: 'Theme', renderKey: fx.read('direct/theme/theme.wav.json').renderKey });
+      expect(fx.read('alias/music-a.wav.json')).toMatchObject({ id: 'music-a', label: 'Theme', renderKey: fx.read('direct/theme/theme.wav.json').renderKey });
       expect(JSON.stringify({ patch, song })).toBe(sources);
       expect(snapshot(p.paths.renders)).toEqual(cached);
     } finally { rmSync(fx.dir, { recursive: true, force: true }); }
@@ -611,7 +611,7 @@ describe.skipIf(!hasChromium)('baked delivery identities', () => {
     try {
       const p = openBuildProject(fx.cfg()), patch = loadPatch(p, fx.path('sfx/coin.json')), song = loadSong(p, fx.path('songs/theme.json')), before = snapshot(fx.dir);
       const patchOptions = { dest: fx.path('alias/inspect.wav'), seed: 11, n: 1, role: 'sfx' as const, manifest: false, manifestId: 'inspect-0' };
-      const songOptions = { dest: fx.path('alias/music.wav'), role: 'music' as const, manifest: false, layers: true, manifestId: 'music-garden' };
+      const songOptions = { dest: fx.path('alias/music.wav'), role: 'music' as const, manifest: false, layers: true, manifestId: 'music-a' };
       await expect(exportPatchVariants(cacheOnlyHost, p, patch, patchOptions)).rejects.toMatchObject({ code: 'E_USAGE' });
       expect(snapshot(fx.dir)).toEqual(before);
       await expect(exportSongAssets(cacheOnlyHost, p, song, songOptions)).rejects.toMatchObject({ code: 'E_USAGE' });

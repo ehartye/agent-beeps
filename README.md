@@ -44,7 +44,7 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 2. **Predict**: `beeps predict --set <id> --pick 3 --shortlist 3,5 --why "..."` seals the agent's
    guess before the owner hears anything.
 3. **Audition**: `beeps audition open --set <id>` prints a link like
-   `http://hal9000:47301/s/<id>?t=<token>`. The owner works through
+   `http://<hostname>:47301/s/<id>?t=<token>`. The owner works through
    - **Lineup**: keep and dud, loudness-matched, with ×5 / ×75 repeat, play-with-kit, a pad bed and
      laptop/phone speaker simulation.
    - **Duel**: A vs B, sides randomised, next pair chosen where the model is least sure.
@@ -198,6 +198,14 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.17.0
+
+`beeps sample overview <normalizedId|file>` shows the shape of a recording of up to 120 seconds before
+you crop it: an image (waveform, loudness arc, spectrogram, numbered segments) and a list of natural
+segments, each at most ten seconds, with peak, loudness, event count and rate, clipping and cut flags
+and a ready `sample prepare` line. `--start`/`--end` zoom into a stretch; `--no-image` skips the
+browser. It proposes; the owner's ear chooses. [Long recordings](skills/beeps-compose/references/hybrid-sources.md).
+
 ## What changed in 0.16.0
 
 Recorded sources can now supply the contact detail in a procedural SFX patch. `beeps sample import`
@@ -257,9 +265,9 @@ Documentation only (#54): no code, schema, engine or pipeline change, so no rend
   metal score, labeled as notes (no new lint rule). The guitar amp chain (`drive` is `tanh(kx)`, so the input spectrum and the
   filter after it decide the tone, and a power chord is one additive layer), double-tracking, riff notation, the bass floor when
   moving a key, and the render, look and stems loop with the traps it found.
-- What the owner heard, recorded as heard: a metal draft read as a JRPG overworld because of the writing (relative-major chords,
-  an arpeggiated lead), not the pitch or timing; a wailing siren reads as police; a lead over a scored chorus reads as a keytar,
-  so some moods want no melody at all; and five variants of one song are not five songs.
+- Craft notes from listening, recorded as heard: a metal draft read as a JRPG overworld because of the writing (relative-major
+  chords, an arpeggiated lead), not the pitch or timing; a wailing siren reads as police; a lead over a scored chorus reads as a
+  keytar, so some moods want no melody at all; and five variants of one song are not five songs.
 
 ## What changed in 0.13.0
 
@@ -282,8 +290,8 @@ Two read-only commands for matching a recording you were given (#52). Additive: 
 
 ## What changed in 0.10.0
 
-Songs now render reproducibly (#45). Before, one song with one input hash could render several ways (Fallow Valley's
-`mus-desert`: five distinct mixes in eight renders, differing by up to 0.08 of full scale). Chromium's garbage collector
+Songs now render reproducibly (#45). Before, one song with one input hash could render several ways (one example song:
+five distinct mixes in eight renders, differing by up to 0.08 of full scale). Chromium's garbage collector
 ran mid-render, since songs are built while the context is suspended, and disposed nodes the render still needed (a modal
 drum's resonators, a delay's feedback loop), while bus filters lost their state when the channel count flipped.
 Offline renders now keep their nodes alive and pin each bus's channel count.
@@ -291,7 +299,7 @@ Offline renders now keep their nodes alive and pin each bus's channel count.
 - `SONG_PIPELINE_VERSION` is 6 (`ENGINE_VERSION` stays 2). Song render keys change; sound effects keep their render keys,
   and a song-pipeline bump no longer changes a sound effect's lock hash after this one release re-keys them.
   `beeps build` stops with `E_TOOLCHAIN` until you pass `--allow-toolchain-change` or `--adopt`.
-- Hash impact, measured on 28 Fallow Valley songs: all 28 now render identically over four renders, two of them with a
+- Hash impact, measured on 28 songs from a game project: all 28 now render identically over four renders, two of them with a
   collection forced every 50 ms. The old engine gave 3 to 8 variants per song in eight renders on a loaded machine; the new
   render equals the old most frequent one for 23 of 28 songs and some old variant for 27 of 28. A locked song may therefore
   hold a variant other than the canonical one.
@@ -306,7 +314,7 @@ Offline renders now keep their nodes alive and pin each bus's channel count.
 
 ## What changed in 0.9.0
 
-Additive tools from the Fallow Valley friction ledger and the delivery backlog (#31 to #43). No engine or pipeline
+Additive tools from a game project's friction ledger and the delivery backlog (#31 to #43). No engine or pipeline
 constant changed (`ENGINE_VERSION` 2, `PIPELINE_VERSION`, `SONG_PIPELINE_VERSION` and `EXPORT_PIPELINE_VERSION`
 unchanged), and every new field is optional, so existing patches and songs keep their render keys and bytes.
 

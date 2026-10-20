@@ -13,7 +13,7 @@ const sfx = (name: string, layers: unknown[], extra: Record<string, unknown> = {
   patch({ schema: 'beeps/patch@1', name, family: 'explosion', duration: 0.45, layers, ...extra });
 
 const CASES: Patch[] = [
-  // Three layers into the patch mix: the Sector Run explosions' shape.
+  // Three layers into the patch mix: the shape of a layered explosion.
   sfx('three-noise-layers', [
     { source: { type: 'noise', color: 'white' }, amp },
     { source: { type: 'noise', color: 'brown' }, amp, filter: { type: 'bandpass', cutoff: 900, q: 0.35, env: { to: 160, time: 0.35 } } },

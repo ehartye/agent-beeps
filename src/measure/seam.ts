@@ -2,6 +2,8 @@
 // ordinary sample-to-sample step), a kink in its slope, and a phase mismatch for tonal material. A codec can smooth the step
 // (Ogg Opus) or reproduce it (MP3), so the source and each delivered file are measured the same way and compared.
 
+import { mixToMono } from '../audio/mono.ts';
+
 export interface SeamMetrics {
   /** The step from the last sample to the first, in dB against the RMS first difference of the file (0 dB: an ordinary step; 20 dB or more: an audible tick). Worst channel. */
   boundaryStepDb: number;
@@ -27,10 +29,10 @@ export function seamMetrics(channels: Float32Array[]): SeamMetrics {
   }
   const typicalStep = Math.sqrt(d1 / count), typicalSlope = Math.sqrt(d2 / count);
   // Zero crossings of the mono mix, upward only, so each cycle contributes one.
-  const mono = (i: number) => channels.reduce((s, c) => s + c[i], 0) / channels.length;
-  let last = -1, prev = -1, before = mono(0);
+  const mono = mixToMono(channels);
+  let last = -1, prev = -1, before = mono[0];
   for (let i = 1; i < n; i++) {
-    const v = mono(i);
+    const v = mono[i];
     if (before < 0 && v >= 0) { prev = last; last = i; }
     before = v;
   }

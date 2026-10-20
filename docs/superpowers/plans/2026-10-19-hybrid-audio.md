@@ -157,7 +157,7 @@ symlink creation was unavailable. Store/fetch/static playback remain Task4B, not
 
 Task4B tests first: store and CI fetch reject hash-consistent but dangling/malformed cue
 dependencies before installation, including already-present/--check paths and build --pull.
-Keep the single exported fetch script portable on Node20 built-ins without the authoring
+Keep the single exported fetch script portable on Node 20 built-ins without the authoring
 checkout, Chromium or ffmpeg. Share or reproducibly generate its dependency checks from the
 same canonical semantics, preserving its project-defaults marker. Actually serve fetched
 outputs and engine under a static project subpath, load verified assets and play native
@@ -166,12 +166,12 @@ alone completes the shipping acceptance; Task4A and Task4B both precede the publ
 
 Task4B verification: spec and quality approved after fixing independently reproduced cross-owner
 overwrite and retirement failures. The final13 ownership regressions pass without skips on actual
-Node20, including Windows source/cue case aliases; independent spec reran overwrite, warm-build
+Node 20, including Windows source/cue case aliases; independent spec reran overwrite, warm-build
 and removed-recipe probes, and independent quality reran all13 tests. Reserved source outputs
 equal the cue dependency set; retirement derives canonical owner/content names before writes.
 Earlier104tests/4files spec,50tests/2files quality and33 new integration tests pass. Broader170
 tests/8files pass with one existing optional Firefox skip. Typecheck, reproducible generator and
-whitespace checks pass. Exported single-file fetch runs on Node20.20.2 with empty PATH and no
+whitespace checks pass. Exported single-file fetch runs on Node 20 with empty PATH and no
 ffmpeg. Relocated baked/runtime/both delivery survives removal of authoring sources and the store;
 native static playback exercises public cue loading and the existing baked player. A changed
 source changes PCM. Invalid closures, names, nonregular files and locked byte counts fail before
@@ -248,7 +248,7 @@ Release the reviewed hybrid capability as package/plugin0.16.0 and engine4. Keep
 the existing baked-player contract has not changed. Update package-lock identity fields,
 plugin/local-marketplace descriptors and capability metadata without dependency churn.
 Regenerate `runtime/ci/fetch.mjs` through `scripts/build-ci-fetch.mjs --write`; its check must
-pass, its project-default marker must remain exact, and its standalone Node20 contract holds.
+pass, its project-default marker must remain exact, and its standalone Node 20 contract holds.
 
 Document sample import, deterministic preparation, the final hybrid edit and portable exchange
 in README, runtime/package/build-store documentation and a direct compose/ship skill reference.

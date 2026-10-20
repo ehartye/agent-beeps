@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fft } from '../../src/measure/fft.ts';
-import { momentaryMax, shortTermMax, integrated, truePeakDb, samplePeakDb } from '../../src/measure/loudness.ts';
+import { loudnessArc, momentaryMax, shortTermMax, integrated, truePeakDb, samplePeakDb } from '../../src/measure/loudness.ts';
 import { attackTime, energyLength, tailLength, crestDb } from '../../src/measure/envelope.ts';
 import { spectrum, centroid, flatness } from '../../src/measure/spectral.ts';
 import { sharpness, roughness, fluctuation } from '../../src/measure/psycho.ts';
@@ -44,6 +44,11 @@ describe('loudness (ITU-R BS.1770 / EBU Tech 3341)', () => {
     const x = sine(12000, 0.1, 1, Math.PI / 4); // samples land at ±0.707
     expect(samplePeakDb([x])).toBeLessThan(-2.5);
     expect(truePeakDb([x], SR)).toBeGreaterThan(-0.6);
+  });
+  it('arcs the loudness of each whole second to 0.1 LU, floored at -70', () => {
+    const power = new Float64Array(Math.round(2.5 * SR)).fill(0.1); // mean square 0.1 is -10 dB, less 0.691
+    power.fill(0, SR, 2 * SR);
+    expect(loudnessArc(power, SR)).toEqual([-10.7, -70]); // the trailing half second is not a whole second
   });
 });
 

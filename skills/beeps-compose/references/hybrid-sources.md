@@ -14,9 +14,9 @@ beeps sample prepare <normalizedId> --start 0 --end 0.15 --fade-in 0.002 --fade-
 ```
 
 Use the import command's actual `normalizedId` (`sha256:` plus 64 lowercase hex digits), not the
-original file ID. Choose crop times within that recording. Import retains the exact original,
-canonical 48 kHz Float32 WAV snapshot and local provenance/decoder receipt under
-`.agent-beeps/samples/`. Preparation reads that snapshot, crops `[startFrame,endFrame)`, applies
+original file ID. Choose crop times within that recording (longer than ten seconds? Look at it
+first: [overview](#long-recordings-overview-first)). Import retains the exact original, canonical
+48 kHz Float32 WAV snapshot and local provenance/decoder receipt under `.agent-beeps/samples/`. Preparation reads that snapshot, crops `[startFrame,endFrame)`, applies
 linear amplitude fades, then gain; seconds round to the nearest 48 kHz frame. The preparation
 receipt contains the frame recipe and expected output hash. Replay it with
 `beeps sample prepare --recipe <recipePath>`; the original encoded recording is unnecessary.
@@ -52,6 +52,46 @@ On another machine/project, `beeps sample sync exchange/contact-hybrid` validate
 before adding/updating patches and immutable source objects. `--dry-run` validates without writes.
 Render/lint/look/export/build/runtime commands use the ordinary prepared-object store and verify
 dependencies even on warm cache paths. A lone hybrid patch JSON does not carry its recording.
+
+## Long recordings: overview first
+
+A recording can run to 120 seconds; a prepared source is at most ten. Look at the whole recording
+before you crop it, from a normalized ID or straight from a file:
+
+```text
+beeps sample overview <normalizedId>
+beeps sample overview take.wav --out shape.png --start 40 --end 70   # zoom into a stretch
+```
+
+A file needs no project to be overviewed, but then the image needs `--out <png>`; import and prepare
+still need a project. The PNG (default `.agent-beeps/renders/overviews/<key>.png`; **open it**) shows
+the waveform, the per-second loudness arc and a spectrogram, with numbered bands for the segments. The
+JSON lists the same segments: stretches between gaps, each cut to at most ten seconds, with
+`peakDb`, `momentaryMaxLufs`, `crestDb`, `centroidHz`, `clippedSamples`, `events`, `flags` and a ready
+`prepare` line. Run that line, adding `--name`, fades and gain as usual. Times are exact frames, so
+the crop is the segment. For a file, the lines use the ID `sample import` will give it: import the
+file first and check the IDs match.
+
+- Gaps: 200 ms or more at least 40 dB under the loudest frame **of the view** (`--min-gap` 10 to
+  10000 ms, `--gap-db` above 0 up to 100). Zooming with `--start`/`--end` can therefore surface
+  quieter segments a whole-recording view merged or left out.
+- `events` is `{count, rpm}`: detected repeats and their rate per minute (`rpm` is null when nothing
+  repeats). Detection reads a bass-only pulse (a kick drum) as nothing, as in
+  [matching a reference](matching-a-reference.md).
+- `clipped`: the segment has flattened peaks; lowering gain will not repair them. Prefer another.
+- `cutAt10s`: the sound goes on past the cut. Choose a shorter window that ends where you want.
+- `short`: under 150 ms. A tap, click or contact transient is listed as its own segment (a lone
+  10 ms tap shows as about 30 ms with its lead-in). Check it is a wanted sound and not stray noise
+  or a room reflection; a tap more than `--gap-db` under the loudest moment is not listed, so lower
+  `--gap-db` to find quiet ones.
+- `hints` say when nothing is audible, when one continuous
+  sound had no gap to cut at (lower `--gap-db` or `--min-gap`), or when quieter segments were left
+  out (at most 64 are kept: raise `--min-gap`, or zoom). A 120-second image is about 86 ms per
+  pixel: zoom to see transients.
+- Nothing is ranked. The overview proposes windows; picking the sound is the owner's ear
+  (beeps-audition).
+- Without Chromium the image fails with `E_BROWSER_MISSING`: run the beeps-setup skill (the error's
+  hint) to get it; `--no-image` returns the JSON alone as a stopgap.
 
 ## What leaves the project
 

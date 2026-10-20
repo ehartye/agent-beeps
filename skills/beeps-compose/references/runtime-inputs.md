@@ -12,7 +12,8 @@ Ask what in the game changes the sound.
 - **A continuous quantity** (speed, load, distance, charge, mass, health): runtime, with an input per quantity.
 - **A choice among a few flavours**: bake the variants (`variation.variants`), unless the flavours are points on a scale that
   the game already has as a number.
-- **A long tail, heavy noise or a grain cloud**: bake; building a grain cloud costs about 4 ms of main-thread time.
+- **A long tail, heavy noise or a grain cloud**: bake; building a grain cloud costs about 4 ms of main-thread time on desktop-class
+  hardware (phones are unmeasured; see the hardware guidelines in `docs/runtime.md`).
 - **Many copies at once** (rain, a crowd's footsteps, gun fire): bake, or runtime with the reverb sent to a shared bus and few
   voices per frame; measure with `beeps runtime perf --bus`.
 

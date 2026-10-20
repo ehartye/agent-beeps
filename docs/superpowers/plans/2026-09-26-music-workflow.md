@@ -1,6 +1,6 @@
 # Music workflow implementation plan
 
-**Goal:** Implement the four accepted workflow improvements, record their verified state in the wiki roadmap, then offer a sound-effects audition.
+**Goal:** Implement the four accepted workflow improvements, record their verified state in the project roadmap, then offer a sound-effects audition.
 
 **Scope:** Work on the user's selected `feat/music` branch. Preserve existing albums, recordings and feedback. No revision A/B UI, automatic mixing or changes to compositions.
 
@@ -17,7 +17,7 @@
 - [x] Test that previews contain exactly the samples from the full delivered render for every selected section occurrence, with no extra normalization; test invalid section selection.
 - [x] Introduce a small cached excerpt helper under `src/render/`. Render the complete song first, then extract requested spans and rebase section metadata. Preserve full-mix trim and instrument/automation context.
 - [x] Route `song render --sections` through that helper. For `--only`, render the selected tracks across the full form before excerpting and label the solo correctly; do not pretend solo is a full-mix sample match.
-- [x] Verify Aurora Station's return excerpt against its cached full WAV; document first-render cost.
+- [x] Verify a library song's return excerpt against its cached full WAV; document first-render cost.
 
 ## 3. Concurrent register diagnostics
 
@@ -30,9 +30,9 @@
 - [x] Run `npm test` and `npm run typecheck`; fix regressions and have the complete diff reviewed.
 - [x] Verify browser playback while tracks update, a failed track beside a ready track, and a saved/reloaded moment note. Verify existing album links still load.
 - [x] Update `skills/beeps-music/SKILL.md`, song-format reference as needed, and README command behavior.
-- [x] Record four individual wiki backlog items, current roadmap/architecture, verification and tradeoffs. Use wiki operations on main and sync per vault instructions.
+- [x] Record four individual backlog items, current roadmap/architecture, verification and tradeoffs.
 - [x] Install/check the updated managed runtime. Generate and visually inspect a varied SFX set, seal a prediction and open a listening session. Leave music feedback unmodified.
 
-Verified: 266 tests pass, typecheck and diff checks pass, independent code review complete. Aurora excerpt PCM matches the full delivered render exactly. Existing album links survive the server upgrade. Wiki main is synchronized at `53bef11d`. Managed runtime setup check passes. Three handoff samplers contain 18 rendered effects with zero lint errors; the occasional asteroid explosion retains an intentional sharpness warning. All three session payloads and all 18 preview images return HTTP 200.
+Verified: 266 tests pass, typecheck and diff checks pass, independent code review complete. The excerpt PCM matches the full delivered render exactly. Existing album links survive the server upgrade. Managed runtime setup check passes. Three handoff samplers contain 18 rendered effects with zero lint errors; the occasional asteroid explosion retains an intentional sharpness warning. All three session payloads and all 18 preview images return HTTP 200.
 
-The wiki owns the project roadmap; this repo document is the execution checklist. Completion means verified behavior and playable sound effects, not only passing unit tests.
+The project roadmap is kept outside this repo; this document is the execution checklist. Completion means verified behavior and playable sound effects, not only passing unit tests.

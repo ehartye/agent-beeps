@@ -1,11 +1,11 @@
 {
   "schema": "beeps/song@1",
-  "name": "stg-ambience-upside",
-  "title": "The Upside · drifting air and glass",
+  "name": "col-ambience-canopy",
+  "title": "Canopy · drifting air and glass",
   "description": "A weightless wash passing between high crystalline resonances. The lowest layer is breath rather than bass; space remains for the score.",
   "tags": [
     "ambience",
-    "space-to-grow"
+    "colony"
   ],
   "bpm": 48,
   "meter": 4,
@@ -223,7 +223,7 @@
     }
   },
   "sections": {
-    "habitat": {
+    "scene": {
       "bars": 4,
       "play": {
         "wind": "wind",
@@ -234,7 +234,7 @@
     }
   },
   "form": [
-    "habitat"
+    "scene"
   ],
   "master": {
     "reverb": {
