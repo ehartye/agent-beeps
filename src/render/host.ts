@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { BeepsError } from '../errors.ts';
+import { mixToMono } from '../audio/mono.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Song } from '../schema/song.ts';
 import type { Scale } from '../schema/project.ts';
@@ -184,8 +185,7 @@ export async function openRenderHost(): Promise<RenderHost> {
       return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
     },
     async songPcmLook(channels, features, label) {
-      const mono = new Float32Array(channels[0].length);
-      for (let i = 0; i < mono.length; i++) mono[i] = channels.reduce((sum, ch) => sum + ch[i], 0) / channels.length;
+      const mono = mixToMono(channels);
       await page.evaluate(n => { (window as any).beepsPreview = new Float32Array(n); }, mono.length);
       try {
         for (let start = 0; start < mono.length; start += 1 << 21) {

@@ -1,6 +1,7 @@
 // Song features: integrated loudness (music is levelled on integrated, not max momentary), loudness
 // range, a per-second and per-section arc (does the piece build and breathe?), stereo width, low-end
 // share, brightness, and the loop seam. Streams over the signal: a 3-minute song is ~9 M samples.
+import { mixToMono } from '../audio/mono.ts';
 import { fft, hann } from './fft.ts';
 import { integrated, loudnessArc, samplePeakDb, toLufs, truePeakDb, weightedPower } from './loudness.ts';
 import { centroid, flatness, logBands, type Spectrum } from './spectral.ts';
@@ -58,11 +59,10 @@ const meanOf = (p: Float64Array, a: number, b: number) => {
 
 export function measureSong(channels: Float32Array[], sr: number, sections: SongSection[], { loop = false } = {}): SongFeatures {
   const n = channels[0].length;
-  const mono = new Float32Array(n);
+  const mono = mixToMono(channels);
   let mid = 0, side = 0;
   for (let i = 0; i < n; i++) {
     const L = channels[0][i], R = channels[1]?.[i] ?? L;
-    mono[i] = (L + R) / 2;
     mid += ((L + R) / 2) ** 2; side += ((L - R) / 2) ** 2;
   }
   const power = weightedPower(channels, 0);
