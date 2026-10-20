@@ -1,11 +1,11 @@
 {
   "schema": "beeps/song@1",
-  "name": "stg-ambience-garden",
-  "title": "Garden habitat · leaves and distant air",
-  "description": "A sheltered plot: broad leaf-air, fine irregular leaf contact, a faraway life-support motor and two almost incidental water drops. No melodic motif.",
+  "name": "col-ambience-glasshouse",
+  "title": "Glasshouse · leaves and distant air",
+  "description": "A sheltered glasshouse: broad leaf-air, fine irregular leaf contact, a faraway life-support motor and two almost incidental water drops. No melodic motif.",
   "tags": [
     "ambience",
-    "space-to-grow"
+    "colony"
   ],
   "bpm": 48,
   "meter": 4,
@@ -201,7 +201,7 @@
     }
   },
   "sections": {
-    "habitat": {
+    "scene": {
       "bars": 4,
       "play": {
         "air": "air",
@@ -212,7 +212,7 @@
     }
   },
   "form": [
-    "habitat"
+    "scene"
   ],
   "master": {
     "reverb": {

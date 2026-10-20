@@ -1,9 +1,9 @@
 {
   "schema": "beeps/patch@1",
-  "name": "stg-till",
+  "name": "col-till",
   "family": "foley",
   "tags": [
-    "space-to-grow",
+    "colony",
     "repeating"
   ],
   "duration": 0.26,

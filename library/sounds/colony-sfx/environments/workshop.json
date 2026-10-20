@@ -1,51 +1,18 @@
 {
   "schema": "beeps/song@1",
-  "name": "stg-ambience-interior",
-  "title": "Inside · warm ventilation and kitchen",
-  "description": "Soft circulation inside a lived-in habitat, a quiet appliance body and distant ceramic contact. Small and warm, with no constant bright mechanical whine.",
+  "name": "col-ambience-workshop",
+  "title": "Workshop · the idle machine",
+  "description": "A low resonant field inside a timber-and-metal workshop, subdued air movement and sparse mechanical settling. The machinery is powered but idle.",
   "tags": [
     "ambience",
-    "space-to-grow"
+    "colony"
   ],
   "bpm": 48,
   "meter": 4,
   "loop": true,
-  "seed": 703,
+  "seed": 704,
   "tracks": {
-    "room": {
-      "instrument": {
-        "duration": 1,
-        "layers": [
-          {
-            "source": {
-              "type": "noise",
-              "color": "pink"
-            },
-            "filter": {
-              "type": "bandpass",
-              "cutoff": 650,
-              "q": 0.6
-            },
-            "gainDb": 0,
-            "amp": {
-              "attack": 2.5,
-              "decay": 1,
-              "sustain": 0.65,
-              "release": 2.5
-            },
-            "pan": -0.15,
-            "lfo": {
-              "target": "gain",
-              "rate": 0.055,
-              "depth": 0.05
-            }
-          }
-        ]
-      },
-      "gainDb": -2,
-      "highpass": 120
-    },
-    "appliance": {
+    "motor": {
       "instrument": {
         "duration": 1,
         "layers": [
@@ -61,44 +28,46 @@
               "decay": 1,
               "sustain": 0.65,
               "release": 2.5
+            },
+            "lfo": {
+              "target": "gain",
+              "rate": 0.14,
+              "depth": 0.08
             }
           },
           {
             "source": {
-              "type": "noise",
-              "color": "brown"
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A3"
             },
-            "filter": {
-              "type": "lowpass",
-              "cutoff": 320,
-              "resonanceDb": 0
-            },
-            "gainDb": -7,
+            "gainDb": -15,
             "amp": {
               "attack": 2.5,
               "decay": 1,
               "sustain": 0.65,
               "release": 2.5
             },
-            "pan": 0.3
+            "pan": 0.15
           }
         ]
       },
-      "gainDb": -23,
-      "highpass": 80
+      "gainDb": -26,
+      "highpass": 85
     },
-    "kettle": {
+    "air": {
       "instrument": {
         "duration": 1,
         "layers": [
           {
             "source": {
-              "type": "grains",
-              "rate": 70,
-              "center": 1650,
-              "grainDecay": 0.028,
-              "q": 0.8,
-              "rateEnd": 1
+              "type": "noise",
+              "color": "pink"
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 850,
+              "q": 0.7
             },
             "gainDb": 0,
             "amp": {
@@ -107,21 +76,67 @@
               "sustain": 0.65,
               "release": 2.5
             },
-            "pan": 0.5
+            "pan": -0.3
           }
         ]
       },
       "gainDb": -8,
-      "highpass": 700
+      "highpass": 300
     },
-    "ceramic": {
+    "field": {
+      "instrument": {
+        "duration": 1,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D4"
+            },
+            "gainDb": 0,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "lfo": {
+              "target": "gain",
+              "rate": 0.09,
+              "depth": 0.3
+            },
+            "pan": 0.4
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A4"
+            },
+            "gainDb": -18,
+            "amp": {
+              "attack": 2.5,
+              "decay": 1,
+              "sustain": 0.65,
+              "release": 2.5
+            },
+            "pan": -0.4
+          }
+        ]
+      },
+      "gainDb": -22,
+      "sends": {
+        "reverb": -18
+      }
+    },
+    "settling": {
       "instrument": {
         "duration": 1,
         "layers": [
           {
             "source": {
               "type": "modal",
-              "pitch": "F#5",
+              "pitch": "A3",
               "modes": [
                 [
                   1,
@@ -144,22 +159,32 @@
             "gainDb": 0,
             "amp": {
               "attack": 0.008,
-              "decay": 0.14,
+              "decay": 0.28,
               "sustain": 0,
               "release": 0.08
             }
           }
         ]
       },
-      "gainDb": 0,
+      "gainDb": -4,
       "pan": -0.5,
       "sends": {
-        "reverb": -21
+        "reverb": -19
       }
     }
   },
   "patterns": {
-    "room": {
+    "motor": {
+      "bars": 4,
+      "notes": [
+        [
+          0,
+          "D2",
+          16
+        ]
+      ]
+    },
+    "air": {
       "bars": 4,
       "notes": [
         [
@@ -169,7 +194,7 @@
         ]
       ]
     },
-    "appliance": {
+    "field": {
       "bars": 4,
       "notes": [
         [
@@ -179,53 +204,37 @@
         ]
       ]
     },
-    "kettle": {
+    "settling": {
       "bars": 4,
       "notes": [
         [
-          0,
-          "D4",
-          16
-        ]
-      ]
-    },
-    "ceramic": {
-      "bars": 4,
-      "notes": [
-        [
-          5.2,
-          "F#5",
-          0.18,
-          0.5
-        ],
-        [
-          5.45,
-          "A4",
-          0.2,
-          0.35
-        ],
-        [
-          13.4,
-          "D5",
-          0.2,
+          4.8,
+          "A3",
+          0.35,
           0.4
+        ],
+        [
+          11.3,
+          "D4",
+          0.3,
+          0.28
         ]
       ]
     }
   },
   "sections": {
-    "habitat": {
+    "scene": {
       "bars": 4,
       "play": {
-        "room": "room",
-        "appliance": "appliance",
-        "kettle": "kettle",
-        "ceramic": "ceramic"
+        "motor": "motor",
+        "air": "air",
+        "field": "field",
+        "settling": "settling"
       }
     }
   },
   "form": [
-    "habitat"
+    "scene"
   ],
   "master": {
     "reverb": {

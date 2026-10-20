@@ -1,36 +1,12 @@
 {
   "schema": "beeps/patch@1",
-  "name": "stg-portal",
-  "family": "transition",
+  "name": "col-rest",
+  "family": "confirm",
   "tags": [
-    "space-to-grow"
+    "colony"
   ],
-  "duration": 1.48,
+  "duration": 0.88,
   "layers": [
-    {
-      "source": {
-        "type": "osc",
-        "wave": "sine",
-        "pitch": "D3"
-      },
-      "gainDb": -7,
-      "amp": {
-        "attack": 0.12,
-        "decay": 0.8,
-        "sustain": 0.12,
-        "release": 0.25
-      },
-      "pitchEnv": [
-        {
-          "at": 0.7,
-          "to": "A3"
-        },
-        {
-          "at": 1.2,
-          "to": "D4"
-        }
-      ]
-    },
     {
       "source": {
         "type": "noise",
@@ -38,21 +14,16 @@
       },
       "filter": {
         "type": "bandpass",
-        "cutoff": 900,
-        "q": 0.6,
-        "env": {
-          "to": 3000,
-          "time": 1.1
-        }
+        "cutoff": 550,
+        "q": 0.55
       },
-      "gainDb": -3,
+      "gainDb": -7,
       "amp": {
-        "attack": 0.2,
-        "decay": 0.7,
-        "sustain": 0.08,
-        "release": 0.3
-      },
-      "pan": -0.2
+        "attack": 0.16,
+        "decay": 0.4,
+        "sustain": 0.05,
+        "release": 0.2
+      }
     },
     {
       "source": {
@@ -76,20 +47,18 @@
           ]
         ]
       },
-      "gainDb": -12,
+      "gainDb": -7,
       "amp": {
-        "attack": 0.04,
-        "decay": 0.65,
+        "attack": 0.045,
+        "decay": 0.4,
         "sustain": 0,
         "release": 0.08
-      },
-      "start": 0.68,
-      "pan": 0.35
+      }
     },
     {
       "source": {
         "type": "additive",
-        "pitch": "D5",
+        "pitch": "F#4",
         "partials": [
           [
             1,
@@ -108,15 +77,29 @@
           ]
         ]
       },
-      "gainDb": -18,
+      "gainDb": -5,
       "amp": {
-        "attack": 0.06,
-        "decay": 0.55,
+        "attack": 0.045,
+        "decay": 0.42,
         "sustain": 0,
         "release": 0.08
       },
-      "start": 0.92,
-      "pan": -0.3
+      "start": 0.23
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "D3"
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.08,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "start": 0.14
     }
   ],
   "variation": {
@@ -128,7 +111,7 @@
   "meta": {
     "priority": 3,
     "intent": "oneshot",
-    "description": "Across the threshold. A low field gathers, airy pressure passes and a crystalline fifth opens into the Upside. One cue per completed travel."
+    "description": "Breathe, then begin again. A warm descending ceramic pair over a soft exhale; a short rest transition, never a persistent hum."
   },
   "fx": {
     "reverb": {
