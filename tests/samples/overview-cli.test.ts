@@ -1,14 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeWav } from '../../src/audio/wav.ts';
 import { findFfmpeg } from '../../src/compress.ts';
 import { initProject } from '../../src/project.ts';
+import { chromiumAvailable } from '../../src/render/host.ts';
 import { sampleId } from '../../src/samples/store.ts';
 import { SR, sine } from '../helpers/signals.ts';
 
+const hasChromium = await chromiumAvailable();
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const bin = join(import.meta.dirname, '../../scripts/beeps.mjs'), dirs: string[] = [];
 const dir = () => { const d = mkdtempSync(join(tmpdir(), 'beeps-overview-')); dirs.push(d); return d; };
@@ -142,5 +144,23 @@ describe('beeps sample overview', () => {
     expect(r.out.segments).toHaveLength(64);
     expect(r.out.omitted).toBeGreaterThan(0);
     expect(r.out.hints.join(' ')).toMatch(/--min-gap/);
+  });
+
+  it.skipIf(!hasChromium)('writes a PNG, in the project renders folder by default and at --out otherwise', () => {
+    const d = dir(); initProject(d);
+    const file = write(d, 'long.wav', long());
+    const byDefault = cli(d, 'sample', 'overview', file);
+    expect(byDefault.status, byDefault.stderr).toBe(0);
+    expect(byDefault.out.image.startsWith(join(d, '.agent-beeps', 'renders', 'overviews'))).toBe(true);
+    const png = readFileSync(byDefault.out.image);
+    expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect(png.length).toBeGreaterThan(5000);
+    const elsewhere = join(d, 'out', 'shape.png');
+    const r = cli(d, 'sample', 'overview', file, '--out', elsewhere, '--start', '3', '--end', '9');
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.out.image).toBe(elsewhere);
+    expect(existsSync(elsewhere)).toBe(true);
+    const outside = dir(); const loose = write(outside, 'long.wav', long());
+    expect(cli(outside, 'sample', 'overview', loose, '--out', join(outside, 'o.png')).status).toBe(0);
   });
 });

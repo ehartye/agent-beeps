@@ -259,7 +259,7 @@ export function renderSongLook(channels, f, label) {
   g.fillStyle = '#e8e8f0'; g.font = 'bold 14px sans-serif';
   g.fillText(label, 8, ty + 20);
   g.font = '12px monospace';
-  g.fillText(`${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
+  g.fillText(f.source ? `${mmss(dur)}  source ${fmt(f.source.startSec, 1)}-${fmt(f.source.endSec, 1)} s  peak ${fmt(f.source.peakDb)} dBFS  ${(f.sections ?? []).length} segments` : `${mmss(dur)}  played at ${fmt(f.delivered?.integratedLufs)} LUFS-I  range ${fmt(f.loudnessRangeLu)} LU  TP ${fmt(f.delivered?.truePeakDb)} dB  centroid ${fmt(f.centroidHz, 0)} Hz  low ${fmt(100 * f.lowShare, 0)}%  width ${fmt(f.stereoWidth, 2)}${f.seamDb !== undefined ? `  seam ${fmt(f.seamDb)} dB` : ''}`, 8, ty + 40);
   const secs = (f.sections ?? []).map((/** @type {any} */ s) => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`).join('  ');
   g.fillText(secs.slice(0, 190), 8, ty + 58);
   if (secs.length > 190) g.fillText(secs.slice(190, 380), 8, ty + 74);
