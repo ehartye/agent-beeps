@@ -92,6 +92,11 @@ describe('segmentMono', () => {
     const dipAtTen = whiteNoise(11, 2, 0.3).slice(0, 481000);
     dipAtTen.fill(0, 480000, 480480); // frame 1000: the quietest frame is exactly at 10 s
     check(dipAtTen);
+    // 480001 samples is 1000 whole frames and one sample. The window ends 5 frames short of the end: floor((480001 - 2400) / 480) = 995.
+    // Frame 996 is the first a 4-frame cap, or a rounded-up one, would allow: cutting there leaves 480001 - 996 * 480 = 1921 samples.
+    const dipPastCap = whiteNoise(11, 1, 0.3).slice(0, 480001);
+    dipPastCap.fill(0, 996 * 480, 997 * 480);
+    check(dipPastCap);
   });
 
   it('keeps a hiss under -70 dBFS as a gap whatever --gap-db says', () => {
@@ -109,6 +114,25 @@ describe('segmentMono', () => {
     const opts = { gapDb: 40, minGapMs: 255 }; // 26 frames
     expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.75, sine(440, 0.5)]]), opts)).toHaveLength(1); // 250 ms apart
     expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.76, sine(440, 0.5)]]), opts)).toHaveLength(2); // 260 ms apart
+  });
+
+  it('rounds --min-gap up, not to nearest', () => {
+    // 251 ms is 25.1 frames: rounded up it is 26, which bridges a 25 frame gap; rounded to nearest it is 25, which splits it
+    const opts = { gapDb: 40, minGapMs: 251 };
+    expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.75, sine(440, 0.5)]]), opts)).toHaveLength(1); // 250 ms apart: 25 frames
+    expect(segmentMono(layout(3, [[1, sine(440, 0.5)], [1.76, sine(440, 0.5)]]), opts)).toHaveLength(2); // 260 ms apart: 26 frames
+  });
+
+  it('cuts only within 6 to 10 s of the piece start', () => {
+    // a three-frame dip is bridged (30 ms is under --min-gap), so the noise stays one run and only the cut search sees it
+    const late = whiteNoise(15, 3, 0.3);
+    late.fill(0, 10.5 * SR, 10.5 * SR + 1440); // 10.5 s in: past the window, which ends at 10 s
+    const first = segmentMono(late, DEFAULTS)[0];
+    expect(first.endFrame).toBeLessThanOrEqual(10 * SR);
+    expect(first.endFrame).not.toBe(10.5 * SR);
+    const near = whiteNoise(15, 3, 0.3);
+    near.fill(0, 9.9 * SR, 9.9 * SR + 1440); // 9.9 s in: inside the window, and the quietest place in it
+    expect(segmentMono(near, DEFAULTS)[0].endFrame).toBe(9.9 * SR);
   });
 });
 
