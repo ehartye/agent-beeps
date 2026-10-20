@@ -46,7 +46,7 @@ export function registerCapabilities(program: Command, io: Io) {
         tasteFeatures: FEATURE_NAMES,
         errorCodes: ERROR_CODES,
         samples: {
-          commands: ['sample import', 'sample prepare', 'sample bundle', 'sample sync'],
+          commands: ['sample import', 'sample overview', 'sample prepare', 'sample bundle', 'sample sync'],
           maxLayers: 8,
           prepared: { sampleRate: 48000, channels: [1, 2], minFrames: 1, maxFrames: 480000 },
           maxNormalizedSeconds: 120,
@@ -54,6 +54,7 @@ export function registerCapabilities(program: Command, io: Io) {
           notes: [
             'Finite, unpitched SFX one-shots: sample pitch envelopes, pitch LFOs, loops, stretching and song sample instruments are unsupported; gain and cutoff LFOs are supported.',
             'Import retains exact originals and local provenance; prepare crops, linearly fades and applies gain to the retained canonical 48 kHz snapshot, with an integer-frame replay recipe.',
+            'A recording longer than ten seconds: sample overview <normalizedId|file> [--start --end] images it and lists natural segments of at most ten seconds (peak, loudness, events, flags, a ready prepare line); it proposes, the owner chooses. --no-image skips the browser.',
             'Prepare a named sample patch, edit/add procedural layers, save, render/lint/look, then sample bundle the final edited patch.',
             'Bundles default to prepared dependencies only. --include-preparation adds required normalized source snapshots and replay recipes, possibly including outtakes; neither mode includes original encoded imports, import receipts or private local paths.',
             'render, look, measure, lint, export, runtime and build resolve and verify prepared dependencies before cache reuse; source bundles are restored with sample sync, not ordinary patch sync.',

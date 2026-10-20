@@ -15,7 +15,7 @@ nothing above 12 kHz, so do not chase that band).
 
 ## Use a recording as material
 
-Matching by synthesis and using the licensed recording itself are different authoring choices.
+Matching by synthesis and using the licensed recording itself are different authoring choices. A reference longer than ten seconds? Run `beeps sample overview <file>` first: it images the whole recording and lists its segments with event counts and rates, so you can pick the stretch to prepare (`analyze` still measures the whole file).
 For recorded contact detail plus an editable procedural body, read [hybrid sources](hybrid-sources.md)
 directly. Import and prepare a named sample patch, add/edit procedural layers, save, render/lint/look,
 then bundle the final edit. Prepared-only bundles are the default; explicit preparation bundles also

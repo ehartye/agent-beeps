@@ -53,6 +53,35 @@ before adding/updating patches and immutable source objects. `--dry-run` validat
 Render/lint/look/export/build/runtime commands use the ordinary prepared-object store and verify
 dependencies even on warm cache paths. A lone hybrid patch JSON does not carry its recording.
 
+## Long recordings: overview first
+
+A recording can run to 120 seconds; a prepared source is at most ten. Look at the whole recording
+before you crop it, from a normalized ID or straight from a file (no project needed):
+
+```text
+beeps sample overview <normalizedId>
+beeps sample overview take.wav --out shape.png --start 40 --end 70   # zoom into a stretch
+```
+
+It writes a PNG (default `.agent-beeps/renders/overviews/<key>.png`; **open it**): waveform, the
+per-second loudness arc and a spectrogram, with numbered bands for the segments. The JSON lists the
+same segments: stretches between gaps (200 ms or more, 40 dB under the loudest frame), each cut to at
+most ten seconds, with `peakDb`, `momentaryMaxLufs`, `crestDb`, `centroidHz`, `clippedSamples`,
+`events` (count and rate), `flags` and a ready `prepare` line. Run that line, adding `--name`,
+fades and gain as usual. Times are exact frames, so the crop is the segment. For a file, the lines use
+the ID `sample import` will give it: import the file first and check the IDs match.
+
+- `clipped`: the segment has flattened peaks; lowering gain will not repair them. Prefer another.
+- `cutAt10s`: the sound goes on past the cut. Choose a shorter window that ends where you want.
+- `short`: under 150 ms. Fine for a click; check it is not a stray noise.
+- `hints` say when nothing is audible, when one continuous sound had no gap to cut at (lower
+  `--gap-db` or `--min-gap`), or when quieter segments were left out (at most 64 are kept: raise
+  `--min-gap`, or zoom with `--start`/`--end`). A 120-second image is about 86 ms per pixel: zoom to
+  see transients.
+- Nothing is ranked. The overview proposes windows; picking the sound is the owner's ear
+  (beeps-audition). `--no-image` returns the JSON without starting a browser (use it when Chromium
+  is not installed).
+
 ## What leaves the project
 
 The default source bundle contains the selected final patches and exactly their prepared WAV

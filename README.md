@@ -198,6 +198,14 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.17.0
+
+`beeps sample overview <normalizedId|file>` shows the shape of a recording of up to 120 seconds before
+you crop it: an image (waveform, loudness arc, spectrogram, numbered segments) and a list of natural
+segments, each at most ten seconds, with peak, loudness, event count and rate, clipping and cut flags
+and a ready `sample prepare` line. `--start`/`--end` zoom into a stretch; `--no-image` skips the
+browser. It proposes; the owner's ear chooses. [Long recordings](skills/beeps-compose/references/hybrid-sources.md).
+
 ## What changed in 0.16.0
 
 Recorded sources can now supply the contact detail in a procedural SFX patch. `beeps sample import`

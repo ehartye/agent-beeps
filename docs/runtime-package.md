@@ -46,7 +46,7 @@ contains the loader and source graph, not your recordings, CLI, source-import to
 Prepared sources are finite, unpitched, 48 kHz mono/stereo one-shots of 1–480000 frames (up to ten
 seconds); the patch limit remains eight layers. Sample pitch envelopes/pitch LFOs, loops/stretching
 and song sample instruments are unsupported. Gain/cutoff LFOs remain supported. The authoring CLI
-accepts originals up to 64 MiB and normalized snapshots up to 120 seconds. Attenuation cannot repair
+accepts originals up to 64 MiB and normalized snapshots up to 120 seconds. `beeps sample overview` images a long recording and proposes ten-second windows. Attenuation cannot repair
 an already clipped source. [Authoring, replay and privacy](../skills/beeps-compose/references/hybrid-sources.md).
 
 ## The `runtime` branch

@@ -1,7 +1,7 @@
 ---
 name: beeps-compose
 description: Compose procedural or recorded-source hybrid game and UI sounds with agent-beeps - generate diverse candidates from archetypes, author or edit JSON patches, render, measure and look at them, and export loudness-matched WAVs.
-when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, when the owner supplies a recording or clip to match, reproduce or combine with synthesis, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
+when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds or less, coin, jump, hit, laser, explosion, click, notification or "a sound for X" in a game or app, when editing an existing beeps patch or designing an instrument patch for a song, when the owner supplies a recording or clip to match, reproduce or combine with synthesis, when a recording is longer than ten seconds and a crop must be chosen, or when a beeps patch command fails with E_SCHEMA and a pointer. Music, themes and loops are beeps-music.
 ---
 
 # Compose sounds
@@ -27,6 +27,8 @@ Import → prepare a named sample patch → edit/add procedural layers → save 
 original encoded imports, import receipts or private paths. For native playback, resume in the user
 gesture, await `loadCueAssets`, then build a fresh voice per play; cancel obsolete pending work.
 Keep ordinary procedural work on the generate path below; songs/music remain beeps-music.
+A recording longer than ten seconds? `beeps sample overview <normalizedId|file>` first: it images the
+whole recording and proposes crop windows with a ready `prepare` line each (hybrid-sources.md).
 
 ## Generate first, author second
 

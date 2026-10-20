@@ -8,7 +8,7 @@
     {
       "name": "agent-beeps",
       "description": "Procedural and recorded-source hybrid SFX plus procedural game music: deterministic sample preparation, editable Web Audio patches, portable bundles, verified delivery, measurement and owner auditions",
-      "version": "0.16.0",
+      "version": "0.17.0",
       "source": "./",
       "license": "MIT"
     }
