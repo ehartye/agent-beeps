@@ -1,0 +1,1596 @@
+{
+  "schema": "beeps/colony-quality@1",
+  "project": {
+    "schema": "beeps/project@1",
+    "scale": {
+      "root": "D",
+      "mode": "majorPentatonic",
+      "snap": true
+    },
+    "targetLoudness": -18,
+    "musicLoudness": -20,
+    "sampleRate": 48000
+  },
+  "effects": [
+    {
+      "id": "till",
+      "seed": 1,
+      "trimDb": 8.32,
+      "renderKey": "08dd898bb759102b4535d9e177f14ecce87fc1acacfb8499ca426f84d9968498",
+      "features": {
+        "durationSec": 0.39,
+        "samplePeakDb": -10.03,
+        "truePeakDb": -10.02,
+        "dcOffset": 0.00017,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -27.18,
+        "shortTermMaxLufs": -35.94,
+        "integratedLufs": -27.18,
+        "integratedReliable": false,
+        "attackSec": 0.007,
+        "energyLengthSec": 0.188,
+        "tailSec": 0.281,
+        "crestDb": 18.75,
+        "centroidHz": 944.6,
+        "centroidPeakHz": 926.4,
+        "flatness": 0.0478,
+        "bands": [
+          -19.41,
+          -10.23,
+          -5.52,
+          -3.91,
+          -9.36,
+          -12.43,
+          -16.53,
+          -21.17
+        ],
+        "sharpness": 1.7229,
+        "roughness": 0.0526,
+        "fluctuation": 0.894,
+        "pitchHz": 0,
+        "pitchStrength": 0.3978,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -1.71,
+          "truePeakDb": -1.7,
+          "momentaryMaxLufs": -18.86,
+          "clippedSamples": 0,
+          "peakLimited": true
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "plant",
+      "seed": 1,
+      "trimDb": 2.25,
+      "renderKey": "d17286b6c06886b7335fb2113568163d1ed47637789aac73e60a1176767fa11b",
+      "features": {
+        "durationSec": 0.35,
+        "samplePeakDb": -4.92,
+        "truePeakDb": -4.9,
+        "dcOffset": 0.000328,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -20.25,
+        "shortTermMaxLufs": -29,
+        "integratedLufs": -20.25,
+        "integratedReliable": false,
+        "attackSec": 0.013,
+        "energyLengthSec": 0.206,
+        "tailSec": 0.288,
+        "crestDb": 16.05,
+        "centroidHz": 257.4,
+        "centroidPeakHz": 264.1,
+        "flatness": 0.0021,
+        "bands": [
+          -18.44,
+          -0.63,
+          -10.87,
+          -15.45,
+          -22.64,
+          -26.04,
+          -31.14,
+          -34.67
+        ],
+        "sharpness": 1.3689,
+        "roughness": 0.0386,
+        "fluctuation": 0.9846,
+        "pitchHz": 220.52,
+        "pitchStrength": 0.9073,
+        "pitchDirection": 0.23,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -2.67,
+          "truePeakDb": -2.65,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "water",
+      "seed": 1,
+      "trimDb": 2,
+      "renderKey": "10fee1c7d42449b3841b11230bc137e1903154b52a60a8b4a7fb51be2173f75f",
+      "features": {
+        "durationSec": 0.79,
+        "samplePeakDb": -6.63,
+        "truePeakDb": -6.57,
+        "dcOffset": -0.000005,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -20,
+        "shortTermMaxLufs": -28.67,
+        "integratedLufs": -23.97,
+        "integratedReliable": false,
+        "attackSec": 0.004,
+        "energyLengthSec": 0.719,
+        "tailSec": 0.737,
+        "crestDb": 19.62,
+        "centroidHz": 1549.7,
+        "centroidPeakHz": 1391.8,
+        "flatness": 0.1334,
+        "bands": [
+          -31.58,
+          -25.9,
+          -5.37,
+          -5.03,
+          -7.97,
+          -8.32,
+          -11.99,
+          -16.87
+        ],
+        "sharpness": 2.0056,
+        "roughness": 0.0778,
+        "fluctuation": 0.3887,
+        "pitchHz": 502.74,
+        "pitchStrength": 0.255,
+        "pitchDirection": -8.11,
+        "voicedFraction": 0.1493,
+        "delivered": {
+          "samplePeakDb": -4.63,
+          "truePeakDb": -4.57,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "harvest",
+      "seed": 1,
+      "trimDb": 1.58,
+      "renderKey": "5e111e6a8e8d0b7a690ce422f89ee1bb81324039e059a8005c38d4033be8d938",
+      "features": {
+        "durationSec": 0.53,
+        "samplePeakDb": -3.33,
+        "truePeakDb": -3.28,
+        "dcOffset": 0.000073,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -23.67,
+        "shortTermMaxLufs": -32.42,
+        "integratedLufs": -25.74,
+        "integratedReliable": false,
+        "attackSec": 0.002,
+        "energyLengthSec": 0.292,
+        "tailSec": 0.399,
+        "crestDb": 22.8,
+        "centroidHz": 795.9,
+        "centroidPeakHz": 761.7,
+        "flatness": 0.0014,
+        "bands": [
+          -48.4,
+          -34.98,
+          -17.08,
+          -0.15,
+          -30.82,
+          -19.22,
+          -31.4,
+          -35.99
+        ],
+        "sharpness": 1.626,
+        "roughness": 0.055,
+        "fluctuation": 0.8813,
+        "pitchHz": 868.28,
+        "pitchStrength": 0.9613,
+        "pitchDirection": 2.99,
+        "voicedFraction": 0.8846,
+        "delivered": {
+          "samplePeakDb": -1.75,
+          "truePeakDb": -1.7,
+          "momentaryMaxLufs": -22.09,
+          "clippedSamples": 0,
+          "peakLimited": true
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "discovery",
+      "seed": 1,
+      "trimDb": -6.54,
+      "renderKey": "48e14844cab6fc98b9d88324381cb918917f9cd4c2cca62d71d61f87818e8c58",
+      "features": {
+        "durationSec": 2.002,
+        "samplePeakDb": -4.71,
+        "truePeakDb": -4.71,
+        "dcOffset": 0.000002,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -14.46,
+        "shortTermMaxLufs": -22.91,
+        "integratedLufs": -20.31,
+        "integratedReliable": true,
+        "attackSec": 0.008,
+        "energyLengthSec": 0.808,
+        "tailSec": 1.006,
+        "crestDb": 15.76,
+        "centroidHz": 470.9,
+        "centroidPeakHz": 568.2,
+        "flatness": 0,
+        "bands": [
+          -15.68,
+          -4.29,
+          -47.38,
+          -2.34,
+          -18.12,
+          -27.26,
+          -47.94,
+          -101.92
+        ],
+        "sharpness": 0.8649,
+        "roughness": 0.0075,
+        "fluctuation": 0.2731,
+        "pitchHz": 147.94,
+        "pitchStrength": 0.9906,
+        "pitchDirection": 33.02,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -11.25,
+          "truePeakDb": -11.25,
+          "momentaryMaxLufs": -21,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "tail-ceiling",
+            "message": "tail 1.006 s exceeds the 0.8 s ceiling for family \"confirm\" (0.808 s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "door",
+      "seed": 1,
+      "trimDb": 6.56,
+      "renderKey": "de1b7f61de1f70cefb406bda7f67e77d0d8aa12f9430c88fcda4f1d0ba58434d",
+      "features": {
+        "durationSec": 0.54,
+        "samplePeakDb": -10.59,
+        "truePeakDb": -10.57,
+        "dcOffset": 0.00014,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -24.56,
+        "shortTermMaxLufs": -33.3,
+        "integratedLufs": -26.7,
+        "integratedReliable": false,
+        "attackSec": 0.042,
+        "energyLengthSec": 0.474,
+        "tailSec": 0.488,
+        "crestDb": 17.91,
+        "centroidHz": 918.9,
+        "centroidPeakHz": 930.3,
+        "flatness": 0.0322,
+        "bands": [
+          -13.68,
+          -9.78,
+          -6.89,
+          -4.45,
+          -7,
+          -12.04,
+          -18.06,
+          -25.26
+        ],
+        "sharpness": 1.5881,
+        "roughness": 0.0911,
+        "fluctuation": 0.4428,
+        "pitchHz": 0,
+        "pitchStrength": 0.3178,
+        "pitchDirection": 0,
+        "voicedFraction": 0,
+        "delivered": {
+          "samplePeakDb": -4.03,
+          "truePeakDb": -4.01,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "portal",
+      "seed": 1,
+      "trimDb": -6.54,
+      "renderKey": "ff25173ee79fc3c6409a13f25da62244f41b833db81a357d7b05192ed33d08eb",
+      "features": {
+        "durationSec": 2.742,
+        "samplePeakDb": -5.86,
+        "truePeakDb": -5.84,
+        "dcOffset": 0,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -11.46,
+        "shortTermMaxLufs": -19.15,
+        "integratedLufs": -17.39,
+        "integratedReliable": true,
+        "attackSec": 0.102,
+        "energyLengthSec": 1.71,
+        "tailSec": 1.758,
+        "crestDb": 12.81,
+        "centroidHz": 218.8,
+        "centroidPeakHz": 170.1,
+        "flatness": 0.0029,
+        "bands": [
+          -25.3,
+          -0.45,
+          -11.5,
+          -20.56,
+          -20.53,
+          -23.28,
+          -28.59,
+          -35.61
+        ],
+        "sharpness": 1.4434,
+        "roughness": 0.0163,
+        "fluctuation": 0.0872,
+        "pitchHz": 235.85,
+        "pitchStrength": 0.978,
+        "pitchDirection": 11.54,
+        "voicedFraction": 1,
+        "delivered": {
+          "samplePeakDb": -12.4,
+          "truePeakDb": -12.38,
+          "momentaryMaxLufs": -18,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "repair",
+      "seed": 1,
+      "trimDb": 0.13,
+      "renderKey": "bc1fb40ff93e765a8c4e5529be1dadaf5813a3e57a7a3604c71c472cddc0d616",
+      "features": {
+        "durationSec": 0.71,
+        "samplePeakDb": -7.35,
+        "truePeakDb": -7.3,
+        "dcOffset": 0.000082,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -21.13,
+        "shortTermMaxLufs": -29.62,
+        "integratedLufs": -21.99,
+        "integratedReliable": false,
+        "attackSec": 0.002,
+        "energyLengthSec": 0.639,
+        "tailSec": 0.658,
+        "crestDb": 18.03,
+        "centroidHz": 390,
+        "centroidPeakHz": 370,
+        "flatness": 0.0021,
+        "bands": [
+          -34.2,
+          -14.05,
+          -0.32,
+          -16.03,
+          -25.96,
+          -26.71,
+          -30.34,
+          -35.03
+        ],
+        "sharpness": 1.4587,
+        "roughness": 0.2952,
+        "fluctuation": 1.1303,
+        "pitchHz": 370.57,
+        "pitchStrength": 0.9765,
+        "pitchDirection": 8.77,
+        "voicedFraction": 0.7959,
+        "delivered": {
+          "samplePeakDb": -7.22,
+          "truePeakDb": -7.17,
+          "momentaryMaxLufs": -21,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    },
+    {
+      "id": "rest",
+      "seed": 1,
+      "trimDb": -4.89,
+      "renderKey": "8dfef3b2f20a4da57397b0bfb64f173ec5e87ba974e6951e85d426cdaa752437",
+      "features": {
+        "durationSec": 2.042,
+        "samplePeakDb": -7,
+        "truePeakDb": -6.99,
+        "dcOffset": 0.000002,
+        "clippedSamples": 0,
+        "momentaryMaxLufs": -16.11,
+        "shortTermMaxLufs": -24.73,
+        "integratedLufs": -18.77,
+        "integratedReliable": true,
+        "attackSec": 0.261,
+        "energyLengthSec": 0.922,
+        "tailSec": 1.061,
+        "crestDb": 15.34,
+        "centroidHz": 324.8,
+        "centroidPeakHz": 332.4,
+        "flatness": 0.0013,
+        "bands": [
+          -15.76,
+          -4.48,
+          -2.31,
+          -18.1,
+          -19.64,
+          -26.9,
+          -32.5,
+          -39.95
+        ],
+        "sharpness": 1.2642,
+        "roughness": 0.0165,
+        "fluctuation": 0.1334,
+        "pitchHz": 146.45,
+        "pitchStrength": 0.9259,
+        "pitchDirection": -18.8,
+        "voicedFraction": 0.9444,
+        "delivered": {
+          "samplePeakDb": -11.89,
+          "truePeakDb": -11.88,
+          "momentaryMaxLufs": -21,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "tail-ceiling",
+            "message": "tail 1.061 s exceeds the 0.8 s ceiling for family \"confirm\" (0.922 s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end"
+          }
+        ],
+        "judgement": [
+          "silent-not-quiet",
+          "synthesis-choice"
+        ]
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "id": "glasshouse",
+      "renderKey": "17a548fbcc7d0707a72b416276d9914bf8d84c9d3982c6baedbcdc192039e57f",
+      "features": {
+        "durationSec": 20,
+        "integratedLufs": -23.29,
+        "shortTermMaxLufs": -21.51,
+        "loudnessRangeLu": 2.4,
+        "samplePeakDb": -11.31,
+        "truePeakDb": -11.31,
+        "crestDb": 14.98,
+        "centroidHz": 1150,
+        "flatness": 0.1051,
+        "bands": [
+          -8.78,
+          -6.35,
+          -7.7,
+          -8.97,
+          -8.18,
+          -9.55,
+          -13.02,
+          -18.91
+        ],
+        "lowShare": 0.145,
+        "stereoWidth": 0.144,
+        "arc": [
+          -19.7,
+          -18.1,
+          -17.3,
+          -19.9,
+          -20.1,
+          -20.3,
+          -20.3,
+          -20.5,
+          -20.7,
+          -20.8,
+          -20.6,
+          -20.9,
+          -20.6,
+          -20.5,
+          -20.6,
+          -20.4,
+          -20.1,
+          -20.3,
+          -20,
+          -20.2
+        ],
+        "sections": [
+          {
+            "name": "scene",
+            "start": 0,
+            "end": 20,
+            "bars": 4,
+            "lufs": -20,
+            "centroidHz": 1150
+          }
+        ],
+        "seamStartLufs": -19,
+        "seamEndLufs": -20.1,
+        "seamDb": 1.1,
+        "seam": {
+          "boundaryStepDb": -10.09,
+          "slopeJumpDb": 2.08,
+          "lastZeroCrossingPhase": 0.5
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -8.02,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix."
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -19.995675853214028,
+        "truePeakDb": -7.999795214051736,
+        "durationSec": 20
+      }
+    },
+    {
+      "id": "canopy",
+      "renderKey": "2a676d8857e9a6e54918162ff5480dc44219db5ab857101be589cf0ec0bbd7c9",
+      "features": {
+        "durationSec": 20,
+        "integratedLufs": -23.21,
+        "shortTermMaxLufs": -21.31,
+        "loudnessRangeLu": 2.5,
+        "samplePeakDb": -12.25,
+        "truePeakDb": -12.18,
+        "crestDb": 15.37,
+        "centroidHz": 1969,
+        "flatness": 0.181,
+        "bands": [
+          -22.77,
+          -12.23,
+          -8.66,
+          -6.81,
+          -5.91,
+          -6.77,
+          -10.06,
+          -16.28
+        ],
+        "lowShare": 0.005,
+        "stereoWidth": 0.266,
+        "arc": [
+          -19.5,
+          -17.8,
+          -17.4,
+          -19.9,
+          -20.2,
+          -20.3,
+          -20.4,
+          -20.5,
+          -20.5,
+          -20.7,
+          -20.8,
+          -20.8,
+          -20.8,
+          -20.5,
+          -20.6,
+          -20.5,
+          -20.4,
+          -20.2,
+          -20.4,
+          -20.3
+        ],
+        "sections": [
+          {
+            "name": "scene",
+            "start": 0,
+            "end": 20,
+            "bars": 4,
+            "lufs": -20,
+            "centroidHz": 1969
+          }
+        ],
+        "seamStartLufs": -19.3,
+        "seamEndLufs": -20.4,
+        "seamDb": 1.1,
+        "seam": {
+          "boundaryStepDb": 9.21,
+          "slopeJumpDb": 10.59,
+          "lastZeroCrossingPhase": 0.5
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -8.97,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix."
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -20.0205370398093,
+        "truePeakDb": -8.998647830289102,
+        "durationSec": 20
+      }
+    },
+    {
+      "id": "interior",
+      "renderKey": "16776b91c35db90aaf357b2cf01f202928c416af4a58e947643069cb241e02b5",
+      "features": {
+        "durationSec": 20,
+        "integratedLufs": -22.75,
+        "shortTermMaxLufs": -21.52,
+        "loudnessRangeLu": 1.5,
+        "samplePeakDb": -10.24,
+        "truePeakDb": -10.22,
+        "crestDb": 14.7,
+        "centroidHz": 640,
+        "flatness": 0.0368,
+        "bands": [
+          -14.06,
+          -3.08,
+          -9,
+          -7.57,
+          -9.77,
+          -13.66,
+          -18.43,
+          -23.99
+        ],
+        "lowShare": 0.04,
+        "stereoWidth": 0.124,
+        "arc": [
+          -20.8,
+          -19.3,
+          -17.5,
+          -19.8,
+          -20.1,
+          -20,
+          -20,
+          -20.3,
+          -20.2,
+          -20.3,
+          -20.2,
+          -20.4,
+          -20.3,
+          -20.4,
+          -20.4,
+          -20.2,
+          -20,
+          -20.2,
+          -19.9,
+          -20.2
+        ],
+        "sections": [
+          {
+            "name": "scene",
+            "start": 0,
+            "end": 20,
+            "bars": 4,
+            "lufs": -20,
+            "centroidHz": 640
+          }
+        ],
+        "seamStartLufs": -20.5,
+        "seamEndLufs": -20.1,
+        "seamDb": 0.4,
+        "seam": {
+          "boundaryStepDb": 1.54,
+          "slopeJumpDb": -3.33,
+          "lastZeroCrossingPhase": 1.833
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -7.47,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix."
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -20.00566774010962,
+        "truePeakDb": -7.721197523475565,
+        "durationSec": 20
+      }
+    },
+    {
+      "id": "workshop",
+      "renderKey": "b0d5841869372a67b1207db926141e0aa006282c2495d55ff56a072bd7f9fc96",
+      "features": {
+        "durationSec": 20,
+        "integratedLufs": -26.88,
+        "shortTermMaxLufs": -25.31,
+        "loudnessRangeLu": 2.1,
+        "samplePeakDb": -15.19,
+        "truePeakDb": -15.19,
+        "crestDb": 13.68,
+        "centroidHz": 439,
+        "flatness": 0.014,
+        "bands": [
+          -5.41,
+          -4.34,
+          -12.45,
+          -8.82,
+          -10.35,
+          -15.88,
+          -22.14,
+          -29.39
+        ],
+        "lowShare": 0.319,
+        "stereoWidth": 0.246,
+        "arc": [
+          -21.3,
+          -19.3,
+          -17.1,
+          -19.4,
+          -20,
+          -20.3,
+          -20.5,
+          -20.7,
+          -20.7,
+          -20.7,
+          -20.4,
+          -20.2,
+          -19.9,
+          -19.7,
+          -19.6,
+          -19.8,
+          -20.1,
+          -20.5,
+          -20.8,
+          -20.9
+        ],
+        "sections": [
+          {
+            "name": "scene",
+            "start": 0,
+            "end": 20,
+            "bars": 4,
+            "lufs": -20,
+            "centroidHz": 439
+          }
+        ],
+        "seamStartLufs": -21.2,
+        "seamEndLufs": -20.9,
+        "seamDb": 0.3,
+        "seam": {
+          "boundaryStepDb": -3.49,
+          "slopeJumpDb": 5.13,
+          "lastZeroCrossingPhase": 1.69
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -8.31,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+            "data": [
+              {
+                "section": "scene",
+                "overlaps": [
+                  "field D3-A3 and settling A3 share a band"
+                ]
+              }
+            ]
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -20.002925467173686,
+        "truePeakDb": -8.43907387840466,
+        "durationSec": 20
+      }
+    },
+    {
+      "id": "outpost-dawn",
+      "renderKey": "fe050a1bda1e1e78f33868f8d78e8b6654b6fc57b6e72dd4ee073db20b6603f6",
+      "features": {
+        "durationSec": 72,
+        "integratedLufs": -24.59,
+        "shortTermMaxLufs": -21.11,
+        "loudnessRangeLu": 5.5,
+        "samplePeakDb": -9.25,
+        "truePeakDb": -9.25,
+        "crestDb": 17.48,
+        "centroidHz": 462,
+        "flatness": 0.0001,
+        "bands": [
+          -8.92,
+          -16.86,
+          -3.47,
+          -4.17,
+          -20.2,
+          -33.42,
+          -45.44,
+          -51.1
+        ],
+        "lowShare": 0.137,
+        "stereoWidth": 0.272,
+        "arc": [
+          -23.1,
+          -22,
+          -21.7,
+          -21.3,
+          -21.5,
+          -23.9,
+          -22.5,
+          -22.2,
+          -23.8,
+          -23.2,
+          -22.3,
+          -23.8,
+          -17.8,
+          -18.5,
+          -17.2,
+          -19.2,
+          -18.7,
+          -21.7,
+          -18.9,
+          -19.7,
+          -18.3,
+          -20.7,
+          -19.2,
+          -21.6,
+          -20,
+          -19.6,
+          -19.4,
+          -20.3,
+          -19.5,
+          -21.8,
+          -20.3,
+          -19.8,
+          -21.1,
+          -20.7,
+          -20.9,
+          -21.9,
+          -16.7,
+          -17.1,
+          -15.8,
+          -18.6,
+          -17.7,
+          -19.6,
+          -18,
+          -16.4,
+          -17.2,
+          -18.6,
+          -16.9,
+          -18.4,
+          -19.9,
+          -19.4,
+          -18.5,
+          -19.6,
+          -20.1,
+          -22.8,
+          -19.9,
+          -20.7,
+          -20.4,
+          -21.5,
+          -20.4,
+          -22.6,
+          -21.3,
+          -22,
+          -21.2,
+          -21.6,
+          -21.6,
+          -23.9,
+          -22.7,
+          -22.2,
+          -23.6,
+          -23.2,
+          -23.1,
+          -24
+        ],
+        "sections": [
+          {
+            "name": "beds",
+            "start": 0,
+            "end": 12,
+            "bars": 4,
+            "lufs": -22.5,
+            "centroidHz": 433
+          },
+          {
+            "name": "shoots",
+            "start": 12,
+            "end": 24,
+            "bars": 4,
+            "lufs": -19.1,
+            "centroidHz": 478
+          },
+          {
+            "name": "paths",
+            "start": 24,
+            "end": 36,
+            "bars": 4,
+            "lufs": -20.4,
+            "centroidHz": 424
+          },
+          {
+            "name": "sunlight",
+            "start": 36,
+            "end": 48,
+            "bars": 4,
+            "lufs": -17.5,
+            "centroidHz": 494
+          },
+          {
+            "name": "water",
+            "start": 48,
+            "end": 60,
+            "bars": 4,
+            "lufs": -20.3,
+            "centroidHz": 458
+          },
+          {
+            "name": "beds",
+            "start": 60,
+            "end": 72,
+            "bars": 4,
+            "lufs": -22.5,
+            "centroidHz": 428
+          }
+        ],
+        "seamStartLufs": -23.4,
+        "seamEndLufs": -23.1,
+        "seamDb": 0.3,
+        "seam": {
+          "boundaryStepDb": -6.35,
+          "slopeJumpDb": -11.68,
+          "lastZeroCrossingPhase": 0.154
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -4.66,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pad\" writes D4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"C5\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pad"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pluck\" writes A3-D5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 14 semitones up and sounds at 587 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#4\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pluck"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"melody\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/melody"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"seed\" writes A5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D6\" (the note it should sound at as written) or write notes near C5",
+            "pointer": "/tracks/seed"
+          }
+        ],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+            "data": [
+              {
+                "section": "beds",
+                "overlaps": [
+                  "pad D4-A5 and pluck D4-B5 share a band"
+                ]
+              },
+              {
+                "section": "shoots",
+                "overlaps": [
+                  "pad D4-A5 and pluck D4-B5 share a band",
+                  "pad D4-A5 and melody A4-E5 share a band",
+                  "pluck D4-Db6 and melody A4-A5 share a band"
+                ]
+              },
+              {
+                "section": "paths",
+                "overlaps": [
+                  "pad D4-A5 and pluck D4-B5 share a band"
+                ]
+              },
+              {
+                "section": "sunlight",
+                "overlaps": [
+                  "pad D4-A5 and pluck A3-D6 share a band",
+                  "pluck E4-D6 and melody D5-B5 share a band",
+                  "pad D4-A5 and melody D5-F#5 share a band"
+                ]
+              },
+              {
+                "section": "water",
+                "overlaps": [
+                  "pad D4-A5 and pluck D4-B5 share a band",
+                  "pad D4-A5 and melody A4-E5 share a band",
+                  "pluck D4-Db6 and melody A4-A5 share a band"
+                ]
+              }
+            ]
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -19.998965744245137,
+        "truePeakDb": -4.707262846152489,
+        "durationSec": 72
+      }
+    },
+    {
+      "id": "the-underside",
+      "renderKey": "ba7c0a3a50747000206a805b1239f8407d06a4b267dd164b7f9d058dc2dd849f",
+      "features": {
+        "durationSec": 80,
+        "integratedLufs": -23.81,
+        "shortTermMaxLufs": -20.91,
+        "loudnessRangeLu": 3.9,
+        "samplePeakDb": -11.66,
+        "truePeakDb": -11.66,
+        "crestDb": 14.98,
+        "centroidHz": 545,
+        "flatness": 0,
+        "bands": [
+          -11.28,
+          -21.92,
+          -3.72,
+          -3.64,
+          -12.39,
+          -28.42,
+          -46.49,
+          -71.94
+        ],
+        "lowShare": 0.078,
+        "stereoWidth": 0.406,
+        "arc": [
+          -21.9,
+          -21.1,
+          -22.9,
+          -22.2,
+          -21.4,
+          -22.2,
+          -21.7,
+          -23.1,
+          -21.9,
+          -23.1,
+          -22,
+          -22,
+          -21.6,
+          -20.8,
+          -18.3,
+          -18.1,
+          -18.4,
+          -20.6,
+          -18.3,
+          -21.2,
+          -19.3,
+          -19.8,
+          -17.8,
+          -20.9,
+          -20.3,
+          -18.5,
+          -19.9,
+          -18.5,
+          -18.7,
+          -20.3,
+          -18.7,
+          -18.5,
+          -18.8,
+          -19.8,
+          -19.3,
+          -18.9,
+          -18.9,
+          -20.4,
+          -18.8,
+          -18.7,
+          -18.5,
+          -17.6,
+          -16.3,
+          -18.7,
+          -20.7,
+          -17.3,
+          -19.6,
+          -19.3,
+          -19.2,
+          -20.3,
+          -19.6,
+          -19.4,
+          -19.1,
+          -20.4,
+          -19.7,
+          -19.5,
+          -19.3,
+          -21.5,
+          -19.5,
+          -21.4,
+          -19.8,
+          -20.8,
+          -19.1,
+          -21.3,
+          -21.3,
+          -19.3,
+          -21.1,
+          -21.5,
+          -22.1,
+          -23.3,
+          -21.5,
+          -21.5,
+          -21,
+          -22.3,
+          -22.3,
+          -21.9,
+          -21.8,
+          -23.4,
+          -22,
+          -21.6
+        ],
+        "sections": [
+          {
+            "name": "float",
+            "start": 0,
+            "end": 13.333333333333334,
+            "bars": 4,
+            "lufs": -22.1,
+            "centroidHz": 538
+          },
+          {
+            "name": "remember",
+            "start": 13.333333333333334,
+            "end": 26.666666666666668,
+            "bars": 4,
+            "lufs": -19.2,
+            "centroidHz": 582
+          },
+          {
+            "name": "clockwork",
+            "start": 26.666666666666668,
+            "end": 40,
+            "bars": 4,
+            "lufs": -19.1,
+            "centroidHz": 551
+          },
+          {
+            "name": "opening",
+            "start": 40,
+            "end": 53.333333333333336,
+            "bars": 4,
+            "lufs": -18.7,
+            "centroidHz": 493
+          },
+          {
+            "name": "drift",
+            "start": 53.333333333333336,
+            "end": 66.66666666666667,
+            "bars": 4,
+            "lufs": -20.2,
+            "centroidHz": 558
+          },
+          {
+            "name": "float",
+            "start": 66.66666666666667,
+            "end": 80,
+            "bars": 4,
+            "lufs": -22,
+            "centroidHz": 539
+          }
+        ],
+        "seamStartLufs": -21.7,
+        "seamEndLufs": -21.3,
+        "seamDb": 0.4,
+        "seam": {
+          "boundaryStepDb": -6.44,
+          "slopeJumpDb": -12.13,
+          "lastZeroCrossingPhase": 0.646
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -7.85,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pad\" writes D4-Db6 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 25 semitones up and sounds at 1109 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D5\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pad"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pluck\" writes Db4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pluck"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"memory\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/memory"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"glass\" writes B5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Eb6\" (the note it should sound at as written) or write notes near C5",
+            "pointer": "/tracks/glass"
+          }
+        ],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+            "data": [
+              {
+                "section": "float",
+                "overlaps": [
+                  "pad D4-Db6 and pluck Db4-D6 share a band"
+                ]
+              },
+              {
+                "section": "remember",
+                "overlaps": [
+                  "pad D4-Db6 and pluck Db4-D6 share a band",
+                  "pad D4-Db6 and memory A4-A5 share a band",
+                  "pluck Db4-D6 and memory A4-E5 share a band"
+                ]
+              },
+              {
+                "section": "clockwork",
+                "overlaps": [
+                  "pad D4-Db6 and pluck Db4-D6 share a band",
+                  "pad G4-Db6 and glass B5 share a band",
+                  "pluck D5-D6 and glass B5 share a band"
+                ]
+              },
+              {
+                "section": "opening",
+                "overlaps": [
+                  "pad D4-F#5 and pluck D4-E5 share a band",
+                  "pluck Ab4-B5 and memory D5-Ab5 share a band",
+                  "pad G4-F#5 and memory E5-F#5 share a band"
+                ]
+              },
+              {
+                "section": "drift",
+                "overlaps": [
+                  "pad D4-Db6 and pluck Db4-D6 share a band",
+                  "pad D4-Db6 and memory A4-A5 share a band",
+                  "pluck Db4-D6 and memory A4-E5 share a band"
+                ]
+              }
+            ]
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -19.99588465115912,
+        "truePeakDb": -7.852145244709505,
+        "durationSec": 80
+      }
+    },
+    {
+      "id": "window-light",
+      "renderKey": "e844f461c668e55a0922f263383fc61abc8f4b1e00ebb0a4cdbc7d462732f83f",
+      "features": {
+        "durationSec": 50.526,
+        "integratedLufs": -29.6,
+        "shortTermMaxLufs": -24.83,
+        "loudnessRangeLu": 6.7,
+        "samplePeakDb": -13.32,
+        "truePeakDb": -13.32,
+        "crestDb": 18.34,
+        "centroidHz": 385,
+        "flatness": 0,
+        "bands": [
+          -7.25,
+          -14.57,
+          -2.69,
+          -6.63,
+          -20.11,
+          -35.96,
+          -59.54,
+          -84.15
+        ],
+        "lowShare": 0.2,
+        "stereoWidth": 0.137,
+        "arc": [
+          -19.2,
+          -24,
+          -21,
+          -23.1,
+          -21.6,
+          -24.8,
+          -24.6,
+          -22,
+          -21.7,
+          -23.8,
+          -24.1,
+          -21.3,
+          -22.8,
+          -15.5,
+          -15.9,
+          -14.4,
+          -21.3,
+          -16.8,
+          -22.7,
+          -16.5,
+          -17.4,
+          -15.1,
+          -21.1,
+          -17.7,
+          -20.3,
+          -17.1,
+          -20.7,
+          -18.6,
+          -21,
+          -21.8,
+          -19.7,
+          -22.9,
+          -22.2,
+          -18.4,
+          -21.5,
+          -22,
+          -18.6,
+          -20,
+          -21.7,
+          -23.5,
+          -22,
+          -23.4,
+          -19.3,
+          -24.1,
+          -24.5,
+          -21,
+          -23,
+          -23.8,
+          -23.1,
+          -22.2
+        ],
+        "sections": [
+          {
+            "name": "window",
+            "start": 0,
+            "end": 12.631578947368421,
+            "bars": 4,
+            "lufs": -22.6,
+            "centroidHz": 383
+          },
+          {
+            "name": "letter",
+            "start": 12.631578947368421,
+            "end": 25.263157894736842,
+            "bars": 4,
+            "lufs": -17.2,
+            "centroidHz": 376
+          },
+          {
+            "name": "kettle",
+            "start": 25.263157894736842,
+            "end": 37.89473684210526,
+            "bars": 4,
+            "lufs": -20.4,
+            "centroidHz": 399
+          },
+          {
+            "name": "window",
+            "start": 37.89473684210526,
+            "end": 50.526315789473685,
+            "bars": 4,
+            "lufs": -22.4,
+            "centroidHz": 390
+          }
+        ],
+        "seamStartLufs": -23.5,
+        "seamEndLufs": -23.7,
+        "seamDb": 0.1,
+        "seam": {
+          "boundaryStepDb": 0.94,
+          "slopeJumpDb": -10.32,
+          "lastZeroCrossingPhase": 0.709
+        },
+        "delivered": {
+          "integratedLufs": -20,
+          "truePeakDb": -3.72,
+          "clippedSamples": 0
+        }
+      },
+      "lint": {
+        "errors": [],
+        "warnings": [
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pad\" writes D4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pad"
+          },
+          {
+            "rule": "song-written-pitch",
+            "message": "track \"pluck\" writes B4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
+            "pointer": "/tracks/pluck"
+          }
+        ],
+        "judgement": [
+          "song-register-bands",
+          "song-fatigue"
+        ],
+        "judgementChecks": [
+          {
+            "rule": "song-register-bands",
+            "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
+            "data": [
+              {
+                "section": "window",
+                "overlaps": [
+                  "pad D4-F#5 and piano E4-B4 share a band"
+                ]
+              },
+              {
+                "section": "letter",
+                "overlaps": [
+                  "pad D4-F#5 and piano D4-A4 share a band"
+                ]
+              },
+              {
+                "section": "kettle",
+                "overlaps": [
+                  "pad D4-F#5 and piano E4-B4 share a band",
+                  "pad E4-F#5 and pluck B4-B5 share a band"
+                ]
+              }
+            ]
+          },
+          {
+            "rule": "song-fatigue",
+            "check": "Music heard for a long time (exploration, menus) keeps melody understated, varies its sections, and leaves space: rests, thinned sections, slow fades in rather than an abrupt start."
+          }
+        ]
+      },
+      "encoded": {
+        "integratedLufs": -20.00475893843567,
+        "truePeakDb": -3.714936756185531,
+        "durationSec": 50.5263125
+      }
+    }
+  ]
+}
