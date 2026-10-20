@@ -10,6 +10,13 @@
 
 Spec: `docs/superpowers/specs/2026-10-20-source-overview-design.md`. Work in the worktree `<worktree>` (branch `feat/source-overview`); every command below runs there. Commit trailer on every commit: `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
 
+> **As built.** This plan is the historical record; the spec describes the shipped behaviour. Where they differ, the code and spec win. Known deviations:
+> - Task 1's quiet-segment test used `sine(440, 0.01)`, which is a 10 ms burst, not a quiet tone. It became `sine(440, 0.5, 0.01)` (amplitude 0.01).
+> - Segment cuts cap the search window so the remainder of a split is at least 50 ms.
+> - `runOverview` resolves the project with `findProjectRoot`/`openProject`, checks the sample ID before the project lookup, and rejects `--out` together with `--no-image` as `E_USAGE`.
+> - Runs under 50 ms are dropped as clicks, and the no-segments hint says so; the mono mixdown, loudness arc and decode limits are shared helpers (`src/audio/mono.ts`, `loudnessArc`, `SAMPLE_DECODE_LIMITS`).
+> - The look footer is built by `sourceFooter` in `runtime/look.js`, from whole segment items.
+
 Refinements to the spec found while planning (Task 6 updates the spec to match):
 - The image defaults to `.agent-beeps/renders/overviews/<key>.png`, not `samples/overviews`: `renders/` is gitignored derived output, `samples/` holds committed immutable objects.
 - A file source reports `source.normalizedId`, the ID `sample import` will give it (same decode, same bytes), so every `prepare` line is real. A hint says to import first.
