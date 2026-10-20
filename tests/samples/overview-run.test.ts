@@ -118,6 +118,8 @@ describe('runOverview arguments', () => {
     ['--start beyond the source', { startSec: 13 }], ['--start negative', { startSec: -1 }], ['--end zero', { endSec: 0 }],
     ['--end before --start', { startSec: 5, endSec: 2 }], ['--end beyond the source', { endSec: 13 }],
     ['--gap-db zero', { gapDb: 0 }], ['--gap-db above 100', { gapDb: 101 }], ['--min-gap under 10 ms', { minGapMs: 5 }],
+    ['--start NaN', { startSec: NaN }], ['--end NaN', { endSec: NaN }], ['--end Infinity', { endSec: Infinity }], ['--start Infinity', { startSec: Infinity }],
+    ['--gap-db NaN', { gapDb: NaN }], ['--min-gap NaN', { minGapMs: NaN }],
   ];
   it.each(cases)('rejects %s with E_SCHEMA before drawing', async (_name, extra) => {
     const d = dir();

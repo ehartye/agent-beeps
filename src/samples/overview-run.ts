@@ -47,6 +47,8 @@ async function drawOverview(openHost: () => Promise<RenderHost>, req: OverviewRe
 export async function runOverview(req: OverviewRequest, openHost: () => Promise<RenderHost> = openRenderHost) {
   if (!(req.gapDb > 0 && req.gapDb <= 100)) throw new BeepsError('E_SCHEMA', '--gap-db must be above 0 and at most 100');
   if (!(req.minGapMs >= 10 && req.minGapMs <= 10000)) throw new BeepsError('E_SCHEMA', '--min-gap must be 10 to 10000 ms');
+  if (req.startSec !== undefined && !Number.isFinite(req.startSec)) throw new BeepsError('E_SCHEMA', '--start must be a finite number');
+  if (req.endSec !== undefined && !Number.isFinite(req.endSec)) throw new BeepsError('E_SCHEMA', '--end must be a finite number');
   if (req.startSec !== undefined && req.startSec < 0) throw new BeepsError('E_SCHEMA', '--start must not be negative');
   if (req.endSec !== undefined && req.endSec <= (req.startSec ?? 0)) throw new BeepsError('E_SCHEMA', '--end must be after --start');
   if (!req.image && req.out) throw new BeepsError('E_USAGE', '--out needs an image: drop --no-image');
