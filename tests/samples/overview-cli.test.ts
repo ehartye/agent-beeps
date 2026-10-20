@@ -69,14 +69,15 @@ describe('beeps sample overview', () => {
     expect(r.out.segments.map((s: { startSec: number }) => s.startSec)).toEqual([3.98, 7.98]);
   });
 
-  it('rejects bad arguments before doing work', () => {
+  // One process per error family and per command-level number parse; the rest of the argument matrix runs in-process in overview-run.test.ts.
+  it('rejects bad arguments with the right error code', () => {
     const d = dir(), file = write(d, 'long.wav', long());
-    for (const args of [['--start', 'NaN'], ['--start', '13'], ['--end', '0'], ['--start', '5', '--end', '2'], ['--end', '13'], ['--gap-db', '0'], ['--gap-db', '101'], ['--min-gap', '5'], ['--min-gap', 'x']]) {
+    for (const args of [['--start', 'NaN'], ['--min-gap', 'x']]) {
       const r = cli(d, 'sample', 'overview', file, '--no-image', ...args);
       expect(r.status, JSON.stringify(args)).not.toBe(0);
       expect(r.err.code, JSON.stringify(args)).toBe('E_SCHEMA');
+      expect(r.err.message, JSON.stringify(args)).toMatch(`${args[0]} must be a finite number`);
     }
-    expect(cli(d, 'sample', 'overview', 'sha256:abc', '--no-image').err.code).toBe('E_SCHEMA');
     expect(cli(d, 'sample', 'overview', join(d, 'missing.wav'), '--no-image').err.code).toBe('E_NOT_FOUND');
     expect(cli(d, 'sample', 'overview', file).err.code).toBe('E_USAGE'); // image wanted, no project, no --out
   });
@@ -114,12 +115,6 @@ describe('beeps sample overview', () => {
     const r = cli(d, 'sample', 'overview', file, '--no-image');
     expect(r.status, r.stderr).toBe(0);
     expect(r.out.source).toMatchObject({ sampleRate: 48000, normalizedId: imported.out.normalizedId });
-  });
-
-  it('refuses --out without an image and a negative --start', () => {
-    const d = dir(), file = write(d, 'long.wav', long());
-    expect(cli(d, 'sample', 'overview', file, '--no-image', '--out', join(d, 'x.png')).err.code).toBe('E_USAGE');
-    expect(cli(d, 'sample', 'overview', file, '--no-image', '--start', '-1').err.code).toBe('E_SCHEMA');
   });
 
   it('accepts exactly 120 seconds and rejects 121 naming the limit', () => {

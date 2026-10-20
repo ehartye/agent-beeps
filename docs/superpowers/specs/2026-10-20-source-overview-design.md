@@ -19,8 +19,8 @@ beeps sample overview <source> [--start <s>] [--end <s>] [--out <png>] [--gap-db
 ```
 
 `<source>` is a normalized sample ID (`sha256:` plus 64 hex digits, project required, read with the
-120 second source bound) or an audio file path (no project, decoded like `analyze`). Both are
-decoded to 48 kHz and capped at 120 seconds and 64 MiB, the import bounds, so every window the
+120 second source bound) or an audio file path (no project needed). Both are
+decoded with the same limits and bytes as `sample import` (48 kHz, 120 seconds, 64 MiB), so every window the
 command proposes can be imported and prepared. Longer files fail with `E_SCHEMA` and a hint to trim
 them first.
 
@@ -28,7 +28,8 @@ them first.
 are found inside it and all times stay in source time. Overview a whole file, then a sub-range for
 detail. `--no-image` skips Chromium and returns the JSON only.
 
-Defaults: `--gap-db 40`, `--min-gap 200`. Both are validated finite and positive.
+Defaults: `--gap-db 40`, `--min-gap 200`. Ranges, all `E_SCHEMA`: `--gap-db` above 0 and at most 100; `--min-gap` 10 to
+10000 ms; `--start` at least 0; `--end` after `--start`; both inside the source length.
 
 ## Segmentation
 
@@ -80,8 +81,8 @@ through one optional feature flag in `runtime/look.js`; song looks must not chan
 pixel is about 86 ms, so the image shows shape; use `--start/--end` for transients.
 
 Default path with a project: `.agent-beeps/renders/overviews/<key>.png`, where key is the first 12 hex
-of the sha256 of the canonical JSON of the normalized ID, the view frames and the gap parameters. It
-is gitignored derived output, so an existing file is overwritten (it is a view, not an immutable
+of the sha256 of the canonical JSON of the normalized ID, the view frames and the gap parameters, not the footer label, so a file run and an ID run of the same
+audio write the same path (the later label wins). It is gitignored derived output, so an existing file is overwritten (it is a view, not an immutable
 object). Without a project `--out` is required. Missing Chromium fails with the existing `E_BROWSER_MISSING`; `--no-image` is the
 workaround.
 

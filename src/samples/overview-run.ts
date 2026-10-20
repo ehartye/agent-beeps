@@ -33,6 +33,7 @@ async function drawOverview(openHost: () => Promise<RenderHost>, req: OverviewRe
   const { startFrame, endFrame } = o.view;
   const key = sha256(canonicalJson({ id: loaded.normalizedId, startFrame, endFrame, gapDb: req.gapDb, minGapMs: req.minGapMs })).slice(0, 12);
   const image = req.out ? resolve(req.out) : project ? join(project.paths.renders, 'overviews', `${key}.png`) : undefined;
+  // Deliberate: runOverview already failed fast on this before decoding; this keeps `image` narrowed to a string and is safe on its own.
   if (!image) throw new BeepsError('E_USAGE', 'outside a project the image needs --out <png> (or pass --no-image)');
   const label = loaded.file ?? `${loaded.normalizedId.slice(0, 15)}...`;
   const host = await openHost();

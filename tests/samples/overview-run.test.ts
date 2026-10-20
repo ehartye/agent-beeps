@@ -25,7 +25,7 @@ const audio = () => {
   for (const t of [1, 4, 8]) pcm.set(sine(440, 0.5), t * SR);
   return pcm;
 };
-const wavFile = (d: string, name = 'long.wav') => { const f = join(d, name); writeFileSync(f, writeWav([audio()], SR, { bits: 32 })); return f; };
+const wavFile = (d: string, name = 'long.wav', pcm = audio()) => { const f = join(d, name); writeFileSync(f, writeWav([pcm], SR, { bits: 32 })); return f; };
 const req = (source: string, projectDir: string, extra: object = {}) => ({ source, projectDir, gapDb: 40, minGapMs: 200, image: true, ...extra });
 
 describe('runOverview image', () => {
@@ -51,6 +51,25 @@ describe('runOverview image', () => {
     const images = new Set([await runOverview(req(file, d), host.open), await runOverview(req(file, d, { startSec: 2 }), host.open),
       await runOverview(req(file, d, { gapDb: 30 }), host.open), await runOverview(req(file, d, { minGapMs: 300 }), host.open)].map(r => r.image));
     expect(images.size).toBe(4);
+  });
+
+  it('keys the image by the audio too', async () => {
+    const d = dir(); initProject(d);
+    const other = audio(); other.set(sine(880, 0.5), 8 * SR);
+    const host = fake();
+    const a = await runOverview(req(wavFile(d, 'a.wav'), d), host.open), b = await runOverview(req(wavFile(d, 'b.wav', other), d), host.open);
+    expect(b.image).not.toBe(a.image);
+  });
+
+  it('hands the renderer the view window, not just a view-sized slice', async () => {
+    const d = dir(), host = fake(), pcm = new Float32Array(5 * SR);
+    pcm.set(sine(440, 0.1), 2 * SR); // 1 s into a view of 1 s to 4 s
+    await runOverview(req(wavFile(d, 'pos.wav', pcm), d, { out: join(d, 'o.png'), startSec: 1, endSec: 4 }), host.open);
+    const [channels] = host.songPcmLook.mock.calls[0] as unknown as [Float32Array[]];
+    expect(channels[0]).toHaveLength(3 * SR);
+    expect(channels[0].findIndex(v => v !== 0)).toBeGreaterThanOrEqual(SR);
+    expect(channels[0].findIndex(v => v !== 0)).toBeLessThanOrEqual(SR + 2);
+    expect(Math.max(...channels[0].subarray(SR, SR + 4800).map(Math.abs))).toBeGreaterThan(0.4);
   });
 
   it('creates the parent directory of --out, even without a project', async () => {
@@ -89,5 +108,37 @@ describe('runOverview image', () => {
     expect(features.source.peakDb).toBeCloseTo(-6, 0);
     expect(label).toBe('long.wav');
     expect(r.segments.map(s => s.index)).toEqual([1, 2]);
+  });
+});
+
+describe('runOverview arguments', () => {
+  const bad = (code: string, d: string, source: string, extra: object) =>
+    expect(runOverview(req(source, d, { image: false, ...extra }), fake().open)).rejects.toMatchObject({ code });
+  const cases: [string, object][] = [
+    ['--start beyond the source', { startSec: 13 }], ['--start negative', { startSec: -1 }], ['--end zero', { endSec: 0 }],
+    ['--end before --start', { startSec: 5, endSec: 2 }], ['--end beyond the source', { endSec: 13 }],
+    ['--gap-db zero', { gapDb: 0 }], ['--gap-db above 100', { gapDb: 101 }], ['--min-gap under 10 ms', { minGapMs: 5 }],
+  ];
+  it.each(cases)('rejects %s with E_SCHEMA before drawing', async (_name, extra) => {
+    const d = dir();
+    await bad('E_SCHEMA', d, wavFile(d), extra);
+  });
+
+  it('rejects a malformed sample ID with E_SCHEMA, with or without a project', async () => {
+    const d = dir();
+    await bad('E_SCHEMA', d, 'sha256:abc', {});
+    initProject(d);
+    await bad('E_SCHEMA', d, 'sha256:abc', {});
+  });
+
+  it('rejects --out without an image with E_USAGE', async () => {
+    const d = dir();
+    await bad('E_USAGE', d, wavFile(d), { out: join(d, 'x.png') });
+  });
+
+  it('checks --out against --no-image before it looks for a project, so an ID without one is E_USAGE', async () => {
+    const d = dir(), id = `sha256:${'0'.repeat(64)}`;
+    await bad('E_USAGE', d, id, { out: join(d, 'x.png') });
+    await bad('E_PROJECT', d, id, {});
   });
 });
