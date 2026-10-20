@@ -44,7 +44,7 @@ function commitFiles(files: { path: string; bytes: Buffer }[]): void {
   for (const f of files) writeImmutableFile(f.path, f.bytes);
 }
 const jsonBytes = (data: unknown) => Buffer.from(canonicalJson(data) + '\n');
-const MAX_ORIGINAL_BYTES = 64 * 1024 * 1024;
+export const MAX_ORIGINAL_BYTES = 64 * 1024 * 1024;
 
 export function importSample(project: ProjectLocation, file: string, options: { origin?: string; license?: string } = {}): ImportedSample {
   for (const [key, value] of Object.entries(options)) if (!['origin', 'license'].includes(key) || typeof value !== 'string' || !value.trim()) throw new BeepsError('E_SCHEMA', `sample import ${key} must be a nonempty string`);

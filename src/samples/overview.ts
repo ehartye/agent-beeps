@@ -1,5 +1,5 @@
 // A long recording's overview: where the sound is, cut into natural segments of at most ten seconds, each with the numbers an
-// agent needs to choose a crop for `beeps sample prepare`. Pure: no files, no browser.
+// agent needs to choose a crop for `beeps sample prepare`. No I/O of its own: no files, no browser.
 import { mixToMono } from '../audio/mono.ts';
 import { SAMPLE_RATE } from '../hash.ts';
 import { clippedSamples, crestDb } from '../measure/envelope.ts';
