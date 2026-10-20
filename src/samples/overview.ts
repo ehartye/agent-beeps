@@ -1,5 +1,6 @@
 // A long recording's overview: where the sound is, cut into natural segments of at most ten seconds, each with the numbers an
 // agent needs to choose a crop for `beeps sample prepare`. Pure: no files, no browser.
+// Imported for one source of truth on the ten-second limit; this module does no I/O.
 import { PREPARED_MAX_FRAMES } from './store.ts';
 
 export const SR = 48000;
@@ -29,7 +30,9 @@ function frameLevels(x: Float32Array): Float64Array {
 function splitLong(levels: Float64Array, start: number, end: number): Cut[] {
   const out: Cut[] = [];
   while (end - start > PREPARED_MAX_FRAMES) {
-    const lo = Math.ceil((start + SPLIT_FROM) / FRAME), hi = Math.floor((start + PREPARED_MAX_FRAMES) / FRAME);
+    const lo = Math.ceil((start + SPLIT_FROM) / FRAME);
+    // the window also stops MIN_RUN_FRAMES short of the end, so the remainder is never under 50 ms
+    const hi = Math.min(Math.floor((start + PREPARED_MAX_FRAMES) / FRAME), Math.floor((end - MIN_RUN_FRAMES * FRAME) / FRAME));
     let at = lo;
     for (let f = lo + 1; f <= hi; f++) if (levels[f] < levels[at]) at = f;
     out.push({ startFrame: start, endFrame: at * FRAME, cutAt10s: true });
