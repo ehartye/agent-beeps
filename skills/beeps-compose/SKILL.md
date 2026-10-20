@@ -28,7 +28,8 @@ original encoded imports, import receipts or private paths. For native playback,
 gesture, await `loadCueAssets`, then build a fresh voice per play; cancel obsolete pending work.
 Keep ordinary procedural work on the generate path below; songs/music remain beeps-music.
 A recording longer than ten seconds? `beeps sample overview <normalizedId|file>` first: it images the
-whole recording and proposes crop windows with a ready `prepare` line each (hybrid-sources.md).
+whole recording and proposes crop windows with a ready `prepare` line each
+([hybrid sources](references/hybrid-sources.md)).
 
 ## Generate first, author second
 

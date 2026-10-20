@@ -255,6 +255,20 @@ describe('overviewAudio', () => {
     expect(overviewLook(o).source.peakDb).toBeNull();
   });
 
+  it('says a lone 5 ms click is too short to list, not that the view is silent', () => {
+    const o = overviewAudio([layout(2, [[0.5, sine(440, 0.005)]])], DEFAULTS);
+    expect(o.segments).toEqual([]);
+    expect(o.hints).toHaveLength(1);
+    expect(o.hints[0]).toMatch(/no segment of 50 ms or more above -70 dBFS/);
+    expect(o.hints[0]).toMatch(/--start and --end/);
+    expect(o.hints[0]).not.toMatch(/no sound above/);
+  });
+
+  it('keeps the silence hint for a silent view', () => {
+    const o = overviewAudio([new Float32Array(SR)], DEFAULTS);
+    expect(o.hints).toEqual(['no sound above -70 dBFS in the view (measured on the mono mix)']);
+  });
+
   it('says "1 quieter segment omitted" in the singular', () => {
     const o = overviewAudio([train(65, () => 0.3)], DEFAULTS);
     expect(o.omitted).toBe(1);

@@ -42,7 +42,7 @@ describe('beeps CLI', () => {
   it('lists sample overview in the capabilities', () => {
     const r = beeps(tmpdir(), 'capabilities');
     expect(r.status).toBe(0);
-    expect(JSON.stringify(r.out)).toContain('sample overview');
+    expect(r.out.samples.commands).toContain('sample overview');
   });
 
   it('rejects q on a lowpass with a pointer and hint on stderr and exit 1', () => {

@@ -84,6 +84,11 @@ export function segmentMono(x: Float32Array, { gapDb, minGapMs }: SegmentOptions
   return cuts;
 }
 
+/** True when any 10 ms frame is above the -70 dBFS floor: with no segments, tells a view of only short clicks from silence. */
+export function hasAudibleFrame(x: Float32Array): boolean {
+  return frameLevels(x).some(v => v > FLOOR_DB);
+}
+
 export const MAX_SEGMENTS = 64;
 const SHORT_SEC = 0.15;
 
@@ -126,7 +131,11 @@ export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): 
   const view = channels.map(c => c.subarray(v0, v1)), x = mixToMono(view);
   let cuts = segmentMono(x, opts);
   const hints: string[] = [];
-  if (!cuts.length) hints.push('no sound above -70 dBFS in the view (measured on the mono mix)');
+  if (!cuts.length) {
+    hints.push(hasAudibleFrame(x)
+      ? `no segment of ${MIN_RUN_FRAMES * 10} ms or more above -70 dBFS: a shorter sound is not listed; crop it by ear with --start and --end`
+      : 'no sound above -70 dBFS in the view (measured on the mono mix)');
+  }
   else if (cuts.length > 1 && cuts.slice(0, -1).every(c => c.cutAt10s)) {
     hints.push(`no gap of ${opts.minGapMs} ms or more, ${opts.gapDb} dB under the loudest frame, splits this sound: the segments are ten-second cuts of one continuous sound; lower --gap-db or --min-gap to look for gaps`);
   }
