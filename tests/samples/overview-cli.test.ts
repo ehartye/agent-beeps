@@ -151,7 +151,8 @@ describe('beeps sample overview', () => {
     const file = write(d, 'long.wav', long());
     const byDefault = cli(d, 'sample', 'overview', file);
     expect(byDefault.status, byDefault.stderr).toBe(0);
-    expect(byDefault.out.image.startsWith(join(d, '.agent-beeps', 'renders', 'overviews'))).toBe(true);
+    // Match the tail, so a Windows 8.3 short temp path cannot make the prefix comparison fail.
+    expect(byDefault.out.image.replaceAll('\\', '/')).toMatch(/\/\.agent-beeps\/renders\/overviews\/[0-9a-f]{12}\.png$/);
     const png = readFileSync(byDefault.out.image);
     expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     expect(png.length).toBeGreaterThan(5000);
@@ -161,6 +162,8 @@ describe('beeps sample overview', () => {
     expect(r.out.image).toBe(elsewhere);
     expect(existsSync(elsewhere)).toBe(true);
     const outside = dir(); const loose = write(outside, 'long.wav', long());
-    expect(cli(outside, 'sample', 'overview', loose, '--out', join(outside, 'o.png')).status).toBe(0);
+    const loosely = cli(outside, 'sample', 'overview', loose, '--out', join(outside, 'o.png'));
+    expect(loosely.status, loosely.stderr).toBe(0);
+    expect(existsSync(join(outside, 'o.png'))).toBe(true);
   });
 });
