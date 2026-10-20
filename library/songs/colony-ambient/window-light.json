@@ -1,9 +1,9 @@
 {
   "schema": "beeps/song@1",
-  "name": "clementines-window",
-  "title": "Clementine’s Window",
-  "description": "Inside Plot 7B, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and warm upper chords leave room for the room itself.",
-  "tags": ["interior", "repose", "space-to-grow"],
+  "name": "window-light",
+  "title": "Window Light",
+  "description": "Inside the home module, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and warm upper chords leave room for the room itself.",
+  "tags": ["interior", "repose", "colony"],
   "bpm": 76,
   "loop": true,
   "seed": 270927,

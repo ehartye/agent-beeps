@@ -1,9 +1,9 @@
 {
   "schema": "beeps/song@1",
-  "name": "sproutpost",
-  "title": "Sproutpost",
-  "description": "Clementine’s orbital garden: a breathy, wistful D-major seed motif, warm plucked strings and a small hand-drum pulse. The middle opens into Lydian sunlight before returning to the quiet beds.",
-  "tags": ["exploration", "space-to-grow"],
+  "name": "outpost-dawn",
+  "title": "Outpost Dawn",
+  "description": "An orbital garden outpost: a breathy, wistful D-major seed motif, warm plucked strings and a small hand-drum pulse. The middle opens into Lydian sunlight before returning to the quiet beds.",
+  "tags": ["exploration", "colony"],
   "bpm": 80,
   "loop": true,
   "seed": 270927,

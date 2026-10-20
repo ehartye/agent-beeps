@@ -1,9 +1,9 @@
 {
   "schema": "beeps/song@1",
-  "name": "the-upside",
-  "title": "The Upside",
-  "description": "The same seed motif suspended above a floating garden: B-minor warmth, G-Lydian glass, distant felt notes, and long spaces. A brief D-major opening in the clouds remembers home.",
-  "tags": ["exploration", "space-to-grow"],
+  "name": "the-underside",
+  "title": "The Underside",
+  "description": "The same seed motif suspended beneath a floating garden: B-minor warmth, G-Lydian glass, distant felt notes, and long spaces. A brief D-major opening in the clouds remembers home.",
+  "tags": ["exploration", "colony"],
   "bpm": 72,
   "loop": true,
   "seed": 270927,
@@ -36,10 +36,10 @@
   "sections": {
     "float": {"bars": 4, "play": {"pad": "pad-cloud", "pluck": "pluck-cloud", "roots": "bass-cloud"}, "mix": {"pad": {"gainDb": -21}, "roots": {"gainDb": -23}, "pluck": {"gainDb": -11}}},
     "remember": {"bars": 4, "play": {"pad": "pad-cloud", "pluck": "pluck-cloud", "roots": "bass-cloud", "memory": "memory"}, "mix": {"pad": {"gainDb": -19}, "roots": {"gainDb": -20}}},
-    "wingnuts": {"bars": 4, "play": {"pad": "pad-cloud", "pluck": "pluck-cloud", "roots": "bass-cloud", "glass": "glint"}, "mix": {"pad": {"gainDb": -18}, "pluck": {"gainDb": -9}}},
+    "clockwork": {"bars": 4, "play": {"pad": "pad-cloud", "pluck": "pluck-cloud", "roots": "bass-cloud", "glass": "glint"}, "mix": {"pad": {"gainDb": -18}, "pluck": {"gainDb": -9}}},
     "opening": {"bars": 4, "play": {"pad": "pad-light", "pluck": "pluck-light", "roots": "bass-light", "memory": "sun"}, "mix": {"pad": {"gainDb": -17}}},
     "drift": {"bars": 4, "play": {"pad": "pad-cloud", "pluck": "pluck-cloud", "roots": "bass-cloud", "memory": "memory"}, "mix": {"pad": {"gainDb": -20}, "memory": {"gainDb": -10}}}
   },
-  "form": ["float", "remember", "wingnuts", "opening", "drift", "float"],
+  "form": ["float", "remember", "clockwork", "opening", "drift", "float"],
   "master": {"reverb": {"preset": "hall", "returnDb": -6}, "delay": {"beats": 1.5, "feedback": 0.28, "returnDb": -12, "cutoff": 2500}}
 }
