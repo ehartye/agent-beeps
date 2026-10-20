@@ -133,6 +133,14 @@ describe('runOverview arguments', () => {
     await bad('E_SCHEMA', d, 'sha256:abc', {});
   });
 
+  it('rejects a file over 120 seconds with E_SCHEMA, the limit in the message and a hint to trim it', async () => {
+    const d = dir();
+    const err = await runOverview(req(wavFile(d, 'huge.wav', new Float32Array(121 * SR)), d, { image: false }), fake().open).catch(e => e);
+    expect(err).toMatchObject({ code: 'E_SCHEMA' });
+    expect(err.message).toMatch(/120 seconds/);
+    expect(err.hint).toMatch(/trim.*120 seconds or less.*ffmpeg -i in\.wav -t 120 out\.wav/);
+  });
+
   it('rejects --out without an image with E_USAGE', async () => {
     const d = dir();
     await bad('E_USAGE', d, wavFile(d), { out: join(d, 'x.png') });

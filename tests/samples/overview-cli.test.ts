@@ -91,13 +91,6 @@ describe('beeps sample overview', () => {
     expect(cli(d, 'sample', 'overview', id, '--no-image').err.code).toBe('E_NOT_FOUND');
   });
 
-  it('rejects a source over 120 seconds', () => {
-    const d = dir(), file = write(d, 'huge.wav', layout(121, [[1, sine(440, 0.5)]]));
-    const r = cli(d, 'sample', 'overview', file, '--no-image');
-    expect(r.status).not.toBe(0);
-    expect(r.err.code).toBe('E_SCHEMA');
-  });
-
   it('agrees with import on a stereo file', () => {
     const d = dir(); initProject(d);
     const file = join(d, 'stereo.wav');
@@ -125,6 +118,7 @@ describe('beeps sample overview', () => {
     expect(ok.status, ok.stderr).toBe(0);
     expect(ok.out.source.durationSec).toBe(120);
     const over = cli(d, 'sample', 'overview', write(d, 'over.wav', layout(121, [[1, sine(440, 0.5)]])), '--no-image');
+    expect(over.status).not.toBe(0);
     expect(over.err.code).toBe('E_SCHEMA');
     expect(over.err.message).toMatch(/120/);
   });

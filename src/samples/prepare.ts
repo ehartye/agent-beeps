@@ -6,7 +6,7 @@ import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { decodeAudio, type DecoderIdentity } from '../audio/decode.ts';
 import { writeWav } from '../audio/wav.ts';
 import { BeepsError } from '../errors.ts';
-import { canonicalJson, sha256 } from '../hash.ts';
+import { canonicalJson, SAMPLE_RATE, sha256 } from '../hash.ts';
 import { PREPARED_MAX_FRAMES, readSampleObject, SAMPLE_ID_PATTERN, sampleId, samplePaths, SOURCE_MAX_FRAMES, verifyImmutableFile, writeImmutableFile, type SampleId } from './store.ts';
 
 // All controls are required: zero fades and zero gain must be explicit in durable recipes.
@@ -29,7 +29,7 @@ export function parseSamplePrep(input: unknown): SamplePrep {
 }
 
 type ProjectLocation = Parameters<typeof samplePaths>[0];
-interface AudioMetadata { sampleRate: 48000; channels: 1 | 2; frames: number; bytes: number }
+interface AudioMetadata { sampleRate: typeof SAMPLE_RATE; channels: 1 | 2; frames: number; bytes: number }
 export interface SampleImportReceipt {
   schema: 'beeps/sample-import@1'; originalId: SampleId; originalName: string; normalizedId: SampleId;
   decoder: DecoderIdentity; sourceSampleRate: number; originalPath: string; importedAt: string; origin?: string; license?: string;
@@ -44,10 +44,10 @@ function commitFiles(files: { path: string; bytes: Buffer }[]): void {
   for (const f of files) writeImmutableFile(f.path, f.bytes);
 }
 const jsonBytes = (data: unknown) => Buffer.from(canonicalJson(data) + '\n');
-export const MAX_ORIGINAL_BYTES = 64 * 1024 * 1024;
+const MAX_ORIGINAL_BYTES = 64 * 1024 * 1024;
 /** What import decodes to, and what overview must decode to so the IDs it prints are the ones import will give. */
-export const SAMPLE_DECODE_LIMITS = { rate: 48000, maxSeconds: 120, maxFrames: SOURCE_MAX_FRAMES, maxChannels: 2, maxInputBytes: MAX_ORIGINAL_BYTES } as const;
-export const normalizedSampleWav = (channels: Float32Array[]): Buffer => writeWav(channels, 48000, { bits: 32 });
+export const SAMPLE_DECODE_LIMITS = { rate: SAMPLE_RATE, maxSeconds: 120, maxFrames: SOURCE_MAX_FRAMES, maxChannels: 2, maxInputBytes: MAX_ORIGINAL_BYTES } as const;
+export const normalizedSampleWav = (channels: Float32Array[]): Buffer => writeWav(channels, SAMPLE_RATE, { bits: 32 });
 
 export function importSample(project: ProjectLocation, file: string, options: { origin?: string; license?: string } = {}): ImportedSample {
   for (const [key, value] of Object.entries(options)) if (!['origin', 'license'].includes(key) || typeof value !== 'string' || !value.trim()) throw new BeepsError('E_SCHEMA', `sample import ${key} must be a nonempty string`);
@@ -80,7 +80,7 @@ export function importSample(project: ProjectLocation, file: string, options: { 
   const receiptId: SampleId = `sha256:${sha256(canonicalJson(receipt))}`;
   const originalPath = join(paths.originals, `${originalId.slice(7)}.bin`), objectPath = join(paths.objects, `${normalizedId.slice(7)}.wav`), receiptPath = join(paths.imports, `${receiptId.slice(7)}.json`);
   commitFiles([{ path: originalPath, bytes: original }, { path: objectPath, bytes: wav }, { path: receiptPath, bytes: jsonBytes(receipt) }]);
-  return { receiptId, originalId, normalizedId, originalPath, objectPath, receiptPath, receipt, sampleRate: 48000, channels: pcm.channels.length as 1 | 2, frames: pcm.frames, bytes: wav.length };
+  return { receiptId, originalId, normalizedId, originalPath, objectPath, receiptPath, receipt, sampleRate: SAMPLE_RATE, channels: pcm.channels.length as 1 | 2, frames: pcm.frames, bytes: wav.length };
 }
 
 export interface SamplePreparedReceipt extends AudioMetadata {
@@ -90,7 +90,7 @@ export interface PreparedSample extends AudioMetadata { recipeId: SampleId; outp
 
 const PreparedReceiptSchema = z.strictObject({
   schema: z.literal('beeps/sample-prepared@1'), recipeId: z.string().regex(SAMPLE_ID_PATTERN), recipe: SamplePrepSchema,
-  outputId: z.string().regex(SAMPLE_ID_PATTERN), sampleRate: z.literal(48000), channels: z.union([z.literal(1), z.literal(2)]),
+  outputId: z.string().regex(SAMPLE_ID_PATTERN), sampleRate: z.literal(SAMPLE_RATE), channels: z.union([z.literal(1), z.literal(2)]),
   frames: z.number().int().min(1).max(PREPARED_MAX_FRAMES), bytes: z.number().int().min(48).max(44 + PREPARED_MAX_FRAMES * 8),
 });
 
@@ -124,8 +124,8 @@ export function prepareSampleWav(input: unknown, sourceWav: Buffer): { wav: Buff
     }
     return out;
   });
-  const wav = writeWav(channels, 48000, { bits: 32 }), outputId = sampleId(wav), recipeId: SampleId = `sha256:${sha256(canonicalJson(recipe))}`;
-  const metadata = { sampleRate: 48000 as const, channels: channels.length as 1 | 2, frames, bytes: wav.length };
+  const wav = writeWav(channels, SAMPLE_RATE, { bits: 32 }), outputId = sampleId(wav), recipeId: SampleId = `sha256:${sha256(canonicalJson(recipe))}`;
+  const metadata = { sampleRate: SAMPLE_RATE, channels: channels.length as 1 | 2, frames, bytes: wav.length };
   const receipt: SamplePreparedReceipt = { schema: 'beeps/sample-prepared@1', recipeId, recipe, outputId, ...metadata };
   if (expected && canonicalJson(expected) !== canonicalJson(receipt)) throw new BeepsError('E_VERIFY', 'sample preparation output or metadata differs from receipt');
   return { wav, receipt };

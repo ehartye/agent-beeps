@@ -3,7 +3,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { decodeAudio } from '../audio/decode.ts';
 import { BeepsError } from '../errors.ts';
-import { canonicalJson, sha256 } from '../hash.ts';
+import { canonicalJson, SAMPLE_RATE, sha256 } from '../hash.ts';
 import { findProjectRoot, openProject, type OpenProject } from '../project.ts';
 import { openRenderHost, type RenderHost } from '../render/host.ts';
 import { overviewAudio, overviewLook, sec, SR, type Overview } from './overview.ts';
@@ -24,7 +24,14 @@ function loadId(id: SampleId, project: OpenProject): Loaded {
 
 // The same decode and encoding `sample import` uses, so the normalized ID is the one import will report.
 function loadFile(path: string): Loaded {
-  const decoded = decodeAudio(resolve(path), SAMPLE_DECODE_LIMITS);
+  let decoded: ReturnType<typeof decodeAudio>;
+  try { decoded = decodeAudio(resolve(path), SAMPLE_DECODE_LIMITS); } catch (e) {
+    // A bound error alone says what was exceeded; say what to do about it. Same code and message, plus the hint.
+    if (e instanceof BeepsError && e.code === 'E_SCHEMA' && e.hint === undefined && /exceed/i.test(e.message)) {
+      throw new BeepsError(e.code, e.message, { pointer: e.pointer, details: e.details, hint: `trim the recording to ${SAMPLE_DECODE_LIMITS.maxSeconds} seconds or less (for example: ffmpeg -i in.wav -t ${SAMPLE_DECODE_LIMITS.maxSeconds} out.wav) and try again` });
+    }
+    throw e;
+  }
   return { channels: decoded.channels, normalizedId: sampleId(normalizedSampleWav(decoded.channels)), file: basename(path) };
 }
 
@@ -70,7 +77,7 @@ export async function runOverview(req: OverviewRequest, openHost: () => Promise<
   if (loaded.file !== undefined) hints.push(`the prepare lines use ${loaded.normalizedId}: run beeps sample import "${resolve(req.source)}" and check that the normalizedId it prints equals the one used in these prepare lines`);
   const image = req.image ? await drawOverview(openHost, req, project, loaded, o) : null;
   return {
-    source: { ...(loaded.file !== undefined ? { file: loaded.file } : {}), normalizedId: loaded.normalizedId, durationSec: sec(total), sampleRate: 48000, channels: loaded.channels.length, view: { startSec: o.view.startSec, endSec: o.view.endSec } },
+    source: { ...(loaded.file !== undefined ? { file: loaded.file } : {}), normalizedId: loaded.normalizedId, durationSec: sec(total), sampleRate: SAMPLE_RATE, channels: loaded.channels.length, view: { startSec: o.view.startSec, endSec: o.view.endSec } },
     image,
     segments: o.segments.map(s => ({ ...s, prepare: `beeps sample prepare ${loaded.normalizedId} --start ${s.startSec} --end ${s.endSec}` })),
     omitted: o.omitted,
