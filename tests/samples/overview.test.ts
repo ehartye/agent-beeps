@@ -29,10 +29,13 @@ describe('segmentMono', () => {
     expect(segmentMono(split, DEFAULTS)).toHaveLength(2);
   });
 
-  it('drops a click shorter than 50 ms', () => {
+  it('lists a click shorter than 50 ms as a segment of its own', () => {
     const click = new Float32Array(1); click[0] = 0.5;
     const x = layout(6, [[2, click], [4, sine(440, 0.5)]]);
-    expect(segmentMono(x, DEFAULTS)).toEqual([{ startFrame: 191040, endFrame: 216000, cutAt10s: false }]);
+    expect(segmentMono(x, DEFAULTS)).toEqual([
+      { startFrame: 95040, endFrame: 96480, cutAt10s: false }, // the 10 ms frame plus the 20 ms lead-in
+      { startFrame: 191040, endFrame: 216000, cutAt10s: false },
+    ]);
   });
 
   it('keeps a quiet burst until --gap-db excludes it', () => {
@@ -255,13 +258,17 @@ describe('overviewAudio', () => {
     expect(overviewLook(o).source.peakDb).toBeNull();
   });
 
-  it('says a lone 5 ms click is too short to list, not that the view is silent', () => {
+  it('lists a lone 5 ms tap with the short flag and no hint', () => {
     const o = overviewAudio([layout(2, [[0.5, sine(440, 0.005)]])], DEFAULTS);
-    expect(o.segments).toEqual([]);
-    expect(o.hints).toHaveLength(1);
-    expect(o.hints[0]).toMatch(/no segment of 50 ms or more above -70 dBFS/);
-    expect(o.hints[0]).toMatch(/--start and --end/);
-    expect(o.hints[0]).not.toMatch(/no sound above/);
+    expect(o.segments).toHaveLength(1);
+    expect(o.segments[0].flags).toEqual(['short']);
+    expect(o.segments[0].durationSec).toBeLessThan(0.05);
+    expect(o.hints).toEqual([]);
+  });
+
+  it('flags a tap beside a longer sound short and leaves the longer one unflagged', () => {
+    const o = overviewAudio([layout(4, [[0.5, sine(440, 0.02)], [2, sine(440, 0.5)]])], DEFAULTS);
+    expect(o.segments.map(s => s.flags)).toEqual([['short'], []]);
   });
 
   it('keeps the silence hint for a silent view', () => {

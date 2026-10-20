@@ -39,8 +39,8 @@ Deterministic, on a mono mix at 48 kHz in 10 ms RMS frames.
    frame, with an absolute floor of -70 dBFS. A frame exactly at the threshold counts as sound,
    not as a gap: only frames strictly below it are quiet.
 2. Segments are the stretches between gaps, extended 20 ms earlier so an onset is not clipped.
-   A segment is dropped as a click when its run of loud frames, measured before the 20 ms
-   lead-in is added, is under 50 ms.
+   Nothing is dropped for being short: a lone tap is listed, with the `short` flag, as a segment of
+   its 10 ms frame plus the lead-in at least.
 3. A segment over ten seconds is cut at its quietest frame between 6 s and 10 s from its start,
    repeatedly. Every piece except the last carries `cutAt10s`. A source with no gap at all comes out
    as ten second slices with a hint.
@@ -105,7 +105,7 @@ workaround.
 ## Tests
 
 - Segmenter unit tests on synthetic audio: three bursts with gaps, noise only, 25 s continuous
-  (cuts and `cutAt10s`), a dropped click, more than 64 segments, a `--start/--end` range, flag rules
+  (cuts and `cutAt10s`), a lone short tap, more than 64 segments, a `--start/--end` range, flag rules
   and determinism.
 - CLI tests on a synthetic WAV path and on an imported ID, including bad arguments, over-length
   source, unknown ID and `--no-image`.

@@ -80,9 +80,11 @@ file first and check the IDs match.
   [matching a reference](matching-a-reference.md).
 - `clipped`: the segment has flattened peaks; lowering gain will not repair them. Prefer another.
 - `cutAt10s`: the sound goes on past the cut. Choose a shorter window that ends where you want.
-- `short`: under 150 ms. Fine for a click; check it is not a stray noise. Sounds under 50 ms are
-  not listed at all: crop a single tap by ear around it with `--start`/`--end`, then prepare.
-- `hints` say when nothing is audible or only sounds under 50 ms were found, when one continuous
+- `short`: under 150 ms. A tap, click or contact transient is listed as its own segment (a lone
+  10 ms tap shows as about 30 ms with its lead-in). Check it is a wanted sound and not stray noise
+  or a room reflection; a tap more than `--gap-db` under the loudest moment is not listed, so lower
+  `--gap-db` to find quiet ones.
+- `hints` say when nothing is audible, when one continuous
   sound had no gap to cut at (lower `--gap-db` or `--min-gap`), or when quieter segments were left
   out (at most 64 are kept: raise `--min-gap`, or zoom). A 120-second image is about 86 ms per
   pixel: zoom to see transients.

@@ -14,7 +14,7 @@ export const SR = SAMPLE_RATE;
 const LEVEL_FRAME = 480;
 const FLOOR_DB = -70;
 const LEAD_FRAMES = 2;      // 20 ms before the first loud frame, so an onset is not clipped
-const MIN_RUN_FRAMES = 5;   // under 50 ms of sound is a click
+const MIN_PIECE_FRAMES = 5; // a ten-second cut never leaves a final piece under 50 ms
 const SPLIT_FROM = 6 * SR;  // a ten-second cut is made at the quietest frame 6 to 10 s into the piece
 
 export interface SegmentOptions { gapDb: number; minGapMs: number }
@@ -37,8 +37,8 @@ function splitLong(levels: Float64Array, start: number, end: number): Cut[] {
   const out: Cut[] = [];
   while (end - start > PREPARED_MAX_FRAMES) {
     const lo = Math.ceil((start + SPLIT_FROM) / LEVEL_FRAME);
-    // the window also stops MIN_RUN_FRAMES short of the end, so the remainder is never under 50 ms
-    const hi = Math.min(Math.floor((start + PREPARED_MAX_FRAMES) / LEVEL_FRAME), Math.floor((end - MIN_RUN_FRAMES * LEVEL_FRAME) / LEVEL_FRAME));
+    // the window also stops MIN_PIECE_FRAMES short of the end, so the remainder is never under 50 ms
+    const hi = Math.min(Math.floor((start + PREPARED_MAX_FRAMES) / LEVEL_FRAME), Math.floor((end - MIN_PIECE_FRAMES * LEVEL_FRAME) / LEVEL_FRAME));
     let at = lo;
     for (let f = lo + 1; f <= hi; f++) if (levels[f] < levels[at]) at = f;
     out.push({ startFrame: start, endFrame: at * LEVEL_FRAME, cutAt10s: true });
@@ -76,17 +76,11 @@ export function segmentMono(x: Float32Array, { gapDb, minGapMs }: SegmentOptions
   const cuts: Cut[] = [];
   let previousEnd = 0;
   for (const r of runs) {
-    if (r.b - r.a + 1 < MIN_RUN_FRAMES) continue;
     const start = Math.max(previousEnd, (r.a - LEAD_FRAMES) * LEVEL_FRAME), end = Math.min(x.length, (r.b + 1) * LEVEL_FRAME);
     cuts.push(...splitLong(levels, start, end));
     previousEnd = end;
   }
   return cuts;
-}
-
-/** True when any 10 ms frame is above the -70 dBFS floor: with no segments, tells a view of only short clicks from silence. */
-export function hasAudibleFrame(x: Float32Array): boolean {
-  return frameLevels(x).some(v => v > FLOOR_DB);
 }
 
 export const MAX_SEGMENTS = 64;
@@ -132,9 +126,7 @@ export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): 
   let cuts = segmentMono(x, opts);
   const hints: string[] = [];
   if (!cuts.length) {
-    hints.push(hasAudibleFrame(x)
-      ? `no segment of ${MIN_RUN_FRAMES * 10} ms or more above -70 dBFS: a shorter sound is not listed; crop it by ear with --start and --end`
-      : 'no sound above -70 dBFS in the view (measured on the mono mix)');
+    hints.push('no sound above -70 dBFS in the view (measured on the mono mix)');
   }
   else if (cuts.length > 1 && cuts.slice(0, -1).every(c => c.cutAt10s)) {
     hints.push(`no gap of ${opts.minGapMs} ms or more, ${opts.gapDb} dB under the loudest frame, splits this sound: the segments are ten-second cuts of one continuous sound; lower --gap-db or --min-gap to look for gaps`);
