@@ -3,6 +3,7 @@
 // and the spectrum shape.
 import { basename } from 'node:path';
 import { decodeAudio } from './audio/decode.ts';
+import { mixToMono } from './audio/mono.ts';
 import { measure, type Features } from './measure/index.ts';
 import { rmsEnvelope } from './measure/envelope.ts';
 import { LOG_BAND_EDGES, logBands, spectrum } from './measure/spectral.ts';
@@ -31,16 +32,9 @@ export interface Analysis {
 
 const PROFILE_WINDOW_MS = 90;
 
-const mono = (channels: Float32Array[]): Float32Array => {
-  if (channels.length === 1) return channels[0];
-  const out = new Float32Array(channels[0].length);
-  for (const ch of channels) for (let i = 0; i < out.length; i++) out[i] += ch[i] / channels.length;
-  return out;
-};
-
 export function analyzeAudio(path: string): Analysis {
   const { sampleRate: sr, channels, sourceRate } = decodeAudio(path, { rate: 48000 });
-  const x = mono(channels);
+  const x = mixToMono(channels);
   const f = measure({ sampleRate: sr, authored: channels, delivered: channels });
   const env = rmsEnvelope(x, sr), top = env.reduce((a, b) => Math.max(a, b), 0);
   let a = 0, b = env.length - 1;

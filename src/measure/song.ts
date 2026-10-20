@@ -2,7 +2,7 @@
 // range, a per-second and per-section arc (does the piece build and breathe?), stereo width, low-end
 // share, brightness, and the loop seam. Streams over the signal: a 3-minute song is ~9 M samples.
 import { fft, hann } from './fft.ts';
-import { integrated, samplePeakDb, toLufs, truePeakDb, weightedPower } from './loudness.ts';
+import { integrated, loudnessArc, samplePeakDb, toLufs, truePeakDb, weightedPower } from './loudness.ts';
 import { centroid, flatness, logBands, type Spectrum } from './spectral.ts';
 import { seamMetrics, type SeamMetrics } from './seam.ts';
 import { clipperCurve } from '../../runtime/engine/fx.js';
@@ -79,8 +79,7 @@ export function measureSong(channels: Float32Array[], sr: number, sections: Song
   const pct = (q: number) => gated[Math.min(gated.length - 1, Math.floor(q * (gated.length - 1) + 0.5))];
   const lra = gated.length > 1 ? pct(0.95) - pct(0.1) : 0;
 
-  const arc: number[] = [];
-  for (let s = 0; s + sr <= n; s += sr) arc.push(r(Math.max(-70, toLufs(meanOf(power, s, s + sr))), 1));
+  const arc = loudnessArc(power, sr);
 
   const spec = spectrumOf(mono, sr, 0, n);
   let low = 0, all = 0;

@@ -44,6 +44,17 @@ function slidingMax(power: Float64Array, win: number, hop: number): number {
   return best;
 }
 
+/** Loudness of each whole second of a K-weighted power signal, in LUFS to 0.1, floored at -70. */
+export function loudnessArc(power: Float64Array, sr: number): number[] {
+  const arc: number[] = [];
+  for (let s = 0; s + sr <= power.length; s += sr) {
+    let sum = 0;
+    for (let i = s; i < s + sr; i++) sum += power[i];
+    arc.push(Math.round(Math.max(-70, toLufs(sum / sr)) * 10) / 10);
+  }
+  return arc;
+}
+
 /** Maximum momentary loudness (400 ms window, 10 ms hop), LUFS. */
 export function momentaryMax(channels: Channels, sr: number): number {
   assertRate(sr);

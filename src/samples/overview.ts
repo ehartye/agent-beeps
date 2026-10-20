@@ -1,8 +1,9 @@
 // A long recording's overview: where the sound is, cut into natural segments of at most ten seconds, each with the numbers an
 // agent needs to choose a crop for `beeps sample prepare`. Pure: no files, no browser.
+import { mixToMono } from '../audio/mono.ts';
 import { clippedSamples, crestDb } from '../measure/envelope.ts';
 import { findEvents } from '../measure/events.ts';
-import { momentaryMax, samplePeakDb, toLufs, weightedPower } from '../measure/loudness.ts';
+import { loudnessArc, momentaryMax, samplePeakDb, weightedPower } from '../measure/loudness.ts';
 import { centroid, spectrum } from '../measure/spectral.ts';
 // Imported for one source of truth on the ten-second limit; this module does no I/O.
 import { PREPARED_MAX_FRAMES } from './store.ts';
@@ -105,23 +106,6 @@ export interface Overview {
   arc: number[];
 }
 
-const mono = (channels: Float32Array[]): Float32Array => {
-  if (channels.length === 1) return channels[0];
-  const out = new Float32Array(channels[0].length);
-  for (const ch of channels) for (let i = 0; i < out.length; i++) out[i] += ch[i] / channels.length;
-  return out;
-};
-
-function loudnessArc(channels: Float32Array[]): number[] {
-  const power = weightedPower(channels, 0), arc: number[] = [];
-  for (let s = 0; s + SR <= power.length; s += SR) {
-    let sum = 0;
-    for (let i = s; i < s + SR; i++) sum += power[i];
-    arc.push(Math.round(Math.max(-70, toLufs(sum / SR)) * 10) / 10);
-  }
-  return arc;
-}
-
 function peakAbs(x: Float32Array, c: Cut): number {
   let p = 0;
   for (let i = c.startFrame; i < c.endFrame; i++) p = Math.max(p, Math.abs(x[i]));
@@ -133,7 +117,7 @@ export type OverviewOptions = SegmentOptions & { startFrame?: number; endFrame?:
 /** Segment the view `[startFrame, endFrame)` of a source and measure each segment. Frames in the result are source frames. */
 export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): Overview {
   const total = channels[0]?.length ?? 0, v0 = opts.startFrame ?? 0, v1 = opts.endFrame ?? total;
-  const view = channels.map(c => c.subarray(v0, v1)), x = mono(view);
+  const view = channels.map(c => c.subarray(v0, v1)), x = mixToMono(view);
   let cuts = segmentMono(x, opts);
   const hints: string[] = [];
   if (!cuts.length) hints.push('no sound above -70 dBFS in the view');
@@ -163,7 +147,7 @@ export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): 
   });
   return {
     view: { startFrame: v0, endFrame: v1, startSec: sec(v0), endSec: sec(v1) },
-    peakDb: finite(samplePeakDb(view)), segments, omitted, hints, arc: loudnessArc(view),
+    peakDb: finite(samplePeakDb(view)), segments, omitted, hints, arc: loudnessArc(weightedPower(view, 0), SR),
   };
 }
 

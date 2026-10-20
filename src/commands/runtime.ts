@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
+import { mixToMono } from '../audio/mono.ts';
 import { BeepsError } from '../errors.ts';
 import { lintPatch } from '../lint.ts';
 import { measure } from '../measure/index.ts';
@@ -218,8 +219,7 @@ export function registerRuntimeCommands(program: Command, io: Io) {
       await withHost(async host => {
         for (const kind of ['baked', 'runtime'] as const) {
           const pcm = r[kind];
-          const mono = new Float32Array(pcm.authored[0].length);
-          for (const ch of pcm.authored) for (let i = 0; i < mono.length; i++) mono[i] += ch[i] / pcm.authored.length;
+          const mono = mixToMono(pcm.authored);
           const [png] = await host.looks([{ mono, sampleRate: pcm.sampleRate, features: featuresOf(pcm), label: `${cue.id} ${kind} ${o.set.join(' ')}` }]);
           files[kind] = join(resolve(o.out), `${kind}.png`);
           writeFileSync(files[kind], png);
