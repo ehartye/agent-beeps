@@ -45,6 +45,9 @@ function commitFiles(files: { path: string; bytes: Buffer }[]): void {
 }
 const jsonBytes = (data: unknown) => Buffer.from(canonicalJson(data) + '\n');
 export const MAX_ORIGINAL_BYTES = 64 * 1024 * 1024;
+/** What import decodes to, and what overview must decode to so the IDs it prints are the ones import will give. */
+export const SAMPLE_DECODE_LIMITS = { rate: 48000, maxSeconds: 120, maxFrames: SOURCE_MAX_FRAMES, maxChannels: 2, maxInputBytes: MAX_ORIGINAL_BYTES } as const;
+export const normalizedSampleWav = (channels: Float32Array[]): Buffer => writeWav(channels, 48000, { bits: 32 });
 
 export function importSample(project: ProjectLocation, file: string, options: { origin?: string; license?: string } = {}): ImportedSample {
   for (const [key, value] of Object.entries(options)) if (!['origin', 'license'].includes(key) || typeof value !== 'string' || !value.trim()) throw new BeepsError('E_SCHEMA', `sample import ${key} must be a nonempty string`);
@@ -62,9 +65,9 @@ export function importSample(project: ProjectLocation, file: string, options: { 
   let decoded;
   try {
     const snapshot = join(temporary, basename(file)); writeFileSync(snapshot, original);
-    decoded = decodeAudio(snapshot, { rate: 48000, maxSeconds: 120, maxFrames: SOURCE_MAX_FRAMES, maxChannels: 2, maxInputBytes: MAX_ORIGINAL_BYTES, identity: true });
+    decoded = decodeAudio(snapshot, { ...SAMPLE_DECODE_LIMITS, identity: true });
   } finally { rmSync(temporary, { recursive: true, force: true }); }
-  const wav = writeWav(decoded.channels, 48000, { bits: 32 });
+  const wav = normalizedSampleWav(decoded.channels);
   let pcm;
   try { pcm = readSampleWav(wav, { maxFrames: SOURCE_MAX_FRAMES }); }
   catch (e) { throw new BeepsError('E_SCHEMA', `invalid imported sample: ${(e as Error).message}`); }

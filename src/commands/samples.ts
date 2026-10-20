@@ -79,10 +79,10 @@ export function registerSampleCommands(program: Command, io: Io): void {
     .action(async (source: string, options: { start?: string; end?: string; out?: string; gapDb?: string; minGap?: string; image: boolean }) => {
       io.emit(await runOverview({
         source, projectDir: io.projectDir(), image: options.image, out: options.out,
-        startSec: options.start === undefined ? undefined : number(options.start, 'start'),
-        endSec: options.end === undefined ? undefined : number(options.end, 'end'),
-        gapDb: options.gapDb === undefined ? 40 : number(options.gapDb, 'gap-db'),
-        minGapMs: options.minGap === undefined ? 200 : number(options.minGap, 'min-gap'),
+        startSec: options.start === undefined ? undefined : number(options.start, '--start'),
+        endSec: options.end === undefined ? undefined : number(options.end, '--end'),
+        gapDb: options.gapDb === undefined ? 40 : number(options.gapDb, '--gap-db'),
+        minGapMs: options.minGap === undefined ? 200 : number(options.minGap, '--min-gap'),
       }));
     });
   sample.command('bundle <refs...>').description('publish a portable source bundle; default includes only prepared dependencies')

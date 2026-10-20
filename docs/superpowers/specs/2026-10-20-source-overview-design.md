@@ -49,10 +49,10 @@ Deterministic, on a mono mix at 48 kHz in 10 ms RMS frames.
 
 ```json
 {
-  "source": { "id": "sha256:...", "durationSec": 74.2, "channels": 2, "view": { "startSec": 0, "endSec": 74.2 } },
+  "source": { "file": "take.wav", "normalizedId": "sha256:...", "durationSec": 74.2, "sampleRate": 48000, "channels": 2, "view": { "startSec": 0, "endSec": 74.2 } },
   "image": "<path or null>",
   "segments": [
-    { "index": 1, "startSec": 3.41, "endSec": 6.02, "durationSec": 2.61, "peakDb": -3.1, "momentaryMaxLufs": -17.4,
+    { "index": 1, "startFrame": 163680, "endFrame": 288960, "startSec": 3.41, "endSec": 6.02, "durationSec": 2.61, "peakDb": -3.1, "momentaryMaxLufs": -17.4,
       "crestDb": 14.2, "centroidHz": 2310, "clippedSamples": 0, "events": { "count": 5, "rpm": 640 },
       "flags": [], "prepare": "beeps sample prepare sha256:... --start 3.41 --end 6.02" }
   ],
@@ -63,21 +63,26 @@ Deterministic, on a mono mix at 48 kHz in 10 ms RMS frames.
 
 Flags: `clipped` (any clipped sample), `cutAt10s` (the sound continues past the cut), `short` (under
 150 ms). Features come from the existing `measure` and `findEvents` code on each segment, so they
-match `analyze` for the same audio. For a file path the `source` carries `file` instead of `id` and
-`prepare` reads `import first, then: beeps sample prepare <normalizedId> --start ... --end ...`.
-Times in `prepare` round to milliseconds and are validated to give at most 480000 frames.
+match `analyze` for the same audio.
+
+`source.normalizedId` is the ID `sample import` gives the audio (same decode limits and encoding, shared
+in code), and every `prepare` line uses it. A file source also carries `file` and a hint to run
+`sample import` first and check the printed ID matches; an ID source has no `file`. Seconds are the
+exact frame count over 48000, rounded to 6 decimals, and each segment also has `startFrame` and
+`endFrame`, so `prepare --start/--end` reproduces the frames. `--out` with `--no-image` is `E_USAGE`.
 
 ## Image
 
 Reuses `host.songPcmLook` and `renderSongLook`: waveform, per-second loudness arc and a fixed-scale
 log-frequency spectrogram. Segments are the numbered section bands (1..N, matching the JSON) and
 gaps stay dark. A source-specific footer (duration, view range, peak) replaces the song footer
-through one optional feature flag in `runtime/look.js`; song looks stay byte-identical. At 120 s a
+through one optional feature flag in `runtime/look.js`; song looks must not change. At 120 s a
 pixel is about 86 ms, so the image shows shape; use `--start/--end` for transients.
 
-Default path with a project: `.agent-beeps/samples/overviews/<12 hex of the PCM sha256>.png`.
-Without a project `--out` is required. An existing file is overwritten (it is a derived view, not an
-immutable object). Missing Chromium fails with the existing `E_BROWSER_MISSING`; `--no-image` is the
+Default path with a project: `.agent-beeps/renders/overviews/<key>.png`, where key is the first 12 hex
+of the sha256 of the canonical JSON of the normalized ID, the view frames and the gap parameters. It
+is gitignored derived output, so an existing file is overwritten (it is a view, not an immutable
+object). Without a project `--out` is required. Missing Chromium fails with the existing `E_BROWSER_MISSING`; `--no-image` is the
 workaround.
 
 ## Skill and documentation support
@@ -102,7 +107,7 @@ workaround.
 - CLI tests on a synthetic WAV path and on an imported ID, including bad arguments, over-length
   source, unknown ID and `--no-image`.
 - A PNG smoke test (signature, dimensions), skipped without Chromium like the existing look tests;
-  a test that a song look is byte-identical before and after the footer flag.
+  song look PNGs are compared by hash on main and on the branch by hand (Chromium-dependent).
 - `skills.test.ts` limits and the capabilities snapshot.
 
 ## Out of scope
