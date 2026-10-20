@@ -43,10 +43,19 @@ const mmss = (/** @type {number} */ s) => `${Math.floor(s / 60)}:${String(Math.f
 export function sourceFooter(f, dur) {
   const sections = f.sections ?? [], n = sections.length;
   const line = `${mmss(dur)}  source ${fmt(f.source.startSec, 1)}-${fmt(f.source.endSec, 1)} s  peak ${fmt(f.source.peakDb)} dBFS  ${n} ${n === 1 ? 'segment' : 'segments'}`;
-  const secs = sections.map((/** @type {any} */ s) => `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`).join('  ');
-  const sectionLines = [];
-  for (let at = 0; at < 380 && at < secs.length; at += 190) sectionLines.push(secs.slice(at, at + 190));
-  if (secs.length > 380) sectionLines.push(`... ${n} segments in all, see the JSON`);
+  // Whole items only, wrapped into at most two lines of 190 characters; a marker says so when some did not fit.
+  const sectionLines = [''];
+  let fitted = 0;
+  for (const s of sections) {
+    const item = `${s.name} ${fmt(s.lufs)}/${fmt(s.centroidHz, 0)}Hz`, last = sectionLines.length - 1;
+    if (sectionLines[last] === '') sectionLines[last] = item;
+    else if (sectionLines[last].length + 2 + item.length <= 190) sectionLines[last] += `  ${item}`;
+    else if (last === 0) sectionLines.push(item);
+    else break;
+    fitted++;
+  }
+  if (sectionLines[0] === '') sectionLines.length = 0;
+  if (fitted < n) sectionLines.push(`... ${n} segments in all, see the JSON`);
   return { line, sectionLines };
 }
 

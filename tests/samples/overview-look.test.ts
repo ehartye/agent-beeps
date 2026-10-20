@@ -46,6 +46,36 @@ describe('sourceFooter', () => {
     expect(sourceFooter(feats(20), 12).sectionLines).toHaveLength(2);
   });
 
+  // Every drawn item is a whole "name lufs/centroidHz"; count them by re-joining the lines.
+  const drawn = (lines: string[]) => lines.filter(l => !l.startsWith('...')).join('  ').split('  ').filter(Boolean);
+  const whole = (item: string) => /^\d+ -20\.0\/1234Hz$/.test(item);
+
+  it('puts a few segments on line one with no marker', () => {
+    const { sectionLines } = sourceFooter(feats(5), 12);
+    expect(sectionLines).toHaveLength(1);
+    expect(drawn(sectionLines)).toHaveLength(5);
+  });
+
+  it('wraps onto line two at a whole item without splitting any', () => {
+    const { sectionLines } = sourceFooter(feats(18), 12);
+    expect(sectionLines).toHaveLength(2);
+    for (const l of sectionLines) { expect(l.length).toBeLessThanOrEqual(190); expect(l.endsWith(' ')).toBe(false); }
+    expect(drawn(sectionLines)).toHaveLength(18);
+    expect(drawn(sectionLines).every(whole)).toBe(true);
+  });
+
+  it('keeps two whole-item lines and a marker with the true count for 64 segments', () => {
+    const { sectionLines } = sourceFooter(feats(64), 12);
+    expect(sectionLines).toHaveLength(3);
+    expect(sectionLines[2]).toBe('... 64 segments in all, see the JSON');
+    for (const l of sectionLines.slice(0, 2)) expect(l.length).toBeLessThanOrEqual(190);
+    const items = drawn(sectionLines);
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.length).toBeLessThan(64);
+    expect(items.every(whole)).toBe(true);
+    expect(items.map(i => i.split(' ')[0])).toEqual(items.map((_, i) => String(i + 1)));
+  });
+
   it('says how many segments there are in all when the list is cut', () => {
     const { sectionLines } = sourceFooter(feats(40), 12);
     expect(sectionLines).toHaveLength(3);
