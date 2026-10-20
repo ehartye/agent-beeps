@@ -12,7 +12,7 @@ gets refined. This spec is the capability that request needs; v1 deferred music 
   variation already built plays notes. No second synthesis engine.
 - Musical intent is written the way composers think: chord symbols, voice-led chords, arpeggios,
   bass lines from the chord roots, step-sequenced drums, explicit melodies, sections and a form.
-- The owner listens on the LAN (hal9000 and the machine's LAN IP, never localhost-only links), keeps
+- The owner listens on the LAN (the host name and the machine's LAN IP, never localhost-only links), keeps
   or rejects tracks and leaves notes; the agent reads that back.
 
 ## Non-goals (this spec)

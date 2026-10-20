@@ -75,7 +75,7 @@ Sample rate is **48 000 Hz everywhere** (BS.1770 coefficients are specified at 4
   "license": "MIT" }
 ```
 `tsconfig.json` = agent-vids' plus `"allowJs": true, "checkJs": true` and `"include": ["src", "tests", "runtime"]`. `vitest.config.ts` = agent-vids' with `testTimeout: 60000`.
-- [ ] **Step 2:** Copy `scripts/managed-runtime.js`, `run-managed.js`, `setup.js` from `C:\Users\ehart\repos\agent-vids\scripts\`, then: `NAME='agent-beeps'`; `RUNTIME_FILES = ['package.json','package-lock.json','tsconfig.json','scripts','src','runtime','craft','library','skills']`; `managedHome` uses `AGENT_BEEPS_HOME` / `~/.agent-beeps`; cli path `scripts/beeps.mjs`; delete `ensureFfmpeg` and its calls and the ffmpeg probe in `checkDependencies`; all messages say `beeps-setup`.
+- [ ] **Step 2:** Copy `scripts/managed-runtime.js`, `run-managed.js`, `setup.js` from the sibling agent-vids plugin's `scripts/` folder, then: `NAME='agent-beeps'`; `RUNTIME_FILES = ['package.json','package-lock.json','tsconfig.json','scripts','src','runtime','craft','library','skills']`; `managedHome` uses `AGENT_BEEPS_HOME` / `~/.agent-beeps`; cli path `scripts/beeps.mjs`; delete `ensureFfmpeg` and its calls and the ffmpeg probe in `checkDependencies`; all messages say `beeps-setup`.
 - [ ] **Step 3:** Failing test `tests/managed-runtime.test.ts`: `describeSource(root)` returns `name 'agent-beeps'`, a 64-hex fingerprint, and a key starting with `0.1.0-`; `resolveRuntime(root, {home: tmp})` throws `/beeps-setup/`; `installRuntime` refuses a home inside the checkout.
 - [ ] **Step 4:** `npm install` (creates lockfile), run `npx vitest run tests/managed-runtime.test.ts` → PASS; `npx tsc --noEmit` → clean.
 - [ ] **Step 5:** Commit `chore: scaffold agent-beeps with managed runtime`.

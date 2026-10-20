@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (Node 24, ESM, `.ts` imports), commander, vitest, Playwright Chromium for the PNG.
 
-Spec: `docs/superpowers/specs/2026-10-20-source-overview-design.md`. Work in the worktree `C:\Users\ehart\repos\agent-beeps-worktrees\source-overview` (branch `feat/source-overview`); every command below runs there. Commit trailer on every commit: `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
+Spec: `docs/superpowers/specs/2026-10-20-source-overview-design.md`. Work in the worktree `<worktree>` (branch `feat/source-overview`); every command below runs there. Commit trailer on every commit: `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
 
 Refinements to the spec found while planning (Task 6 updates the spec to match):
 - The image defaults to `.agent-beeps/renders/overviews/<key>.png`, not `samples/overviews`: `renders/` is gitignored derived output, `samples/` holds committed immutable objects.
@@ -716,11 +716,11 @@ Then compare a real song look on main and on the branch (the change must be byte
 
 ```bash
 S=$(ls library/songs | head -1); echo "$S"
-mkdir -p "$TEMP/idm" && cd "$TEMP/idm" && node /c/Users/ehart/repos/agent-beeps/scripts/beeps.mjs init >/dev/null 2>&1
-cp /c/Users/ehart/repos/agent-beeps/library/songs/$S .agent-beeps/songs/ 2>/dev/null
-node /c/Users/ehart/repos/agent-beeps/scripts/beeps.mjs song render "${S%.json}" >/dev/null && sha256sum .agent-beeps/renders/song-*/look.png
+mkdir -p "$TEMP/idm" && cd "$TEMP/idm" && node <repo>/scripts/beeps.mjs init >/dev/null 2>&1
+cp <repo>/library/songs/$S .agent-beeps/songs/ 2>/dev/null
+node <repo>/scripts/beeps.mjs song render "${S%.json}" >/dev/null && sha256sum .agent-beeps/renders/song-*/look.png
 rm -rf .agent-beeps/renders
-node /c/Users/ehart/repos/agent-beeps-worktrees/source-overview/scripts/beeps.mjs song render "${S%.json}" >/dev/null && sha256sum .agent-beeps/renders/song-*/look.png
+node <worktree>/scripts/beeps.mjs song render "${S%.json}" >/dev/null && sha256sum .agent-beeps/renders/song-*/look.png
 ```
 
 Expected: the two hashes match. If the song needs instruments or arguments the commands above lack, run `beeps song render --help` and adapt; the point is two renders of the same song, one per checkout. If the hashes differ, stop: the footer edit changed the non-source path.

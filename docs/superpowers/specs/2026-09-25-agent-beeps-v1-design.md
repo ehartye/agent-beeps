@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-A procedural sound composer whose primary user is a coding agent and whose final judge is the owner's ear. The agent generates, renders, measures and looks at sounds; the owner auditions them on a LAN page (hal9000) and every explicit judgement trains a persistent taste model that ranks, steers and predicts future candidates. It is **mixed-initiative**: the agent does bulk generation, the owner steers. Evidence in the owner's wiki says players rarely hear procedural depth but do value choosing — the value of this tool is in the choosing loop.
+A procedural sound composer whose primary user is a coding agent and whose final judge is the owner's ear. The agent generates, renders, measures and looks at sounds; the owner auditions them on a LAN page (the host machine) and every explicit judgement trains a persistent taste model that ranks, steers and predicts future candidates. It is **mixed-initiative**: the agent does bulk generation, the owner steers. Evidence in the owner's wiki says players rarely hear procedural depth but do value choosing — the value of this tool is in the choosing loop.
 
 Procedural only: no sample files, no AI audio models.
 
@@ -18,7 +18,7 @@ Procedural only: no sample files, no AI audio models.
 - **Measurement in Node** (`src/measure/`): pure TS DSP over Float32 PCM.
 - **Project state** `.agent-beeps/` (committable except `cache/`): `project.json` (scale, key, target loudness, defaults), `patches/*.json`, `kit.json`, `sessions/<id>/` (session.json, candidates, `events.jsonl`), `taste/verdicts.jsonl`, `renders/` (WAV + features + PNG per render hash).
 - **Global state** `~/.agent-beeps/`: `taste/verdicts.jsonl` (all projects), `taste/model.json` (fitted), `taste/summary.md`, `server.json` (port, token), `releases/`.
-- **Audition server** `beeps serve`: Node `http` (no framework), binds `0.0.0.0` by default (`--host` to override), persistent token in `server.json`, links printed with the machine hostname (e.g. `http://hal9000:47301/s/<id>?t=<token>`). Idempotent start (`serve` when already running prints the existing URL). Pages are static HTML/JS that import the same `runtime/` engine.
+- **Audition server** `beeps serve`: Node `http` (no framework), binds `0.0.0.0` by default (`--host` to override), persistent token in `server.json`, links printed with the machine hostname (e.g. `http://<host>:47301/s/<id>?t=<token>`). Idempotent start (`serve` when already running prints the existing URL). Pages are static HTML/JS that import the same `runtime/` engine.
 
 ```
 agent ──beeps generate/batch/mutate──▶ CLI ──batch──▶ Chromium(OfflineAudioContext + engine) ──PCM──▶ measure ──▶ renders/
@@ -97,7 +97,7 @@ Psychoacoustic metrics are **indicators, not verdicts**; they diagnose named def
 
 ## 6. Craft rules (`craft/rules.json`, `craft/GUIDE.md`)
 
-agent-vids pattern: `{id, statement, value, unit, check: "auto"|"judgement", severity: "error"|"warn", sources: [...]}`, citing primary sources directly (the plugin never references the owner's wiki). `beeps lint <patch|set|kit>`; judgement rules are listed as "applied by judgement", never silently skipped. v1 rules include: true peak ≤ −1 dBTP; attack ≥ 4 ms unless `click` intent; no declared partial above Nyquist; energy length ceilings per family (ticks ≤ 60 ms); sharpness warn threshold; roughness warn; no DC; variation present on any patch tagged `repeating`; one `no` per kit; priority uses ≤ 5 levels; gated beds are silent when idle; family consistency (pickup family centroid spread bound); reverb via preset convolver only.
+agent-vids pattern: `{id, statement, value, unit, check: "auto"|"judgement", severity: "error"|"warn", sources: [...]}`, citing primary sources directly (the plugin never references an external knowledge base). `beeps lint <patch|set|kit>`; judgement rules are listed as "applied by judgement", never silently skipped. v1 rules include: true peak ≤ −1 dBTP; attack ≥ 4 ms unless `click` intent; no declared partial above Nyquist; energy length ceilings per family (ticks ≤ 60 ms); sharpness warn threshold; roughness warn; no DC; variation present on any patch tagged `repeating`; one `no` per kit; priority uses ≤ 5 levels; gated beds are silent when idle; family consistency (pickup family centroid spread bound); reverb via preset convolver only.
 
 `beeps kit check`: family consistency, key consistency, masking/critical-band overlap between kit members, priority levels, missing/duplicate "no".
 
