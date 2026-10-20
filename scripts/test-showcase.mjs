@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { serveShowcase } from './showcase-server.mjs';
@@ -50,6 +50,7 @@ for(const t of colony.tracks){
   assert.ok(t.truePeakDb<=-1,`${t.id}: encoded true peak ceiling`);
   assert.ok(Math.abs(t.loudnessLufs-colonyProject.musicLoudness)<=1,`${t.id}: within 1 LU of the kit music loudness`);
 }
+for(const path of [...colony.effects.map(e=>e.look),...colony.tracks.flatMap(t=>[t.look,t.mp3,t.recipe])])assert.ok(existsSync(resolve(site,path)),`${path}: published file exists`);
 assert.equal(colonyQuality.effects.length,9);assert.equal(colonyQuality.tracks.length,7);
 for(const r of [...colonyQuality.effects,...colonyQuality.tracks])assert.deepEqual(r.lint.errors,[],`${r.id}: no colony lint errors`);
 assert.equal(flux.cases.length,3);assert.equal(fluxQuality.reports.length,6);

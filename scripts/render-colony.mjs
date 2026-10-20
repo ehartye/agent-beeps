@@ -75,7 +75,8 @@ export async function renderColony(host,project) {
     run(['-i',encoded,'-c:a','pcm_f32le',decoded]);
     const wav=readWav(readFileSync(decoded));
     const lufs=integrated(wav.channels,wav.sampleRate).lufs,peak=truePeakDb(wav.channels,wav.sampleRate),durationSec=wav.channels[0].length/wav.sampleRate;
-    if(peak> -1)throw new Error(`colony ${t.id}: encoded peak ${peak} exceeds -1 dBTP`);
+    if(!Number.isFinite(peak)||peak> -1)throw new Error(`colony ${t.id}: encoded peak ${peak} dBTP is not finite or exceeds -1 dBTP`);
+    if(!Number.isFinite(lufs)||Math.abs(lufs-colonyProject.musicLoudness)>1)throw new Error(`colony ${t.id}: encoded loudness ${lufs} LUFS is not within 1 LU of the kit music loudness ${colonyProject.musicLoudness}`);
     tracks.push({id:t.id,title:t.title,kind:t.kind,description:t.description,mp3:`./media/colony-${t.id}.mp3`,durationSec,loudnessLufs:lufs,truePeakDb:peak,look:`./media/colony-${t.id}.png`,recipe:`./recipes/colony-${t.id}.json`});
     trackReports.push({id:t.id,renderKey:render.key,features:render.features,lint,encoded:{integratedLufs:lufs,truePeakDb:peak,durationSec}});
   }

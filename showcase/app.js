@@ -416,7 +416,7 @@ for(const button of document.querySelectorAll('[data-take]')){
 }
 function activateColony(){
   ++transportRequest;++playRequest;cancelPendingPad();silence(colony);
-  stopPad();foreground=undefined;paused=false;mediaWanted.set(colony,true);
+  stopPad();foreground=undefined;paused=false;pausedMedia.delete(colony);mediaWanted.set(colony,true);
   choose(collections['Colony music'][colonyIndex],'Playing');
 }
 const colonyStatus=text=>{$('#colony-status').textContent=text;};
@@ -542,7 +542,7 @@ async function loadColony(){
     colonyTracks=session.tracks;
     session.tracks.forEach((track,index)=>{
       const button=document.createElement('button');button.className='toggle';button.dataset.colonyTrack=track.id;
-      button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',`Play ${track.title}, ${track.kind}`);
+      button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',`${track.title}, ${track.kind}`);
       button.textContent=`${track.title} · ${track.kind}`;button.title=track.description;
       register('Colony music',track.title,()=>playColony(index));
       button.onclick=()=>playColony(index);

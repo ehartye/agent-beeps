@@ -91,7 +91,9 @@ try {
   const {readdirSync}=await import('node:fs');
   const fuseFiles=['library/examples/fuse','library/examples/fuse-tommy','library/examples/fuse-m16'].flatMap(fuse=>readdirSync(resolve(root,fuse),{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>resolve(e.parentPath,e.name).slice(root.length+1).replaceAll('\\','/'))).sort();
   const colonyFiles=[...readdirSync(resolve(root,'library/sounds/colony-sfx'),{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>resolve(e.parentPath,e.name).slice(root.length+1).replaceAll('\\','/')),...readdirSync(resolve(root,'library/songs/colony-ambient')).filter(f=>f.endsWith('.json')).map(f=>`library/songs/colony-ambient/${f}`)].sort();
-  const files=['showcase/project.json',...readdirSync(media).filter(f=>f!=='manifest.json').map(f=>`showcase/media/${f}`),...readdirSync(recipes).map(f=>`showcase/recipes/${f}`),...fuseFiles,...colonyFiles,...readdirSync(resolve(root,'runtime/engine')).filter(f=>f.endsWith('.js')).map(f=>`runtime/engine/${f}`)];
+  // The colony songs resolve their instruments from the shared library, so every instrument file is a render input.
+  const instrumentFiles=readdirSync(resolve(root,'library/instruments')).filter(f=>f.endsWith('.json')).map(f=>`library/instruments/${f}`).sort();
+  const files=['showcase/project.json',...readdirSync(media).filter(f=>f!=='manifest.json').map(f=>`showcase/media/${f}`),...readdirSync(recipes).map(f=>`showcase/recipes/${f}`),...fuseFiles,...colonyFiles,...instrumentFiles,...readdirSync(resolve(root,'runtime/engine')).filter(f=>f.endsWith('.js')).map(f=>`runtime/engine/${f}`)];
   write(resolve(media,'manifest.json'),{schema:'beeps/showcase-assets@1',files:Object.fromEntries(files.map(p=>[p,hash(resolve(root,p))]))});
   console.log(JSON.stringify({duration:session.durationSec,lufs:session.loudnessLufs,peak,warnings:lint.warnings,padWarnings:padReports.map(p=>({name:p.name,warnings:p.lint.warnings}))},null,2));
 } finally {await host.close();}

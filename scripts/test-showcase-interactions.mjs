@@ -127,6 +127,48 @@ async function mediaResumeErrors(browser,server){
   }finally{await page.close();assert.deepEqual(errors,[]);}
 }
 
+// A pause position saved for one Colony track must never leak into a later track or another section.
+async function colonyPausedPositions(browser,server){
+  const {page,errors}=await open(browser,server);
+  const track=id=>`[data-colony-track="${id}"]`;
+  const colony=()=>page.locator('#colony-audio');
+  const pad=async()=>{
+    const name=await page.locator('#colony-pads .pad .sound-name').first().textContent();
+    await page.locator('#colony-pads .face').first().click();
+    await page.waitForFunction(name=>document.querySelector('#colony-status').textContent===`${name} · synthesized live`,name);
+  };
+  try{
+    // Glasshouse paused at about 3 s, then a different track, then a pad: the new track keeps its own place.
+    await page.locator(track('glasshouse')).click();
+    await page.waitForFunction(()=>document.querySelector('#colony-audio').currentTime>.2);
+    await colony().evaluate(a=>{a.currentTime=3;});
+    await page.waitForFunction(()=>document.querySelector('#colony-audio').currentTime>=3);
+    await page.locator('#play').click();await page.waitForFunction(()=>boothContext.state==='suspended'&&document.querySelector('#colony-audio').paused);
+    await page.locator(track('canopy')).click();
+    await page.waitForFunction(()=>{const a=document.querySelector('#colony-audio');return a.src.includes('colony-canopy')&&!a.paused&&a.currentTime>.1&&a.currentTime<2;});
+    assert.deepEqual(await page.locator('[data-colony-track][aria-pressed="true"]').evaluateAll(els=>els.map(el=>el.dataset.colonyTrack)),['canopy']);
+    const before=await colony().evaluate(a=>a.currentTime);
+    await pad();
+    const after=await colony().evaluate(a=>a.currentTime);
+    assert.ok(after>=before&&after<before+1.5,`Canopy stays near ${before}s after a pad, not the old 3 s position (${after})`);
+    await page.keyboard.press('Escape');
+    // Colony paused, then Matter or Touch starts: Colony stays paused through a later pad and is not revived.
+    for(const other of ['matter','touch']){
+      await page.locator(track('window-light')).click();
+      await page.waitForFunction(()=>document.querySelector('#colony-audio').currentTime>.2);
+      await page.locator('#play').click();await page.waitForFunction(()=>boothContext.state==='suspended'&&document.querySelector('#colony-audio').paused);
+      if(other==='matter')await page.locator('#matter-play').click();else await page.locator('#touch-audio').evaluate(a=>a.play());
+      const id=other==='matter'?'audio':'touch-audio';
+      await page.waitForFunction(id=>!document.getElementById(id).paused&&document.getElementById(id).currentTime>.1,id);
+      assert.equal(await colony().evaluate(a=>a.paused),true,`${other}: Colony stays paused`);
+      await pad();
+      assert.equal(await colony().evaluate(a=>a.paused),true,`${other}: a pad does not revive the paused Colony track`);
+      assert.equal(await page.locator(`#${id}`).evaluate(a=>a.paused),false,`${other}: keeps playing under the pad`);
+      await page.keyboard.press('Escape');
+    }
+  }finally{await page.close();assert.deepEqual(errors,[]);}
+}
+
 async function colonyPlayback(browser,server){
   const {page,errors}=await open(browser,server);
   const track=id=>`[data-colony-track="${id}"]`;
@@ -153,8 +195,16 @@ async function colonyPlayback(browser,server){
       window.gainTargets.length=0;window.titles=[];
       new MutationObserver(()=>window.titles.push(document.querySelector('#np-title').textContent)).observe(document.querySelector('#np-title'),{childList:true,characterData:true,subtree:true});
     });
-    await page.locator('#colony-pads .face').first().click();
-    await page.waitForFunction(()=>window.titles.at(-1)?.startsWith('Colony music / Outpost Dawn')&&window.titles.some(t=>t.startsWith('Colony effects /')));
+    // Every pad really builds and starts: a native source starts and the status says it was synthesized.
+    const names=await page.locator('#colony-pads .pad .sound-name').allTextContents();
+    assert.equal(names.length,9);
+    for(let i=0;i<names.length;i++){
+      const starts=await page.evaluate(()=>nativeStarts);
+      await page.locator('#colony-pads .face').nth(i).click();
+      await page.waitForFunction(name=>document.querySelector('#colony-status').textContent===`${name} · synthesized live`,names[i]);
+      assert.ok(await page.evaluate(n=>nativeStarts>n,starts),`${names[i]}: the effect started native sources`);
+    }
+    await page.waitForFunction(()=>window.titles.some(t=>t.startsWith('Colony effects /'))&&window.titles.at(-1)?.startsWith('Colony music / Outpost Dawn'));
     assert.ok(await page.evaluate(()=>window.gainTargets.includes(.32)&&window.gainTargets.lastIndexOf(1)>window.gainTargets.indexOf(.32)),'the effect ducks the music, then restores it');
     assert.equal(await page.locator('#colony-audio').evaluate(a=>a.paused),false,'the track keeps playing under the effect');
     await page.waitForFunction(at=>document.querySelector('#colony-audio').currentTime>at,at);
@@ -188,7 +238,7 @@ async function colonyPlayback(browser,server){
 export async function testTransportInteractions(browser,server){
   // Keep native gesture/audio scenarios in the active page, rather than competing tabs.
   const failures=[];
-  for(const test of [focusedSpace,mediaResumeErrors,colonyPlayback])try{await test(browser,server);}catch(error){failures.push(error);}
+  for(const test of [focusedSpace,mediaResumeErrors,colonyPlayback,colonyPausedPositions])try{await test(browser,server);}catch(error){failures.push(error);}
   if(failures.length)throw new AggregateError(failures,'Focused playback Space / media resume error regressions');
   console.log('Focused playback Space, native widget keys, media resume errors and Colony playback passed.');
 }
