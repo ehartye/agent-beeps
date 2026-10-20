@@ -96,7 +96,8 @@ export interface OverviewSegment {
 }
 export interface Overview {
   view: { startFrame: number; endFrame: number; startSec: number; endSec: number };
-  peakDb: number;
+  /** Loudest sample of the view in dB; null when the view is silent. */
+  peakDb: number | null;
   segments: OverviewSegment[];
   omitted: number;
   hints: string[];
@@ -127,8 +128,10 @@ function peakAbs(x: Float32Array, c: Cut): number {
   return p;
 }
 
+export type OverviewOptions = SegmentOptions & { startFrame?: number; endFrame?: number };
+
 /** Segment the view `[startFrame, endFrame)` of a source and measure each segment. Frames in the result are source frames. */
-export function overviewAudio(channels: Float32Array[], opts: SegmentOptions & { startFrame?: number; endFrame?: number }): Overview {
+export function overviewAudio(channels: Float32Array[], opts: OverviewOptions): Overview {
   const total = channels[0]?.length ?? 0, v0 = opts.startFrame ?? 0, v1 = opts.endFrame ?? total;
   const view = channels.map(c => c.subarray(v0, v1)), x = mono(view);
   let cuts = segmentMono(x, opts);
@@ -160,14 +163,21 @@ export function overviewAudio(channels: Float32Array[], opts: SegmentOptions & {
   });
   return {
     view: { startFrame: v0, endFrame: v1, startSec: sec(v0), endSec: sec(v1) },
-    peakDb: r2(samplePeakDb(view)), segments, omitted, hints, arc: loudnessArc(view),
+    peakDb: finite(samplePeakDb(view)), segments, omitted, hints, arc: loudnessArc(view),
   };
 }
 
+export interface OverviewLook {
+  sections: { name: string; start: number; end: number; lufs: number; centroidHz: number }[];
+  arc: number[];
+  source: { startSec: number; endSec: number; peakDb: number | null };
+}
+
 /** The feature object `renderSongLook` draws: numbered segment bands over the view, the loudness arc, a source footer. */
-export function overviewLook(o: Overview): object {
+export function overviewLook(o: Overview): OverviewLook {
   return {
-    sections: o.segments.map(s => ({ name: String(s.index), start: s.startSec - o.view.startSec, end: s.endSec - o.view.startSec, lufs: s.momentaryMaxLufs ?? -70, centroidHz: s.centroidHz })),
+    // relative times are taken in frames, where the subtraction is exact
+    sections: o.segments.map(s => ({ name: String(s.index), start: sec(s.startFrame - o.view.startFrame), end: sec(s.endFrame - o.view.startFrame), lufs: s.momentaryMaxLufs ?? -70, centroidHz: s.centroidHz })),
     arc: o.arc,
     source: { startSec: o.view.startSec, endSec: o.view.endSec, peakDb: o.peakDb },
   };
