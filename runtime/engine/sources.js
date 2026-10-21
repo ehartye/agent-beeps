@@ -418,6 +418,9 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
       bp.Q.value = 1.5;
       parts.push(sum.connect(bp));
     }
+  } else {
+    // Without this a type added to the schema but not here would build an empty mix and play as silence.
+    throw new Error(`unknown source type "${/** @type {{ type?: string }} */ (src).type}"`);
   }
 
   sumInto(ctx, parts, mix);
