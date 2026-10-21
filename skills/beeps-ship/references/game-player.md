@@ -15,7 +15,7 @@ createPlayer({
   onError(e) {},                       // { code, message, id? } — see "Error codes" below
   context,                             // an existing AudioContext to reuse
   contextFactory: () => new AudioContext(), // or build one lazily instead
-  fetcher: url => fetch(url),          // swap in a test double
+  fetcher: (url, { signal }) => fetch(url, { signal }), // swap in a test double; the signal aborts on dispose() (a one-argument fetcher still works)
   seed: 1,                             // seeds each sound's own variant picker
   memoryBudgetBytes: 150e6,            // optional: cap decoded audio, evicting idle buffers (see "Memory")
   layerLoading: 'state',               // optional: load only the layers an adaptive state plays
@@ -39,6 +39,12 @@ createPlayer({
 - **`setEnabled(enabled)`** — a mute/off switch distinct from tab visibility: stops everything with a
   fade, then suspends; re-enabling needs the next `unlock()`-driven gesture to resume.
 - **`stopAll(fadeSec?)`** — fades out every voice and both beds and clears the voice budget.
+- **`dispose()`** — tears the player down for good (a single-page game leaving the screen, a level reload): stops every
+  voice and bed at once, aborts loads in flight (their fetches get an aborted `signal`; they never start a voice and never
+  report an error), clears the player's timers, drops the decoded buffers and cuts its nodes from the graph. It closes the
+  `AudioContext` only when the player made it (the default or `contextFactory`); one passed as `context` is left for the game.
+  Afterwards every call is a quiet no-op — `play()` returns `null`, `unlock()`/`music()`/`ambience()` resolve `false`,
+  `prefetch()` resolves `0`, nothing reaches `onError` — and calling `dispose()` again does nothing. Make a new player to play again.
 - **`retry()`** — forgets failed loads: a file that failed twice (then silent) and a failed catalog
   (retry throttle, one-report-per-outage) are fetched and reported again: the catalog on the next
   `unlock()`, `play()`, `music()` or `ambience()`, a file on the next call that needs it. Keeps loaded sounds, playback and the context — call it from

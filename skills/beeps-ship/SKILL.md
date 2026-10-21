@@ -27,7 +27,7 @@ Baked recipe ids may alias the patch or song `name`; keep the authored source na
 Effective `runtime`/`both` delivery requires the patch name, including inherited `xRuntime.delivery`;
 explicit `delivery: "baked"` permits an alias. See the detailed id contract in `docs/build-lock-and-store.md`.
 Targets: `web-universal` (Ogg Opus 44/48/72 kbps for music/ambience/sfx, 24 for the adaptive mix
-preview; the default), `web-mp3`, `wav-master`. Override per role with `kbps`; set `budgetBytes`.
+preview; the default), `web-mp3`, `wav-master`. Override per role with `kbps`; set `budgetBytes`. Format table, exact encoder settings and the loop checks: [web delivery](references/web-delivery.md).
 
 ## 2. Build and commit the lock
 
@@ -48,6 +48,8 @@ then the stale test. A lock written by another tool: `beeps build --adopt` (veri
 beeps build --push --store release:<owner>/<store-repo>     # or dir:<path>; first writer wins, immutable
 beeps build --pull --store ...                              # fetch stale assets by hash before rendering
 beeps store status                                          # built here? in the store?
+beeps store push --store ...                                # publish verified locked assets the store lacks
+beeps store pull --store ...                                # write locked assets from the store into the output dir
 beeps ci export tools/audio                                 # vendors fetch.mjs: Node 20+, no deps
 ```
 
@@ -77,7 +79,7 @@ privacy boundary and native lifecycle. Bundle **after** saving and validating th
 prepared WAV closure, locked and fetched with the cue. Budget those fixed bytes separately from encoded
 audio. Baked files use the existing player; source bundles are authoring exchange, not a game catalog.
 
-For baked-player Play/Stop controls, read [the player API](../beeps-compose/references/game-player.md).
+For baked-player Play/Stop controls, read [the player API](references/game-player.md).
 Call `player.unlock()` within the play gesture and give the request a generation token; after
 awaiting unlock, check that it succeeded and the token is still current before `player.play(id)`.
 Stop/replacement increments the generation and stops the current handle, including while its
@@ -97,7 +99,7 @@ Abort/generation guards prevent Stop or replacement from starting a late load; c
 not already-started voices. The complete handler is in `docs/runtime.md#playing-it`. Add **`beeps verify --parity chromium,firefox`** to a CI job that has the browsers:
 bit-exact in Chromium, loudness within 1 LU and centroid within 30 Hz in Firefox; WebKit without `OfflineAudioContext` is a
 warning, not a pass. A new engine version makes `parseCue` refuse old cues: rebuild with the toolchain change below. Which
-delivery to pick: `docs/runtime.md`.
+delivery to pick: `docs/runtime.md`. Outside a build, `beeps runtime export <dir> <refs...>` writes the same cues and `beeps runtime verify <dir> <refs...>` exits 1 when a cue has drifted from its patch or the engine.
 
 ## 4. Toolchain changes
 

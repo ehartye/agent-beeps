@@ -288,6 +288,6 @@ overlaps among only that state's tracks, and its lint. Read it instead of the fu
 
 A score of several adaptive songs that must crossfade (biomes, times of day, fights) works best on one grid: the same bpm, a loop length that divides the others, one key.
 `beeps song compat <songs...>` plans it from the written notes: tempo relation, whether the loops can be phase-locked, the estimated key, and the pitch-class agreement per pair.
-The player then starts the new loop in the old one's phase (`music(id, { at: 'bar', sync: true })`; see game-player.md).
+The player then starts the new loop in the old one's phase (`music(id, { at: 'bar', sync: true })`; see skills/beeps-ship/references/game-player.md).
 
-Play an adaptive song in a game with `beeps bundle` and `beeps player export` (README, "Game player"), and ship it with `beeps compress` (game-player.md).
+Play an adaptive song in a game with `beeps bundle` and `beeps player export` (README, "Game player"), and ship it with `beeps compress` (skills/beeps-ship/references/game-player.md).
