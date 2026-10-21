@@ -55,7 +55,7 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
   try {
     const authored = await host.pullSong(r.id, r.frames);
     const f = measureSong(authored, r.sampleRate, r.sections, { loop: song.loop });
-    if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new Error(`song rendered near-silence (${f.integratedLufs} LUFS)`);
+    if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new BeepsError('E_RENDER', `song rendered near-silence (${f.integratedLufs} LUFS)`);
     const loud = target - f.integratedLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
     const trimDb = fixedTrim ?? Math.round(Math.max(-36, Math.min(24, Math.min(loud, ceiling))) * 100) / 100;

@@ -100,8 +100,12 @@ nine effects, four ambience beds and three songs, that you can hear on the
 | `player export <dir>` | vendor the browser game player (voice budget, priorities, crossfades, adaptive layers, safety clipper) into `<dir>/beeps-player/` |
 | `player selftest [dir]` | write `<dir>/beeps-selftest/`: a static page that decodes a known 2 s loop (WAV control, Ogg Opus, MP3) through the vendored player's loader in a realtime and in 48000 and 44100 Hz offline contexts and prints frame delta and lead, with a copyable result; `--serve` serves it on the LAN to open on a real iPhone or Safari |
 
-Every command prints JSON; failures print `{"error":{code,message,pointer?,hint?}}` to stderr and
-exit non-zero.
+Every command prints JSON. An error that stops a command prints `{"error":{code,message,pointer?,hint?}}` to stderr
+and exits 1, or 2 for a usage error (`E_USAGE`, including an option value that does not parse). A command that
+works through several items (a batch render, a set, a family) reports each one in its stdout JSON, with `ok: false`
+and an `error` for the ones that failed, and exits 1 if any did. `E_RENDER` is work that ran and failed;
+`E_INTERNAL` is a bug in beeps (a `TypeError` or `ReferenceError`), not your input: rerun with `BEEPS_DEBUG=1` to
+add the stack, and report it.
 
 `beeps export <patch>` writes the render's own stereo WAV. `--channels 1` writes one channel (identical
 channels keep their samples exactly; channels that differ, from the stereo reverb or a panned layer, are averaged and the

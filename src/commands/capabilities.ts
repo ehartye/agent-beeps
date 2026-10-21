@@ -74,6 +74,7 @@ export function registerCapabilities(program: Command, io: Io) {
           'Many similar patches: beeps family <template.json> --table rows.csv fills {{param}} placeholders and /pointer columns per row, validates each, and can --lint, --out a folder, or hand off --set; see the beeps-compose family reference.',
           'Hand-made variants authored as separate patches (names <stem>-<n> in one family, or a shared meta.variantOf) count toward variation-on-repeating.',
           'Every render writes a look.png (waveform, spectrogram, features): look at it; you cannot hear.',
+          'Errors: a failure that stops a command is one JSON line on stderr (exit 1, or 2 for E_USAGE); items that fail inside a multi-item command appear in the stdout JSON with ok: false. E_INTERNAL is a bug in beeps: rerun with BEEPS_DEBUG=1 for the stack.',
         ],
         example: EXAMPLE,
         music: {

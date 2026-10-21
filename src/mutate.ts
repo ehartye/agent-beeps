@@ -18,6 +18,7 @@ import { utility } from './taste/model.ts';
 
 export { DIRECTIONS, directionScore } from './directions.ts';
 import { directionScore } from './directions.ts';
+import { BeepsError } from './errors.ts';
 
 const FROZEN = new Set(['schema', 'start', 'variants', 'priority', 'algorithm', 'weights', 'at', 'voices']);
 const DB_KEYS = new Set(['gainDb', 'sendDb', 'resonanceDb']);
@@ -141,7 +142,7 @@ export async function autoRefine(p: OpenProject, sessionId: string, state: Sessi
       like: likeC ? setCandidatePatch(p, likeC.setId, likeC.name) : undefined,
       toward: req.directions, count: 4, parentSet: champ.setId,
     });
-    if (!set.candidates.length) throw new Error('no mutation passed the craft rules');
+    if (!set.candidates.length) throw new BeepsError('E_RENDER', 'no mutation passed the craft rules');
     // Re-read the session: the owner may have shipped or closed it while this round was breeding.
     const fresh = foldSession(readSession(p, sessionId), readEvents(p, sessionId));
     if (fresh.stage !== 'waiting') return;

@@ -1,3 +1,4 @@
+import { InvalidArgumentError } from 'commander';
 import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
 import type { Rendered, RenderOutcome } from '../render/pipeline.ts';
 
@@ -30,6 +31,7 @@ export function outcomeJson(o: RenderOutcome) {
 
 export const int = (v: string) => {
   const n = Number(v);
-  if (!Number.isInteger(n)) throw new Error(`expected an integer, got "${v}"`);
+  // Commander reports this as a usage error (E_USAGE, exit 2) naming the option.
+  if (!Number.isInteger(n)) throw new InvalidArgumentError(`expected an integer, got "${v}"`);
   return n;
 };

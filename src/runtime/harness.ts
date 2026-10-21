@@ -13,6 +13,7 @@ import { selectSampleWavs, type EncodedSampleWavs } from '../samples/transport.t
 import { sampleId } from '../samples/store.ts';
 import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { writeWav } from '../audio/wav.ts';
+import { BeepsError } from '../errors.ts';
 
 export type Kind = 'baked' | 'runtime';
 export type EngineName = 'chromium' | 'firefox' | 'webkit';
@@ -357,7 +358,7 @@ const maxStep = (c: Float32Array, from: number, to: number) => { let m = 0; for 
 /** Move a live input mid-note and compare with static bakes of the two input values. Chromium only. */
 export async function runLive(cue: Cue, move: { input: string; to: number; at?: number; tau?: number }, { sampleWavs }: SampleTransportOptions = {}): Promise<LiveReport> {
   const decl = cue.patch.xRuntime!.inputs[move.input];
-  if (!decl) throw new Error(`the patch declares no input "${move.input}"`);
+  if (!decl) throw new BeepsError('E_USAGE', `the patch declares no input "${move.input}"`);
   const at = move.at ?? 0.5, tau = move.tau ?? 0.03;
   const noSnap = cue.scale ? { ...cue.scale, snap: false } : undefined;
   const st = stage();

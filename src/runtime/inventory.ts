@@ -1,3 +1,4 @@
+import { BeepsError } from '../errors.ts';
 // Portable validation of one delivered asset. No authoring stores or filesystem access.
 import { createHash } from 'node:crypto';
 import { parseCue } from '../../runtime/engine/voice.js';
@@ -8,10 +9,10 @@ export interface DeliveredAsset { outputs: readonly DeliveredOutput[]; delivery?
 
 /** Guard the complete output inventory before any read callback or installation write. */
 export function assertDeliveredInventory(owner: string, asset: DeliveredAsset): void {
-  if (!Array.isArray(asset.outputs)) throw new Error('asset needs an output inventory');
+  if (!Array.isArray(asset.outputs)) throw new BeepsError('E_VERIFY', 'asset needs an output inventory');
   assertCueInventory(owner, asset.outputs, { requiresCue: asset.delivery === 'runtime' || asset.delivery === 'both' });
   for (const o of asset.outputs) {
-    if (!Number.isSafeInteger(o.bytes) || o.bytes < 0 || !/^[0-9a-f]{64}$/.test(o.sha256)) throw new Error(`invalid output metadata: ${o.file}`);
+    if (!Number.isSafeInteger(o.bytes) || o.bytes < 0 || !/^[0-9a-f]{64}$/.test(o.sha256)) throw new BeepsError('E_VERIFY', `invalid output metadata: ${o.file}`);
   }
 }
 
@@ -23,8 +24,8 @@ export function validateDeliveredAsset(owner: string, asset: DeliveredAsset, rea
   const files = new Map<string, Uint8Array>();
   for (const o of asset.outputs) {
     const bytes = read(o.file);
-    if (!bytes) throw new Error(`${o.file} is missing`);
-    if (bytes.byteLength !== o.bytes || createHash('sha256').update(bytes).digest('hex') !== o.sha256) throw new Error(`${o.file} does not match the lock`);
+    if (!bytes) throw new BeepsError('E_VERIFY', `${o.file} is missing`);
+    if (bytes.byteLength !== o.bytes || createHash('sha256').update(bytes).digest('hex') !== o.sha256) throw new BeepsError('E_VERIFY', `${o.file} does not match the lock`);
     files.set(o.file, bytes);
   }
   for (const o of asset.outputs) if (o.file.endsWith('.runtime.json')) {
