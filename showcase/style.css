@@ -80,7 +80,7 @@ footer { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wr
 .colony-tracks { margin-top: 26px; }
 #colony-tracks { display: flex; gap: 8px; flex-wrap: wrap; }
 #colony-audio { width: 100%; margin-top: 12px; }
-#colony-status { min-height: 1.5em; }
+#colony-status, #colony-pad-status { min-height: 1.5em; }
 button:disabled { cursor: wait; opacity: .5; }
 @media(max-width:720px) {
   #flux-pads { grid-template-columns: 1fr; }

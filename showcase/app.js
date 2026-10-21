@@ -420,6 +420,7 @@ function activateColony(){
   choose(collections['Colony music'][colonyIndex],'Playing');
 }
 const colonyStatus=text=>{$('#colony-status').textContent=text;};
+const colonyPadStatus=text=>{$('#colony-pad-status').textContent=text;};
 colony.addEventListener('play',async()=>{
   if(colony.paused)return;
   if(mediaWanted.get(colony)){draw();return;}
@@ -520,7 +521,7 @@ async function loadFuse(){
 }
 void loadFuse();
 async function loadColony(){
-  const feedback=colonyStatus;
+  const feedback=colonyPadStatus;
   try {
     const response=await fetch('./media/colony-session.json');
     if(!response.ok)throw new Error(`Kit returned ${response.status}`);
@@ -548,7 +549,7 @@ async function loadColony(){
       button.onclick=()=>playColony(index);
       $('#colony-tracks').append(button);
     });
-    feedback('Press a pad to hear it built live, or choose a bed or song to play.');
-  } catch(error){feedback(`The colony kit could not load. Reload to retry. ${error.message}`);}
+    feedback('Press a pad to hear it built live.');colonyStatus('Choose a bed or a song to play.');
+  } catch(error){const message=`The colony kit could not load. Reload to retry. ${error.message}`;feedback(message);colonyStatus(message);}
 }
 void loadColony();

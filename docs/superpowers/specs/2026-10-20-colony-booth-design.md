@@ -76,3 +76,55 @@ exactly as before.
 
 `showcase/README.md` (what Colony is, how it is rendered, size), the root `README.md` (one line where the
 booth and the library are described), `skills` untouched. Wiki: add to the booth reference and backlog.
+
+## Follow-ups from review
+
+Four points were left open when the section first landed. Each is resolved on the same branch.
+
+### 1. Separate status lines for pads and tracks
+
+`#colony-status` served both the pads and the track buttons, so a pad pressed over a track replaced the
+track's description. Pads get their own line, `#colony-pad-status`, directly under the pad grid. The
+track line (`#colony-status`) is written only by track selection and track playback errors, so it keeps
+describing the selected track however many pads are pressed. A load failure writes to both lines.
+
+| Option | Time | Risk | Complexity | Best practice | Maintainability |
+| --- | --- | --- | --- | --- | --- |
+| Two lines (chosen) | Minutes: one element, one call site, two selectors in tests | Low; live regions stay polite and each line has one writer | Adds one element | One live region per control group | Each line has one writer |
+| Restore the track text after each pad | Minutes | A restore races with a second pad and with a changed track | A save/restore pair of state | Weak: one region, two meanings | Fragile ordering |
+| Leave it | None | Misleading text under an unchanged transport title | None | Poor | Known wart carried |
+
+### 2. Look-image labels match the published recipes
+
+The effect look images are labelled with the patch name, so they read `col-till` while the downloadable
+recipe is `colony-till`. The render now builds each effect from the already-renamed patch, so the label,
+the recipe and the live session patch share one name. Beds and songs are labelled with their titles and are
+unaffected. The render is checked to leave every effect's audio unchanged (trim and measured features equal
+the committed quality file); only the 9 effect look PNGs change.
+
+| Option | Time | Risk | Complexity | Best practice | Maintainability |
+| --- | --- | --- | --- | --- | --- |
+| Render the renamed patch (chosen) | Minutes plus one re-render | Low if the name does not reach the audio; verified by comparing features | One line | Published artifacts agree with their labels | Nothing new to keep in sync |
+| Rename the library patches to `colony-*` | Longer: library files, README tables, any tests naming them | Touches shipped library content and its docs | Wider diff | Right in the long run but outside this section | One name everywhere, at the cost of a library change |
+| Leave it | None | None | None | Label and file disagree | A permanent mismatch |
+
+### 3. Library-only instrument resolution for song renders
+
+`resolveInstruments` reads a project's own `patches` folder before the bundled instruments. A developer's
+same-named local patch would silently change a published render. The Colony render now passes a project
+whose patches folder is a path that does not exist, so every named instrument resolves from the library.
+Checked by planting a decoy local patch that shadows a library instrument the songs use and confirming the
+re-rendered MP3s are byte-identical. Matter's score carries its instruments inline, so it has no exposure.
+
+| Option | Time | Risk | Complexity | Best practice | Maintainability |
+| --- | --- | --- | --- | --- | --- |
+| Non-existent patches folder for the render (chosen) | Minutes | None to published bytes when no local patch exists | One derived project object | Reproducible renders from tracked inputs only | Local to the script |
+| Fail the render if a shadowing local patch exists | Minutes | Blocks a developer who has a harmless local patch | A scan of every instrument name | Explicit, but noisy | Needs the resolver's search order duplicated |
+| Add a "library only" flag to `resolveInstruments` | Longer: engine change, tests, docs | Touches code every song render uses | A new public option | Cleanest eventually | A flag for one caller |
+
+### 4. The kit README's canopy warning
+
+The kit README says the canopy bed's thin-low-end warning is intentional. The render raises no such warning.
+The sentence is corrected to say what the lint reports (no warning on the canopy bed; the register diagnostics
+paragraph stands). The song pitch warnings are a separate item: fixing them changes the renders and needs
+a listen, so they stay on the backlog.

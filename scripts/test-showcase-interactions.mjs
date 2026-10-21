@@ -135,7 +135,7 @@ async function colonyPausedPositions(browser,server){
   const pad=async()=>{
     const name=await page.locator('#colony-pads .pad .sound-name').first().textContent();
     await page.locator('#colony-pads .face').first().click();
-    await page.waitForFunction(name=>document.querySelector('#colony-status').textContent===`${name} · synthesized live`,name);
+    await page.waitForFunction(name=>document.querySelector('#colony-pad-status').textContent===`${name} · synthesized live`,name);
   };
   try{
     // Glasshouse paused at about 3 s, then a different track, then a pad: the new track keeps its own place.
@@ -201,9 +201,11 @@ async function colonyPlayback(browser,server){
     for(let i=0;i<names.length;i++){
       const starts=await page.evaluate(()=>nativeStarts);
       await page.locator('#colony-pads .face').nth(i).click();
-      await page.waitForFunction(name=>document.querySelector('#colony-status').textContent===`${name} · synthesized live`,names[i]);
+      await page.waitForFunction(name=>document.querySelector('#colony-pad-status').textContent===`${name} · synthesized live`,names[i]);
       assert.ok(await page.evaluate(n=>nativeStarts>n,starts),`${names[i]}: the effect started native sources`);
     }
+    // The pads report on their own line: the track line still describes the selected track.
+    assert.match(await page.locator('#colony-status').textContent(),/^Outpost Dawn · song · /,'a pad leaves the track description alone');
     await page.waitForFunction(()=>window.titles.some(t=>t.startsWith('Colony effects /'))&&window.titles.at(-1)?.startsWith('Colony music / Outpost Dawn'));
     assert.ok(await page.evaluate(()=>window.gainTargets.includes(.32)&&window.gainTargets.lastIndexOf(1)>window.gainTargets.indexOf(.32)),'the effect ducks the music, then restores it');
     assert.equal(await page.locator('#colony-audio').evaluate(a=>a.paused),false,'the track keeps playing under the effect');

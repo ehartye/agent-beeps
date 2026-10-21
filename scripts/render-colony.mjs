@@ -1,6 +1,6 @@
 // Render the bundled colony kit (library/sounds/colony-sfx, library/songs/colony-ambient) for the booth.
 // The kit is rendered against its own project settings (D major pentatonic, -18 LUFS effects, -20 LUFS music).
-import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import ffmpegStatic from 'ffmpeg-static';
@@ -40,15 +40,21 @@ export async function renderColony(host,project) {
   const opts={project:colonyProject,rendersDir:project.paths.renders};
   const text=readme(root);
 
-  // Effects: seed 1, variant 0, the kit README's export seed.
-  const patches=EFFECTS.map(n=>parseOrThrow(read(`library/sounds/colony-sfx/effects/${n}.json`),n));
+  // Songs resolve instruments from the project's own patches before the bundled library, so a developer's same-named
+  // local patch would change a published render. This project points at a folder that does not exist: library only.
+  const libraryOnly={...project,paths:{...project.paths,patches:resolve(project.paths.dir,'colony-library-only')}};
+  if(existsSync(libraryOnly.paths.patches))throw new Error(`${libraryOnly.paths.patches} must not exist: colony songs resolve their instruments from the library only`);
+
+  // Effects: seed 1, variant 0, the kit README's export seed. Rendered under the published colony-<id> name, so the
+  // look-image label, the downloadable recipe and the live session patch all agree.
+  const patches=EFFECTS.map(n=>parseOrThrow({...read(`library/sounds/colony-sfx/effects/${n}.json`),name:`colony-${n}`},n));
   const outcomes=await renderAndMeasure(host,patches.map(patch=>({patch,seed:1,variant:0})),opts);
   const effects=[],effectReports=[];
   for(let i=0;i<EFFECTS.length;i++){
     const id=EFFECTS[i],result=outcomes[i];if(!result.ok)throw new Error(result.error);
     const lint=lintPatch(patches[i],result.features,colonyProject);
     if(lint.errors.length)throw new Error(`colony ${id}: ${JSON.stringify(lint.errors)}`);
-    const patch={...patches[i],name:`colony-${id}`};
+    const patch=patches[i];
     copyFileSync(result.lookPath,resolve(media,`colony-${id}.png`));
     write(resolve(recipes,`colony-${id}.json`),patch);
     effects.push({id,...text.effects[id],seed:1,trimDb:result.trimDb,look:`./media/colony-${id}.png`,sources:[...new Set(patch.layers.map(l=>l.source.type))],patch});
@@ -62,9 +68,9 @@ export async function renderColony(host,project) {
   const list=[...BEDS.map(([id,title])=>({id,title,kind:'bed',description:text.beds[id].description,file:`library/sounds/colony-sfx/environments/${id}.json`})),
     ...SONGS.map(id=>({id,kind:'song',file:`library/songs/colony-ambient/${id}.json`}))];
   for(const t of list){
-    const path=resolve(root,t.file),song=loadSong(project,path);
+    const path=resolve(root,t.file),song=loadSong(libraryOnly,path);
     if(t.kind==='song'){t.title=song.title;t.description=song.description;}
-    const instruments=resolveInstruments(project,song);
+    const instruments=resolveInstruments(libraryOnly,song);
     const render=await renderSong(host,song,instruments,opts);
     const lint=lintSong(song,render.features,colonyProject,instruments);
     if(lint.errors.length)throw new Error(`colony ${t.id}: ${JSON.stringify(lint.errors)}`);
