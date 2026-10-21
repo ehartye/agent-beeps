@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { noteToHz, snapToScale, hzToMidi } from '../runtime/engine/notes.js';
 import { METAL_RATIOS } from '../runtime/engine/sources.js';
 import type { Features } from './measure/index.ts';
-import type { Patch } from './schema/patch.ts';
+import { REVERB_PRESET_NAMES, type Patch } from './schema/patch.ts';
 import type { Project } from './schema/project.ts';
 import { targetFor } from './render/pipeline.ts';
 import { BeepsError } from './errors.ts';
@@ -288,7 +288,8 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
     c.add('loudness-target', `delivered max momentary loudness ${d.momentaryMaxLufs} LUFS is not within ${tol} LU of the ${target} LUFS target`);
   }
 
-  const presets = ['small', 'room', 'hall', 'cave'];
+  // The schema owns the preset list, so the lint cannot disagree with what a valid patch may say.
+  const presets: readonly string[] = REVERB_PRESET_NAMES;
   if (patch.fx?.reverb && !presets.includes(patch.fx.reverb.preset)) {
     c.add('reverb-preset-only', `reverb preset "${patch.fx.reverb.preset}" is not one of ${presets.join(', ')}`, '/fx/reverb/preset');
   }

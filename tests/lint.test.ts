@@ -5,7 +5,7 @@ import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSi
 import type { Features } from '../src/measure/index.ts';
 import { defaultProject } from '../src/schema/project.ts';
 import { targetFor } from '../src/render/pipeline.ts';
-import type { Patch } from '../src/schema/patch.ts';
+import { REVERB_PRESET_NAMES, type Patch } from '../src/schema/patch.ts';
 import { coin, patch } from './helpers/patches.ts';
 
 const project = defaultProject();
@@ -32,6 +32,13 @@ describe('lintPatch', () => {
     const r = lintPatch(p, features(p), project);
     expect(r.errors).toEqual([]);
     expect(r.warnings).toEqual([]);
+  });
+
+  it('accepts every reverb preset the schema accepts, including space', () => {
+    for (const preset of REVERB_PRESET_NAMES) {
+      const p = patch({ ...coin(), fx: { reverb: { preset, sendDb: -22 } } });
+      expect(rulesOf(lintPatch(p, features(p), project).errors), preset).not.toContain('reverb-preset-only');
+    }
   });
 
   it('flags a 1 ms attack on a non-click patch with a pointer', () => {

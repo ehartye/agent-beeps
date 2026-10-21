@@ -127,7 +127,7 @@
     },
     {
       "id": "reverb-preset-only",
-      "statement": "Reverb comes only from the preset generated-impulse-response convolvers (small, room, hall, cave), never from a DelayNode feedback network. The patch schema enforces this.",
+      "statement": "Reverb comes only from the preset generated-impulse-response convolvers (small, room, hall, cave, space), never from a DelayNode feedback network. The patch schema enforces this.",
       "check": "auto", "severity": "error", "appliesTo": "patch",
       "rationale": "Small delay networks ring metallically unless their feedback matrix is optimised. A DelayNode inside a feedback cycle cannot go below one render quantum. A convolver's impulse response is expensive to assign, so each one is built once per preset.",
       "sources": [
