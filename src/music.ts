@@ -83,6 +83,14 @@ export function libraryInstruments() {
   });
 }
 
+/** A project patch of that name, else a bundled library instrument; null when there is neither. */
+export function findInstrument(p: OpenProject, name: string): Patch | null {
+  for (const file of [join(p.paths.patches, `${name}.json`), join(INSTRUMENTS_DIR, `${name}.json`)]) {
+    if (existsSync(file)) return parseOrThrow(readJsonFile(file), file);
+  }
+  return null;
+}
+
 /**
  * Instrument patch per track. A name resolves to the song's own instruments, then project patches,
  * then the library; {base, set} copies a named instrument and applies JSON-pointer overrides.
@@ -95,10 +103,8 @@ export function resolveInstruments(p: OpenProject, song: Song): Record<string, P
       resolving.add(name);
       try { return fromSpec(song.instruments[name], `/instruments/${name}`, name); } finally { resolving.delete(name); }
     }
-    const own = join(p.paths.patches, `${name}.json`);
-    const lib = join(INSTRUMENTS_DIR, `${name}.json`);
-    if (existsSync(own)) return parseOrThrow(readJsonFile(own), own);
-    if (existsSync(lib)) return parseOrThrow(readJsonFile(lib), lib);
+    const found = findInstrument(p, name);
+    if (found) return found;
     throw new BeepsError('E_NOT_FOUND', `no instrument "${name}"`, { pointer: at, hint: 'a song instrument, a project patch name, a library instrument (beeps instruments), or an inline patch' });
   };
   const fromSpec = (spec: unknown, at: string, name: string): Patch => {

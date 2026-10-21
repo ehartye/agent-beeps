@@ -84,7 +84,7 @@ nine effects, four ambience beds and three songs, that you can hear on the
 | `audition formats <bundle\|wav...>`, `audition formats-status` | blind-audition delivery formats: encodes the sounds through the compress presets (MP3 CBR/VBR, Ogg Opus) beside a hidden lossless reference and a low-pass anchor, serves a lettered rating page with a device decode check, writes `results.json`, and projects catalog bytes per preset ([guide](docs/delivery-format-audition.md)) |
 | `serve` | the LAN audition server (idempotent; `--stop`) |
 | `taste show/fit/stats/import` | the learned taste profile and prediction hit rates; `import` logs a game page's thumbs, or a delivery-format audition's `results.json` as delivery preferences (kept apart from the sound model) |
-| `instruments` | bundled instrument patches songs can name |
+| `instruments`, `instruments rebase <name>` (`--by N` or `--to NOTE`) | bundled instrument patches songs can name; `rebase` prints the song-instrument override that builds one at another register, moving its pitched layers and scaling their filter cutoffs |
 | `song new/list/check/render/lint/export` | compose, outline, render (parallel), lint and export music |
 | `album open/feedback/list` | progressive LAN song playback: love/keep/dud, tags, whole-track and timestamped moment notes |
 | `bundle <dir>` | collect export sidecars under a directory into `index.json`, the game player's catalog |
@@ -201,6 +201,10 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.18.0
+
+The `song-written-pitch` lint now leads with the cure that keeps the sound: build the instrument at the register it plays, in the song's `instruments` block, with its filter cutoffs scaled to match. `beeps instruments rebase <name> --to F4` (or `--by -12`) prints that override. `fixed`, `root` and `transpose` stay, but the advice now says they change what you hear. Test-suite fixes: a media-position race in the booth browser tests and a justified timeout for the slowest render test.
 
 ## What changed in 0.17.0
 

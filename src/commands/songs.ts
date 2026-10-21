@@ -4,7 +4,7 @@ import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
 import { openProject, readJsonFile, type OpenProject } from '../project.ts';
-import { libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
+import { findInstrument, libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { readFileSync } from 'node:fs';
 import { readWav } from '../audio/wav.ts';
 import { applyTrimAndClip, measureSong } from '../measure/song.ts';
@@ -25,6 +25,9 @@ import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
 import { planScore } from '../compat.ts';
+import { rebaseInstrument, type FilterMode } from '../rebase.ts';
+import { hzToMidi, noteToHz } from '../../runtime/engine/notes.js';
+import { instrumentRoot } from '../../runtime/engine/song.js';
 import { exportRole } from '../export-manifest.ts';
 import { exportSongAssets } from '../export-assets.ts';
 
@@ -102,9 +105,30 @@ export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?:
 const STEM_PEAK_AUDIBLE_DB = 12;
 
 export function registerSongCommands(program: Command, io: Io) {
-  program.command('instruments')
+  const instruments = program.command('instruments')
     .description('list the bundled instrument patches songs can play by name')
     .action(() => io.emit({ instruments: libraryInstruments() }));
+
+  instruments.command('rebase <name>')
+    .description('print the song-instrument override that builds an instrument at another register, so a part written far from its root plays as built')
+    .option('--by <semitones>', 'move every pitched layer by this many semitones (negative is down)', int)
+    .option('--to <note>', 'move the instrument so its root is this note, such as F4')
+    .option('--filters <mode>', 'follow: scale the cutoffs of the moved layers by the same ratio; keep: leave them', 'follow')
+    .action((name: string, opts: { by?: number; to?: string; filters: string }) => {
+      if ((opts.by === undefined) === (opts.to === undefined)) throw new BeepsError('E_USAGE', 'give exactly one of --by <semitones> or --to <note>');
+      if (opts.filters !== 'follow' && opts.filters !== 'keep') throw new BeepsError('E_USAGE', `--filters must be follow or keep, not ${opts.filters}`);
+      const patch = findInstrument(openProject(io.projectDir()), name);
+      if (!patch) throw new BeepsError('E_NOT_FOUND', `no instrument "${name}"`, { hint: 'a project patch name or a library instrument (beeps instruments)' });
+      const root = instrumentRoot(patch as never);
+      if (root === null) throw new BeepsError('E_USAGE', `"${name}" has no pitched layer to rebase`);
+      const shift = opts.by ?? Math.round(hzToMidi(noteToHz(opts.to!)) - root);
+      const r = rebaseInstrument(patch, shift, { filters: opts.filters as FilterMode });
+      io.emit({
+        instrument: name, root: r.root, rebuiltRoot: r.rebuiltRoot, shiftSemitones: shift, filters: opts.filters, movedLayers: r.layers, scaledCutoffs: r.filters,
+        override: { base: name, set: r.set },
+        hint: `add it to the song's "instruments" block under a new name and point the track at that name; then write the part near ${r.rebuiltRoot}. Layers without a pitch keep their own filters.`,
+      });
+    });
 
   const song = program.command('song').description('compose, render and export music (beeps/song@1)');
   // A bare group command lists its subcommands instead of exiting silently.

@@ -72,8 +72,14 @@ changes a song that does not set them:
   own `transpose` shifts that pattern only.
 
 `beeps song check` flags a track whose written notes sit more than an octave from the root it
-plays from (`song-written-pitch`), with these fixes. `range`/`sounds` follow `fixed`, `root` and
-`transpose`.
+plays from (`song-written-pitch`). `range`/`sounds` follow `fixed`, `root` and `transpose`.
+
+The three fields above change what you hear. To keep the sound and still write far from the root, build
+the instrument at the register it plays: `beeps instruments rebase soft-pluck --to F4` prints a
+`{ "base", "set" }` override that moves every pitched layer (and `pitchEnv` target) to the new root and
+scales those layers' filter cutoffs by the same ratio (`--filters keep` leaves them). Put it in the
+song's `instruments` block under a new name, point the track at it, then write the part near the new
+root. Noise, grain and metal layers keep their own filters.
 
 ## Tracks
 

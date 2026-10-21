@@ -117,6 +117,7 @@ export async function testTransport(browser, server) {
     await click('#matter-play');await page.waitForFunction(()=>document.querySelector('#audio').currentTime>.1);
     await click('[data-fuse-take="tommy-recording"]');await page.waitForFunction(()=>document.querySelector('#fuse-status').textContent.includes('· playing'));
     await click('#play');await page.waitForFunction(()=>boothContext.state==='suspended');
+    await page.waitForFunction(()=>document.querySelector('#audio').paused);
     const heldTime=await page.locator('#audio').evaluate(a=>a.currentTime);
     await page.evaluate(()=>window.holdResume=true);await click('#play');
     await page.waitForFunction(()=>window.resumeWaiting);await page.waitForTimeout(200);

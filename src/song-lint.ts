@@ -101,7 +101,8 @@ export function lintSong(song: Song, f: SongFeatures, project: Project, instrume
     if (notes.length === 0 || Math.abs(worst) <= far) continue;
     const lo = Math.min(...notes), hi = Math.max(...notes), written = lo === hi ? nn(lo) : `${nn(lo)}-${nn(hi)}`;
     const hzOf = (m: number) => fmt(440 * 2 ** ((m - 69) / 12), 0);
-    c.add('song-written-pitch', `track "${track}" writes ${written} for an instrument rooted at ${nn(inst)} (${hzOf(inst)} Hz): the whole patch is retuned ${fmt(Math.abs(worst), 0)} semitones ${worst > 0 ? 'up' : 'down'} and sounds at ${hzOf(inst + worst)} Hz. To play it as built at ${nn(inst)}, set "fixed": true on the track; to keep following the notes, set "root": "${nn((lo + hi) / 2)}" (the note it should sound at as written) or write notes near ${nn(ref)}`, `/tracks/${track}`);
+    const shift = Math.round((lo + hi) / 2 - ref + tr), semis = `${Math.abs(shift)} semitone${Math.abs(shift) === 1 ? '' : 's'} ${shift > 0 ? 'up' : 'down'}`;
+    c.add('song-written-pitch', `track "${track}" writes ${written} for an instrument rooted at ${nn(inst)} (${hzOf(inst)} Hz): the whole patch is retuned ${fmt(Math.abs(worst), 0)} semitones ${worst > 0 ? 'up' : 'down'} and sounds at ${hzOf(inst + worst)} Hz, far from the register its filters and envelopes were built for. To keep what you hear, build the instrument where it plays: copy it in the song's "instruments" block with every pitched layer moved ${semis} and its filter cutoffs scaled to match. To change what you hear instead, write notes near ${nn(ref)}, set "root": "${nn((lo + hi) / 2)}" (the written note that sounds at the built pitch), or set "fixed": true to play it at ${nn(inst)} whatever is written; "transpose" is counted as part of the distance`, `/tracks/${track}`);
   }
 
   const played = new Set<string>(), usedTracks = new Set<string>();

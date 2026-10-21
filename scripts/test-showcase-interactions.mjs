@@ -78,6 +78,8 @@ async function mediaResumeErrors(browser,server){
       else await page.locator('#touch-audio').evaluate(a=>a.play());
       await page.waitForFunction(id=>document.getElementById(id).currentTime>.1,media);
       await page.locator('#play').click();await page.waitForFunction(()=>boothContext.state==='suspended');
+      // The context suspends a moment before the media element stops, so read the position only once it has.
+      await page.waitForFunction(id=>document.getElementById(id).paused,media);
       const position=await page.locator(`#${media}`).evaluate(a=>a.currentTime);
       await page.evaluate(id=>window.rejectMedia=id,media);await page.locator('#play').click();
       await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('retry'));
@@ -94,6 +96,7 @@ async function mediaResumeErrors(browser,server){
     await page.locator('#matter-play').click();await page.waitForFunction(()=>document.querySelector('#audio').currentTime>.1);
     await page.locator('[data-fuse-take="tommy-recording"]').click();await page.waitForFunction(()=>document.querySelector('#fuse-status').textContent.includes('Tommy recording · playing'));
     await page.locator('#play').click();await page.waitForFunction(()=>boothContext.state==='suspended');
+    await page.waitForFunction(()=>document.querySelector('#audio').paused);
     const starts=await page.evaluate(()=>nativeStarts),position=await page.locator('#audio').evaluate(a=>a.currentTime);
     await page.evaluate(()=>window.rejectMedia='audio');await page.locator('#play').click();
     await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('retry'));
