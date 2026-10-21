@@ -6,24 +6,42 @@
     "colony",
     "repeating"
   ],
-  "duration": 0.22,
+  "duration": 0.4,
   "layers": [
     {
       "source": {
         "type": "grains",
-        "rate": 75,
-        "center": 1800,
-        "grainDecay": 0.009,
-        "q": 0.8,
-        "rateEnd": 0.25
+        "rate": 110,
+        "center": 2400,
+        "grainDecay": 0.008,
+        "q": 0.9,
+        "rateEnd": 0.1
       },
-      "gainDb": -6,
       "amp": {
-        "attack": 0.006,
-        "decay": 0.09,
+        "attack": 0.01,
+        "decay": 0.16,
         "sustain": 0,
-        "release": 0.08
-      }
+        "release": 0.05
+      },
+      "gainDb": -5
+    },
+    {
+      "source": {
+        "type": "grains",
+        "rate": 80,
+        "center": 1300,
+        "grainDecay": 0.01,
+        "q": 0.8,
+        "rateEnd": 0.1
+      },
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.05
+      },
+      "gainDb": -9,
+      "start": 0.05
     },
     {
       "source": {
@@ -31,31 +49,44 @@
         "color": "brown"
       },
       "filter": {
-        "type": "bandpass",
-        "cutoff": 380,
-        "q": 0.55
+        "type": "lowpass",
+        "cutoff": 400,
+        "resonanceDb": 0,
+        "env": {
+          "to": 200,
+          "time": 0.18000000000000002
+        }
       },
-      "gainDb": 0,
+      "highpass": 40,
       "amp": {
-        "attack": 0.007,
-        "decay": 0.11,
+        "attack": 0.02,
+        "decay": 0.14,
         "sustain": 0,
-        "release": 0.08
-      }
+        "release": 0.09
+      },
+      "gainDb": -3,
+      "start": 0.12
     },
     {
       "source": {
         "type": "osc",
         "wave": "sine",
-        "pitch": "A3"
+        "pitch": "D3"
       },
-      "gainDb": -9,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 500,
+        "resonanceDb": 0
+      },
+      "highpass": 40,
       "amp": {
-        "attack": 0.006,
-        "decay": 0.14,
+        "attack": 0.035,
+        "decay": 0.2,
         "sustain": 0,
-        "release": 0.08
-      }
+        "release": 0.1
+      },
+      "gainDb": -6,
+      "start": 0.13
     }
   ],
   "variation": {
@@ -67,6 +98,6 @@
   "meta": {
     "priority": 3,
     "intent": "oneshot",
-    "description": "A seed tucked in. A tiny seed-shell rattle lands in soft soil; a rounded low pluck confirms planting without becoming a reward chime."
+    "description": "A seed tucked in. Seeds pour from a palm into soft soil and settle with a low, rounded wum; planting is confirmed without a reward chime."
   }
 }

@@ -37,7 +37,7 @@ environment; the occasional pitched details remain subordinate.
 | Asset / source file in `effects/` | Listening label | Event and character |
 | --- | --- | --- |
 | `till` | Soil and steel | Successful tilling: a padded tool bite, quiet handle contact and loose grains settling |
-| `plant` | A seed tucked in | Successful planting: tiny shell rattle, soft soil and a rounded low pluck |
+| `plant` | A seed tucked in | Successful planting: seeds poured into soft soil, settling with a low, rounded wum |
 | `water` | Watering the roots | Successful watering: soft pouring noise and staggered falling droplets |
 | `harvest` | Picked with care | Successful harvest: a woody stem release with restrained upper overtones |
 | `discovery` | A new find | First discovery only: a four-note glass figure with a warm low anchor |
