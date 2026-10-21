@@ -68,6 +68,8 @@ nine effects, four ambience beds and three songs, that you can hear on the
 
 ## Commands
 
+The table below groups the commands you reach for most. [`docs/cli.md`](docs/cli.md) lists every command with its description, generated from the CLI itself (`node scripts/gen-cli-docs.mjs --write` after adding one), and `beeps capabilities` returns the same list as JSON.
+
 | Command | Does |
 |---|---|
 | `capabilities` | schema, source types, archetypes, directions, error codes |
@@ -149,7 +151,7 @@ public/audio` (writes `index.json`) and `beeps player export src/vendor` (vendor
 automatic, and the master never hard-limits below its -1.5 dBFS knee. `player.retry()` re-fetches
 after failed loads (e.g. on a sound toggle). For long music on phones, `memoryBudgetBytes`, `layerLoading: 'state'`,
 `prefetch(ids)`, `unload(id)` and `memory()` bound the decoded audio kept in memory. Full API and error codes:
-`skills/beeps-compose/references/game-player.md`.
+`skills/beeps-ship/references/game-player.md`.
 
 ## Shipping audio
 
@@ -205,6 +207,18 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.18.1
+
+Fixes and tooling from an internal architecture review; no new sound or music features.
+
+- **Lint:** `reverb-preset-only` accepts every preset the schema does, including `space`.
+- **Errors:** a malformed option value is `E_USAGE` (exit 2) instead of `E_RENDER`; a bug in beeps (`TypeError`, `ReferenceError`) is `E_INTERNAL`, with the stack behind `BEEPS_DEBUG=1`. Pointer, rebase and runtime-verification failures carry codes.
+- **Discoverability:** `beeps capabilities` lists every runnable command (75, not 37), [`docs/cli.md`](docs/cli.md) is generated from the CLI, every command is mentioned in the README or a skill (tested), and the delivery references now live under the `beeps-ship` skill.
+- **Engine:** an unknown source type throws instead of building silence.
+- **Game player:** `player.dispose()` stops everything, aborts in-flight loads and clears timers; the loader's `fetcher` receives `{ signal }`.
+- **Internals:** Chromium opens lazily (a fully cached `render` no longer starts a browser), one worker pool, one render-cache helper, one JSON-pointer module, shared pitch math and sample limits in the engine.
+- **Repository:** tests run under one temp root that is removed afterwards, `docs/RELEASING.md` and `scripts/release-check.mjs` describe and check a release, and a ship eval case joins the evals.
 
 ## What changed in 0.18.0
 
@@ -486,10 +500,11 @@ npm install
 npm test          # vitest; browser tests run when Playwright's Chromium is installed
 npm run typecheck
 node scripts/beeps.mjs capabilities
+node scripts/gen-cli-docs.mjs --write        # docs/cli.md, after adding or renaming a command
 claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals in evals/
 ```
 
-Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`.
+Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`. Cutting a release: `docs/RELEASING.md` (and `node scripts/release-check.mjs`).
 
 ## Runtime path
 
