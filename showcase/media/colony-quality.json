@@ -911,7 +911,7 @@
     },
     {
       "id": "outpost-dawn",
-      "renderKey": "fe050a1bda1e1e78f33868f8d78e8b6654b6fc57b6e72dd4ee073db20b6603f6",
+      "renderKey": "518a0d4181cebfcb63ff4a6e164b9c1f085a2f1cd61f1297db93eb7df314d6ac",
       "features": {
         "durationSec": 72,
         "integratedLufs": -24.59,
@@ -1074,28 +1074,7 @@
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"C5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes A3-D5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 14 semitones up and sounds at 587 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"melody\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/melody"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"seed\" writes A5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D6\" (the note it should sound at as written) or write notes near C5",
-            "pointer": "/tracks/seed"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"
@@ -1157,7 +1136,7 @@
     },
     {
       "id": "the-underside",
-      "renderKey": "ba7c0a3a50747000206a805b1239f8407d06a4b267dd164b7f9d058dc2dd849f",
+      "renderKey": "f437f5aa711dd2a5614a7d254b2d27d23e298431865af9ac9d098d5d356e40e2",
       "features": {
         "durationSec": 80,
         "integratedLufs": -23.81,
@@ -1328,28 +1307,7 @@
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-Db6 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 25 semitones up and sounds at 1109 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes Db4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"memory\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/memory"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"glass\" writes B5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Eb6\" (the note it should sound at as written) or write notes near C5",
-            "pointer": "/tracks/glass"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"
@@ -1413,7 +1371,7 @@
     },
     {
       "id": "window-light",
-      "renderKey": "e844f461c668e55a0922f263383fc61abc8f4b1e00ebb0a4cdbc7d462732f83f",
+      "renderKey": "32d1510881a3a88621f02928a414923e125e36f7444fc082a5083ecab96adeeb",
       "features": {
         "durationSec": 50.526,
         "integratedLufs": -29.6,
@@ -1538,18 +1496,7 @@
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes B4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"

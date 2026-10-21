@@ -45,10 +45,14 @@ local files, not committed source assets.
 | The Underside | -20 | -7.85 | 3.9 | 0.4 | 7.8% |
 | Window Light | -20 | -3.72 | 6.7 | 0.1 | 20.0% |
 
-All three scores pass schema/check and render lint with zero errors. The current linter reports
-`song-written-pitch` warnings on the retuned reed, pluck and pad tracks (the notes are written
-well above the instruments' rooted pitch). The scores predate that rule, so their notes are
-unchanged and the warnings stand as a known follow-up. All
+All three scores pass schema/check and render lint with zero errors and zero warnings. A song
+retunes its instrument to each written note, so an instrument built at middle C and written two
+octaves up would be flagged (`song-written-pitch`). The pad, pluck, bell and piano that sit far from
+their library root therefore use song-local copies (`warm-pad-c5`, `soft-pluck-fs4` and so on, named
+for the pitch they are built at) with every pitched layer moved to where the track plays, and the
+outpost reed is built at E5. The copies sound exactly as the library instruments retuned did: the
+renders are sample-for-sample identical to before. The library instruments are unchanged.
+All
 three look images were inspected: the section arcs match the forms, quiet endings return to the
 opening density, and bass energy leaves gaps between notes. The loop edge metric measures level
 consistency, not a guarantee of inaudible musical joins; listening remains the final judgment.

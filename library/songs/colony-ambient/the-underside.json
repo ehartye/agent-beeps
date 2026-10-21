@@ -8,6 +8,10 @@
   "loop": true,
   "seed": 270927,
   "instruments": {
+    "warm-pad-d5": {"base": "warm-pad", "set": {"/layers/0/source/pitch": "D5", "/layers/1/source/pitch": "D5"}},
+    "soft-pluck-as4": {"base": "soft-pluck", "set": {"/layers/0/source/pitch": "A#4", "/layers/1/source/pitch": "A#5"}},
+    "felt-piano-e5": {"base": "felt-piano", "set": {"/layers/0/source/pitch": "E5"}},
+    "glass-bell-ds6": {"base": "glass-bell", "set": {"/layers/0/source/pitch": "D#6"}},
     "garden-reed": {"duration": 2, "layers": [{"source": {"type": "additive", "pitch": "C4", "partials": [[1, 0, 3], [2, -14, 2], [3, -21, 1.5]]}, "amp": {"attack": 0.045, "decay": 0.5, "sustain": 0.6, "release": 0.3}, "filter": {"type": "lowpass", "cutoff": 2400, "resonanceDb": 0}}, {"source": {"type": "noise", "color": "pink"}, "gainDb": -34, "amp": {"attack": 0.055, "decay": 0.25, "sustain": 0.12, "release": 0.2}, "filter": {"type": "bandpass", "cutoff": 1700, "q": 0.7}}]},
     "root-bass": {"duration": 2, "layers": [{"source": {"type": "osc", "wave": "triangle", "pitch": "C2"}, "amp": {"attack": 0.045, "decay": 0.6, "sustain": 0.35, "release": 0.22}, "filter": {"type": "lowpass", "cutoff": 500, "resonanceDb": 0}}]}
   },
@@ -16,11 +20,11 @@
     "light": [["Dmaj9", 4], ["E/D", 4], ["Gmaj7", 4], ["D6", 4]]
   },
   "tracks": {
-    "pad": {"instrument": "warm-pad", "gainDb": -18, "highpass": 160, "spread": 0.85, "sends": {"reverb": -10}},
-    "pluck": {"instrument": "soft-pluck", "gainDb": -10, "pan": -0.3, "sends": {"reverb": -10, "delay": -17}, "humanize": 0.2},
+    "pad": {"instrument": "warm-pad-d5", "gainDb": -18, "highpass": 160, "spread": 0.85, "sends": {"reverb": -10}},
+    "pluck": {"instrument": "soft-pluck-as4", "gainDb": -10, "pan": -0.3, "sends": {"reverb": -10, "delay": -17}, "humanize": 0.2},
     "roots": {"instrument": "root-bass", "gainDb": -21},
-    "memory": {"instrument": "felt-piano", "gainDb": -8, "pan": 0.15, "sends": {"reverb": -10}},
-    "glass": {"instrument": "glass-bell", "gainDb": -13, "pan": 0.35, "sends": {"reverb": -9, "delay": -14}}
+    "memory": {"instrument": "felt-piano-e5", "gainDb": -8, "pan": 0.15, "sends": {"reverb": -10}},
+    "glass": {"instrument": "glass-bell-ds6", "gainDb": -13, "pan": 0.35, "sends": {"reverb": -9, "delay": -14}}
   },
   "patterns": {
     "pad-cloud": {"bars": 4, "chords": {"progression": "cloud", "octave": 4, "voicing": "close", "slash": false}, "vel": 0.65},
