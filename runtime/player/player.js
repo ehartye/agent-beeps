@@ -1,7 +1,7 @@
 // runtime/player/player.js
 // Game-side playback of exported agent-beeps audio: a voice-managed SFX bus, crossfading music and
 // ambience beds, adaptive layers, and the renderer's safety clipper on the master. Importing it has
-// no side effects; an AudioContext is created on the first unlock().
+// no side effects; an AudioContext is created on the first unlock(). dispose() tears it all down.
 import { clipperCurve } from '../engine/fx.js';
 import { createPicker } from '../engine/variation.js';
 import { createVoiceManager } from './voices.js';
@@ -35,6 +35,7 @@ const hash = s => {
  *   layers?: LayerFile[], states?: Record<string, string[]>, initialState?: string, stateTrimDb?: Record<string, number> }} Asset
  * @typedef {{ code: string, message: string, id?: string }} PlayerError
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
+ * @typedef {import('./loader.js').Fetcher} Fetcher
  * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number, release?: () => void }} Playing one source and its gain; `release` gives its buffer back to the loader when it ends
  * @typedef {{ key: string, id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, origin: number, state: string | null, active: number, loading: Set<string> }} Bed
  * @typedef {{ id: string | null, fadeSec: number, token: number, slot?: string, gainDb?: number }} Pending
@@ -49,7 +50,7 @@ const hash = s => {
  *   onError?: (e: PlayerError) => void,
  *   context?: AudioContext,
  *   contextFactory?: () => AudioContext,
- *   fetcher?: (url: string) => Promise<FetchResponse>,
+ *   fetcher?: Fetcher,
  *   seed?: number,
  *   memoryBudgetBytes?: number,
  *   layerLoading?: 'all' | 'state',
@@ -86,8 +87,21 @@ export function createPlayer(opts) {
   /** @type {string | null} */
   let pendingState = null;
   let enabled = true, hidden = false;
+  /** Set by dispose(): every later call is a quiet no-op and anything still loading ends without starting. */
+  let disposed = false;
+  /** Timers the player has pending, so dispose() can clear them. @type {Set<ReturnType<typeof setTimeout>>} */
+  const timers = new Set();
+  /** @param {() => void} fn @param {number} ms */
+  const later = (fn, ms) => {
+    const t = setTimeout(() => { timers.delete(t); fn(); }, ms);
+    timers.add(t);
+  };
   /** @type {AudioContext | null} */
   let ctx = null;
+  /** Whether dispose() closes the context: only one this player created, never one passed as `opts.context`. */
+  let ownsContext = false;
+  /** The clipper, master and bus nodes, to cut from the graph on dispose. @type {AudioNode[]} */
+  let graphNodes = [];
   /** @type {ReturnType<typeof createLifecycle> | null} */
   let lifecycle = null;
   /** @type {GainNode | null} */
@@ -97,6 +111,7 @@ export function createPlayer(opts) {
 
   /** @param {string} code @param {string} message @param {string} [id] */
   const report = (code, message, id) => {
+    if (disposed) return; // a late failure after teardown is not the game's business
     try { onError({ code, message, ...(id !== undefined ? { id } : {}) }); } catch { /* a game's handler must not break audio */ }
   };
   /** @param {string} code @param {string} message @param {string} id */
@@ -109,7 +124,7 @@ export function createPlayer(opts) {
   const loader = createLoader({
     catalog,
     base: opts.baseUrl ?? (typeof catalog === 'string' ? catalog.slice(0, catalog.lastIndexOf('/') + 1) : ''),
-    fetcher: opts.fetcher ?? (url => fetch(url)),
+    fetcher: opts.fetcher ?? ((url, { signal }) => fetch(url, { signal })),
     report,
     now: () => ctx?.currentTime ?? 0,
     decode: data => /** @type {AudioContext} */ (ctx).decodeAudioData(data),
@@ -119,10 +134,11 @@ export function createPlayer(opts) {
   // Wanted AND actually running. `enabled` is checked directly because disabling suspends only
   // after the stop fade; the context state because after setEnabled(true) without a gesture it is
   // still suspended, and sounds started then would hold voices and all burst out on resume.
-  const running = () => enabled && !hidden && !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
+  const running = () => !disposed && enabled && !hidden && !!ctx && !!lifecycle && lifecycle.running && ctx.state === 'running';
 
   function build() {
     const c = contextFactory();
+    ownsContext = c !== opts.context;
     try { graph(c); } catch (e) {
       // The context exists but its graph does not: close it so a retry does not leak contexts, unless
       // the game passed it in, in which case it is the game's to close.
@@ -142,8 +158,9 @@ export function createPlayer(opts) {
     m.connect(shaper);
     shaper.connect(c.destination);
     master = m;
+    graphNodes = [shaper, m];
     /** @param {'music' | 'ambience' | 'sfx'} b */
-    const bus = b => { const g = c.createGain(); g.gain.value = levels[b] * ducks[b]; g.connect(m); return g; };
+    const bus = b => { const g = c.createGain(); g.gain.value = levels[b] * ducks[b]; g.connect(m); graphNodes.push(g); return g; };
     buses = { music: bus('music'), ambience: bus('ambience'), sfx: bus('sfx') };
     lifecycle = createLifecycle(c, { enabled, hidden });
   }
@@ -280,6 +297,7 @@ export function createPlayer(opts) {
    * @returns {Promise<boolean>}
    */
   function bed(bus, id, { fadeSec: requested = 2, slot, gainDb, at = 'now', sync = false } = {}) {
+    if (disposed) return Promise.resolve(false);
     if (slot !== undefined && (bus !== 'ambience' || !SLOT_NAME.test(slot))) {
       report('E_USAGE', `bad ambience slot "${slot}": use 1-32 chars, lowercase letters, digits and dashes`, String(slot));
       return Promise.resolve(false);
@@ -494,6 +512,7 @@ export function createPlayer(opts) {
    * @param {{ fadeSec?: number, at?: 'now' | 'beat' | 'bar' }} [o]
    */
   function setState(state, { fadeSec: requested = 1.5, at = 'now' } = {}) {
+    if (disposed) return false;
     const fadeSec = fade(requested);
     const cur = beds.get('music');
     const pm = pending.get('music');
@@ -530,7 +549,7 @@ export function createPlayer(opts) {
 
   /** @param {LevelBus} bus @param {number} value */
   function setLevel(bus, value) {
-    if (!Object.hasOwn(levels, bus) || !Number.isFinite(value)) return; // untyped callers too
+    if (disposed || !Object.hasOwn(levels, bus) || !Number.isFinite(value)) return; // untyped callers too
     levels[bus] = Math.min(1, Math.max(0, value));
     applyBus(bus);
   }
@@ -542,7 +561,7 @@ export function createPlayer(opts) {
    * @param {{ fadeSec?: number }} [o]
    */
   function duck(bus, gainDb, { fadeSec } = {}) {
-    if (!Number.isFinite(gainDb)) return;
+    if (disposed || !Number.isFinite(gainDb)) return;
     for (const b of Array.isArray(bus) ? bus : [bus]) {
       if (!Object.hasOwn(ducks, b)) continue;
       ducks[b] = 10 ** (Math.min(0, Math.max(-60, gainDb)) / 20);
@@ -552,6 +571,7 @@ export function createPlayer(opts) {
 
   /** @param {number} [fadeSec] */
   function stopAll(fadeSec = RAMP) {
+    if (disposed) return;
     fadeSec = fade(fadeSec);
     for (const key of new Set([...BEDS, ...beds.keys(), ...pending.keys()])) {
       bump(key);
@@ -569,13 +589,13 @@ export function createPlayer(opts) {
 
   /** Call from a user gesture: creates or resumes the context, then starts queued beds. */
   async function unlock() {
-    if (!enabled || hidden) return false;
+    if (disposed || !enabled || hidden) return false;
     if (!ctx) {
       // No Web Audio (or a factory that throws) is reported, never thrown: the next unlock retries.
       try { build(); } catch (e) { ctx = null; master = null; buses = null; lifecycle = null; report('E_CONTEXT', text(e)); return false; }
     }
     const life = /** @type {ReturnType<typeof createLifecycle>} */ (lifecycle);
-    try { await life.reconcile(); } catch (e) { report('E_CONTEXT', text(e)); return false; }
+    try { await life.reconcile(); } catch (e) { report('E_CONTEXT', text(e)); return false; } // report() is silent once disposed
     await loader.catalog();
     if (!running()) return false;
     await drainPending();
@@ -595,6 +615,7 @@ export function createPlayer(opts) {
 
   /** @param {boolean} value */
   function setEnabled(value) {
+    if (disposed) return;
     enabled = !!value;
     if (!enabled) {
       stopAll();
@@ -602,12 +623,13 @@ export function createPlayer(opts) {
       // and beds are refused meanwhile, because running() checks `enabled`. Re-enabling inside the
       // delay cancels the suspend: the context never stopped, so no gesture is needed.
       const life = lifecycle;
-      if (life) setTimeout(() => { if (!enabled) void life.setEnabled(false).catch(e => report('E_CONTEXT', text(e))); }, RAMP * 1000 + 10);
+      if (life) later(() => { if (!enabled) void life.setEnabled(false).catch(e => report('E_CONTEXT', text(e))); }, RAMP * 1000 + 10);
     } else if (lifecycle) lifecycle.allow(); // resuming a suspended context needs a gesture: the next unlock() does it
   }
 
   /** @param {boolean} value */
   function setHidden(value) {
+    if (disposed) return;
     hidden = !!value;
     if (!lifecycle) return;
     // Showing the tab again resumes without a new gesture: the page already has sticky user
@@ -623,7 +645,7 @@ export function createPlayer(opts) {
    * playing, and the AudioContext.
    */
   function retry() {
-    loader.reset();
+    if (!disposed) loader.reset();
   }
 
   /** Each named layer as 1 (playing, or loading in for the state) or 0. @param {Bed} m @returns {Record<string, number>} */
@@ -693,7 +715,7 @@ export function createPlayer(opts) {
    */
   function prefetch(ids) {
     const list = (Array.isArray(ids) ? ids : []).map(x => (typeof x === 'string' ? { id: x } : x)).filter(x => x && typeof x.id === 'string');
-    if (!list.length) return Promise.resolve(0);
+    if (!list.length || disposed) return Promise.resolve(0);
     if (!ctx) { waitingPrefetch.push(...list); return Promise.resolve(0); }
     return runPrefetch(list).catch(e => { report('E_PLAYBACK', text(e)); return 0; });
   }
@@ -704,6 +726,7 @@ export function createPlayer(opts) {
    * @param {string} id
    */
   function unload(id) {
+    if (disposed) return 0;
     const asset = loader.assets?.[id];
     if (!asset) return 0;
     let freed = 0;
@@ -717,8 +740,45 @@ export function createPlayer(opts) {
     return loader.memory();
   }
 
+  /**
+   * Tear the player down for good, e.g. when a single-page game leaves the screen or a level reloads. Stops every sound and bed at
+   * once (no fade), cancels loads in flight (their fetches are aborted, and they never start a voice or report an error), clears the
+   * player's timers, drops the decoded buffers and cuts its nodes from the graph. The AudioContext is closed only if the player
+   * created it; one passed as `opts.context` is left running for the game. Afterwards every method is a quiet no-op (play() returns
+   * null, the promises resolve false or 0, nothing reaches onError); inspect() and memory() still answer. Calling it again does nothing.
+   */
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    for (const t of timers) clearTimeout(t);
+    timers.clear();
+    for (const key of new Set([...BEDS, ...beds.keys(), ...pending.keys()])) bump(key); // loads in flight lose their token
+    pending.clear();
+    pendingState = null;
+    loadingMusic = null;
+    waitingPrefetch = [];
+    /** @type {Playing[]} */
+    const nodes = [...live.values()];
+    for (const b of beds.values()) {
+      nodes.push(...b.layers.values());
+      try { b.group.disconnect(); } catch { /* already disconnected */ }
+    }
+    for (const n of nodes) n.src.onended = null; // discard() below ends them; their own cleanup would run twice
+    discard(nodes);
+    live.clear();
+    beds.clear();
+    vm.clear();
+    loader.dispose(); // aborts every fetch in flight, drops the cache
+    // A bed fading out under a newer one is no longer tracked: with its buses cut it is silent, and it ends within its fade.
+    for (const n of graphNodes) { try { n.disconnect(); } catch { /* already disconnected */ } }
+    graphNodes = [];
+    const c = ctx;
+    ctx = null; master = null; buses = null; lifecycle = null;
+    if (c && ownsContext) { try { void Promise.resolve(c.close?.()).catch(() => {}); } catch { /* a context that cannot close */ } }
+  }
+
   return {
-    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect, prefetch, unload, memory,
+    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect, prefetch, unload, memory, dispose,
     /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'beat' | 'bar', sync?: boolean }} [o] */
     music: (id, o) => bed('music', id, o),
     /**

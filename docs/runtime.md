@@ -194,6 +194,17 @@ it does not fetch missing assets or silently fall back to a baked file. For a pr
 * `dispose()` stops every source and cuts the voice from its output and sends, so the browser can collect the graph. It is
   not a fade.
 
+### Tearing down the vendored game player
+
+`createPlayer(opts)` (the player `beeps player export` vendors) has `player.dispose()`, the counterpart of the cue voice's
+`dispose()` for a whole session: a single-page game leaving the screen, or a level reload, calls it so nothing keeps playing,
+fetching or holding decoded audio. It stops every sound and bed, aborts loads in flight, clears the player's timers, drops its
+buffers and cuts its nodes from the graph. It closes the `AudioContext` only when the player created it, never one passed as
+`opts.context`. The player's `fetcher` option receives `(url, { signal })`, and the default passes `signal` to `fetch`; a
+one-argument fetcher still works. A load cancelled by `dispose()` resolves quietly (never an `onError`), and after `dispose()`
+every call is a no-op rather than an error. The player API is in
+[the game player reference](../skills/beeps-ship/references/game-player.md).
+
 ### Prepared-source cues (engine 4)
 
 A sample layer is `{ source: { type: 'sample', asset: 'sha256:<64 lowercase hex digits>' }, ... }`.
