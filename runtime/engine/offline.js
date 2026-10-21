@@ -2,8 +2,9 @@
 // (pre-trim, pre-limiter) stereo tap, rendered together into one 4-channel OfflineAudioContext.
 import { buildPatch, patchLength } from './patch.js';
 import { prepareSampleWavs } from './samples.js';
+import { MAX_SAMPLE_WAV_BYTES, SAMPLE_RATE_HZ } from './limits.js';
 
-export const SAMPLE_RATE = 48000;
+export const SAMPLE_RATE = SAMPLE_RATE_HZ;
 const PAD = 0.05;
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
@@ -24,7 +25,7 @@ export function prepareEncodedSamples(ctx, patch, encoded = {}) {
   const wavs = Object.fromEntries(Object.entries(encoded).map(([id, text]) => {
     // A repeated regex group over the maximum 5.12 MB base64 string overflows V8's stack.
     // A single invalid-character scan and explicit suffix checks keep validation linear and bounded.
-    if (typeof text !== 'string' || text.length > Math.ceil((44 + 480000 * 2 * 4) / 3) * 4 || text.length % 4 || /[^A-Za-z0-9+/=]/.test(text)) throw new TypeError(`invalid bounded sample WAV base64 transport: ${id}`);
+    if (typeof text !== 'string' || text.length > Math.ceil(MAX_SAMPLE_WAV_BYTES / 3) * 4 || text.length % 4 || /[^A-Za-z0-9+/=]/.test(text)) throw new TypeError(`invalid bounded sample WAV base64 transport: ${id}`);
     const padding = text.indexOf('=');
     if (padding !== -1 && (padding < text.length - 2 || !['=', '=='].includes(text.slice(padding)))) throw new TypeError(`invalid sample WAV base64 padding: ${id}`);
     return [id, Uint8Array.from(atob(text), c => c.charCodeAt(0))];

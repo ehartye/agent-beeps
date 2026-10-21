@@ -1,6 +1,7 @@
 // One layer: source → drive → filter → tremolo → amp envelope → pan → layer gain → out.
 import { buildSource, sampleBuffer, validateSourceEnvelopes } from './sources.js';
 import { noteToHz, snapToScale } from './notes.js';
+import { dbToGain } from './units.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Layer} Layer */
 /**
@@ -18,7 +19,12 @@ import { noteToHz, snapToScale } from './notes.js';
 /** @typedef {{ root: string, mode: 'chromatic'|'major'|'minor'|'dorian'|'majorPentatonic'|'minorPentatonic'|'blues', snap: boolean }} Scale */
 
 const MIN_FREQ = 1;
-const db = (/** @type {number} */ x) => 10 ** (x / 20);
+
+/**
+ * How long after its onset a layer may first be released, capped by a shorter attack: the note-off is never scheduled
+ * inside the first 2 ms of the attack ramp. patchLength uses the same figure so an offline context is sized to match.
+ */
+export const RELEASE_FLOOR_S = 0.002;
 
 /**
  * @param {string | number} p
@@ -87,7 +93,7 @@ export function envelopeAt(amp, t) {
 export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1, samples }) {
   const { when: t0, pitchHz: base } = resolveLayerSource(layer, { when, scale, pitchRatio });
   const { attack, decay, sustain, release } = layer.amp;
-  const off = Math.max(t0 + Math.min(attack, 0.002), when + duration);
+  const off = Math.max(t0 + Math.min(attack, RELEASE_FLOOR_S), when + duration);
   const end = off + release;
   const prepared = sampleBuffer(layer.source, samples);
   const naturalEnd = prepared ? t0 + prepared.length / prepared.sampleRate : Infinity;
@@ -197,7 +203,7 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
   }
 
   const gain = ctx.createGain();
-  gain.gain.value = db(layer.gainDb);
+  gain.gain.value = dbToGain(layer.gainDb);
   node.connect(gain).connect(out);
 
   built.start(t0);
@@ -208,7 +214,7 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
     // this does not estimate arbitrary filter decay. A held sample releases at exhaustion.
     end: hold ? (prepared ? naturalEnd + release : Infinity) : end,
     release(at) {
-      const releaseAt = Math.max(at, t0 + Math.min(attack, 0.002));
+      const releaseAt = Math.max(at, t0 + Math.min(attack, RELEASE_FLOOR_S));
       // Once the automatic release has started, a later stop must not restart it.
       if (hold && prepared && releaseAt >= naturalEnd) return naturalEnd + release;
       const silent = scheduleRelease(releaseAt, hold && !!prepared);
