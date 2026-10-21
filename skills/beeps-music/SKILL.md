@@ -40,9 +40,11 @@ bass at octave 2, pad chords at 4 (at 3 only for thin, filtered pads; `spread` d
 octave further), arps and bells at 4-5, lead at 4-5, sparkle at 6. Parts that share a band need
 rhythmic gaps between them.
 A song retunes the instrument to every written note, so one built at 3300 Hz and written `D4`
-sounds at 293 Hz. Set the track's `fixed: true` to play it at its own pitch, `root` to name the
-note it sounds at as written, or `transpose` to shift it; lint `song-written-pitch` flags notes more
-than an octave from the root (song-format reference).
+sounds at 293 Hz, and its filters and envelopes stay tuned for the old register. Lint `song-written-pitch`
+flags notes more than an octave from the root. To keep the sound, write each part within an octave of its
+instrument's root, or build the instrument at the register it plays: `beeps instruments rebase <name> --to F4`
+prints an override for the song's `instruments` block that moves the pitched layers and scales their
+filters. `fixed: true`, `root` and `transpose` only change what you hear (song-format reference).
 
 ## 3. Write, check, fix
 

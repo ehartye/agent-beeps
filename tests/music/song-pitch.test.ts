@@ -70,6 +70,8 @@ describe('song-written-pitch lint', () => {
     expect(w[0].message).toMatch(/294 Hz/);
     expect(w[0].message).toMatch(/"fixed": true/);
     expect(w[0].message).toMatch(/"root": "D4"/);
+    // The cure that keeps the sound leads: rebuild the instrument at the register it plays, by the distance written.
+    expect(w[0].message).toMatch(/"instruments" block with every pitched layer moved 42 semitones down and its filter cutoffs scaled/);
   });
 
   it('is quiet once the track says what it means, or the note is near the root', () => {

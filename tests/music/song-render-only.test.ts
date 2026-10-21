@@ -44,7 +44,9 @@ it.skipIf(!hasChromium)('song render --only plays the same chance hits and noise
   expect(stems.status, stems.stderr).toBe(0);
   const hatStem = stems.data.stems.find((x: { track: string }) => x.track === 'hat').wav;
   expect(scaledResidualDb(readChannels(hatStem), readChannels(solo.data.songs[0].wav))).toBeLessThan(-60);
-});
+  // Three CLI renders, each starting its own Chromium: about 12 s alone, but several times that when the
+  // default worker count has other Chromium-heavy files running, so the shared 60 s limit is too tight.
+}, 180_000);
 
 it.skipIf(!hasChromium)('song render --only rejects inherited property names as tracks', () => {
   const p = initProject(mkdtempSync(join(tmpdir(), 'beeps-only-bad-')));

@@ -159,8 +159,10 @@ every `beeps song render`. The judgement rules are yours to apply.
   band, or leave it rhythmic gaps. Notes below E1 are almost always an octave slip.
 - **Written pitch** (`song-written-pitch`). A song retunes the whole instrument to each written
   note, so a patch built far from the notes written for it no longer sounds as built (a 3300 Hz
-  chime written D4 plays at 293 Hz). Play it at its own pitch with the track's `fixed`, name the
-  note it sounds at with `root`, or shift it with `transpose`.
+  chime written D4 plays at 293 Hz), and its filters and envelopes stay tuned for the register it was
+  built at. Keep the sound by writing each part within an octave of the instrument's root, or by building
+  the instrument at the register it plays (`beeps instruments rebase` prints the override and scales the
+  filters). The track's `fixed`, `root` and `transpose` change what you hear instead of rebuilding it.
 - **Long-play fatigue** (`song-fatigue`). Composers of reused cues reduce dramatic melody so the
   cue survives repetition. Silence and slow fades in are the leading remedies. Keep exploration
   melodies understated, vary sections, and leave space.
