@@ -4,6 +4,31 @@ import { createHash } from "node:crypto";
 import { existsSync, lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+//#region src/errors.ts
+/** An error an agent can act on: a stable code, the JSON pointer at fault, a hint, and structured details. */
+var BeepsError = class extends Error {
+	code;
+	pointer;
+	hint;
+	details;
+	constructor(code, message, extra = {}) {
+		super(message);
+		this.code = code;
+		this.pointer = extra.pointer;
+		this.hint = extra.hint;
+		this.details = extra.details ?? {};
+	}
+	toJson() {
+		return {
+			code: this.code,
+			message: this.message,
+			...this.pointer !== void 0 ? { pointer: this.pointer } : {},
+			...this.hint !== void 0 ? { hint: this.hint } : {},
+			...this.details
+		};
+	}
+};
+//#endregion
 //#region runtime/engine/sample-wav.js
 /**
 * Read the exact 44-byte IEEE float32 LE WAV format used for immutable samples.
@@ -130,8 +155,8 @@ const isDeliveredCueFile = (file) => /\.runtime\.json$/i.test(file);
 function assertOutputNames(outputs) {
 	const seen = /* @__PURE__ */ new Set();
 	for (const { file } of outputs) {
-		if (typeof file !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(file) || file.includes("..") || file.endsWith(".") || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(file)) throw new Error(`unsafe output filename: ${file}`);
-		if (seen.has(file)) throw new Error(`duplicate output filename: ${file}`);
+		if (typeof file !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(file) || file.includes("..") || file.endsWith(".") || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(file)) throw new BeepsError("E_VERIFY", `unsafe output filename: ${file}`);
+		if (seen.has(file)) throw new BeepsError("E_VERIFY", `duplicate output filename: ${file}`);
 		seen.add(file);
 	}
 }
@@ -141,11 +166,11 @@ function assertOutputNames(outputs) {
 function assertCueInventory(owner, outputs, { requiresCue = false } = {}) {
 	assertOutputNames(outputs);
 	const expected = `${owner}.runtime.json`;
-	for (const { file } of outputs) if (isDeliveredCueFile(file) && file !== expected) throw new Error(`runtime cue filename ${file} does not match owner ${owner}: expected ${expected}`);
-	if (requiresCue && !outputs.some((o) => o.file === expected)) throw new Error(`required runtime cue ${expected} is missing from this asset's output inventory`);
+	for (const { file } of outputs) if (isDeliveredCueFile(file) && file !== expected) throw new BeepsError("E_VERIFY", `runtime cue filename ${file} does not match owner ${owner}: expected ${expected}`);
+	if (requiresCue && !outputs.some((o) => o.file === expected)) throw new BeepsError("E_VERIFY", `required runtime cue ${expected} is missing from this asset's output inventory`);
 	if (!outputs.some((o) => o.file === expected)) {
 		const orphan = outputs.find((o) => isDeliveredSampleFile(o.file));
-		if (orphan) throw new Error(`orphan runtime sample output ${orphan.file} has no runtime cue`);
+		if (orphan) throw new BeepsError("E_VERIFY", `orphan runtime sample output ${orphan.file} has no runtime cue`);
 	}
 }
 /** Verify a cue's exact closure against this asset's inventory and already supplied bytes.
@@ -154,31 +179,31 @@ function assertCueInventory(owner, outputs, { requiresCue = false } = {}) {
 */
 function validateDeliveredDependencies(owner, cue, outputs, read) {
 	assertCueInventory(owner, outputs, { requiresCue: true });
-	if (cue.id !== owner) throw new Error(`cue id "${cue.id}" is not the asset id "${owner}"`);
+	if (cue.id !== owner) throw new BeepsError("E_VERIFY", `cue id "${cue.id}" is not the asset id "${owner}"`);
 	const assets = validateSampleManifest(cue.patch, cue.assets), names = new Set(outputs.map((o) => o.file));
 	const wavs = {};
 	for (const [id, a] of Object.entries(assets)) {
-		if (a.file !== sampleFile(owner, id)) throw new Error(`sample ${id} file does not match its cue owner/content filename`);
-		if (!names.has(a.file)) throw new Error(`sample ${id} dependency ${a.file} is missing from this asset's lock outputs`);
+		if (a.file !== sampleFile(owner, id)) throw new BeepsError("E_VERIFY", `sample ${id} file does not match its cue owner/content filename`);
+		if (!names.has(a.file)) throw new BeepsError("E_VERIFY", `sample ${id} dependency ${a.file} is missing from this asset's lock outputs`);
 		const bytes = read(a.file);
-		if (!bytes) throw new Error(`missing delivered sample: ${a.file}`);
-		if (bytes.byteLength !== a.bytes) throw new Error(`sample ${id} metadata bytes mismatch`);
-		if (`sha256:${createHash("sha256").update(bytes).digest("hex")}` !== id) throw new Error(`sample hash mismatch: ${id}`);
+		if (!bytes) throw new BeepsError("E_VERIFY", `missing delivered sample: ${a.file}`);
+		if (bytes.byteLength !== a.bytes) throw new BeepsError("E_VERIFY", `sample ${id} metadata bytes mismatch`);
+		if (`sha256:${createHash("sha256").update(bytes).digest("hex")}` !== id) throw new BeepsError("E_VERIFY", `sample hash mismatch: ${id}`);
 		const wav = readSampleWav(bytes);
-		if (wav.sampleRate !== a.sampleRate || wav.channels.length !== a.channels || wav.frames !== a.frames) throw new Error(`sample ${id} metadata disagrees with canonical WAV`);
+		if (wav.sampleRate !== a.sampleRate || wav.channels.length !== a.channels || wav.frames !== a.frames) throw new BeepsError("E_VERIFY", `sample ${id} metadata disagrees with canonical WAV`);
 		wavs[id] = bytes;
 	}
 	const requiredFiles = new Set(Object.values(assets).map((a) => a.file));
-	for (const { file } of outputs) if (isDeliveredSampleFile(file) && !requiredFiles.has(file)) throw new Error(`orphan runtime sample output ${file} is not a cue dependency`);
+	for (const { file } of outputs) if (isDeliveredSampleFile(file) && !requiredFiles.has(file)) throw new BeepsError("E_VERIFY", `orphan runtime sample output ${file} is not a cue dependency`);
 	return wavs;
 }
 //#endregion
 //#region src/runtime/inventory.ts
 /** Guard the complete output inventory before any read callback or installation write. */
 function assertDeliveredInventory(owner, asset) {
-	if (!Array.isArray(asset.outputs)) throw new Error("asset needs an output inventory");
+	if (!Array.isArray(asset.outputs)) throw new BeepsError("E_VERIFY", "asset needs an output inventory");
 	assertCueInventory(owner, asset.outputs, { requiresCue: asset.delivery === "runtime" || asset.delivery === "both" });
-	for (const o of asset.outputs) if (!Number.isSafeInteger(o.bytes) || o.bytes < 0 || !/^[0-9a-f]{64}$/.test(o.sha256)) throw new Error(`invalid output metadata: ${o.file}`);
+	for (const o of asset.outputs) if (!Number.isSafeInteger(o.bytes) || o.bytes < 0 || !/^[0-9a-f]{64}$/.test(o.sha256)) throw new BeepsError("E_VERIFY", `invalid output metadata: ${o.file}`);
 }
 /** Verify full output hashes, runtime cue headers and the exact canonical source closure.
 * read supplies only delivered bytes; a caller must reject nonregular local files.
@@ -188,8 +213,8 @@ function validateDeliveredAsset(owner, asset, read) {
 	const files = /* @__PURE__ */ new Map();
 	for (const o of asset.outputs) {
 		const bytes = read(o.file);
-		if (!bytes) throw new Error(`${o.file} is missing`);
-		if (bytes.byteLength !== o.bytes || createHash("sha256").update(bytes).digest("hex") !== o.sha256) throw new Error(`${o.file} does not match the lock`);
+		if (!bytes) throw new BeepsError("E_VERIFY", `${o.file} is missing`);
+		if (bytes.byteLength !== o.bytes || createHash("sha256").update(bytes).digest("hex") !== o.sha256) throw new BeepsError("E_VERIFY", `${o.file} does not match the lock`);
 		files.set(o.file, bytes);
 	}
 	for (const o of asset.outputs) if (o.file.endsWith(".runtime.json")) validateDeliveredDependencies(owner, parseCue(JSON.parse(new TextDecoder().decode(files.get(o.file)))), asset.outputs, (file) => files.get(file));
