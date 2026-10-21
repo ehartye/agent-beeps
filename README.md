@@ -35,6 +35,10 @@ use the same song renderer and listening workflow.
 
 [`library/sounds/sci-fi/`](library/sounds/sci-fi/) contains 18 approved effects across Expedition,
 Arcade and Oddities, with purpose labels, playback seeds and measured kit levels.
+[`library/sounds/colony-sfx/`](library/sounds/colony-sfx/) and
+[`library/songs/colony-ambient/`](library/songs/colony-ambient/) are a second worked example kit, with
+nine effects, four ambience beds and three songs, that you can hear on the
+[listening booth](https://ehartye.github.io/agent-beeps/#colony).
 
 ## Workflow
 

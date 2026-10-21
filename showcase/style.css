@@ -74,10 +74,19 @@ footer { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wr
 .fuse-case { grid-column: 1 / -1; margin-top: 12px; }
 .fuse-case h3 { margin: 0 0 8px; }
 .fuse-case p { margin: 0; max-width: 76ch; }
+#colony-pads { grid-template-columns: repeat(3,minmax(0,1fr)); }
+#colony-pads .face { aspect-ratio: 3; border-radius: 7px; overflow: hidden; }
+#colony-pads .sound-purpose { min-height: 4em; }
+.colony-tracks { margin-top: 26px; }
+#colony-tracks { display: flex; gap: 8px; flex-wrap: wrap; }
+#colony-audio { width: 100%; margin-top: 12px; }
+#colony-status, #colony-pad-status { min-height: 1.5em; }
 button:disabled { cursor: wait; opacity: .5; }
 @media(max-width:720px) {
   #flux-pads { grid-template-columns: 1fr; }
   #fuse-pads { grid-template-columns: 1fr; }
+  #colony-pads { grid-template-columns: 1fr; }
+  #colony-pads .sound-purpose { min-height: 0; }
   #fuse-pads .sound-purpose { min-height: 0; }
   #flux-pads .sound-purpose { min-height: 0; }
   .intro { grid-template-columns: 1fr; gap: 4px; }

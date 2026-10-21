@@ -25,9 +25,9 @@ music with scene crossfades, not compete with it at their normalized audition le
 | `ambience-interior` | `environments/interior.json` | Warm ventilation, a subdued appliance, a soft kettle texture and rare ceramic contacts | 0.4 dB |
 | `ambience-workshop` | `environments/workshop.json` | D2 machinery, an airy middle layer, D3 field resonance and occasional hardware settling; powered but idle | 0.3 dB |
 
-The beds render at -20 LUFS integrated. All have zero song-lint errors. The canopy bed's
-thin-low-end warning is intentional: it leaves space for music playing underneath and distinguishes
-a weightless place. Whole-song register diagnostics currently label noise/grain trigger notes as
+The beds render at -20 LUFS integrated. All four have zero song-lint errors and zero warnings.
+The canopy bed's low end is thin on purpose: it leaves space for music playing underneath and
+distinguishes a weightless place. Whole-song register diagnostics currently label noise/grain trigger notes as
 pitched overlaps; those labels are not evidence of actual tonal masking. Filter bands and stem
 measurements were used to balance those layers. Noises retain deliberate overlap as a continuous
 environment; the occasional pitched details remain subordinate.

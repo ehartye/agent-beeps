@@ -5,6 +5,10 @@ import { build, parseCue, loadCueAssets } from './engine/index.js';
 const $ = selector => document.querySelector(selector);
 const audio = $('#audio');
 const touch = $('#touch-audio');
+const colony = $('#colony-audio');
+const backgroundMedia = [audio, touch, colony];
+const mediaSection = new Map([[audio,'Matter'],[touch,'Touch'],[colony,'Colony music']]);
+let colonyTracks = [], colonyIndex = 0;
 const clock = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 const sceneCopy = [
   ['Glass', 'A struck overtone hangs in the air. A few grains of dust answer.', 'ADDITIVE PARTIALS / POISSON GRAINS'],
@@ -22,9 +26,9 @@ let bins, animation = 0, padRequest = 0, padAbort, takeRequest = 0;
 let selected, foreground, transportState = 'Idle', paused = false, transportRequest = 0;
 let contextQueue = Promise.resolve(), contextWanted = false;
 const pausedMedia = new Map();
-const mediaWanted = new Map([[audio,false],[touch,false]]);
+const mediaWanted = new Map(backgroundMedia.map(media=>[media,false]));
 const permissionPauses = new WeakSet();
-const collections = {Matter:[], 'Sound bench':[], Touch:[], Flux:[], Fuse:[]};
+const collections = {Matter:[], 'Sound bench':[], Touch:[], Flux:[], Fuse:[], 'Colony effects':[], 'Colony music':[]};
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const status = text => { $('#status').textContent = text; };
 function register(section, title, run) {
@@ -35,6 +39,7 @@ function register(section, title, run) {
 function choose(entry, state) {selected=entry;transportState=state;paintTransport();}
 function backgroundEntry() {
   if(!touch.paused || paused&&pausedMedia.has(touch))return collections.Touch[touchTakeIndex()];
+  if(!colony.paused || paused&&pausedMedia.has(colony))return collections['Colony music'][colonyIndex];
   if(!audio.paused || paused&&pausedMedia.has(audio))return collections.Matter[Math.max(0,sceneIndex)];
 }
 function revealBackground(state='Finished') {
@@ -50,7 +55,7 @@ function paintTransport() {
   $('#led').classList.toggle('on',active);
   $('#play').textContent=active?'❚❚':'▶';
   $('#play').setAttribute('aria-label',`${active?'Pause':'Play'} ${selected?.section??'Matter'}`);
-  const section=selected?.section??'Matter',unit=section==='Matter'?'scene':section==='Sound bench'?'pad':'take';
+  const section=selected?.section??'Matter',unit=section==='Matter'?'scene':section==='Sound bench'||section==='Colony effects'?'pad':section==='Colony music'?'track':'take';
   $('#prev').setAttribute('aria-label',`Previous ${section} ${unit}`);
   $('#next').setAttribute('aria-label',`Next ${section} ${unit}`);
   $('#repeat').hidden=selected?.section!=='Matter';
@@ -64,7 +69,7 @@ function initAudio() {
     musicGain = ctx.createGain();sfxGain = ctx.createGain();
     const safety = buildLimiter(ctx);
     ctx.createMediaElementSource(audio).connect(musicGain).connect(safety);
-    ctx.createMediaElementSource(touch).connect(musicGain);
+    for(const media of [touch,colony])ctx.createMediaElementSource(media).connect(musicGain);
     sfxGain.connect(safety);safety.connect(master).connect(analyser).connect(ctx.destination);
     ctx.addEventListener('statechange',()=>{
       clearTimeout(voiceTimer);
@@ -111,6 +116,8 @@ function cancelPendingPad(){
   if(foreground && !voice){foreground=undefined;revealBackground('Stopped');}
 }
 function pauseMedia(media) {mediaWanted.set(media,false);media.pause();}
+// Hand the background over: pause and forget every other background media element.
+function silence(except) {for(const media of backgroundMedia)if(media!==except){pausedMedia.delete(media);pauseMedia(media);}}
 async function startMedia(media,resumed,current,position=media.currentTime) {
   // Request media permission in the gesture, but keep its clock frozen until output runs.
   const playing=media.play();
@@ -127,7 +134,7 @@ async function startMedia(media,resumed,current,position=media.currentTime) {
 function stopAll() {
   ++transportRequest;cancelPendingPad();++playRequest;++takeRequest;
   pausedMedia.clear();paused=false;
-  pauseMedia(audio);audio.currentTime=0;pauseMedia(touch);touch.currentTime=0;
+  for(const media of backgroundMedia){pauseMedia(media);media.currentTime=0;}
   stopPad();foreground=undefined;void setContextRunning(false);
   status('');$('#fuse-status').textContent='Stopped. Choose a take to play.';
   transportState='Stopped';paint();paintTransport();draw();
@@ -143,7 +150,7 @@ async function restoreMedia() {
       failed=true;
       pauseMedia(media);
       status(`Playback could not start. Press Play to retry. ${error.message}`);
-      const section=media===audio?'Matter':'Touch';
+      const section=mediaSection.get(media);
       if(!foreground&&selected?.section===section){
         // Keep a failed sole media resume at its exact position for shared Play to retry.
         pausedMedia.set(media,position);transportState='Error';paintTransport();
@@ -155,7 +162,7 @@ async function restoreMedia() {
 }
 async function pauseShared() {
   ++transportRequest;++playRequest;++takeRequest;cancelPendingPad();paused=true;
-  for(const media of [audio,touch]){
+  for(const media of backgroundMedia){
     if(!media.paused)pausedMedia.set(media,media.currentTime);
     pauseMedia(media);
   }
@@ -175,16 +182,16 @@ async function resumeShared() {
     const mediaFailed=await restoreMedia();
     if(request!==transportRequest || paused)return;
     if(voice)choose(foreground,'Playing');
-    else if(!audio.paused || !touch.paused)revealBackground('Playing');
+    else if(backgroundMedia.some(media=>!media.paused))revealBackground('Playing');
     else if(transportState==='Loading')transportState='Paused';
-    if(!mediaFailed&&(voice||!audio.paused||!touch.paused))status('');
+    if(!mediaFailed&&(voice||backgroundMedia.some(media=>!media.paused)))status('');
     paintTransport();draw();
   } catch(error){if(request===transportRequest){transportState='Error';paintTransport();status(`Playback could not start. Press Play to retry. ${error.message}`);}}
 }
 async function play(at) {
   if (!session) return;
-  ++transportRequest;++takeRequest;paused=false;pausedMedia.delete(touch);
-  cancelPendingPad();pauseMedia(touch);
+  ++transportRequest;++takeRequest;paused=false;
+  cancelPendingPad();silence(audio);
   const request = ++playRequest;
   try {
     const resumed = initAudio();
@@ -246,7 +253,7 @@ function draw() {
     animation=0;const canvas=$('#scope'),g=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
     g.clearRect(0,0,w,h);g.strokeStyle='#b5d4ce18';g.lineWidth=1;
     for(let y=30;y<h;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
-    const active=analyser&&ctx.state==='running'&&(!audio.paused||!touch.paused||voice);
+    const active=analyser&&ctx.state==='running'&&(backgroundMedia.some(media=>!media.paused)||voice);
     if(active){
       analyser.getByteFrequencyData(bins);const count=100;
       for(let i=0;i<count;i++){
@@ -255,7 +262,7 @@ function draw() {
         let peak=0;for(let b=lo;b<Math.min(hi,bins.length);b++)peak=Math.max(peak,bins[b]);
         const v=peak/255;g.fillStyle=i>74?'#ffae42':'#91c5ba';g.fillRect(i*w/count,h-v*(h-10),w/count-3,Math.max(1,v*(h-10)));
       }
-      $('#meter-label').textContent=voice?'LIVE PATCH + OUTPUT':!touch.paused?'TOUCH / PERFORMANCE STUDY':'REEL OUTPUT';
+      $('#meter-label').textContent=voice?'LIVE PATCH + OUTPUT':!touch.paused?'TOUCH / PERFORMANCE STUDY':!colony.paused?`COLONY / ${(colonyTracks[colonyIndex]?.kind??'bed').toUpperCase()}`:'REEL OUTPUT';
     }else{
       g.strokeStyle='#91c5ba55';g.beginPath();g.moveTo(0,h-2);g.lineTo(w,h-2);g.stroke();
       $('#meter-label').textContent=paused?'SIGNAL PAUSED':'AWAITING SIGNAL';
@@ -330,10 +337,11 @@ $('#next').onclick=()=>skip(1);
 $('#repeat').onclick=e=>{audio.loop=!audio.loop;e.currentTarget.setAttribute('aria-pressed',String(audio.loop));};
 $('#volume').oninput=e=>{if(master)master.gain.setTargetAtTime(Number(e.target.value)/100,ctx.currentTime,.02);};
 audio.addEventListener('timeupdate',paint);
-for(const [media,section]of [[audio,'Matter'],[touch,'Touch']]){
+for(const media of backgroundMedia){
+  const section=mediaSection.get(media);
   media.addEventListener('playing',()=>{
     if(!mediaWanted.get(media)){media.pause();return;}
-    if(!foreground&&!paused)choose(section==='Matter'?collections.Matter[Math.max(0,sceneIndex)]:collections.Touch[touchTakeIndex()],'Playing');
+    if(!foreground&&!paused)choose(section==='Matter'?collections.Matter[Math.max(0,sceneIndex)]:section==='Touch'?collections.Touch[touchTakeIndex()]:collections['Colony music'][colonyIndex],'Playing');
   });
   media.addEventListener('pause',()=>{
     if(permissionPauses.has(media)){permissionPauses.delete(media);return;}
@@ -356,7 +364,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){stopAll();return;}
   if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey)return;
   const nativeWidget=e.target.closest('button,input,textarea,select,a,audio,[role="slider"],[contenteditable],summary');
-  const playbackEntry=e.target.closest('#matter-play,[data-scene],#pads .face,[data-take],[data-flux-take],[data-fuse-take],.controls button');
+  const playbackEntry=e.target.closest('#matter-play,[data-scene],#pads .face,[data-take],[data-flux-take],[data-fuse-take],[data-colony-track],#colony-pads .face,.controls button');
   if(e.key===' '&&(!nativeWidget||playbackEntry)){
     e.preventDefault();if(!e.repeat)$('#play').click();return;
   }
@@ -370,7 +378,7 @@ const takeCopy = {
 };
 function touchTakeIndex(){return $('[data-take="touch"]').getAttribute('aria-pressed')==='true'?1:0;}
 function activateTouch(){
-  ++transportRequest;++playRequest;cancelPendingPad();pauseMedia(audio);pausedMedia.delete(audio);
+  ++transportRequest;++playRequest;cancelPendingPad();silence(touch);
   stopPad();foreground=undefined;paused=false;pausedMedia.delete(touch);mediaWanted.set(touch,true);
   choose(collections.Touch[touchTakeIndex()],'Playing');
 }
@@ -405,6 +413,33 @@ async function switchTouch(button,forcePlay=false){
 for(const button of document.querySelectorAll('[data-take]')){
   register('Touch',button.textContent,()=>switchTouch(button,true));
   button.onclick=()=>switchTouch(button);
+}
+function activateColony(){
+  ++transportRequest;++playRequest;cancelPendingPad();silence(colony);
+  stopPad();foreground=undefined;paused=false;pausedMedia.delete(colony);mediaWanted.set(colony,true);
+  choose(collections['Colony music'][colonyIndex],'Playing');
+}
+const colonyStatus=text=>{$('#colony-status').textContent=text;};
+const colonyPadStatus=text=>{$('#colony-pad-status').textContent=text;};
+colony.addEventListener('play',async()=>{
+  if(colony.paused)return;
+  if(mediaWanted.get(colony)){draw();return;}
+  activateColony();const request=++takeRequest;
+  try {await startMedia(colony,initAudio(),()=>request===takeRequest);if(request===takeRequest&&mediaWanted.get(colony))draw();}
+  catch(error){if(request===takeRequest){pauseMedia(colony);transportState='Error';paintTransport();colonyStatus(`Playback could not start. ${error.message}`);}}
+});
+colony.addEventListener('error',()=>{colonyStatus('This track could not load. Choose a track to retry.');});
+async function playColony(index){
+  const track=colonyTracks[index],request=++takeRequest;
+  cancelPendingPad();pauseMedia(colony);colonyIndex=index;
+  for(const b of document.querySelectorAll('[data-colony-track]'))b.setAttribute('aria-pressed',String(b.dataset.colonyTrack===track.id));
+  const recipe=$('#colony-recipe');recipe.href=track.recipe;recipe.hidden=false;
+  colonyStatus(`${track.title} · ${track.kind} · ${clock(track.durationSec)} · ${track.loudnessLufs.toFixed(1)} LUFS`);
+  colony.src=track.mp3;
+  // Request playback within the click gesture; a new source always starts from the top.
+  activateColony();
+  try {await startMedia(colony,initAudio(),()=>request===takeRequest,0);if(request===takeRequest&&mediaWanted.get(colony))draw();}
+  catch(error){if(request===takeRequest){pauseMedia(colony);transportState='Error';paintTransport();colonyStatus(`Playback could not start. Press the track to retry. ${error.message}`);}}
 }
 new ResizeObserver(()=>document.documentElement.style.setProperty('--transport-clearance',`${Math.ceil($('.transport').getBoundingClientRect().height)+16}px`)).observe($('.transport'));
 void load();
@@ -485,3 +520,36 @@ async function loadFuse(){
   } catch(error){feedback(`The material study could not load. Reload to retry. ${error.message}`);}
 }
 void loadFuse();
+async function loadColony(){
+  const feedback=colonyPadStatus;
+  try {
+    const response=await fetch('./media/colony-session.json');
+    if(!response.ok)throw new Error(`Kit returned ${response.status}`);
+    const session=await response.json();
+    for(const effect of session.effects){
+      const card=document.createElement('article');card.className='pad';card.dataset.colonyCard=effect.id;
+      const button=document.createElement('button');button.className='face';button.dataset.colonyEffect=effect.id;
+      button.setAttribute('aria-label',`Play Colony: ${effect.title}`);
+      const img=document.createElement('img');img.src=effect.look;img.alt='';img.loading='lazy';button.append(img);
+      const glyph=document.createElement('span');glyph.className='play-glyph';glyph.textContent='▶';button.append(glyph);
+      const entry=register('Colony effects',effect.title,()=>strikeSound({...effect},`[data-colony-card="${effect.id}"]`,session.scale,feedback,entry));
+      button.onclick=entry.run;card.append(button);
+      for(const [tag,cls,text]of [['h3','sound-name',effect.title],['p','sound-purpose',effect.description],['span','facts',effect.sources.join(' + ').toUpperCase()]]){
+        const el=document.createElement(tag);el.className=cls;el.textContent=text;card.append(el);
+      }
+      const link=document.createElement('a');link.href=`./recipes/colony-${effect.id}.json`;link.textContent='Open patch ↗';link.target='_blank';link.rel='noopener';card.append(link);
+      $('#colony-pads').append(card);
+    }
+    colonyTracks=session.tracks;
+    session.tracks.forEach((track,index)=>{
+      const button=document.createElement('button');button.className='toggle';button.dataset.colonyTrack=track.id;
+      button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',`${track.title}, ${track.kind}`);
+      button.textContent=`${track.title} · ${track.kind}`;button.title=track.description;
+      register('Colony music',track.title,()=>playColony(index));
+      button.onclick=()=>playColony(index);
+      $('#colony-tracks').append(button);
+    });
+    feedback('Press a pad to hear it built live.');colonyStatus('Choose a bed or a song to play.');
+  } catch(error){const message=`The colony kit could not load. Reload to retry. ${error.message}`;feedback(message);colonyStatus(message);}
+}
+void loadColony();

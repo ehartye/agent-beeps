@@ -1,0 +1,1352 @@
+{
+  "schema": "beeps/colony-kit@1",
+  "scale": {
+    "root": "D",
+    "mode": "majorPentatonic",
+    "snap": true
+  },
+  "effects": [
+    {
+      "id": "till",
+      "title": "Soil and steel",
+      "description": "Successful tilling: a padded tool bite, quiet handle contact and loose grains settling",
+      "seed": 1,
+      "trimDb": 8.32,
+      "look": "./media/colony-till.png",
+      "sources": [
+        "noise",
+        "grains",
+        "modal"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-till",
+        "family": "foley",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.26,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "brown"
+            },
+            "start": 0,
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.008,
+              "decay": 0.1,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 650,
+              "q": 0.55
+            }
+          },
+          {
+            "source": {
+              "type": "grains",
+              "rate": 110,
+              "grainDecay": 0.013,
+              "center": 950,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -4,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.17,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "D3",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0,
+            "gainDb": -12,
+            "amp": {
+              "attack": 0.005,
+              "decay": 0.12,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Soil and steel. A padded cultivator bite, small metal handle knock and loose soil settling. Successful tilling only."
+        }
+      }
+    },
+    {
+      "id": "plant",
+      "title": "A seed tucked in",
+      "description": "Successful planting: tiny shell rattle, soft soil and a rounded low pluck",
+      "seed": 1,
+      "trimDb": 2.25,
+      "look": "./media/colony-plant.png",
+      "sources": [
+        "grains",
+        "noise",
+        "osc"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-plant",
+        "family": "foley",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.22,
+        "layers": [
+          {
+            "source": {
+              "type": "grains",
+              "rate": 75,
+              "grainDecay": 0.009,
+              "center": 1800,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -6,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.09,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "noise",
+              "color": "brown"
+            },
+            "start": 0,
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.007,
+              "decay": 0.11,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 380,
+              "q": 0.55
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A3"
+            },
+            "start": 0,
+            "gainDb": -9,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.14,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "A seed tucked in. A tiny seed-shell rattle lands in soft soil; a rounded low pluck confirms planting without becoming a reward chime."
+        }
+      }
+    },
+    {
+      "id": "water",
+      "title": "Watering the roots",
+      "description": "Successful watering: soft pouring noise and staggered falling droplets",
+      "seed": 1,
+      "trimDb": 2,
+      "look": "./media/colony-water.png",
+      "sources": [
+        "noise",
+        "grains",
+        "osc"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-water",
+        "family": "foley",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.62,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "start": 0,
+            "gainDb": -5,
+            "amp": {
+              "attack": 0.018,
+              "decay": 0.25,
+              "sustain": 0.16,
+              "release": 0.12
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 1700,
+              "q": 0.55
+            }
+          },
+          {
+            "source": {
+              "type": "grains",
+              "rate": 180,
+              "grainDecay": 0.017,
+              "center": 1500,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -3,
+            "amp": {
+              "attack": 0.012,
+              "decay": 0.42,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "A4"
+            },
+            "start": 0,
+            "gainDb": -11,
+            "pitchEnv": [
+              {
+                "at": 0.08,
+                "to": "D4",
+                "curve": "exp"
+              }
+            ],
+            "amp": {
+              "attack": 0.004,
+              "decay": 0.09,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "F#5"
+            },
+            "start": 0.13,
+            "gainDb": -16,
+            "pitchEnv": [
+              {
+                "at": 0.06,
+                "to": "A4",
+                "curve": "exp"
+              }
+            ],
+            "amp": {
+              "attack": 0.004,
+              "decay": 0.065,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D5"
+            },
+            "start": 0.31,
+            "gainDb": -15,
+            "pitchEnv": [
+              {
+                "at": 0.07,
+                "to": "F#4",
+                "curve": "exp"
+              }
+            ],
+            "amp": {
+              "attack": 0.005,
+              "decay": 0.08,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Watering the roots. A brief soft pour with staggered round droplets; useful for repeated watering without a piercing hiss."
+        }
+      }
+    },
+    {
+      "id": "harvest",
+      "title": "Picked with care",
+      "description": "Successful harvest: a woody stem release with restrained upper overtones",
+      "seed": 1,
+      "trimDb": 1.58,
+      "look": "./media/colony-harvest.png",
+      "sources": [
+        "modal",
+        "grains",
+        "additive"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-harvest",
+        "family": "pickup",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.4,
+        "layers": [
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "D4",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0,
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.004,
+              "decay": 0.17,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "grains",
+              "rate": 55,
+              "grainDecay": 0.009,
+              "center": 2100,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -14,
+            "amp": {
+              "attack": 0.005,
+              "decay": 0.09,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "F#5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.055,
+            "gainDb": -13,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.23,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.12,
+            "gainDb": -17,
+            "amp": {
+              "attack": 0.009,
+              "decay": 0.27,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Picked with care. A plant stem releases with a woody pluck and two restrained sunlit overtones. A small harvest, not a jackpot."
+        }
+      }
+    },
+    {
+      "id": "discovery",
+      "title": "A new find",
+      "description": "First discovery only: a four-note glass figure with a warm low anchor",
+      "seed": 1,
+      "trimDb": -6.54,
+      "look": "./media/colony-discovery.png",
+      "sources": [
+        "additive",
+        "osc"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-discovery",
+        "family": "confirm",
+        "tags": [
+          "colony"
+        ],
+        "duration": 0.96,
+        "layers": [
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "D5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0,
+            "gainDb": -4,
+            "amp": {
+              "attack": 0.01,
+              "decay": 0.45,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "F#5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.16,
+            "gainDb": -7,
+            "amp": {
+              "attack": 0.014,
+              "decay": 0.45,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "pan": -0.3
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.34,
+            "gainDb": -10,
+            "amp": {
+              "attack": 0.018,
+              "decay": 0.5,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "pan": 0.3
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "B5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.57,
+            "gainDb": -14,
+            "amp": {
+              "attack": 0.022,
+              "decay": 0.5,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D3"
+            },
+            "start": 0,
+            "gainDb": -12,
+            "amp": {
+              "attack": 0.05,
+              "decay": 0.5,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "fx": {
+          "reverb": {
+            "preset": "room",
+            "sendDb": -21
+          }
+        },
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 2,
+          "intent": "oneshot",
+          "description": "A new find. Four soft glass notes unfold upward, with a low warm anchor. Reserve for first discoveries."
+        }
+      }
+    },
+    {
+      "id": "door",
+      "title": "Interior door",
+      "description": "A building transition: rounded latch, short air seal and cushioned catch",
+      "seed": 1,
+      "trimDb": 6.56,
+      "look": "./media/colony-door.png",
+      "sources": [
+        "modal",
+        "noise",
+        "grains"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-door",
+        "family": "foley",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.4,
+        "layers": [
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "A3",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0,
+            "gainDb": -6,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.08,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "start": 0,
+            "gainDb": 0,
+            "amp": {
+              "attack": 0.045,
+              "decay": 0.2,
+              "sustain": 0.08,
+              "release": 0.09
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 650,
+              "q": 0.55
+            }
+          },
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "D3",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0.24,
+            "gainDb": -8,
+            "amp": {
+              "attack": 0.008,
+              "decay": 0.1,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "grains",
+              "rate": 25,
+              "grainDecay": 0.025,
+              "center": 720,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -16,
+            "amp": {
+              "attack": 0.01,
+              "decay": 0.15,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Interior door. A rounded latch and short air seal, ending in a cushioned closing catch; neither a heavy slam nor a UI beep."
+        }
+      }
+    },
+    {
+      "id": "portal",
+      "title": "Across the threshold",
+      "description": "Completed portal travel: gathering field, air passage and an opening fifth",
+      "seed": 1,
+      "trimDb": -6.54,
+      "look": "./media/colony-portal.png",
+      "sources": [
+        "osc",
+        "noise",
+        "additive"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-portal",
+        "family": "transition",
+        "tags": [
+          "colony"
+        ],
+        "duration": 1.48,
+        "layers": [
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D3"
+            },
+            "start": 0,
+            "gainDb": -7,
+            "pitchEnv": [
+              {
+                "at": 0.7,
+                "to": "A3",
+                "curve": "exp"
+              },
+              {
+                "at": 1.2,
+                "to": "D4",
+                "curve": "exp"
+              }
+            ],
+            "amp": {
+              "attack": 0.12,
+              "decay": 0.8,
+              "sustain": 0.12,
+              "release": 0.25
+            }
+          },
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "start": 0,
+            "gainDb": -3,
+            "amp": {
+              "attack": 0.2,
+              "decay": 0.7,
+              "sustain": 0.08,
+              "release": 0.3
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 900,
+              "q": 0.6,
+              "env": {
+                "to": 3000,
+                "time": 1.1
+              }
+            },
+            "pan": -0.2
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A4",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.68,
+            "gainDb": -12,
+            "amp": {
+              "attack": 0.04,
+              "decay": 0.65,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "pan": 0.35
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "D5",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.92,
+            "gainDb": -18,
+            "amp": {
+              "attack": 0.06,
+              "decay": 0.55,
+              "sustain": 0,
+              "release": 0.08
+            },
+            "pan": -0.3
+          }
+        ],
+        "fx": {
+          "reverb": {
+            "preset": "room",
+            "sendDb": -21
+          }
+        },
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Across the threshold. A low field gathers, airy pressure passes and a crystalline fifth opens onto another place. One cue per completed travel."
+        }
+      }
+    },
+    {
+      "id": "repair",
+      "title": "The fitting catches",
+      "description": "Successful repair only: two hardware contacts followed by warm resonance",
+      "seed": 1,
+      "trimDb": 0.13,
+      "look": "./media/colony-repair.png",
+      "sources": [
+        "modal",
+        "grains",
+        "osc",
+        "additive"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-repair",
+        "family": "confirm",
+        "tags": [
+          "colony",
+          "repeating"
+        ],
+        "duration": 0.58,
+        "layers": [
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "D4",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0,
+            "gainDb": -2,
+            "amp": {
+              "attack": 0.005,
+              "decay": 0.11,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "grains",
+              "rate": 160,
+              "grainDecay": 0.008,
+              "center": 1600,
+              "q": 0.8,
+              "rateEnd": 0.25
+            },
+            "start": 0,
+            "gainDb": -12,
+            "amp": {
+              "attack": 0.008,
+              "decay": 0.16,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "modal",
+              "pitch": "A3",
+              "modes": [
+                [
+                  1,
+                  7,
+                  0
+                ],
+                [
+                  2.76,
+                  5,
+                  -10
+                ],
+                [
+                  5.4,
+                  3,
+                  -24
+                ]
+              ],
+              "exciter": "noiseBurst"
+            },
+            "start": 0.17,
+            "gainDb": -5,
+            "amp": {
+              "attack": 0.006,
+              "decay": 0.14,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "F#4"
+            },
+            "start": 0.25,
+            "gainDb": -13,
+            "amp": {
+              "attack": 0.025,
+              "decay": 0.3,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A4",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.32,
+            "gainDb": -18,
+            "amp": {
+              "attack": 0.015,
+              "decay": 0.24,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "The fitting catches. Two small hardware contacts and a restrained warm resonance mark a successful repair; only after materials are spent."
+        }
+      }
+    },
+    {
+      "id": "rest",
+      "title": "Breathe, then begin again",
+      "description": "A short rest transition: descending ceramics and an exhale",
+      "seed": 1,
+      "trimDb": -4.89,
+      "look": "./media/colony-rest.png",
+      "sources": [
+        "noise",
+        "additive",
+        "osc"
+      ],
+      "patch": {
+        "schema": "beeps/patch@1",
+        "name": "colony-rest",
+        "family": "confirm",
+        "tags": [
+          "colony"
+        ],
+        "duration": 0.88,
+        "layers": [
+          {
+            "source": {
+              "type": "noise",
+              "color": "pink"
+            },
+            "start": 0,
+            "gainDb": -7,
+            "amp": {
+              "attack": 0.16,
+              "decay": 0.4,
+              "sustain": 0.05,
+              "release": 0.2
+            },
+            "filter": {
+              "type": "bandpass",
+              "cutoff": 550,
+              "q": 0.55
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "A4",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0,
+            "gainDb": -7,
+            "amp": {
+              "attack": 0.045,
+              "decay": 0.4,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "additive",
+              "pitch": "F#4",
+              "partials": [
+                [
+                  1,
+                  0,
+                  0.5
+                ],
+                [
+                  2.76,
+                  -17,
+                  0.22
+                ],
+                [
+                  5.4,
+                  -29,
+                  0.08
+                ]
+              ]
+            },
+            "start": 0.23,
+            "gainDb": -5,
+            "amp": {
+              "attack": 0.045,
+              "decay": 0.42,
+              "sustain": 0,
+              "release": 0.08
+            }
+          },
+          {
+            "source": {
+              "type": "osc",
+              "wave": "sine",
+              "pitch": "D3"
+            },
+            "start": 0.14,
+            "gainDb": -14,
+            "amp": {
+              "attack": 0.08,
+              "decay": 0.5,
+              "sustain": 0,
+              "release": 0.08
+            }
+          }
+        ],
+        "fx": {
+          "reverb": {
+            "preset": "room",
+            "sendDb": -21
+          }
+        },
+        "variation": {
+          "pitchCents": 16,
+          "gainDb": 0.7,
+          "variants": 4,
+          "noRepeat": true
+        },
+        "meta": {
+          "priority": 3,
+          "intent": "oneshot",
+          "description": "Breathe, then begin again. A warm descending ceramic pair over a soft exhale; a short rest transition, never a persistent hum."
+        }
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "id": "glasshouse",
+      "title": "Glasshouse",
+      "kind": "bed",
+      "description": "Filtered leaf-air, irregular fine foliage, distant life support and two small water drops; an inhabited garden sheltered from the outside",
+      "mp3": "./media/colony-glasshouse.mp3",
+      "durationSec": 20,
+      "loudnessLufs": -19.995675853214028,
+      "truePeakDb": -7.999795214051736,
+      "look": "./media/colony-glasshouse.png",
+      "recipe": "./recipes/colony-glasshouse.json"
+    },
+    {
+      "id": "canopy",
+      "title": "Canopy",
+      "kind": "bed",
+      "description": "Airborne wind, a lower drifting wash and alternating glass resonances; spacious without a bass drone",
+      "mp3": "./media/colony-canopy.mp3",
+      "durationSec": 20,
+      "loudnessLufs": -20.0205370398093,
+      "truePeakDb": -8.998647830289102,
+      "look": "./media/colony-canopy.png",
+      "recipe": "./recipes/colony-canopy.json"
+    },
+    {
+      "id": "interior",
+      "title": "Interior",
+      "kind": "bed",
+      "description": "Warm ventilation, a subdued appliance, a soft kettle texture and rare ceramic contacts",
+      "mp3": "./media/colony-interior.mp3",
+      "durationSec": 20,
+      "loudnessLufs": -20.00566774010962,
+      "truePeakDb": -7.721197523475565,
+      "look": "./media/colony-interior.png",
+      "recipe": "./recipes/colony-interior.json"
+    },
+    {
+      "id": "workshop",
+      "title": "Workshop",
+      "kind": "bed",
+      "description": "D2 machinery, an airy middle layer, D3 field resonance and occasional hardware settling; powered but idle",
+      "mp3": "./media/colony-workshop.mp3",
+      "durationSec": 20,
+      "loudnessLufs": -20.002925467173686,
+      "truePeakDb": -8.43907387840466,
+      "look": "./media/colony-workshop.png",
+      "recipe": "./recipes/colony-workshop.json"
+    },
+    {
+      "id": "outpost-dawn",
+      "title": "Outpost Dawn",
+      "kind": "song",
+      "description": "An orbital garden outpost: a breathy, wistful D-major seed motif, warm plucked strings and a small hand-drum pulse. The middle opens into Lydian sunlight before returning to the quiet beds.",
+      "mp3": "./media/colony-outpost-dawn.mp3",
+      "durationSec": 72,
+      "loudnessLufs": -19.998965744245137,
+      "truePeakDb": -4.707262846152489,
+      "look": "./media/colony-outpost-dawn.png",
+      "recipe": "./recipes/colony-outpost-dawn.json"
+    },
+    {
+      "id": "the-underside",
+      "title": "The Underside",
+      "kind": "song",
+      "description": "The same seed motif suspended beneath a floating garden: B-minor warmth, G-Lydian glass, distant felt notes, and long spaces. A brief D-major opening in the clouds remembers home.",
+      "mp3": "./media/colony-the-underside.mp3",
+      "durationSec": 80,
+      "loudnessLufs": -19.99588465115912,
+      "truePeakDb": -7.852145244709505,
+      "look": "./media/colony-the-underside.png",
+      "recipe": "./recipes/colony-the-underside.json"
+    },
+    {
+      "id": "window-light",
+      "title": "Window Light",
+      "kind": "song",
+      "description": "Inside the home module, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and warm upper chords leave room for the room itself.",
+      "mp3": "./media/colony-window-light.mp3",
+      "durationSec": 50.5263125,
+      "loudnessLufs": -20.00475893843567,
+      "truePeakDb": -3.714936756185531,
+      "look": "./media/colony-window-light.png",
+      "recipe": "./recipes/colony-window-light.json"
+    }
+  ]
+}
