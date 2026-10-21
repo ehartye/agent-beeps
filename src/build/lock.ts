@@ -1,9 +1,11 @@
 // audio.lock.json: per recipe, the input hash that produced its files and the sha256 of every file. Committed; sorted keys, LF,
 // two-space indent, trailing newline, no timestamps, so an unchanged build rewrites the same bytes and one change is a small diff.
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { BeepsError } from '../errors.ts';
+import { atomicWrite } from '../atomic-write.ts';
+export { atomicWrite };
 import { sortKeys } from '../hash.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { PIPELINE_VERSION } from '../render/pipeline.ts';
@@ -62,20 +64,6 @@ export function emptyLock(delivery: Record<string, unknown>, toolchain: Toolchai
 export function lockText(lock: Lock): string {
   const sorted = sortKeys({ ...lock, assets: Object.fromEntries(Object.entries(lock.assets).map(([id, a]) => [id, { ...a, outputs: [...a.outputs].sort((x, y) => (x.file < y.file ? -1 : 1)) }])) });
   return JSON.stringify(sorted, null, 2) + '\n';
-}
-
-/** Writes through a temp file and a rename, so a reader (or a crash) sees the old file or the new one, never half of one. */
-export function atomicWrite(path: string, data: string | Buffer): void {
-  mkdirSync(dirname(path), { recursive: true });
-  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`);
-  writeFileSync(tmp, data);
-  for (let attempt = 0; ; attempt++) {
-    try { renameSync(tmp, path); return; } catch (e) {
-      // Windows: a virus scanner or indexer can hold the destination for a moment.
-      if (attempt >= 20 || !['EPERM', 'EBUSY', 'EACCES'].includes((e as NodeJS.ErrnoException).code ?? '')) { rmSync(tmp, { force: true }); throw e; }
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
-    }
-  }
 }
 
 export function writeLock(path: string, lock: Lock): void {

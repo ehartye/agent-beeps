@@ -1,5 +1,5 @@
 // Preview the delivered mix, without recompiling its arrangement or changing its level.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { BeepsError } from '../errors.ts';
 import { readWav } from '../audio/wav.ts';
@@ -8,6 +8,7 @@ import { measureSong, type SongSection } from '../measure/song.ts';
 import { clippedSamples } from '../measure/envelope.ts';
 import type { RenderHost } from './host.ts';
 import type { RenderedSong } from './song-pipeline.ts';
+import { commit, lookup } from './cache.ts';
 
 /** Internal delivered WAVs have the canonical 44-byte PCM header written by writeWav. */
 export function excerptWav(wav: Buffer, timeline: SongSection[], names: string[]) {
@@ -45,11 +46,11 @@ export async function renderSongExcerpt(host: RenderHost, full: RenderedSong, na
   const sourceRanges = spans.filter(s => names.includes(s.name)).map(({ name, start, end }) => ({ name, start, end }));
   const key = renderKey({ sourceKey: full.key, sourceRanges }, { kind: 'song-excerpt', version: 1 });
   const dir = join(dirname(full.dir), `song-${key.slice(0, 40)}`);
-  const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png'), metaPath = join(dir, 'meta.json');
+  const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png');
   const song = { ...full.song, loop: false, form: sourceRanges.map(s => s.name) };
   const excerpt = { sourceKey: full.key, sourceRanges };
-  if (existsSync(metaPath) && existsSync(wavPath) && existsSync(lookPath)) {
-    const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
+  const meta = lookup(dir, ['delivered.wav', 'look.png']);
+  if (meta) {
     return { key, song, trimDb: full.trimDb, features: meta.features, dir, wavPath, lookPath, cached: true, excerpt };
   }
   const cut = excerptWav(readFileSync(full.wavPath), spans, names);
@@ -57,10 +58,6 @@ export async function renderSongExcerpt(host: RenderHost, full: RenderedSong, na
   const features = measureSong(channels, sampleRate, cut.sections);
   features.delivered = { integratedLufs: features.integratedLufs, truePeakDb: features.truePeakDb, clippedSamples: clippedSamples(channels) };
   const look = await host.songPcmLook(channels, features, `${song.title ?? song.name} — excerpt`);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(wavPath, cut.wav);
-  writeFileSync(lookPath, look);
-  writeFileSync(join(dir, 'song.json'), JSON.stringify(song, null, 2));
-  writeFileSync(metaPath, JSON.stringify({ songName: song.name, trimDb: full.trimDb, features, excerpt }, null, 2));
+  commit(dir, { files: { 'delivered.wav': cut.wav, 'look.png': look, 'song.json': JSON.stringify(song, null, 2) }, meta: { songName: song.name, trimDb: full.trimDb, features, excerpt } });
   return { key, song, trimDb: full.trimDb, features, dir, wavPath, lookPath, cached: false, excerpt };
 }

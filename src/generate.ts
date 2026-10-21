@@ -1,6 +1,5 @@
 // Generate a candidate set: oversample an archetype, render and measure everything, drop lint
 // failures, then pick a diverse subset by farthest-point selection in taste-feature space.
-import { samplePaths } from './samples/store.ts';
 import { join } from 'node:path';
 import { getArchetype, loadArchetypes, sampleArchetype, type Archetype } from './archetypes.ts';
 import { lintPatch } from './lint.ts';
@@ -13,6 +12,7 @@ import { candidateFromRendered, newId, writeSet, type CandidateSet } from './set
 import { loadModel, tasteVectors } from './audition/session.ts';
 import { utility } from './taste/model.ts';
 import { directionScore, promptDirections } from './directions.ts';
+import { renderOptions } from './render/options.ts';
 
 const dist2 = (a: number[], b: number[]) => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0);
 
@@ -86,7 +86,7 @@ export async function generate(host: RenderHost, p: OpenProject, opts: { archety
   const members = familyMembers(a);
   const per = Math.ceil((count * 4) / members.length);
   const samples = members.flatMap((m, k) => sampleArchetype(m, seed + k * 1009, per));
-  const pool = usable(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }), p);
+  const pool = usable(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), renderOptions(p)), p);
   const steering = promptDirections(opts.prompt);
   const set = await finishSet(host, p, selectDiverse(p, pool, count, steering), { archetype: a.name, family: a.family, prompt: opts.prompt ?? null, parent: null, idPrefix: a.name });
   return { ...set, steering };

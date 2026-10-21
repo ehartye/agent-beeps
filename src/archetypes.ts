@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { BeepsError } from './errors.ts';
+import { replacePointer, tryGetPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 import { mulberry32 } from '../runtime/engine/rng.js';
 import { noteToHz } from '../runtime/engine/notes.js';
@@ -37,51 +38,10 @@ export interface Archetype {
   ranges: Record<string, Range>;
 }
 
-// ---- JSON pointers (RFC 6901) ----
+// Pointers are src/pointer.ts's. Archetypes read leniently (a missing step is undefined) and write strictly (replace what exists).
+export { tryGetPointer as getPointer, replacePointer as setPointer };
 
-const decodeToken = (t: string) => t.replaceAll('~1', '/').replaceAll('~0', '~');
-
-function tokens(ptr: string): string[] {
-  if (ptr === '') return [];
-  if (!ptr.startsWith('/')) throw new BeepsError('E_USAGE', `JSON pointer "${ptr}" must start with "/"`, { pointer: ptr });
-  return ptr.slice(1).split('/').map(decodeToken);
-}
-
-const hasKey = (obj: unknown, key: string): boolean => {
-  if (Array.isArray(obj)) return /^(0|[1-9]\d*)$/.test(key) && Number(key) < obj.length;
-  return obj !== null && typeof obj === 'object' && Object.hasOwn(obj, key);
-};
-
-/** Value at `ptr`, or undefined when any step is missing. */
-export function getPointer(obj: unknown, ptr: string): unknown {
-  let cur: any = obj;
-  for (const t of tokens(ptr)) {
-    if (!hasKey(cur, t)) return undefined;
-    cur = cur[Array.isArray(cur) ? Number(t) : t];
-  }
-  return cur;
-}
-
-/** Sets the value at `ptr` in place; the parent must exist (arrays by existing index). */
-export function setPointer(obj: unknown, ptr: string, value: unknown): void {
-  const ts = tokens(ptr);
-  if (!ts.length) throw new BeepsError('E_USAGE', 'cannot set the root of a document', { pointer: ptr });
-  let parent: any = obj;
-  for (const t of ts.slice(0, -1)) {
-    if (!hasKey(parent, t)) throw new BeepsError('E_USAGE', `no value at ${t} on the way to ${ptr}`, { pointer: ptr });
-    parent = parent[Array.isArray(parent) ? Number(t) : t];
-  }
-  const last = ts[ts.length - 1];
-  if (Array.isArray(parent)) {
-    if (!hasKey(parent, last)) throw new BeepsError('E_USAGE', `no array index ${last} at ${ptr}`, { pointer: ptr });
-    parent[Number(last)] = value;
-  } else if (parent !== null && typeof parent === 'object') (parent as Record<string, unknown>)[last] = value;
-  else throw new BeepsError('E_USAGE', `no object at the parent of ${ptr}`, { pointer: ptr });
-}
-
-const resolves = (obj: unknown, ptr: string) => {
-  try { return getPointer(obj, ptr) !== undefined; } catch { return false; }
-};
+const resolves = (obj: unknown, ptr: string) => tryGetPointer(obj, ptr) !== undefined;
 
 // ---- loading ----
 
@@ -124,7 +84,7 @@ function validate(file: string, raw: unknown): Archetype {
       if (target === ptr) fail(file, 'ratioOf cannot refer to itself', ptr);
       if (!resolves(template, target)) fail(file, `ratioOf target ${target} does not resolve in the template`, ptr);
       if (Object.hasOwn(a.ranges, target) && !seen.has(target)) fail(file, `ratioOf target ${target} must come before its dependents`, ptr);
-      if (toHz(getPointer(template, target)) === undefined) fail(file, `ratioOf target ${target} is not a number or note name`, ptr);
+      if (toHz(tryGetPointer(template, target)) === undefined) fail(file, `ratioOf target ${target} is not a number or note name`, ptr);
     }
     seen.add(ptr);
   }
@@ -169,12 +129,12 @@ function applyRanges(a: Archetype, rand: () => number): Patch {
   for (const [ptr, range] of Object.entries(a.ranges)) {
     let value: unknown;
     if ('ratioOf' in range) {
-      const base = toHz(getPointer(p, range.ratioOf))!;
+      const base = toHz(tryGetPointer(p, range.ratioOf))!;
       const ratio = 'choices' in range ? pick(rand, range.choices) : draw(rand, range);
       value = precise(base * ratio);
     } else if ('choices' in range) value = structuredClone(pick(rand, range.choices));
     else value = Math.min(range.max, Math.max(range.min, precise(draw(rand, range))));
-    setPointer(p, ptr, value);
+    replacePointer(p, ptr, value);
   }
   return p;
 }

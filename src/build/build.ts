@@ -11,7 +11,8 @@ import { exportPatchVariants, exportSongAssets } from '../export-assets.ts';
 import { ExportManifestSchema } from '../export-manifest.ts';
 import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.ts';
 import { loadSong } from '../music.ts';
-import { openRenderHost, verifyingDeterminism, type RenderHost } from '../render/host.ts';
+import { hostScope, type RenderHost } from '../render/host.ts';
+import { mapPool } from '../pool.ts';
 import { parseProject } from '../schema/project.ts';
 import { renderAndMeasure } from '../render/pipeline.ts';
 import { makeCue, wantsBaked, wantsRuntime } from '../runtime/cue.ts';
@@ -23,6 +24,7 @@ import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, r
 import { planAsset, type Encoder, type Planned } from './plan.ts';
 import { packAsset, sha256Hex, storeName, unpackAsset, type OutputRef, type Store } from './store.ts';
 import { sidecarExpectations, staticCheck } from './verify.ts';
+import { renderOptions } from '../render/options.ts';
 
 export interface BuildOptions {
   only?: string[];
@@ -63,16 +65,6 @@ export interface BuildReport {
   catalogWritten: boolean;
   estimate: { totalBytes: number; budgetBytes?: number; newAssets: number; basis: string };
   seconds: number;
-}
-
-/** A render host that opens Chromium on its first use: an asset whose renders are all in the cache never starts a browser. */
-function lazyHost(): { host: RenderHost; close(): Promise<void> } {
-  let real: Promise<RenderHost> | undefined;
-  const open = () => (real ??= openRenderHost());
-  const host = new Proxy({} as RenderHost, {
-    get: (_, prop) => (...args: unknown[]) => open().then(h => (h as unknown as Record<string, (...a: unknown[]) => unknown>)[prop as string](...args)),
-  });
-  return { host, close: async () => { if (real) await (await real).close().catch(() => {}); } };
 }
 
 const prefer = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -280,30 +272,21 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
 
   if (toBuild.length) {
     mkdirSync(stage, { recursive: true });
-    const queue = [...toBuild];
-    let failed: unknown;
-    const worker = async () => {
-      const lazy = lazyHost();
-      const host = o.verifyDeterminism ? verifyingDeterminism(lazy.host) : lazy.host, close = lazy.close;
-      try {
-        while (queue.length && !failed) {
-          const pl = queue.shift()!;
-          const t = Date.now();
-          const entry = await buildOne(host, p, cfg, pl, delivery, stage, lockedAsset(lock, pl.recipe.id), o, log);
-          commit(pl.recipe.id, entry);
-          o.hooks?.afterInstall?.(pl.recipe.id);
-          built.push(pl.recipe.id);
-          log(`built ${pl.recipe.id} (${((Date.now() - t) / 1000).toFixed(1)} s)`);
-          if (o.push && o.store) {
-            const name = storeName(pl.inputHash);
-            const res = await o.store.put(name, packAsset(pl.recipe.id, pl.inputHash, entry.outputs, f => readFileSync(join(cfg.out, f))));
-            if (res === 'stored') pushed.push(pl.recipe.id);
-          }
-        }
-      } catch (e) { failed ??= e; } finally { await close(); }
-    };
-    await Promise.all(Array.from({ length: Math.min(o.jobs ?? cfg.jobs, queue.length) }, worker));
-    if (failed) throw failed;
+    // One lazily opened browser per worker: an asset whose renders are all cached never starts one. A failure stops the pool claiming
+    // assets, lets the ones in flight finish (their installs are already committed), and is thrown after every browser has closed.
+    await mapPool(toBuild, o.jobs ?? cfg.jobs, async (pl, _i, host) => {
+      const t = Date.now();
+      const entry = await buildOne(host, p, cfg, pl, delivery, stage, lockedAsset(lock, pl.recipe.id), o, log);
+      commit(pl.recipe.id, entry);
+      o.hooks?.afterInstall?.(pl.recipe.id);
+      built.push(pl.recipe.id);
+      log(`built ${pl.recipe.id} (${((Date.now() - t) / 1000).toFixed(1)} s)`);
+      if (o.push && o.store) {
+        const name = storeName(pl.inputHash);
+        const res = await o.store.put(name, packAsset(pl.recipe.id, pl.inputHash, entry.outputs, f => readFileSync(join(cfg.out, f))));
+        if (res === 'stored') pushed.push(pl.recipe.id);
+      }
+    }, hostScope({ verifyDeterminism: o.verifyDeterminism }));
   }
   rmSync(stage, { recursive: true, force: true });
 
@@ -389,7 +372,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     // Runtime only: nothing is exported or encoded. The one render is the trim measurement (a cache hit when the patch was baked before).
     const patch = loadPatch(p, r.source);
     if (patch.name !== r.id) throw new BeepsError('E_SCHEMA', `recipe "${r.id}" is the patch "${patch.name}": rename the patch "name" to "${r.id}"`, { hint: 'the cue file and the game look the sound up by the patch name' });
-    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
+    const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], renderOptions(p));
     if (!m.ok) throw new BeepsError('E_RENDER', m.error);
     trimDb = m.trimDb;
   }

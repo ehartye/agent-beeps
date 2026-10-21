@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { BeepsError } from './errors.ts';
 import { sha256 } from './hash.ts';
-import { getPointer, parsePointer, setPointer } from './pointer.ts';
+import { escapePointer, getPointer, parsePointer, setPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 
 export type Row = Record<string, unknown>;
@@ -82,7 +82,6 @@ export interface RowFailure { row: number; name: string | null; message: string;
 export interface FamilyResult { patches: Patch[]; unusedParams: string[] }
 
 const isPlain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
-const esc = (k: string) => k.replaceAll('~', '~0').replaceAll('/', '~1');
 
 /** Replace {{param}} in every string; a string that is only a placeholder takes the param's own type. */
 function substitute(node: unknown, params: Row, path: string, missing: (name: string, at: string) => void, used: Set<string>): unknown {
@@ -100,7 +99,7 @@ function substitute(node: unknown, params: Row, path: string, missing: (name: st
     });
   }
   if (Array.isArray(node)) return node.map((x, i) => substitute(x, params, `${path}/${i}`, missing, used));
-  if (isPlain(node)) return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, substitute(v, params, `${path}/${esc(k)}`, missing, used)]));
+  if (isPlain(node)) return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, substitute(v, params, `${path}/${escapePointer(k)}`, missing, used)]));
   return node;
 }
 
