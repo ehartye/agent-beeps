@@ -29,6 +29,14 @@ var BeepsError = class extends Error {
 	}
 };
 //#endregion
+//#region runtime/engine/limits.js
+/** The only sample rate a prepared sample (and the offline render) may have, Hz. */
+const SAMPLE_RATE_HZ = 48e3;
+/** Most frames a prepared sample may hold: ten seconds at 48 kHz. */
+const MAX_SAMPLE_FRAMES = SAMPLE_RATE_HZ * 10;
+/** Most frames a retained source snapshot may hold: two minutes at 48 kHz. */
+const MAX_SOURCE_FRAMES = SAMPLE_RATE_HZ * 120;
+//#endregion
 //#region runtime/engine/sample-wav.js
 /**
 * Read the exact 44-byte IEEE float32 LE WAV format used for immutable samples.
@@ -37,8 +45,8 @@ var BeepsError = class extends Error {
 * @param {{maxFrames?: number}} [options] defaults to ten seconds; retained source snapshots may explicitly allow 120 seconds
 * @returns {{sampleRate: 48000, frames: number, channels: Float32Array[]}}
 */
-function readSampleWav(bytes, { maxFrames = 48e4 } = {}) {
-	if (!Number.isSafeInteger(maxFrames) || maxFrames < 1 || maxFrames > 576e4) throw new RangeError("sample maxFrames must be an integer in 1..5760000");
+function readSampleWav(bytes, { maxFrames = MAX_SAMPLE_FRAMES } = {}) {
+	if (!Number.isSafeInteger(maxFrames) || maxFrames < 1 || maxFrames > 576e4) throw new RangeError(`sample maxFrames must be an integer in 1..${MAX_SOURCE_FRAMES}`);
 	const u8 = bytes instanceof Uint8Array ? bytes : bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : void 0;
 	if (!u8 || u8.byteLength < 44) throw new TypeError("sample WAV requires a complete canonical 44-byte header");
 	const view = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -53,7 +61,7 @@ function readSampleWav(bytes, { maxFrames = 48e4 } = {}) {
 	const pcm = Array.from({ length: channels }, () => new Float32Array(frames));
 	for (let i = 0, p = 44; i < frames; i++) for (let c = 0; c < channels; c++, p += 4) pcm[c][i] = view.getFloat32(p, true);
 	return {
-		sampleRate: 48e3,
+		sampleRate: SAMPLE_RATE_HZ,
 		frames,
 		channels: pcm
 	};
@@ -98,7 +106,7 @@ function validateSampleManifest(patch, assets) {
 		if (typeof a.file !== "string" || !FILE.test(a.file) || a.file.includes("..")) throw new TypeError(`sample ${id} file must be a safe flat relative .wav filename`);
 		if (files.has(a.file)) throw new TypeError(`duplicate sample file: ${a.file}; files must be unique`);
 		files.add(a.file);
-		if (a.sampleRate !== 48e3 || a.channels !== 1 && a.channels !== 2 || !Number.isSafeInteger(a.frames) || a.frames < 1 || a.frames > 48e4 || !Number.isSafeInteger(a.bytes) || a.bytes !== 44 + a.frames * a.channels * 4) throw new TypeError(`sample ${id} metadata requires 48 kHz, 1..2 channels, 1..480000 integer frames and matching canonical bytes`);
+		if (a.sampleRate !== 48e3 || a.channels !== 1 && a.channels !== 2 || !Number.isSafeInteger(a.frames) || a.frames < 1 || a.frames > 48e4 || !Number.isSafeInteger(a.bytes) || a.bytes !== 44 + a.frames * a.channels * 4) throw new TypeError(`sample ${id} metadata requires 48 kHz, 1..2 channels, 1..${MAX_SAMPLE_FRAMES} integer frames and matching canonical bytes`);
 	}
 	return assets ?? {};
 }
