@@ -51,7 +51,8 @@ octaves up would be flagged (`song-written-pitch`). The pad, pluck, bell and pia
 their library root therefore use song-local copies (`warm-pad-c5`, `soft-pluck-fs4` and so on, named
 for the pitch they are built at) with every pitched layer moved to where the track plays, and the
 outpost reed is built at E5. The copies sound exactly as the library instruments retuned did: the
-renders are sample-for-sample identical to before. The library instruments are unchanged.
+renders are sample-for-sample identical to before. The library instruments are unchanged. Whether a texture built
+for one register still suits another is a listening judgement the linter cannot make.
 All
 three look images were inspected: the section arcs match the forms, quiet endings return to the
 opening density, and bass energy leaves gaps between notes. The loop edge metric measures level
