@@ -9,7 +9,7 @@ gestures. The instruments are synthesized acoustic-like textures, not recordings
 | --- | --- | --- | --- |
 | Outpost Dawn | `music-dawn` | 80 BPM, 72 seconds. D-major warmth with a Lydian middle; breathy reed, plucked strings, soft roots, hand drum and two dew-like bell notes. | beds → shoots → paths → sunlight → water → beds |
 | The Underside | `music-underside` | 72 BPM, 80 seconds. The seed phrase over Bm9, Gmaj7♯11 and suspended colors; airy felt-piano memory, glass and sparse plucks, without drums. | float → remember → clockwork → opening → drift → float |
-| Window Light | `music-window` | 76 BPM, 50.526 seconds. Intimate felt-piano statement one octave lower, a few plucked answers, quiet roots and a supporting upper pad. | window → letter → kettle → window |
+| Window Light | `music-window` | 76 BPM, 50.526 seconds. Intimate felt-piano statement one octave lower, a few plucked answers, quiet roots and a soft low pad. | window → letter → kettle → window |
 
 Each loop returns to its opening accompaniment. The outpost melody rests during half the form;
 the underside alternates melody and glints; the window song has a single explicit statement
@@ -41,26 +41,25 @@ local files, not committed source assets.
 
 | Song | LUFS integrated | True peak dBTP | Loudness range LU | Loop edge level difference dB | Low-frequency share |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Outpost Dawn | -20 | -4.66 | 5.5 | 0.3 | 13.7% |
-| The Underside | -20 | -7.85 | 3.9 | 0.4 | 7.8% |
-| Window Light | -20 | -3.72 | 6.7 | 0.1 | 20.0% |
+| Outpost Dawn | -20 | -4.09 | 5.6 | 1.9 | 21.6% |
+| The Underside | -20 | -5.23 | 4.9 | 0.5 | 13.1% |
+| Window Light | -20 | -3.84 | 6.7 | 0.7 | 21.6% |
 
-All three scores pass schema/check and render lint with zero errors and zero warnings. A song
-retunes its instrument to each written note, so an instrument built at middle C and written two
-octaves up would be flagged (`song-written-pitch`). The pad, pluck, bell and piano that sit far from
-their library root therefore use song-local copies (`warm-pad-c5`, `soft-pluck-fs4` and so on, named
-for the pitch they are built at) with every pitched layer moved to where the track plays, and the
-outpost reed is built at E5. The copies sound exactly as the library instruments retuned did: the
-renders are sample-for-sample identical to before. The library instruments are unchanged. Whether a texture built
-for one register still suits another is a listening judgement the linter cannot make.
-All
+All three scores pass schema/check and render lint with zero errors and zero warnings. Each part is
+written in the range its instrument was built for: pads at octave 3 and arps at octave 4 for the
+C4-rooted library instruments, the sparkle on `shimmer` (rooted at C6), and the instruments the songs
+define themselves (the outpost reed at C5, plucks rebuilt around F4 and A4 with their filters scaled to
+match) built at the pitch they play. Where a phrase sat above its instrument's range it moved down an
+octave (the underside's felt-piano memory, the window song's plucked answers), the pads dropped the
+chord tones that would reach past C5, and the outpost loop now returns to its opening chord so the
+loop seam stays under 2 dB. All
 three look images were inspected: the section arcs match the forms, quiet endings return to the
 opening density, and bass energy leaves gaps between notes. The loop edge metric measures level
 consistency, not a guarantee of inaudible musical joins; listening remains the final judgment.
 
 Stems were inspected at full-mix trim. The first pass exposed a buried hand drum and overly
 dominant pads. The final pass brings the physical gestures forward and makes the piano the
-leading voice in the window song. Final stem levels sit within 12.5 LU of their mixes; there are
+leading voice in the window song. Final stem levels sit within 11.5 LU of their mixes; there are
 no buried-part warnings. Shared registers are deliberate soft accompaniment underneath distinct
 attacks, with sparse melody and pluck rhythms. The evidence is arrangement and measured balance,
 not a claim that a spectrogram can establish subjective masking.
@@ -69,9 +68,9 @@ Render keys (prefixes used in `.agent-beeps/renders/song-<prefix>/`) were recomp
 songs were renamed, with the `library/sounds/colony-sfx/project.json` settings, so they change if a
 song's name, tags or content change:
 
-- Outpost Dawn: `fe050a1bda1e1e78f33868f8d78e8b6654b6fc57`
-- The Underside: `ba7c0a3a50747000206a805b1239f8407d06a4b2`
-- Window Light: `e844f461c668e55a0922f263383fc61abc8f4b1e`
+- Outpost Dawn: `419b08fab37ac2e471c19aaaba2371fec04b4518`
+- The Underside: `de8db4b7029c5d805acf78bc62b2d045979ee66f`
+- Window Light: `ef443dc738b557c620eb7c7b62b51b9d7b370a14`
 
 ## Tool friction observed during composition
 

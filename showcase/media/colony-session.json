@@ -1319,8 +1319,8 @@
       "description": "An orbital garden outpost: a breathy, wistful D-major seed motif, warm plucked strings and a small hand-drum pulse. The middle opens into Lydian sunlight before returning to the quiet beds.",
       "mp3": "./media/colony-outpost-dawn.mp3",
       "durationSec": 72,
-      "loudnessLufs": -19.998965744245137,
-      "truePeakDb": -4.707262846152489,
+      "loudnessLufs": -20.001230494517394,
+      "truePeakDb": -4.0559476221985165,
       "look": "./media/colony-outpost-dawn.png",
       "recipe": "./recipes/colony-outpost-dawn.json"
     },
@@ -1331,8 +1331,8 @@
       "description": "The same seed motif suspended beneath a floating garden: B-minor warmth, G-Lydian glass, distant felt notes, and long spaces. A brief D-major opening in the clouds remembers home.",
       "mp3": "./media/colony-the-underside.mp3",
       "durationSec": 80,
-      "loudnessLufs": -19.99588465115912,
-      "truePeakDb": -7.852145244709505,
+      "loudnessLufs": -19.998952874104265,
+      "truePeakDb": -5.238969060614062,
       "look": "./media/colony-the-underside.png",
       "recipe": "./recipes/colony-the-underside.json"
     },
@@ -1340,11 +1340,11 @@
       "id": "window-light",
       "title": "Window Light",
       "kind": "song",
-      "description": "Inside the home module, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and warm upper chords leave room for the room itself.",
+      "description": "Inside the home module, the garden melody becomes a few felt-piano notes by the window. A quiet plucked answer and soft, low chords leave room for the room itself.",
       "mp3": "./media/colony-window-light.mp3",
       "durationSec": 50.5263125,
-      "loudnessLufs": -20.00475893843567,
-      "truePeakDb": -3.714936756185531,
+      "loudnessLufs": -19.997761134761745,
+      "truePeakDb": -3.8442016990721743,
       "look": "./media/colony-window-light.png",
       "recipe": "./recipes/colony-window-light.json"
     }
