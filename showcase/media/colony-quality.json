@@ -911,102 +911,102 @@
     },
     {
       "id": "outpost-dawn",
-      "renderKey": "fe050a1bda1e1e78f33868f8d78e8b6654b6fc57b6e72dd4ee073db20b6603f6",
+      "renderKey": "419b08fab37ac2e471c19aaaba2371fec04b4518ccfe68d3029dfc83662994d3",
       "features": {
         "durationSec": 72,
-        "integratedLufs": -24.59,
-        "shortTermMaxLufs": -21.11,
-        "loudnessRangeLu": 5.5,
-        "samplePeakDb": -9.25,
-        "truePeakDb": -9.25,
-        "crestDb": 17.48,
-        "centroidHz": 462,
-        "flatness": 0.0001,
+        "integratedLufs": -26.89,
+        "shortTermMaxLufs": -23.58,
+        "loudnessRangeLu": 5.6,
+        "samplePeakDb": -11.03,
+        "truePeakDb": -10.98,
+        "crestDb": 17.95,
+        "centroidHz": 339,
+        "flatness": 0.0002,
         "bands": [
-          -8.92,
-          -16.86,
-          -3.47,
-          -4.17,
-          -20.2,
-          -33.42,
-          -45.44,
-          -51.1
+          -6.93,
+          -6.74,
+          -4.4,
+          -7.08,
+          -19.18,
+          -30.74,
+          -42.91,
+          -49.13
         ],
-        "lowShare": 0.137,
-        "stereoWidth": 0.272,
+        "lowShare": 0.216,
+        "stereoWidth": 0.215,
         "arc": [
-          -23.1,
-          -22,
-          -21.7,
-          -21.3,
-          -21.5,
-          -23.9,
-          -22.5,
-          -22.2,
-          -23.8,
-          -23.2,
-          -22.3,
-          -23.8,
-          -17.8,
-          -18.5,
-          -17.2,
-          -19.2,
-          -18.7,
-          -21.7,
-          -18.9,
-          -19.7,
-          -18.3,
-          -20.7,
-          -19.2,
-          -21.6,
-          -20,
-          -19.6,
-          -19.4,
-          -20.3,
-          -19.5,
-          -21.8,
-          -20.3,
-          -19.8,
-          -21.1,
-          -20.7,
-          -20.9,
-          -21.9,
-          -16.7,
-          -17.1,
-          -15.8,
-          -18.6,
-          -17.7,
-          -19.6,
-          -18,
-          -16.4,
-          -17.2,
-          -18.6,
-          -16.9,
-          -18.4,
-          -19.9,
-          -19.4,
-          -18.5,
-          -19.6,
-          -20.1,
-          -22.8,
-          -19.9,
-          -20.7,
-          -20.4,
-          -21.5,
-          -20.4,
-          -22.6,
-          -21.3,
-          -22,
-          -21.2,
-          -21.6,
-          -21.6,
-          -23.9,
-          -22.7,
-          -22.2,
+          -21.4,
           -23.6,
-          -23.2,
+          -22.7,
+          -21.8,
+          -23,
+          -25.1,
+          -20.5,
+          -24.5,
+          -22.9,
+          -23.6,
+          -22.7,
+          -24.8,
+          -17.3,
+          -18.6,
+          -16.4,
+          -19.2,
+          -18.5,
+          -22.3,
+          -16.7,
+          -19.7,
+          -17,
+          -20.8,
+          -18.8,
+          -22.3,
+          -19.3,
+          -20.4,
+          -20.4,
+          -19.3,
+          -21,
+          -23,
+          -19.5,
+          -21.3,
+          -20.4,
+          -18.7,
+          -20.8,
+          -22.6,
+          -16.6,
+          -17.6,
+          -16,
+          -18.8,
+          -17.9,
+          -23.3,
+          -17.1,
+          -19.1,
+          -16.7,
+          -18.4,
+          -18,
+          -20.7,
+          -18.3,
+          -19.9,
+          -17.8,
+          -19.5,
+          -19.6,
+          -23.3,
+          -17.8,
+          -20.8,
+          -18.7,
+          -20.5,
+          -19.9,
+          -23.3,
+          -21.7,
+          -23.6,
+          -22.4,
+          -22,
           -23.1,
-          -24
+          -25.1,
+          -21.9,
+          -24.5,
+          -22.9,
+          -22.1,
+          -22.6,
+          -24.8
         ],
         "sections": [
           {
@@ -1014,88 +1014,67 @@
             "start": 0,
             "end": 12,
             "bars": 4,
-            "lufs": -22.5,
-            "centroidHz": 433
+            "lufs": -23,
+            "centroidHz": 258
           },
           {
             "name": "shoots",
             "start": 12,
             "end": 24,
             "bars": 4,
-            "lufs": -19.1,
-            "centroidHz": 478
+            "lufs": -18.6,
+            "centroidHz": 393
           },
           {
             "name": "paths",
             "start": 24,
             "end": 36,
             "bars": 4,
-            "lufs": -20.4,
-            "centroidHz": 424
+            "lufs": -20.5,
+            "centroidHz": 263
           },
           {
             "name": "sunlight",
             "start": 36,
             "end": 48,
             "bars": 4,
-            "lufs": -17.5,
-            "centroidHz": 494
+            "lufs": -18,
+            "centroidHz": 379
           },
           {
             "name": "water",
             "start": 48,
             "end": 60,
             "bars": 4,
-            "lufs": -20.3,
-            "centroidHz": 458
+            "lufs": -19.6,
+            "centroidHz": 357
           },
           {
             "name": "beds",
             "start": 60,
             "end": 72,
             "bars": 4,
-            "lufs": -22.5,
-            "centroidHz": 428
+            "lufs": -23,
+            "centroidHz": 258
           }
         ],
-        "seamStartLufs": -23.4,
-        "seamEndLufs": -23.1,
-        "seamDb": 0.3,
+        "seamStartLufs": -22.6,
+        "seamEndLufs": -24.5,
+        "seamDb": 1.9,
         "seam": {
-          "boundaryStepDb": -6.35,
-          "slopeJumpDb": -11.68,
-          "lastZeroCrossingPhase": 0.154
+          "boundaryStepDb": -12.39,
+          "slopeJumpDb": -25.4,
+          "lastZeroCrossingPhase": 0.292
         },
         "delivered": {
           "integratedLufs": -20,
-          "truePeakDb": -4.66,
+          "truePeakDb": -4.09,
           "clippedSamples": 0
         }
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"C5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes A3-D5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 14 semitones up and sounds at 587 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"melody\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/melody"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"seed\" writes A5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D6\" (the note it should sound at as written) or write notes near C5",
-            "pointer": "/tracks/seed"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"
@@ -1108,37 +1087,36 @@
               {
                 "section": "beds",
                 "overlaps": [
-                  "pad D4-A5 and pluck D4-B5 share a band"
+                  "pad B3-A4 and pluck D4-D5 share a band"
                 ]
               },
               {
                 "section": "shoots",
                 "overlaps": [
-                  "pad D4-A5 and pluck D4-B5 share a band",
-                  "pad D4-A5 and melody A4-E5 share a band",
-                  "pluck D4-Db6 and melody A4-A5 share a band"
+                  "pluck D4-Db6 and melody A4-A5 share a band",
+                  "pad B3-A4 and pluck D4-D5 share a band",
+                  "pad B3-A4 and melody A4 share a band"
                 ]
               },
               {
                 "section": "paths",
                 "overlaps": [
-                  "pad D4-A5 and pluck D4-B5 share a band"
+                  "pad B3-A4 and pluck D4-D5 share a band"
                 ]
               },
               {
                 "section": "sunlight",
                 "overlaps": [
-                  "pad D4-A5 and pluck A3-D6 share a band",
                   "pluck E4-D6 and melody D5-B5 share a band",
-                  "pad D4-A5 and melody D5-F#5 share a band"
+                  "pad D3-A4 and pluck A3-A4 share a band"
                 ]
               },
               {
                 "section": "water",
                 "overlaps": [
-                  "pad D4-A5 and pluck D4-B5 share a band",
-                  "pad D4-A5 and melody A4-E5 share a band",
-                  "pluck D4-Db6 and melody A4-A5 share a band"
+                  "pluck D4-Db6 and melody A4-A5 share a band",
+                  "pad B3-A4 and pluck D4-D5 share a band",
+                  "pad B3-A4 and melody A4 share a band"
                 ]
               }
             ]
@@ -1150,117 +1128,117 @@
         ]
       },
       "encoded": {
-        "integratedLufs": -19.998965744245137,
-        "truePeakDb": -4.707262846152489,
+        "integratedLufs": -20.001230494517394,
+        "truePeakDb": -4.0559476221985165,
         "durationSec": 72
       }
     },
     {
       "id": "the-underside",
-      "renderKey": "ba7c0a3a50747000206a805b1239f8407d06a4b267dd164b7f9d058dc2dd849f",
+      "renderKey": "de8db4b7029c5d805acf78bc62b2d045979ee66f136eb657bb4a7487c26c9d25",
       "features": {
         "durationSec": 80,
-        "integratedLufs": -23.81,
-        "shortTermMaxLufs": -20.91,
-        "loudnessRangeLu": 3.9,
-        "samplePeakDb": -11.66,
-        "truePeakDb": -11.66,
-        "crestDb": 14.98,
-        "centroidHz": 545,
+        "integratedLufs": -26.49,
+        "shortTermMaxLufs": -23.73,
+        "loudnessRangeLu": 4.9,
+        "samplePeakDb": -11.73,
+        "truePeakDb": -11.72,
+        "crestDb": 16.11,
+        "centroidHz": 296,
         "flatness": 0,
         "bands": [
-          -11.28,
-          -21.92,
-          -3.72,
-          -3.64,
-          -12.39,
-          -28.42,
-          -46.49,
-          -71.94
+          -9.01,
+          -5.51,
+          -2.89,
+          -11.91,
+          -20.92,
+          -30.58,
+          -42.88,
+          -68.15
         ],
-        "lowShare": 0.078,
-        "stereoWidth": 0.406,
+        "lowShare": 0.131,
+        "stereoWidth": 0.365,
         "arc": [
-          -21.9,
-          -21.1,
-          -22.9,
-          -22.2,
-          -21.4,
-          -22.2,
-          -21.7,
-          -23.1,
-          -21.9,
-          -23.1,
-          -22,
-          -22,
-          -21.6,
           -20.8,
-          -18.3,
+          -24.1,
+          -23.5,
+          -21.2,
+          -24.4,
+          -22.8,
+          -20.8,
+          -23.3,
+          -23.8,
+          -22.8,
+          -20.8,
+          -23.3,
+          -21.6,
+          -19.7,
+          -17.9,
+          -16.1,
+          -18.7,
+          -21.7,
+          -19.5,
+          -20.4,
           -18.1,
+          -19.6,
+          -18.5,
+          -18.7,
+          -21.3,
+          -20,
+          -18.8,
+          -19.7,
+          -19.9,
+          -20.8,
+          -18.9,
+          -21.5,
           -18.4,
+          -18.4,
+          -20.2,
+          -20.4,
+          -17.7,
+          -20.4,
           -20.6,
           -18.3,
-          -21.2,
-          -19.3,
-          -19.8,
-          -17.8,
-          -20.9,
-          -20.3,
-          -18.5,
-          -19.9,
-          -18.5,
-          -18.7,
-          -20.3,
-          -18.7,
-          -18.5,
-          -18.8,
-          -19.8,
-          -19.3,
-          -18.9,
-          -18.9,
-          -20.4,
-          -18.8,
-          -18.7,
-          -18.5,
-          -17.6,
-          -16.3,
-          -18.7,
-          -20.7,
-          -17.3,
-          -19.6,
-          -19.3,
-          -19.2,
-          -20.3,
-          -19.6,
+          -16.8,
           -19.4,
-          -19.1,
-          -20.4,
-          -19.7,
-          -19.5,
-          -19.3,
-          -21.5,
-          -19.5,
-          -21.4,
-          -19.8,
-          -20.8,
-          -19.1,
-          -21.3,
-          -21.3,
-          -19.3,
-          -21.1,
-          -21.5,
-          -22.1,
-          -23.3,
-          -21.5,
-          -21.5,
+          -16.1,
+          -17.6,
+          -20,
+          -18.9,
+          -18.7,
+          -17.7,
           -21,
-          -22.3,
-          -22.3,
-          -21.9,
-          -21.8,
-          -23.4,
+          -18.2,
+          -18.3,
+          -19.4,
+          -20.6,
+          -19.3,
+          -19.5,
+          -17.6,
+          -19.2,
+          -22.5,
+          -20.8,
+          -20.4,
+          -18.5,
+          -20.7,
+          -20,
+          -19,
+          -22.2,
+          -20.3,
+          -20.2,
+          -22.6,
+          -23.8,
+          -23.8,
+          -21.6,
+          -24.5,
           -22,
-          -21.6
+          -21.3,
+          -23.2,
+          -23.4,
+          -20.2,
+          -23.3,
+          -24.3,
+          -21.2
         ],
         "sections": [
           {
@@ -1268,88 +1246,67 @@
             "start": 0,
             "end": 13.333333333333334,
             "bars": 4,
-            "lufs": -22.1,
-            "centroidHz": 538
+            "lufs": -22.5,
+            "centroidHz": 284
           },
           {
             "name": "remember",
             "start": 13.333333333333334,
             "end": 26.666666666666668,
             "bars": 4,
-            "lufs": -19.2,
-            "centroidHz": 582
+            "lufs": -19,
+            "centroidHz": 303
           },
           {
             "name": "clockwork",
             "start": 26.666666666666668,
             "end": 40,
             "bars": 4,
-            "lufs": -19.1,
-            "centroidHz": 551
+            "lufs": -19.4,
+            "centroidHz": 304
           },
           {
             "name": "opening",
             "start": 40,
             "end": 53.333333333333336,
             "bars": 4,
-            "lufs": -18.7,
-            "centroidHz": 493
+            "lufs": -18.5,
+            "centroidHz": 285
           },
           {
             "name": "drift",
             "start": 53.333333333333336,
             "end": 66.66666666666667,
             "bars": 4,
-            "lufs": -20.2,
-            "centroidHz": 558
+            "lufs": -19.9,
+            "centroidHz": 304
           },
           {
             "name": "float",
             "start": 66.66666666666667,
             "end": 80,
             "bars": 4,
-            "lufs": -22,
-            "centroidHz": 539
+            "lufs": -22.5,
+            "centroidHz": 283
           }
         ],
-        "seamStartLufs": -21.7,
-        "seamEndLufs": -21.3,
-        "seamDb": 0.4,
+        "seamStartLufs": -22.3,
+        "seamEndLufs": -22.8,
+        "seamDb": 0.5,
         "seam": {
-          "boundaryStepDb": -6.44,
-          "slopeJumpDb": -12.13,
-          "lastZeroCrossingPhase": 0.646
+          "boundaryStepDb": -1.07,
+          "slopeJumpDb": -11.25,
+          "lastZeroCrossingPhase": 0.815
         },
         "delivered": {
           "integratedLufs": -20,
-          "truePeakDb": -7.85,
+          "truePeakDb": -5.23,
           "clippedSamples": 0
         }
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-Db6 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 25 semitones up and sounds at 1109 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"D5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes Db4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"memory\" writes A4-B5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 23 semitones up and sounds at 988 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/memory"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"glass\" writes B5-F#6 for an instrument rooted at C5 (523 Hz): the whole patch is retuned 18 semitones up and sounds at 1480 Hz. To play it as built at C5, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Eb6\" (the note it should sound at as written) or write notes near C5",
-            "pointer": "/tracks/glass"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"
@@ -1360,41 +1317,32 @@
             "check": "Parts that play together sit in different registers or leave each other rhythmic gaps; fix a masking clash in the arrangement (voicing, octave, rhythm) before the mix.",
             "data": [
               {
-                "section": "float",
-                "overlaps": [
-                  "pad D4-Db6 and pluck Db4-D6 share a band"
-                ]
-              },
-              {
                 "section": "remember",
                 "overlaps": [
-                  "pad D4-Db6 and pluck Db4-D6 share a band",
-                  "pad D4-Db6 and memory A4-A5 share a band",
-                  "pluck Db4-D6 and memory A4-E5 share a band"
+                  "pad D3-A4 and memory A3-A4 share a band",
+                  "pluck Db4-Db5 and memory A4 share a band"
                 ]
               },
               {
                 "section": "clockwork",
                 "overlaps": [
-                  "pad D4-Db6 and pluck Db4-D6 share a band",
-                  "pad G4-Db6 and glass B5 share a band",
+                  "pad B3-A4 and pluck Db4-Db5 share a band",
                   "pluck D5-D6 and glass B5 share a band"
                 ]
               },
               {
                 "section": "opening",
                 "overlaps": [
-                  "pad D4-F#5 and pluck D4-E5 share a band",
-                  "pluck Ab4-B5 and memory D5-Ab5 share a band",
-                  "pad G4-F#5 and memory E5-F#5 share a band"
+                  "pluck D4-Ab5 and memory E4-B4 share a band",
+                  "pad G3-F#4 and memory E4-F#4 share a band"
                 ]
               },
               {
                 "section": "drift",
                 "overlaps": [
-                  "pad D4-Db6 and pluck Db4-D6 share a band",
-                  "pad D4-Db6 and memory A4-A5 share a band",
-                  "pluck Db4-D6 and memory A4-E5 share a band"
+                  "pad D3-A4 and memory A3-A4 share a band",
+                  "pad B3-A4 and pluck Db4-Db5 share a band",
+                  "pluck Db4-Db5 and memory A4 share a band"
                 ]
               }
             ]
@@ -1406,86 +1354,86 @@
         ]
       },
       "encoded": {
-        "integratedLufs": -19.99588465115912,
-        "truePeakDb": -7.852145244709505,
+        "integratedLufs": -19.998952874104265,
+        "truePeakDb": -5.238969060614062,
         "durationSec": 80
       }
     },
     {
       "id": "window-light",
-      "renderKey": "e844f461c668e55a0922f263383fc61abc8f4b1e00ebb0a4cdbc7d462732f83f",
+      "renderKey": "ef443dc738b557c620eb7c7b62b51b9d7b370a1480036c838b683f34173bc947",
       "features": {
         "durationSec": 50.526,
-        "integratedLufs": -29.6,
-        "shortTermMaxLufs": -24.83,
+        "integratedLufs": -30.03,
+        "shortTermMaxLufs": -25.33,
         "loudnessRangeLu": 6.7,
-        "samplePeakDb": -13.32,
-        "truePeakDb": -13.32,
-        "crestDb": 18.34,
-        "centroidHz": 385,
+        "samplePeakDb": -13.87,
+        "truePeakDb": -13.87,
+        "crestDb": 17.87,
+        "centroidHz": 296,
         "flatness": 0,
         "bands": [
-          -7.25,
-          -14.57,
-          -2.69,
-          -6.63,
-          -20.11,
-          -35.96,
-          -59.54,
-          -84.15
+          -6.92,
+          -7.13,
+          -2.89,
+          -11.8,
+          -20.23,
+          -37.3,
+          -69.46,
+          -91.59
         ],
-        "lowShare": 0.2,
-        "stereoWidth": 0.137,
+        "lowShare": 0.216,
+        "stereoWidth": 0.122,
         "arc": [
-          -19.2,
-          -24,
-          -21,
-          -23.1,
-          -21.6,
-          -24.8,
-          -24.6,
-          -22,
+          -18.8,
+          -24.9,
           -21.7,
+          -23.2,
+          -20.8,
+          -23.9,
           -23.8,
-          -24.1,
-          -21.3,
-          -22.8,
-          -15.5,
-          -15.9,
-          -14.4,
-          -21.3,
-          -16.8,
-          -22.7,
-          -16.5,
-          -17.4,
-          -15.1,
-          -21.1,
-          -17.7,
-          -20.3,
-          -17.1,
-          -20.7,
-          -18.6,
-          -21,
-          -21.8,
-          -19.7,
-          -22.9,
-          -22.2,
-          -18.4,
-          -21.5,
-          -22,
-          -18.6,
-          -20,
-          -21.7,
-          -23.5,
-          -22,
-          -23.4,
-          -19.3,
-          -24.1,
-          -24.5,
-          -21,
+          -22.4,
+          -22.4,
           -23,
-          -23.8,
-          -23.1,
+          -24.9,
+          -21.2,
+          -22.3,
+          -14.8,
+          -16.6,
+          -14.8,
+          -21.5,
+          -16.8,
+          -22.1,
+          -16.7,
+          -18.2,
+          -14.7,
+          -20.1,
+          -17.7,
+          -20.8,
+          -16.6,
+          -21.6,
+          -19.4,
+          -21.1,
+          -22.6,
+          -18.5,
+          -22.2,
+          -22.7,
+          -18.5,
+          -20.5,
+          -22.2,
+          -19,
+          -20,
+          -20.9,
+          -25,
+          -21.5,
+          -23.2,
+          -20.8,
+          -24.6,
+          -24,
+          -21.2,
+          -23.3,
+          -22.9,
+          -23.5,
           -22.2
         ],
         "sections": [
@@ -1495,61 +1443,50 @@
             "end": 12.631578947368421,
             "bars": 4,
             "lufs": -22.6,
-            "centroidHz": 383
+            "centroidHz": 287
           },
           {
             "name": "letter",
             "start": 12.631578947368421,
             "end": 25.263157894736842,
             "bars": 4,
-            "lufs": -17.2,
-            "centroidHz": 376
+            "lufs": -17.3,
+            "centroidHz": 304
           },
           {
             "name": "kettle",
             "start": 25.263157894736842,
             "end": 37.89473684210526,
             "bars": 4,
-            "lufs": -20.4,
-            "centroidHz": 399
+            "lufs": -20.3,
+            "centroidHz": 290
           },
           {
             "name": "window",
             "start": 37.89473684210526,
             "end": 50.526315789473685,
             "bars": 4,
-            "lufs": -22.4,
-            "centroidHz": 390
+            "lufs": -22.6,
+            "centroidHz": 286
           }
         ],
-        "seamStartLufs": -23.5,
-        "seamEndLufs": -23.7,
-        "seamDb": 0.1,
+        "seamStartLufs": -23.9,
+        "seamEndLufs": -24.6,
+        "seamDb": 0.7,
         "seam": {
-          "boundaryStepDb": 0.94,
-          "slopeJumpDb": -10.32,
-          "lastZeroCrossingPhase": 0.709
+          "boundaryStepDb": -8.08,
+          "slopeJumpDb": -3.68,
+          "lastZeroCrossingPhase": 0.431
         },
         "delivered": {
           "integratedLufs": -20,
-          "truePeakDb": -3.72,
+          "truePeakDb": -3.84,
           "clippedSamples": 0
         }
       },
       "lint": {
         "errors": [],
-        "warnings": [
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pad\" writes D4-F#5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 18 semitones up and sounds at 740 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"Bb4\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pad"
-          },
-          {
-            "rule": "song-written-pitch",
-            "message": "track \"pluck\" writes B4-A5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 21 semitones up and sounds at 880 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"E5\" (the note it should sound at as written) or write notes near C4",
-            "pointer": "/tracks/pluck"
-          }
-        ],
+        "warnings": [],
         "judgement": [
           "song-register-bands",
           "song-fatigue"
@@ -1562,20 +1499,21 @@
               {
                 "section": "window",
                 "overlaps": [
-                  "pad D4-F#5 and piano E4-B4 share a band"
+                  "pad E3-F#4 and piano E4 share a band"
                 ]
               },
               {
                 "section": "letter",
                 "overlaps": [
-                  "pad D4-F#5 and piano D4-A4 share a band"
+                  "pad D3-F#4 and piano A3-E4 share a band"
                 ]
               },
               {
                 "section": "kettle",
                 "overlaps": [
-                  "pad D4-F#5 and piano E4-B4 share a band",
-                  "pad E4-F#5 and pluck B4-B5 share a band"
+                  "piano E4-B4 and pluck B3-F#5 share a band",
+                  "pad D3-F#4 and piano E4 share a band",
+                  "pad E3-F#4 and pluck B3-B4 share a band"
                 ]
               }
             ]
@@ -1587,8 +1525,8 @@
         ]
       },
       "encoded": {
-        "integratedLufs": -20.00475893843567,
-        "truePeakDb": -3.714936756185531,
+        "integratedLufs": -19.997761134761745,
+        "truePeakDb": -3.8442016990721743,
         "durationSec": 50.5263125
       }
     }

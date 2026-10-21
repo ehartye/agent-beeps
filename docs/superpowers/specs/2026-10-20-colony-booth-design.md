@@ -126,5 +126,5 @@ re-rendered MP3s are byte-identical. Matter's score carries its instruments inli
 
 The kit README says the canopy bed's thin-low-end warning is intentional. The render raises no such warning.
 The sentence is corrected to say what the lint reports (no warning on the canopy bed; the register diagnostics
-paragraph stands). The song pitch warnings are a separate item: fixing them changes the renders and needs
-a listen, so they stay on the backlog.
+paragraph stands). The song pitch warnings were a separate item, since resolved by recomposing the three songs
+with each part written in its instrument's range (the booth's three song tracks were re-rendered).
