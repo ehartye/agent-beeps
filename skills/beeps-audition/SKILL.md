@@ -47,7 +47,7 @@ cannot resolve the machine name. Never give a file path. `notes` says when the k
 - **live** (default): you stay and answer refine requests yourself (step 3).
 - **handoff**: the server breeds refine rounds on its own. Use it whenever you will not be waiting -
   the owner may listen later, or it is a batch - then end your turn. Next session, `beeps audition
-  status --id <id>` shows the stage; once shipped it prints the `next` step to wire the sound in.
+  status --id <id>` shows the stage; once shipped it prints the `next` step to wire the sound in. `beeps audition list` shows the project's sessions, `beeps audition close --id <id>` abandons one, and `beeps serve` starts or reuses the LAN server (open does it for you).
 
 ## 3. Wait and answer (live)
 

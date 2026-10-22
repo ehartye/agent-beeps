@@ -1,7 +1,6 @@
 // Refine by ear: nudge parameters (jsfxr/bfxr style: each numeric parameter has a 50 % chance of a
 // small nudge; waveforms and structure never change), render, and keep the mutations that move the
 // measured features in the direction the owner asked for, favouring what their taste model likes.
-import { samplePaths } from './samples/store.ts';
 import { mulberry32 } from '../runtime/engine/rng.js';
 import { noteToHz } from '../runtime/engine/notes.js';
 import { getArchetype, type Archetype } from './archetypes.ts';
@@ -18,6 +17,8 @@ import { utility } from './taste/model.ts';
 
 export { DIRECTIONS, directionScore } from './directions.ts';
 import { directionScore } from './directions.ts';
+import { BeepsError } from './errors.ts';
+import { renderOptions } from './render/options.ts';
 
 const FROZEN = new Set(['schema', 'start', 'variants', 'priority', 'algorithm', 'weights', 'at', 'voices']);
 const DB_KEYS = new Set(['gainDb', 'sendDb', 'resonanceDb']);
@@ -107,8 +108,8 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
     if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) continue; // unchanged: not a variation
     kids.push({ ...child, name: `${base}-m${tag}-${i + 1}` });
   }
-  const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
-  const pool = usable(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects }), p);
+  const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], renderOptions(p));
+  const pool = usable(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), renderOptions(p)), p);
   const pv = parentR.ok ? featureVector(parentR.features) : null;
   const model = loadModel(p);
   const scored = pool.map(r => {
@@ -141,7 +142,7 @@ export async function autoRefine(p: OpenProject, sessionId: string, state: Sessi
       like: likeC ? setCandidatePatch(p, likeC.setId, likeC.name) : undefined,
       toward: req.directions, count: 4, parentSet: champ.setId,
     });
-    if (!set.candidates.length) throw new Error('no mutation passed the craft rules');
+    if (!set.candidates.length) throw new BeepsError('E_RENDER', 'no mutation passed the craft rules');
     // Re-read the session: the owner may have shipped or closed it while this round was breeding.
     const fresh = foldSession(readSession(p, sessionId), readEvents(p, sessionId));
     if (fresh.stage !== 'waiting') return;

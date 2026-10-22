@@ -98,6 +98,51 @@ export function verifyingDeterminism(host: RenderHost): RenderHost {
   return new Proxy(host, { get: (target, prop) => (prop === 'renderSong' ? renderSong : Reflect.get(target, prop)) });
 }
 
+/**
+ * A render host that opens the real one on its first method call: work whose renders are all cached never starts a browser.
+ * `open` is the seam (tests inject a fake). `close()` does nothing when the host was never opened, and never throws.
+ * `page` and `url` exist only once the host has opened; reading them earlier is a bug and throws.
+ */
+export function lazyRenderHost(open: () => Promise<RenderHost> = openRenderHost): RenderHost {
+  let opening: Promise<RenderHost> | undefined;
+  let opened: RenderHost | undefined;
+  const real = (): Promise<RenderHost> => (opening ??= open().then(h => (opened = h)));
+  const live = (what: string): RenderHost => {
+    if (!opened) throw new BeepsError('E_INTERNAL', `render host ${what} is not available before the first render call`);
+    return opened;
+  };
+  return {
+    get page() { return live('page').page; },
+    get url() { return live('url').url; },
+    render: items => real().then(h => h.render(items)),
+    looks: (items, sheet) => real().then(h => h.looks(items, sheet)),
+    renderSong: (song, instruments, opts) => real().then(h => h.renderSong(song, instruments, opts)),
+    pullSong: (id, frames) => real().then(h => h.pullSong(id, frames)),
+    songDiff: (a, b) => real().then(h => h.songDiff(a, b)),
+    songLook: (id, features, label) => real().then(h => h.songLook(id, features, label)),
+    songPcmLook: (channels, features, label) => real().then(h => h.songPcmLook(channels, features, label)),
+    freeSong: id => real().then(h => h.freeSong(id)),
+    async close() {
+      if (!opening) return;
+      let h: RenderHost;
+      try { h = await opening; } catch { return; }
+      await h.close().catch(() => {});
+    },
+  };
+}
+
+/**
+ * Run `fn` against a lazily opened render host and close it afterwards. `verifyDeterminism`: every song render is done twice and
+ * compared (see verifyingDeterminism); the check wraps the lazy host, so it still opens no browser until a render call is made.
+ */
+export async function withRenderHost<T>(fn: (host: RenderHost) => Promise<T>, { verifyDeterminism = false, open }: { verifyDeterminism?: boolean; open?: () => Promise<RenderHost> } = {}): Promise<T> {
+  const host = lazyRenderHost(open);
+  try { return await fn(verifyDeterminism ? verifyingDeterminism(host) : host); } finally { await host.close(); }
+}
+
+/** A worker scope for mapPool (see pool.ts): each worker gets its own lazily opened host, closed when the worker finishes. */
+export const hostScope = (o: { verifyDeterminism?: boolean; open?: () => Promise<RenderHost> } = {}) => (body: (host: RenderHost) => Promise<void>): Promise<void> => withRenderHost(body, o);
+
 export async function chromiumAvailable(): Promise<boolean> {
   try {
     const { chromium } = await import('playwright');

@@ -75,7 +75,7 @@ whole recording and proposes crop windows with a ready `prepare` line each
 - Authoring a set (several sounds of one family, or a game's kit)? Kit-level rules (family-consistency,
   masking-risk, key-consistency, one-no, priority-levels) run only in `beeps kit check`, never in lint
   (lint's `notes` says so). `beeps kit add <name>` each sound as you draft it and rerun
-  `beeps kit check` after every change, not at the end.
+  `beeps kit check` after every change, not at the end (`beeps kit list` shows the kit, `beeps kit remove <name>` drops a sound).
 - `beeps export <name> --wav public/audio/<name>.wav --manifest` writes a WAV plus a sidecar; add
   `--variants` to export every declared variant for no-repeat playback. Exports are stereo and the
   full render length by default; `--channels 1` halves a sound whose channels are identical (no pan,
@@ -95,11 +95,11 @@ whole recording and proposes crop windows with a ready `prepare` line each
   hard-limits below its -1.5 dBFS knee. Its voice priority follows `meta.priority` (1 = most
   important, 5 = least): a new sound may steal a voice only from one with a strictly larger number.
   Engines that are not web games use the WAVs and sidecars directly. Full API, error codes and the
-  required `visibilitychange` wiring: `references/game-player.md`.
+  required `visibilitychange` wiring: `skills/beeps-ship/references/game-player.md`.
 
 Delivering to the web? Ogg Opus at 48 kHz is the default, MP3 (Xing tag, never `+bitexact`) only for Safari before 18.4,
 and decoded memory is 26.3 MB per stereo 68.6 s layer however small the file. Check with `beeps verify` and
-`beeps loopcheck <files> --engines chromium,firefox,webkit`; the full recipe is `skills/beeps-music/references/web-delivery.md`.
+`beeps loopcheck <files> --engines chromium,firefox,webkit`; the full recipe is `skills/beeps-ship/references/web-delivery.md`.
 
 Writing a build script that calls beeps (Windows `.cmd` shim, exit codes, seeds)? README, "Calling
 beeps from your own build script": run `node <npm root -g>/agent-beeps/scripts/beeps.mjs` with an

@@ -10,6 +10,9 @@
 // The delta is applied in the target's natural unit: dB and plain numbers add; Hz and seconds multiply by 2^delta
 // (delta in octaves); the macro `/out/transpose` is in semitones. Browser-safe: no Node APIs, no zod.
 
+import { noteToHz } from './notes.js';
+import { shiftPitchedLayers } from './transpose.js';
+
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {{ min: number, max: number, default: number, description?: string }} RuntimeInput */
 /** @typedef {{ input: string, target: string | string[], range: [number, number], shape?: 'linear' | 'quad' | 'sqrt', unit?: 'db' | 'lin' | 'oct' | 'st', live?: boolean, clamp?: [number, number] }} RuntimeBind */
@@ -118,15 +121,6 @@ export function defaultParams(patch) {
 /** Clamp an input to its declared range (a runtime value outside it is a caller bug, not a reason to blow a filter up). */
 export const clampInput = (/** @type {RuntimeInput} */ i, /** @type {number} */ v) => Math.min(i.max, Math.max(i.min, v));
 
-/** @param {string | number} p */
-const hz = p => {
-  if (typeof p === 'number') return p;
-  const m = /^([A-G])(#|b)?(-?\d)$/.exec(p);
-  if (!m) return NaN;
-  const semi = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[/** @type {'C'} */ (m[1])] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
-  return 440 * 2 ** ((12 * (Number(m[3]) + 1) + semi - 69) / 12);
-};
-
 /**
  * Apply the *static* bindings to a copy of the patch: the interpreter path, and the reference the generated code is tested
  * against. Live bindings (`live: true`) are left alone here; the voice automates them after the build.
@@ -158,7 +152,7 @@ export function applyParams(patch, params = {}, all = false) {
         const last = keys[keys.length - 1];
         if (cur == null || cur[last] === undefined) throw new Error(`xRuntime: bind target ${t} does not exist in the patch`);
         const unit = b.unit ?? unitOf(t);
-        const base = last === 'pitch' || last === 'to' ? hz(cur[last]) : cur[last];
+        const base = last === 'pitch' || last === 'to' ? noteToHz(cur[last]) : cur[last];
         let v = unit === 'oct' ? base * 2 ** d : unit === 'st' ? base * 2 ** (d / 12) : base + d;
         if (b.clamp) v = Math.min(b.clamp[1], Math.max(b.clamp[0], v));
         cur[last] = v;
@@ -168,15 +162,8 @@ export function applyParams(patch, params = {}, all = false) {
   return { patch: p, trimDeltaDb };
 }
 
-/** Every pitched thing, scaled by `r` (a frequency ratio). @param {any} p @param {number} r */
-function transpose(p, r) {
-  for (const l of p.layers) {
-    const s = l.source;
-    if ('pitch' in s) s.pitch = hz(s.pitch) * r;
-    if (s.type === 'metal') s.base *= r;
-    if (l.pitchEnv) for (const e of l.pitchEnv) e.to = hz(e.to) * r;
-  }
-}
+/** Every pitched thing, scaled by `r` (a frequency ratio); a metal source's base moves with it. @param {any} p @param {number} r */
+const transpose = (p, r) => shiftPitchedLayers(p, r, { onSource: s => { if (s.type === 'metal') s.base *= r; } });
 
 /** Every filter cutoff (and its envelope target), scaled by `r`. @param {any} p @param {number} r */
 function brighten(p, r) {

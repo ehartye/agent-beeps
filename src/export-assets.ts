@@ -1,6 +1,5 @@
 // Export a patch or a song as delivered WAVs (+ the portable sidecar). The CLI export commands and `beeps build` share this,
 // so a build writes exactly the files `beeps export --manifest` and `beeps song export --manifest` write.
-import { samplePaths } from './samples/store.ts';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { toMono, trimTail } from './audio/post.ts';
 import { basename, dirname } from 'node:path';
@@ -16,6 +15,7 @@ import type { OpenProject } from './project.ts';
 import type { RenderHost } from './render/host.ts';
 import type { Patch } from './schema/patch.ts';
 import type { Song } from './schema/song.ts';
+import { songRenderOptions, renderOptions } from './render/options.ts';
 
 /** Opt-in export post-processing (beeps export --channels 1, --trim-tail <dBFS>); absent, the WAV is the render's own file. */
 export interface ExportPost { channels?: 1 | 2; trimTailDb?: number }
@@ -48,7 +48,7 @@ function manifestIdentity(o: { manifest: boolean; manifestId?: string }, sourceI
 /** Every variant 0..n-1 of a patch as `<stem>.<i>.wav`, and (with `manifest`) one sidecar `<dest>.json` listing them. */
 export async function exportPatchVariants(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; n: number; role: ExportRole; manifest: boolean; manifestId?: string; post?: ExportPost }) {
   const identity = manifestIdentity(o, patch.name);
-  const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
+  const outs = await renderAndMeasure(host, Array.from({ length: o.n }, (_, variant) => ({ patch, seed: o.seed, variant })), renderOptions(p));
   const ok = outs.map(r => { if (!r.ok) throw new BeepsError('E_RENDER', r.error); return r; });
   const stem = o.dest.replace(/\.wav$/i, '');
   mkdirSync(dirname(o.dest), { recursive: true });
@@ -63,7 +63,7 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
 
 /** One variant of a patch as `dest`. */
 export async function exportPatchOne(host: RenderHost, p: OpenProject, patch: Patch, o: { dest: string; seed: number; variant: number; role: ExportRole; manifest: boolean; post?: ExportPost }) {
-  const [r] = await renderAndMeasure(host, [{ patch, seed: o.seed, variant: o.variant }], { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects });
+  const [r] = await renderAndMeasure(host, [{ patch, seed: o.seed, variant: o.variant }], renderOptions(p));
   if (!r.ok) throw new BeepsError('E_RENDER', r.error);
   mkdirSync(dirname(o.dest), { recursive: true });
   const post = deliver(r.wavPath, o.dest, o.post);
@@ -77,8 +77,8 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
   // A loop's tail is folded onto its start and layers must stay sample-aligned with the mix: trimming either would break the wrap or the sum.
   if (o.trimTailDb !== undefined && (s.loop || o.layers)) throw new BeepsError('E_USAGE', `--trim-tail is for a non-loop song exported without --layers (${s.loop ? `"${s.name}" loops: its tail wraps onto the start` : 'layers must line up with the mix'})`);
   const instruments = resolveInstruments(p, s);
-  const r = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders });
-  const layers = o.layers ? await renderLayers(host, s, instruments, r, { project: p.project, rendersDir: p.paths.renders }) : undefined;
+  const r = await renderSong(host, s, instruments, songRenderOptions(p));
+  const layers = o.layers ? await renderLayers(host, s, instruments, r, songRenderOptions(p)) : undefined;
   const dest = o.dest;
   mkdirSync(dirname(dest), { recursive: true });
   const post = deliver(r.wavPath, dest, o.trimTailDb !== undefined ? { trimTailDb: o.trimTailDb } : undefined);

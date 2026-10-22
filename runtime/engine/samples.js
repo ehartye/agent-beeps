@@ -1,6 +1,7 @@
 // Browser-safe, explicit sample preparation. Graph construction never performs I/O.
 import { readSampleWav } from './sample-wav.js';
 import { sampleHash } from './sample-hash.js';
+import { MAX_SAMPLE_FRAMES, MAX_SAMPLE_WAV_BYTES, SAMPLE_RATE_HZ } from './limits.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {{file: string, bytes: number, sampleRate: 48000, channels: 1 | 2, frames: number}} SampleAsset */
@@ -45,7 +46,7 @@ export function validateSampleManifest(patch, assets) {
     if (typeof a.file !== 'string' || !FILE.test(a.file) || a.file.includes('..')) throw new TypeError(`sample ${id} file must be a safe flat relative .wav filename`);
     if (files.has(a.file)) throw new TypeError(`duplicate sample file: ${a.file}; files must be unique`);
     files.add(a.file);
-    if (a.sampleRate !== 48000 || (a.channels !== 1 && a.channels !== 2) || !Number.isSafeInteger(a.frames) || a.frames < 1 || a.frames > 480000 || !Number.isSafeInteger(a.bytes) || a.bytes !== 44 + a.frames * a.channels * 4) throw new TypeError(`sample ${id} metadata requires 48 kHz, 1..2 channels, 1..480000 integer frames and matching canonical bytes`);
+    if (a.sampleRate !== SAMPLE_RATE_HZ || (a.channels !== 1 && a.channels !== 2) || !Number.isSafeInteger(a.frames) || a.frames < 1 || a.frames > MAX_SAMPLE_FRAMES || !Number.isSafeInteger(a.bytes) || a.bytes !== 44 + a.frames * a.channels * 4) throw new TypeError(`sample ${id} metadata requires 48 kHz, 1..2 channels, 1..${MAX_SAMPLE_FRAMES} integer frames and matching canonical bytes`);
   }
   return assets ?? {};
 }
@@ -55,7 +56,7 @@ export function validateSampleManifest(patch, assets) {
  */
 function verifiedWav(id, bytes) {
   if (!(bytes instanceof Uint8Array)) throw new TypeError(`sample ${id} requires WAV bytes`);
-  if (bytes.byteLength > 44 + 480000 * 2 * 4) throw new RangeError(`sample ${id} exceeds the prepared WAV byte bound`);
+  if (bytes.byteLength > MAX_SAMPLE_WAV_BYTES) throw new RangeError(`sample ${id} exceeds the prepared WAV byte bound`);
   if (`sha256:${sampleHash(bytes)}` !== id) throw new Error(`sample hash mismatch: ${id}`);
   return readSampleWav(bytes);
 }

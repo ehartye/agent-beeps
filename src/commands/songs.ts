@@ -30,6 +30,9 @@ import { hzToMidi, noteToHz } from '../../runtime/engine/notes.js';
 import { instrumentRoot } from '../../runtime/engine/song.js';
 import { exportRole } from '../export-manifest.ts';
 import { exportSongAssets } from '../export-assets.ts';
+import { songRenderOptions } from '../render/options.ts';
+import { hostScope } from '../render/host.ts';
+import { mapPool } from '../pool.ts';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -89,16 +92,7 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
  */
 export async function renderMany(p: OpenProject, songs: Song[], jobs = 3, only?: string[], verifyDeterminism = false): Promise<RenderedSong[]> {
   const instruments = songs.map(s => resolveInstruments(p, s));
-  const out: RenderedSong[] = new Array(songs.length);
-  let next = 0;
-  const worker = () => withHost(async host => {
-    while (next < songs.length) {
-      const i = next++;
-      out[i] = await renderSong(host, songs[i], instruments[i], { project: p.project, rendersDir: p.paths.renders, ...(only?.length ? { only } : {}) });
-    }
-  }, { verifyDeterminism });
-  await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, songs.length)) }, worker));
-  return out;
+  return mapPool(songs, jobs, (s, i, host) => renderSong(host, s, instruments[i], songRenderOptions(p, only?.length ? { only } : {})), hostScope({ verifyDeterminism }));
 }
 
 /** A part this far under the mix's peak (dB) is inaudible; nearer, it is an accent however quiet its integrated level. */
@@ -211,17 +205,9 @@ export function registerSongCommands(program: Command, io: Io) {
       const instruments = resolveInstruments(p, s);
       const [mix] = await renderMany(p, [s], 1);
       const tracks = Object.keys(s.tracks).filter(t => Object.values(s.sections).some(sec => sec.play[t] != null));
-      const stems: RenderedSong[] = new Array(tracks.length);
-      let next = 0;
-      const worker = () => withHost(async host => {
-        while (next < tracks.length) {
-          const i = next++;
-          // Stems are the full song with one track's notes playing: they line up sample for sample
-          // with the mix and draw the same chance hits, arp orders and noise.
-          stems[i] = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders, trimDb: mix.trimDb, only: [tracks[i]] });
-        }
-      });
-      await Promise.all(Array.from({ length: Math.max(1, Math.min(opts.jobs, tracks.length)) }, worker));
+      // Stems are the full song with one track's notes playing: they line up sample for sample
+      // with the mix and draw the same chance hits, arp orders and noise.
+      const stems = await mapPool(tracks, opts.jobs, (t, _i, host) => renderSong(host, s, instruments, songRenderOptions(p, { trimDb: mix.trimDb, only: [t] })), hostScope());
       if (opts.out) mkdirSync(resolve(opts.out), { recursive: true });
       const mixLufs = mix.features.delivered?.integratedLufs ?? 0;
       const report = {
@@ -255,8 +241,8 @@ export function registerSongCommands(program: Command, io: Io) {
       if (!s.adaptive) throw new BeepsError('E_USAGE', `song "${s.name}" has no "adaptive" block`);
       const instruments = resolveInstruments(p, s);
       const { mix, layers } = await withHost(async host => {
-        const mix = await renderSong(host, s, instruments, { project: p.project, rendersDir: p.paths.renders });
-        return { mix, layers: await renderLayers(host, s, instruments, mix, { project: p.project, rendersDir: p.paths.renders }) };
+        const mix = await renderSong(host, s, instruments, songRenderOptions(p));
+        return { mix, layers: await renderLayers(host, s, instruments, mix, songRenderOptions(p)) };
       });
       const sections = mix.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end }));
       const sr = readWav(readFileSync(mix.wavPath)).sampleRate;
@@ -288,7 +274,7 @@ export function registerSongCommands(program: Command, io: Io) {
     .action(async (ref: string) => {
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);
-      const r = await withHost(host => renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders }));
+      const r = await withHost(host => renderSong(host, s, resolveInstruments(p, s), songRenderOptions(p)));
       const report = lintSong(s, r.features, p.project, resolveInstruments(p, s));
       io.emit({ name: s.name, ...report });
       if (report.errors.length) process.exitCode = 1;
@@ -334,31 +320,27 @@ export function registerSongCommands(program: Command, io: Io) {
       io.emit({ album: a.id, status: 'rendering', url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, status: t.status })) });
       // Stdout remains one JSON document. Progress is JSON lines on stderr; the page polls the album.
       const progress = (value: object) => process.stderr.write(JSON.stringify({ album: a.id, ...value }) + '\n');
-      let next = 0;
-      const worker = () => withHost(async host => {
-        while (next < songs.length) {
-          const i = next++, index = i + 1;
-          try {
-            const s = songs[i];
-            const r = await renderSong(host, s, resolveInstruments(p, s), { project: p.project, rendersDir: p.paths.renders });
-            updateAlbumTrack(p, a.id, index, {
-              status: 'ready', renderKey: r.key, durationSec: r.features.durationSec, wav: r.wavPath, look: r.lookPath,
-              sections: r.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end })),
-              features: { loudnessLufs: r.features.delivered?.integratedLufs, loudnessRangeLu: r.features.loudnessRangeLu, arc: r.features.arc },
-            });
-            progress({ index, status: 'ready' });
-          } catch (e) {
-            const error = (e as Error).message;
-            updateAlbumTrack(p, a.id, index, { status: 'failed', error });
-            progress({ index, status: 'failed', error });
-          }
+      // Each track records its own outcome, so one failed track never stops the others; mapPool only throws when a browser itself fails.
+      const poolError = await mapPool(songs, opts.jobs, async (s, i, host) => {
+        const index = i + 1;
+        try {
+          const r = await renderSong(host, s, resolveInstruments(p, s), songRenderOptions(p));
+          updateAlbumTrack(p, a.id, index, {
+            status: 'ready', renderKey: r.key, durationSec: r.features.durationSec, wav: r.wavPath, look: r.lookPath,
+            sections: r.features.sections.map(x => ({ name: x.name, start: x.start, end: x.end })),
+            features: { loudnessLufs: r.features.delivered?.integratedLufs, loudnessRangeLu: r.features.loudnessRangeLu, arc: r.features.arc },
+          });
+          progress({ index, status: 'ready' });
+        } catch (e) {
+          const error = (e as Error).message;
+          updateAlbumTrack(p, a.id, index, { status: 'failed', error });
+          progress({ index, status: 'failed', error });
         }
-      });
-      const workers = await Promise.allSettled(Array.from({ length: Math.max(1, Math.min(opts.jobs, songs.length)) }, worker));
+      }, hostScope()).then(() => undefined, (e: unknown) => ({ reason: e }));
       // A browser may fail before claiming a track. Never leave its unrendered slots pending forever.
-      const rejected = workers.find(w => w.status === 'rejected');
       for (const t of readAlbum(p, a.id).tracks.filter(t => t.status === 'pending')) {
-        const error = rejected?.status === 'rejected' ? String(rejected.reason?.message ?? rejected.reason) : 'render did not complete';
+        const reason = poolError?.reason as { message?: unknown } | undefined;
+        const error = poolError ? String(reason?.message ?? reason) : 'render did not complete';
         updateAlbumTrack(p, a.id, t.index, { status: 'failed', error });
         progress({ index: t.index, status: 'failed', error });
       }

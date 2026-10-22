@@ -74,12 +74,12 @@
         "warnings": [
           {
             "rule": "song-written-pitch",
-            "message": "track \"keys\" writes F3-E5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 16 semitones up and sounds at 659 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F4\" (the note it should sound at as written) or write notes near C4",
+            "message": "track \"keys\" writes F3-E5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 16 semitones up and sounds at 659 Hz, far from the register its filters and envelopes were built for. To keep what you hear, build the instrument where it plays: copy it in the song's \"instruments\" block with every pitched layer moved 5 semitones up and its filter cutoffs scaled to match. To change what you hear instead, write notes near C4, set \"root\": \"F4\" (the written note that sounds at the built pitch), or set \"fixed\": true to play it at C4 whatever is written; \"transpose\" is counted as part of the distance",
             "pointer": "/tracks/keys"
           },
           {
             "rule": "song-written-pitch",
-            "message": "track \"bass\" writes A1-D3 for an instrument rooted at C2 (65 Hz): the whole patch is retuned 14 semitones up and sounds at 147 Hz. To play it as built at C2, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#2\" (the note it should sound at as written) or write notes near C2",
+            "message": "track \"bass\" writes A1-D3 for an instrument rooted at C2 (65 Hz): the whole patch is retuned 14 semitones up and sounds at 147 Hz, far from the register its filters and envelopes were built for. To keep what you hear, build the instrument where it plays: copy it in the song's \"instruments\" block with every pitched layer moved 6 semitones up and its filter cutoffs scaled to match. To change what you hear instead, write notes near C2, set \"root\": \"F#2\" (the written note that sounds at the built pitch), or set \"fixed\": true to play it at C2 whatever is written; \"transpose\" is counted as part of the distance",
             "pointer": "/tracks/bass"
           }
         ],
@@ -179,12 +179,12 @@
         "warnings": [
           {
             "rule": "song-written-pitch",
-            "message": "track \"keys\" writes F3-E5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 16 semitones up and sounds at 659 Hz. To play it as built at C4, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F4\" (the note it should sound at as written) or write notes near C4",
+            "message": "track \"keys\" writes F3-E5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 16 semitones up and sounds at 659 Hz, far from the register its filters and envelopes were built for. To keep what you hear, build the instrument where it plays: copy it in the song's \"instruments\" block with every pitched layer moved 5 semitones up and its filter cutoffs scaled to match. To change what you hear instead, write notes near C4, set \"root\": \"F4\" (the written note that sounds at the built pitch), or set \"fixed\": true to play it at C4 whatever is written; \"transpose\" is counted as part of the distance",
             "pointer": "/tracks/keys"
           },
           {
             "rule": "song-written-pitch",
-            "message": "track \"bass\" writes A1-D3 for an instrument rooted at C2 (65 Hz): the whole patch is retuned 14 semitones up and sounds at 147 Hz. To play it as built at C2, set \"fixed\": true on the track; to keep following the notes, set \"root\": \"F#2\" (the note it should sound at as written) or write notes near C2",
+            "message": "track \"bass\" writes A1-D3 for an instrument rooted at C2 (65 Hz): the whole patch is retuned 14 semitones up and sounds at 147 Hz, far from the register its filters and envelopes were built for. To keep what you hear, build the instrument where it plays: copy it in the song's \"instruments\" block with every pitched layer moved 6 semitones up and its filter cutoffs scaled to match. To change what you hear instead, write notes near C2, set \"root\": \"F#2\" (the written note that sounds at the built pitch), or set \"fixed\": true to play it at C2 whatever is written; \"transpose\" is counted as part of the distance",
             "pointer": "/tracks/bass"
           }
         ],

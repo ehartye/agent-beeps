@@ -1,6 +1,5 @@
 // Song render → measure → integrated-loudness trim → clip → cache WAV, features and look image.
 // One render pass: the trim and clipper are applied in Node with the engine's own clipper curve.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderKey } from '../hash.ts';
 import { BeepsError } from '../errors.ts';
@@ -13,6 +12,7 @@ import type { Song } from '../schema/song.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
+import { clampTrimDb, commit, lookup } from './cache.ts';
 
 /**
  * Bump when song rendering or measurement changes, so cached renders are redone.
@@ -46,19 +46,19 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
   const target = project.musicLoudness;
   const key = songRenderKey(song, instruments, { target, fixedTrim, only });
   const dir = join(rendersDir, `song-${key.slice(0, 40)}`);
-  const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png'), meta = join(dir, 'meta.json');
-  if (existsSync(meta) && existsSync(wavPath) && existsSync(lookPath)) {
-    const m = JSON.parse(readFileSync(meta, 'utf8'));
+  const wavPath = join(dir, 'delivered.wav'), lookPath = join(dir, 'look.png');
+  const m = lookup(dir, ['delivered.wav', 'look.png']);
+  if (m) {
     return { key, song, trimDb: m.trimDb, features: m.features, dir, wavPath, lookPath, cached: true };
   }
   const r = await host.renderSong(song, instruments, only ? { only } : {});
   try {
     const authored = await host.pullSong(r.id, r.frames);
     const f = measureSong(authored, r.sampleRate, r.sections, { loop: song.loop });
-    if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new Error(`song rendered near-silence (${f.integratedLufs} LUFS)`);
+    if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new BeepsError('E_RENDER', `song rendered near-silence (${f.integratedLufs} LUFS)`);
     const loud = target - f.integratedLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
-    const trimDb = fixedTrim ?? Math.round(Math.max(-36, Math.min(24, Math.min(loud, ceiling))) * 100) / 100;
+    const trimDb = fixedTrim ?? Math.round(clampTrimDb(Math.min(loud, ceiling)) * 100) / 100;
     const delivered = applyTrimAndClip(authored, trimDb);
     // Report the arc and sections at the level they play, like every other number the agent reads.
     f.arc = f.arc.map(v => Math.round((v + trimDb) * 10) / 10);
@@ -71,11 +71,10 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
       clippedSamples: clippedSamples(delivered),
       ...(fixedTrim === undefined && ceiling < loud ? { peakLimited: true } : {}),
     };
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(wavPath, writeWav(delivered, r.sampleRate));
-    writeFileSync(join(dir, 'song.json'), JSON.stringify(song, null, 2));
-    writeFileSync(lookPath, await host.songLook(r.id, { ...f, trimDb }, song.title ?? song.name));
-    writeFileSync(meta, JSON.stringify({ songName: song.name, trimDb, features: f }, null, 2));
+    commit(dir, {
+      files: { 'delivered.wav': writeWav(delivered, r.sampleRate), 'song.json': JSON.stringify(song, null, 2), 'look.png': await host.songLook(r.id, { ...f, trimDb }, song.title ?? song.name) },
+      meta: { songName: song.name, trimDb, features: f },
+    });
     return { key, song, trimDb, features: f, dir, wavPath, lookPath, cached: false };
   } finally {
     await host.freeSong(r.id);

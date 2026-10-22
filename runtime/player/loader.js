@@ -1,7 +1,9 @@
 // runtime/player/loader.js
 // Fetching for the player: the catalog (cached once it loads) and decoded audio buffers (cached,
 // shared while in flight; optionally kept under a byte budget by least-recently-used eviction of
-// buffers nothing holds). Failures are reported and resolve null; nothing here ever rejects.
+// buffers nothing holds). Failures are reported and resolve null; nothing here ever rejects. dispose()
+// aborts every fetch in flight (the fetcher's second argument carries the signal) and drops the cache:
+// an aborted load resolves null quietly, it is not a failure.
 
 /** A failed catalog is retried by retryCatalog() at most once per this many seconds of `now()`. */
 export const CATALOG_RETRY_SEC = 5;
@@ -10,6 +12,7 @@ export const CATALOG_RETRY_SEC = 5;
 export const THRASH_SEC = 30;
 
 /** @typedef {{ ok: boolean, json(): Promise<any>, arrayBuffer(): Promise<ArrayBuffer> }} FetchResponse */
+/** A fetcher may take just the url: the second argument only matters to one that can cancel (the default passes it to `fetch`). @typedef {(url: string, init: { signal: AbortSignal }) => Promise<FetchResponse>} Fetcher */
 
 /** A thrown value's message, for onError. @param {unknown} e */
 export const text = e => String((/** @type {any} */ (e))?.message ?? e);
@@ -43,7 +46,7 @@ const sizeOf = (b, fallback) => {
  * @param {{
  *   catalog: string | { assets: Record<string, A> },
  *   base: string,
- *   fetcher: (url: string) => Promise<FetchResponse>,
+ *   fetcher: Fetcher,
  *   report: (code: string, message: string, id?: string) => void,
  *   now: () => number,
  *   decode: (data: ArrayBuffer) => Promise<AudioBuffer>,
@@ -52,6 +55,9 @@ const sizeOf = (b, fallback) => {
  * }} opts
  */
 export function createLoader({ catalog, base, fetcher, report, now, decode, budgetBytes = Infinity, prefetchConcurrency = defaultPrefetchConcurrency() }) {
+  /** Aborted by dispose(); handed to every fetch. */
+  const controller = new AbortController();
+  const { signal } = controller;
   const budget = typeof budgetBytes === 'number' && budgetBytes >= 0 ? budgetBytes : Infinity; // NaN, negative or a non-number: no budget
   const cap = Math.max(1, Math.floor(prefetchConcurrency) || 1);
   /** @type {Record<string, A> | null} */
@@ -79,12 +85,14 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
 
   /** The catalog's assets, or null if it could not be loaded (the next call tries again). */
   function loadCatalog() {
+    if (signal.aborted) return Promise.resolve(null);
     if (assets) return Promise.resolve(assets);
     if (typeof catalog !== 'string') { assets = catalog.assets ?? {}; return Promise.resolve(assets); }
     catalogLoad ??= Promise.resolve()
-      .then(() => fetcher(catalog))
+      .then(() => fetcher(catalog, { signal }))
       .then(r => { if (!r.ok) throw new Error(`catalog ${catalog} unavailable`); return r.json(); })
       .then(j => {
+        if (signal.aborted) throw new Error('aborted');
         if (!j || typeof j.assets !== 'object' || j.assets === null || Array.isArray(j.assets)) {
           throw new Error(`${catalog}: not a beeps audio catalog (no "assets" object)`);
         }
@@ -94,6 +102,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
       })
       .catch(e => {
         catalogLoad = null;
+        if (signal.aborted) return null;
         if (!catalogReported) { catalogReported = true; report('E_CATALOG', text(e), catalog); }
         return null;
       });
@@ -192,6 +201,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
   async function run(e, gen) {
     try {
       await acquire(e);
+      if (signal.aborted) throw new Error('aborted'); // woken by dispose()
       // Make room before the decode allocates, so the peak stays near the budget. A background load
       // that cannot fit is skipped; a foreground one goes ahead (makeRoom has reported it).
       e.started = true; reservedBytes += e.est;
@@ -202,9 +212,12 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
         return null;
       }
       noteReload(e.url, e.file);
-      const r = await fetcher(e.url);
+      const r = await fetcher(e.url, { signal });
       if (!r.ok) throw new Error(`${e.url} unavailable`);
-      const buffer = await decode(await r.arrayBuffer());
+      const data = await r.arrayBuffer();
+      if (signal.aborted) throw new Error('aborted');
+      const buffer = await decode(data);
+      if (signal.aborted) throw new Error('aborted');
       free(e);
       e.bytes = sizeOf(buffer, e.est); e.loaded = true;
       decodedBytes += e.bytes;
@@ -216,6 +229,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
     } catch (err) {
       free(e);
       if (entries.get(e.url) === e) entries.delete(e.url);
+      if (signal.aborted) return null; // cancelled by dispose(): neither a failure to count nor an error to report
       if (gen === generation) failures.set(e.url, (failures.get(e.url) ?? 0) + 1);
       report('E_LOAD', text(err), e.file);
       return null;
@@ -227,7 +241,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
     catalog: loadCatalog,
     /** Retry a failed catalog without waiting, at most once per CATALOG_RETRY_SEC: safe to call every frame. */
     retryCatalog() {
-      if (assets || catalogLoad || now() < retryAt) return;
+      if (signal.aborted || assets || catalogLoad || now() < retryAt) return;
       retryAt = now() + CATALOG_RETRY_SEC;
       void loadCatalog();
     },
@@ -254,6 +268,7 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
      * @returns {Promise<AudioBuffer | null>}
      */
     load(file, { bytes = 0, prefetch = false } = {}) {
+      if (signal.aborted) return Promise.resolve(null);
       const url = base + file;
       const cached = entries.get(url);
       if (cached) {
@@ -304,6 +319,17 @@ export function createLoader({ catalog, base, fetcher, report, now, decode, budg
       const bytes = e.bytes;
       remove(e, false);
       return bytes;
+    },
+    /**
+     * Cancel everything: abort the signal every fetch carries, wake queued background loads so they end, and drop the catalog,
+     * the decoded buffers and the holds. Later calls resolve null without fetching. Calling it again does nothing.
+     */
+    dispose() {
+      if (signal.aborted) return;
+      controller.abort();
+      for (const e of waiting.splice(0)) e.wake?.(); // run() sees the abort and ends quietly
+      entries.clear(); holds.clear(); evictedAt.clear(); failures.clear();
+      assets = null; catalogLoad = null; decodedBytes = 0;
     },
     /** Decoded-memory numbers for telemetry and tests. */
     memory() {

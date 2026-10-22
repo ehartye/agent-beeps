@@ -36,15 +36,24 @@ export interface FetchResponse {
   arrayBuffer(): Promise<ArrayBuffer>;
 }
 
+/**
+ * Fetch one file. Takes the url, and a second argument whose `signal` aborts when the player is disposed: pass it on to `fetch`.
+ * A fetcher that declares only `url` keeps working; it just cannot be cancelled (its result is discarded after dispose()).
+ */
+export type Fetcher = (url: string, init: { signal: AbortSignal }) => Promise<FetchResponse>;
+
 export interface PlayerOptions {
   catalog: string | { assets: Record<string, Asset> };
   baseUrl?: string;
   voices?: number;
   defaults?: { cooldownSec?: number; cap?: number };
   onError?: (e: PlayerError) => void;
+  /** An AudioContext the game owns: the player uses it but `dispose()` never closes it. */
   context?: AudioContext;
+  /** Builds the context on the first `unlock()`. What it returns is the player's own: `dispose()` closes it. */
   contextFactory?: () => AudioContext;
-  fetcher?: (url: string) => Promise<FetchResponse>;
+  /** Default: `fetch(url, { signal })`. */
+  fetcher?: Fetcher;
   seed?: number;
   /**
    * Keep decoded audio under about this many bytes (a stereo 48 kHz minute is ~23 MB): when a load would go over, the least recently used
@@ -140,6 +149,15 @@ export interface Player {
   unload(id: string): number;
   memory(): MemoryStats;
   inspect(): PlayerSnapshot;
+  /**
+   * Tear the player down for good (a single-page game leaving the screen, a level reload). Stops every sound and bed at once, aborts
+   * loads in flight (their fetches get an aborted `signal`; they never start a voice and never reach `onError`), clears the player's
+   * timers, drops the decoded buffers and cuts its nodes from the graph. Closes the AudioContext only if the player created it (the
+   * default or `contextFactory`), never one passed as `context`. Afterwards every method is a quiet no-op: `play` returns null,
+   * `unlock`, `music` and `ambience` resolve false, `prefetch` resolves 0, `setState` returns false, nothing reaches `onError`;
+   * `inspect()` and `memory()` still answer. Calling `dispose()` again does nothing.
+   */
+  dispose(): void;
 }
 
 export function createPlayer(opts: PlayerOptions): Player;

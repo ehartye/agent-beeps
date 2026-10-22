@@ -72,7 +72,7 @@ and brightness, and the lint. **Open every look.png.** Check that:
 - Loop songs: the end looks like the start (seam under 3 dB).
 
 Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down. Every part you
-wrote should be within about 15 LU of the mix. Fix every lint error, justify or fix every warning,
+wrote should be within about 15 LU of the mix. Fix every lint error, justify or fix every warning (`beeps song lint <name>` re-checks a song on its own),
 and work through each `judgementChecks` item. Levels are automatic (songs are trimmed to
 `project.musicLoudness`, -20 LUFS by default): balance tracks with `gainDb`, never chase loudness.
 
@@ -99,7 +99,7 @@ progress and final ready/failed counts. A failed song leaves the others playable
 The owner can open the hostname or IP link from any device on the local network (never localhost).
 The page streams each ready track, skips unavailable tracks, and records love / keep / dud, tags and
 whole-track notes. **Note here** captures the current position before the owner types; saved moment
-notes include the section and exact render identity. `beeps album feedback <id>` returns all notes.
+notes include the section and exact render identity. `beeps album feedback <id>` returns all notes and `beeps album list` lists the project's albums.
 Revise from the notes and open a new album; earlier albums retain their audio and feedback.
 
 For a game that should react to play, add an `adaptive` block (layers and states;
@@ -114,7 +114,7 @@ A web game hosts encoded files, not WAVs, and the codec can change a loop's leng
 (`beeps build`, `beeps compress`), use MP3 only for Safari before 18.4 (never `+bitexact`, never without the Xing tag), and
 budget decoded memory, not download size: 26.3 MB per stereo 68.6 s layer. Then `beeps verify`,
 `beeps loopcheck <files> --engines chromium,firefox,webkit`, and `beeps player selftest` on a real device. Format table, exact
-settings and the checks: `references/web-delivery.md`; build, lock and CI: skill `beeps-ship`.
+settings and the checks: `skills/beeps-ship/references/web-delivery.md`; build, lock and CI: skill `beeps-ship`.
 
 Guitar, metal or rock (distorted guitars, a kit, riffs, a score with one song per level)? `references/guitar-and-metal.md` has the
 instrument recipes, riff notation and the pitfalls; the reasoning is in `craft/GUIDE.md` section 11.

@@ -2,6 +2,7 @@
 // from the instrument's root plays as built instead of being retuned (lint `song-written-pitch`).
 import { hzToMidi, noteToHz } from '../runtime/engine/notes.js';
 import { instrumentRoot } from '../runtime/engine/song.js';
+import { BeepsError } from './errors.ts';
 import { midiName } from './music.ts';
 import type { Patch } from './schema/patch.ts';
 
@@ -33,8 +34,8 @@ function shiftPitch(pitch: string | number, semitones: number): string | number 
  */
 export function rebaseInstrument(patch: Patch, semitones: number, { filters = 'follow' as FilterMode } = {}): Rebase {
   const root = instrumentRoot(patch as never);
-  if (root === null) throw new Error('this instrument has no pitched layer to rebase');
-  if (!Number.isInteger(semitones)) throw new Error('the shift must be a whole number of semitones');
+  if (root === null) throw new BeepsError('E_USAGE', 'this instrument has no pitched layer to rebase');
+  if (!Number.isInteger(semitones)) throw new BeepsError('E_USAGE', 'the shift must be a whole number of semitones');
   const set: Record<string, string | number> = {};
   const layers: number[] = [];
   let scaled = 0;

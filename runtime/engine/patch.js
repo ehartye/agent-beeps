@@ -1,10 +1,11 @@
 // The one entry point: patch JSON → Web Audio graph on any BaseAudioContext.
 // Games, the audition page and the offline renderer all call this, so what is measured is what plays.
-import { buildLayer, validateLayerEnvelopes } from './layer.js';
+import { buildLayer, RELEASE_FLOOR_S, validateLayerEnvelopes } from './layer.js';
 import { buildDcBlocker, buildDelay, buildLimiter, buildReverb, busFor, delayTail, REVERB_PRESETS } from './fx.js';
 import { variantPatch } from './variation.js';
 import { sumInto } from './sum.js';
 import { sampleBuffer } from './sources.js';
+import { dbToGain } from './units.js';
 
 export { ENGINE_VERSION } from './version.js';
 
@@ -21,7 +22,6 @@ export { ENGINE_VERSION } from './version.js';
  * @property {import('./layer.js').LayerNodes[]} layers
  */
 
-const db = (/** @type {number} */ x) => 10 ** (x / 20);
 
 /**
  * Seconds from onset until the patch is silent: the same arithmetic buildPatch schedules with,
@@ -31,7 +31,7 @@ const db = (/** @type {number} */ x) => 10 ** (x / 20);
 export function patchLength(p) {
   let end = 0;
   for (const l of p.layers) {
-    const off = Math.max(l.start + Math.min(l.amp.attack, 0.002), p.duration);
+    const off = Math.max(l.start + Math.min(l.amp.attack, RELEASE_FLOOR_S), p.duration);
     end = Math.max(end, off + l.amp.release);
   }
   let tail = 0;
@@ -94,11 +94,11 @@ export function buildPatch(ctx, patch, opts = {}) {
     if (bus) {
       // Shared bus: the voice owns a send gain and nothing else. The trim is folded in, since this path skips the trim stage.
       const send = reverbSend = ctx.createGain();
-      send.gain.value = db(p.fx.reverb.sendDb + trimDb);
+      send.gain.value = dbToGain(p.fx.reverb.sendDb + trimDb);
       dry.connect(send).connect(bus.input);
     } else {
       const send = reverbSend = ctx.createGain();
-      send.gain.value = db(p.fx.reverb.sendDb);
+      send.gain.value = dbToGain(p.fx.reverb.sendDb);
       toAuthored.push(dry.connect(send).connect(buildReverb(ctx, p.fx.reverb.preset)));
       const preset = REVERB_PRESETS[p.fx.reverb.preset];
       tail = Math.max(tail, preset.decay + preset.preDelay);
@@ -106,7 +106,7 @@ export function buildPatch(ctx, patch, opts = {}) {
   }
   if (p.fx?.delay) {
     const send = delaySend = ctx.createGain();
-    send.gain.value = db(p.fx.delay.sendDb);
+    send.gain.value = dbToGain(p.fx.delay.sendDb);
     const d = buildDelay(ctx, p.fx.delay);
     dry.connect(send).connect(d.input);
     toAuthored.push(d.output);
@@ -116,7 +116,7 @@ export function buildPatch(ctx, patch, opts = {}) {
   sumInto(ctx, toAuthored, authored);
 
   const trim = ctx.createGain();
-  trim.gain.value = db(trimDb);
+  trim.gain.value = dbToGain(trimDb);
   authored.connect(trim);
   if (limiter) trim.connect(buildLimiter(ctx)).connect(destination);
   else trim.connect(destination);

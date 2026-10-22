@@ -1,13 +1,15 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { linkSync, lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { MAX_SAMPLE_FRAMES, MAX_SOURCE_FRAMES } from '../../runtime/engine/limits.js';
 import { readSampleWav } from '../../runtime/engine/sample-wav.js';
 import { BeepsError } from '../errors.ts';
 
 export type SampleId = `sha256:${string}`;
 export const SAMPLE_ID_PATTERN = /^sha256:[0-9a-f]{64}$/;
-export const SOURCE_MAX_FRAMES = 48000 * 120;
-export const PREPARED_MAX_FRAMES = 48000 * 10;
+export const SOURCE_MAX_FRAMES = MAX_SOURCE_FRAMES;
+/** Alias of the engine's `MAX_SAMPLE_FRAMES`, the one definition of the prepared-sample limit. */
+export const PREPARED_MAX_FRAMES = MAX_SAMPLE_FRAMES;
 type ProjectLocation = string | { paths: { dir: string } };
 
 /** String locations are project roots; project objects already carry the .agent-beeps directory. */

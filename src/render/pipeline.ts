@@ -1,7 +1,7 @@
 // Render → measure → loudness trim → re-render delivered → cache WAV, features and look image.
 // Patches carry no loudness literal: the trim is computed from the authored tap's measured
 // max momentary loudness so every sound meets the project target ("a gain literal is not a loudness").
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderKey } from '../hash.ts';
 import { mixToMono } from '../audio/mono.ts';
@@ -10,6 +10,7 @@ import { measure, type Features } from '../measure/index.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
+import { clampTrimDb, commit, lookup } from './cache.ts';
 import { createSampleWavSnapshot, type EncodedSampleWavs } from '../samples/transport.ts';
 
 /** Loudness offsets (LU re project target) by family: quiet UI, fuller impacts. */
@@ -58,8 +59,6 @@ export const patchRenderKey = (patch: Patch, project: Project, seed: number, var
     ...(detunesAfterSnap(patch, project, variant) ? { detune: 'after-snap' } : {}),
   });
 
-const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
-
 /** The family's offset: the project's `familyOffsets` entry if it has one, else the stock table's, else 0. */
 const familyOffset = (family: string, project: Project) => project.familyOffsets?.[family] ?? FAMILY_OFFSETS[family] ?? 0;
 
@@ -89,9 +88,8 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   keyed.forEach((k, i) => {
     try { samples[i] = sampleSnapshot(k.patch); }
     catch (e) { out[i] = { ok: false, patchName: k.patch.name, error: (e as Error).message }; return; }
-    const meta = join(k.dir, 'meta.json');
-    if (existsSync(meta) && existsSync(join(k.dir, 'delivered.wav')) && existsSync(join(k.dir, 'look.png'))) {
-      const m = JSON.parse(readFileSync(meta, 'utf8'));
+    const m = lookup(k.dir, ['delivered.wav', 'look.png']);
+    if (m) {
       out[i] = { ok: true, key: k.key, patch: k.patch, seed: k.seed, variant: k.variant, trimDb: m.trimDb, features: m.features, dir: k.dir, wavPath: join(k.dir, 'delivered.wav'), lookPath: join(k.dir, 'look.png') };
     } else misses.push(i);
   });
@@ -113,36 +111,30 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
     // would otherwise be flattened. Peak-limited sounds sit below target by design.
     const loud = targetFor(keyed[i].patch, project) - f.momentaryMaxLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
-    trims[j] = Math.round(clamp(Math.min(loud, ceiling), -36, 24) * 100) / 100;
+    trims[j] = Math.round(clampTrimDb(Math.min(loud, ceiling)) * 100) / 100;
     limited[j] = ceiling < loud;
   });
 
   // Pass 2: delivered tap with the trim applied through the real limiter.
   const live = misses.map((i, j) => ({ i, j })).filter(({ j }) => features[j]);
   const pass2 = await host.render(live.map(({ i, j }) => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale, trimDb: trims[j], sampleWavs: samples[i] } })));
-  const looks: { i: number; mono: Float32Array; f: Features }[] = [];
+  const looks: { i: number; mono: Float32Array; f: Features; files: Record<string, Uint8Array | string> }[] = [];
   pass2.forEach((r, n) => {
     const { i, j } = live[n];
     if (!r.ok) { out[i] = { ok: false, patchName: keyed[i].patch.name, error: r.error }; return; }
     const d = measure({ sampleRate: r.sampleRate, authored: r.delivered, delivered: r.delivered });
     const f: Features = { ...features[j]!, delivered: { samplePeakDb: d.samplePeakDb, truePeakDb: d.truePeakDb, momentaryMaxLufs: d.momentaryMaxLufs, clippedSamples: d.clippedSamples, ...(limited[j] ? { peakLimited: true } : {}) } };
     const k = keyed[i];
-    mkdirSync(k.dir, { recursive: true });
-    writeFileSync(join(k.dir, 'delivered.wav'), writeWav(r.delivered, r.sampleRate));
-    writeFileSync(join(k.dir, 'patch.json'), JSON.stringify(k.patch, null, 2));
     const mono = mixToMono(r.authored);
-    looks.push({ i, mono, f });
+    looks.push({ i, mono, f, files: { 'delivered.wav': writeWav(r.delivered, r.sampleRate), 'patch.json': JSON.stringify(k.patch, null, 2) } });
     out[i] = { ok: true, key: k.key, patch: k.patch, seed: k.seed, variant: k.variant, trimDb: trims[j], features: f, dir: k.dir, wavPath: join(k.dir, 'delivered.wav'), lookPath: join(k.dir, 'look.png') };
   });
-  if (looks.length) {
-    const pngs = await host.looks(looks.map(l => ({ mono: l.mono, sampleRate: 48000, features: l.f, label: keyed[l.i].patch.name })));
-    pngs.forEach((png, n) => writeFileSync(join(keyed[looks[n].i].dir, 'look.png'), png));
-  }
-  // meta.json last: its presence (with the WAV and look) is what makes a cache hit.
-  for (const l of looks) {
+  const pngs = looks.length ? await host.looks(looks.map(l => ({ mono: l.mono, sampleRate: 48000, features: l.f, label: keyed[l.i].patch.name }))) : [];
+  // The cache entry lands whole, meta.json last: its presence (with the WAV and look) is what makes a cache hit.
+  looks.forEach((l, n) => {
     const o = out[l.i];
-    if (o.ok) writeFileSync(join(o.dir, 'meta.json'), JSON.stringify({ patchName: o.patch.name, seed: o.seed, variant: o.variant, trimDb: o.trimDb, features: o.features }, null, 2));
-  }
+    if (o.ok) commit(o.dir, { files: { ...l.files, 'look.png': pngs[n] }, meta: { patchName: o.patch.name, seed: o.seed, variant: o.variant, trimDb: o.trimDb, features: o.features } });
+  });
   return out;
 }
 

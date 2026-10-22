@@ -5,14 +5,15 @@ import { buildReverb, delayTail, REVERB_PRESETS } from './fx.js';
 import { patchLength } from './patch.js';
 import { compileSong } from './sequence.js';
 import { hzToMidi, noteToHz } from './notes.js';
+import { shiftPitchedLayers } from './transpose.js';
 import { sumInto, voicePool } from './sum.js';
 import { recordNodes } from './retain.js';
 import { scheduleNoteExpression, songPerformanceIssues, velocityPatch } from './expression.js';
+import { dbToGain } from './units.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Patch} Patch */
 /** @typedef {import('../../src/schema/song.ts').Song} Song */
 
-const db = (/** @type {number} */ x) => 10 ** (x / 20);
 const GLIDE = 0.05; // seconds: an unramped mix change still glides, so it never clicks
 /** Seconds a finished note stays referenced (retain): its amp is at zero, this outlasts any filter ring. */
 const RELEASE_AFTER = 1;
@@ -100,21 +101,10 @@ export function trackShift(t, p) {
  * @returns {Patch}
  */
 export function transposePatch(p, semitones, keytrack, duration) {
-  const ratio = 2 ** (semitones / 12);
-  const fRatio = ratio ** keytrack;
   /** @type {Patch} */
   const out = structuredClone(p);
   if (duration !== null) out.duration = Math.max(0.01, duration);
-  if (!semitones) return out;
-  for (const l of out.layers) {
-    const src = /** @type {any} */ (l.source);
-    if ('pitch' in src) src.pitch = noteToHz(src.pitch) * ratio;
-    if (l.pitchEnv) for (const pt of l.pitchEnv) pt.to = noteToHz(pt.to) * ratio;
-    if (l.filter && keytrack) {
-      l.filter.cutoff = Math.min(22000, l.filter.cutoff * fRatio);
-      if (l.filter.env) l.filter.env.to = Math.min(22000, l.filter.env.to * fRatio);
-    }
-  }
+  if (semitones) shiftPitchedLayers(out, 2 ** (semitones / 12), { keytrack });
   return out;
 }
 
@@ -196,7 +186,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   if (song.master.reverb) {
     reverbIn = pinned(ctx.createGain(), 2);
     const ret = ctx.createGain();
-    ret.gain.value = db(song.master.reverb.returnDb);
+    ret.gain.value = dbToGain(song.master.reverb.returnDb);
     toMaster.push(reverbIn.connect(buildReverb(ctx, song.master.reverb.preset)).connect(ret));
   }
   /** @type {GainNode | undefined} */
@@ -213,7 +203,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     const fb = ctx.createGain();
     fb.gain.value = d.feedback;
     const ret = ctx.createGain();
-    ret.gain.value = db(d.returnDb);
+    ret.gain.value = dbToGain(d.returnDb);
     delayIn.connect(line).connect(tone).connect(fb).connect(line);
     tone.connect(ret);
     toMaster.push(ret);
@@ -246,7 +236,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     // The instrument's own effects run once per track, not once per note.
     if (p.fx?.reverb) {
       const send = ctx.createGain();
-      send.gain.value = db(p.fx.reverb.sendDb);
+      send.gain.value = dbToGain(p.fx.reverb.sendDb);
       const wet = ctx.createGain();
       input.connect(send).connect(buildReverb(ctx, p.fx.reverb.preset)).connect(wet);
       const sum = ctx.createGain();
@@ -291,13 +281,13 @@ export function buildSong(ctx, song, instruments, opts = {}) {
       node = node.connect(pan);
     }
     const level = ctx.createGain();
-    automate(level.gain, db(t.gainDb), m => (m.gainDb === undefined ? undefined : db(m.gainDb)));
+    automate(level.gain, dbToGain(t.gainDb), m => (m.gainDb === undefined ? undefined : dbToGain(m.gainDb)));
     toMaster.push(node.connect(level));
     for (const [kind, input] of /** @type {const} */ ([['reverb', reverbIn], ['delay', delayIn]])) {
       const base = t.sends[kind];
       if (!input || (base === undefined && !points.some(m => m.sends?.[kind] !== undefined))) continue;
       const send = ctx.createGain();
-      automate(send.gain, base === undefined ? 0 : db(base), m => (m.sends?.[kind] === undefined ? undefined : db(m.sends[kind])));
+      automate(send.gain, base === undefined ? 0 : dbToGain(base), m => (m.sends?.[kind] === undefined ? undefined : dbToGain(m.sends[kind])));
       (kind === 'reverb' ? toReverb : toDelay).push(level.connect(send));
     }
     buses[name] = { input, pool: voicePool(ctx, input), shift: trackShift(t, p) };
@@ -331,7 +321,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
   /** Builds one note's nodes into its track's bus; returns when it falls silent. */
   const buildNote = (/** @type {import('./sequence.js').NoteEvent} */ e, /** @type {number} */ i, /** @type {Patch} */ p, /** @type {typeof buses[string]} */ bus, trimDeltaDb = 0) => {
     const out = ctx.createGain();
-    out.gain.value = trimDeltaDb ? e.vel * db(trimDeltaDb) : e.vel;
+    out.gain.value = trimDeltaDb ? e.vel * dbToGain(trimDeltaDb) : e.vel;
     /** @type {AudioNode} */
     let note = out;
     if (e.pan) {

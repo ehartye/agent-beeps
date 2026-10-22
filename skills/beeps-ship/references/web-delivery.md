@@ -40,7 +40,7 @@ plays nothing, silently, so decide who you must reach.
 `decodeAudioData` returns float32: **frames x channels x 4 bytes**, whatever the file format. A stereo 48 kHz layer of 68.571 s is
 **26.3 MB**; a five-layer song is 131.6 MB; all the layers of a score resident can be over a gigabyte. Download size is not the
 constraint, decoded size is. Load only the layers of the playing state, mono where a layer's channels are identical
-(`beeps export --channels 1`), and cap the player; see `skills/beeps-compose/references/game-player.md` ("Memory") for the
+(`beeps export --channels 1`), and cap the player; see [game-player.md](game-player.md) ("Memory") for the
 player's budget option.
 
 ## Check before you ship

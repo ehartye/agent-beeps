@@ -30,7 +30,7 @@ export function readDeliveredFile(out: string, file: string): Buffer | undefined
   const full = join(out, file);
   let entry;
   try { entry = lstatSync(full); } catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw e; }
-  if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(`output is not a regular file: ${file}`);
+  if (!entry.isFile() || entry.isSymbolicLink()) throw new BeepsError('E_VERIFY', `output is not a regular file: ${file}`);
   return readFileSync(full);
 }
 

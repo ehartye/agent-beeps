@@ -2,6 +2,8 @@ import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { ERROR_CODES } from '../errors.ts';
 import { patchJsonSchema, SOURCE_TYPES } from '../schema/patch.ts';
+import { leafCommands } from './inventory.ts';
+import { MAX_SAMPLE_FRAMES, SAMPLE_RATE_HZ } from '../../runtime/engine/limits.js';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { SCALES } from '../../runtime/engine/notes.js';
 import { REVERB_PRESETS } from '../../runtime/engine/fx.js';
@@ -33,11 +35,12 @@ export function registerCapabilities(program: Command, io: Io) {
     .option('--no-schema', 'omit the full JSON Schema')
     .action(async (opts: { schema: boolean }) => {
       const { VERSION } = await import('../cli.ts');
+      const commands = leafCommands(program);
       io.emit({
         version: VERSION,
         engine: ENGINE_VERSION,
-        sampleRate: 48000,
-        commands: program.commands.map(c => ({ name: c.name(), description: c.description() })),
+        sampleRate: SAMPLE_RATE_HZ,
+        commands,
         sourceTypes: SOURCE_TYPES,
         scales: Object.keys(SCALES),
         reverbPresets: Object.keys(REVERB_PRESETS),
@@ -46,9 +49,9 @@ export function registerCapabilities(program: Command, io: Io) {
         tasteFeatures: FEATURE_NAMES,
         errorCodes: ERROR_CODES,
         samples: {
-          commands: ['sample import', 'sample overview', 'sample prepare', 'sample bundle', 'sample sync'],
+          commands: commands.filter(c => c.name.startsWith('sample ')).map(c => c.name),
           maxLayers: 8,
-          prepared: { sampleRate: 48000, channels: [1, 2], minFrames: 1, maxFrames: 480000 },
+          prepared: { sampleRate: SAMPLE_RATE_HZ, channels: [1, 2], minFrames: 1, maxFrames: MAX_SAMPLE_FRAMES },
           maxNormalizedSeconds: 120,
           maxOriginalBytes: 64 * 1024 * 1024,
           notes: [
@@ -74,6 +77,7 @@ export function registerCapabilities(program: Command, io: Io) {
           'Many similar patches: beeps family <template.json> --table rows.csv fills {{param}} placeholders and /pointer columns per row, validates each, and can --lint, --out a folder, or hand off --set; see the beeps-compose family reference.',
           'Hand-made variants authored as separate patches (names <stem>-<n> in one family, or a shared meta.variantOf) count toward variation-on-repeating.',
           'Every render writes a look.png (waveform, spectrogram, features): look at it; you cannot hear.',
+          'Errors: a failure that stops a command is one JSON line on stderr (exit 1, or 2 for E_USAGE); items that fail inside a multi-item command appear in the stdout JSON with ok: false. E_INTERNAL is a bug in beeps: rerun with BEEPS_DEBUG=1 for the stack.',
         ],
         example: EXAMPLE,
         music: {
