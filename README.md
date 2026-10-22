@@ -179,8 +179,9 @@ usually runs `beeps sync <patchDir>`, `beeps kit add` per sound, `beeps lint`, `
   ```
 - **Exit codes**: every command prints its JSON on stdout. `lint` exits 1 only when a patch has an
   error (a warning alone exits 0), so a gate that also wants warnings reads `errors` and `warnings`
-  from the JSON; `notes` lines are informational. Usage errors exit 2, other failures 1, with
-  `{"error":{code,...}}` on stderr.
+  from the JSON; `notes` lines are informational. Usage errors caught while parsing options exit 2, other failures 1, with
+  `{"error":{code,category,retryable,...}}` on stderr (`retryable` is true only for `E_LOCK`, `E_SERVER` and `E_STORE`).
+  A command that changed, clamped or ignored something adds a `notices` array; both tables are in [`docs/notices.md`](docs/notices.md).
 - **Seeds**: `export` uses `--seed`, else the seed an audition ship recorded in the kit, else 1. `kit add`
   records no seed, so pass `--seed` explicitly when the build must not depend on audition history.
   Renders are bit-exact for a seed (since 0.8.0, on one Chromium build): exporting an unchanged patch
@@ -207,6 +208,18 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.19.0
+
+Honest feedback: the places where a command quietly did something other than what the caller asked now say so. No sound or
+music changes; no render, hash or cache key moves.
+
+- **Notices:** a structured `notices` array (`code`, `severity`, `message`, and `pointer`, `requested`, `applied`, `hint` where they apply), listed in [`docs/notices.md`](docs/notices.md) and `beeps capabilities`. `N_SCALE_SNAP` reports a pitch the project scale moved (in `render`, `measure`, `look`, `lint`, `export` and `kit check`); `N_VARIANTS_IDENTICAL` and `N_NO_VARIANTS` report variants that cannot differ. The `warnings` and `notes` arrays stay.
+- **Errors:** every error carries a `category` (`input`, `environment`, `outcome`, `transient`, `bug`) and `retryable`; a patch that fails the schema echoes the rejected value as `received`. Usage errors from option parsing carry them too.
+- **`crossover`:** `--t` must be a number from 0 to 1; a blend that is not a valid patch is `E_SCHEMA` instead of a renamed copy of the first parent; an existing name needs `--force` (`E_CONFLICT`); the result lists `parents` and `t`.
+- **`kit check`:** a sound that fails to render stays in `sounds` as `ok: false` with its error, and the command exits 1. It used to vanish from the list and the kit rules.
+- **Variants:** `measure --variant` and `export --variant` reject an index the patch does not declare (`E_USAGE`); before, they rendered the patch as written.
+- **Skill:** `beeps-compose` opens with what to read in `notices` before describing a result.
 
 ## What changed in 0.18.1
 

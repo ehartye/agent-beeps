@@ -12,6 +12,8 @@ import { int, outcomeJson, summary, withHost } from './shared.ts';
 import { exportRole } from '../export-manifest.ts';
 import { exportPatchOne, exportPatchVariants } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
+import { noticeField } from '../notices.ts';
+import { requireDeclaredVariant, scaleSnapNotices, variantNotices } from '../patch-notices.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
   program.command('init')
@@ -70,7 +72,10 @@ export function registerPatchCommands(program: Command, io: Io) {
         return Array.from({ length: n }, (_, variant) => ({ patch, seed: opts.seed, variant }));
       });
       const out = await withHost(host => renderAndMeasure(host, items, renderOptions(p)));
-      io.emit({ renders: out.map(outcomeJson) });
+      // Scale-snap notices ride on a patch's first render only; the variants share the same pitches.
+      const renders = out.map(o => (o.ok && o.variant === 0 ? { ...outcomeJson(o), ...noticeField(scaleSnapNotices(o.patch, p.project.scale)) } : outcomeJson(o)));
+      const variantNote = opts.variants ? patches.flatMap(patch => variantNotices(patch, { requested: true })) : [];
+      io.emit({ renders, ...noticeField(variantNote) });
       if (out.some(o => !o.ok)) process.exitCode = 1;
     });
 
@@ -80,9 +85,11 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--variant <n>', 'variant index', int, 0)
     .action(async (ref: string, opts: { seed: number; variant: number }) => {
       const p = openProject(io.projectDir());
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch: loadPatch(p, ref), seed: opts.seed, variant: opts.variant }], renderOptions(p)));
+      const patch = loadPatch(p, ref);
+      requireDeclaredVariant(patch, opts.variant);
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed: opts.seed, variant: opts.variant }], renderOptions(p)));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
-      io.emit({ name: o.patch.name, key: o.key, trimDb: o.trimDb, features: o.features });
+      io.emit({ name: o.patch.name, key: o.key, trimDb: o.trimDb, features: o.features, ...noticeField(scaleSnapNotices(o.patch, p.project.scale)) });
     });
 
   program.command('look <refs...>')
@@ -97,11 +104,12 @@ export function registerPatchCommands(program: Command, io: Io) {
         const failed = out.find(o => !o.ok);
         if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
         const rendered = out as Rendered[];
-        if (rendered.length === 1) { io.emit(summary(rendered[0])); return; }
+        const snap = (r: Rendered) => noticeField(scaleSnapNotices(r.patch, p.project.scale));
+        if (rendered.length === 1) { io.emit({ ...summary(rendered[0]), ...snap(rendered[0]) }); return; }
         const path = resolve(opts.out ?? join(p.paths.renders, `sheet-${sha256(rendered.map(r => r.key).join()).slice(0, 12)}.png`));
         mkdirSync(dirname(path), { recursive: true });
         await contactSheet(host, rendered, rendered.map((r, i) => `${i + 1} · ${r.patch.name}`), path);
-        io.emit({ sheet: path, items: rendered.map((r, i) => ({ index: i + 1, ...summary(r) })) });
+        io.emit({ sheet: path, items: rendered.map((r, i) => ({ index: i + 1, ...summary(r), ...snap(r) })) });
       });
     });
 
@@ -143,12 +151,13 @@ export function registerPatchCommands(program: Command, io: Io) {
         const dest = resolve(opts.wav);
         const { first, wavs, manifest, posts } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest, post }));
         const postOut = posts.map(postJson);
-        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}) });
+        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}), ...noticeField([...scaleSnapNotices(patch, p.project.scale), ...variantNotices(patch, { requested: true })]) });
         return;
       }
+      requireDeclaredVariant(patch, opts.variant);
       const dest = resolve(opts.wav);
       const { rendered: o, manifest, post: done } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest, post }));
       const extra = postJson(done);
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}) });
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}), ...noticeField(scaleSnapNotices(patch, p.project.scale)) });
     });
 }

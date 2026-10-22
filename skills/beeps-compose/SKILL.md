@@ -18,6 +18,15 @@ spectrogram, feature strip). The owner's ear is the judge: finish by auditioning
 2. `beeps taste show` - what this owner has preferred so far (skip nothing marked `strong`).
 3. The beeps-craft skill when choosing a synthesis method or checking a sound "feels right".
 
+## Read the `notices` before you describe a result
+
+A command that changed something you did not ask for says so in a `notices` array (codes: `docs/notices.md`). Match on `code`, and
+never call a sound "as written" while a notice says otherwise.
+- `N_SCALE_SNAP`: the project scale moved a pitch (466 Hz is another note). Write in-scale pitches, or set `scale.snap` to false.
+- `N_VARIANTS_IDENTICAL`: the declared variants render the same samples. Add `pitchCents` (pitched layers) or `gainDb`.
+- `kit check` lists a sound that failed to render as `ok: false` and exits 1. `crossover` errors on an invalid blend and needs `--force` to overwrite.
+- You cannot hear: state what the measurements and the look image show, not what the sound "feels" like.
+
 ## Recorded-source or hybrid SFX
 
 For a recording used in a patch, read [hybrid sources](references/hybrid-sources.md) directly.

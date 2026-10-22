@@ -6,7 +6,7 @@ import { BeepsError } from '../errors.ts';
 import { loadArchetypes } from '../archetypes.ts';
 import { generate } from '../generate.ts';
 import { crossover, DIRECTIONS, mutate } from '../mutate.ts';
-import { loadPatch, openProject, parseOrThrow, readJsonFile, type OpenProject } from '../project.ts';
+import { loadPatch, openProject, parseOrThrow, readJsonFile, savePatch, type OpenProject } from '../project.ts';
 import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
@@ -21,6 +21,8 @@ import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } fro
 import { DeliveryResultsHead, deliveryPrefsFile, foldResults, globalDeliveryPrefsFile, importPreferences, preferencesFromResults, readDelivery, readDeliveryEvents, readDeliveryPrefs, summarizePreferences } from '../audition/delivery.ts';
 import { int, withHost } from './shared.ts';
 import { renderOptions } from '../render/options.ts';
+import { noticeField } from '../notices.ts';
+import { scaleSnapNotices, variantNotices } from '../patch-notices.ts';
 
 export const setJson = (s: CandidateSet) => ({
   set: s.id, archetype: s.archetype, family: s.family, prompt: s.prompt, parent: s.parent, sheet: s.sheet,
@@ -80,12 +82,13 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
   const text = new Map(loadRules().map(r => [r.id, r.statement]));
   const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...scaleSnapNotices(o.patch, p.project.scale), ...variantNotices(o.patch)]) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
   const failed = reports.some(r => r.errors.length);
   if (brief) {
-    const found = reports.filter(r => r.errors.length || r.warnings.length);
+    // A patch with a notice is not "clean": a notice is something the render did that the patch did not say.
+    const quiet = (r: (typeof reports)[number]) => !r.errors.length && !r.warnings.length && !('notices' in r);
     const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-    return { failed, payload: { reports: found.map(({ judgement: _j, ...r }) => r), clean: reports.filter(r => !r.errors.length && !r.warnings.length).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) } };
+    return { failed, payload: { reports: reports.filter(r => !quiet(r)).map(({ judgement: _j, ...r }) => r), clean: reports.filter(quiet).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) } };
   }
   return { failed, payload: { reports, ...(notes.length ? { notes } : {}) } };
 }
@@ -123,16 +126,15 @@ export function registerGenerateCommands(program: Command, io: Io) {
     });
 
   program.command('crossover <a> <b>')
-    .description('blend two patches (structure from a) and save the result as a project patch')
-    .option('--t <x>', 'blend amount toward b', parseFloat, 0.5)
+    .description('blend two patches (structure from a) and save the result as a project patch; a blend that is not a valid patch is an error, and an existing name needs --force')
+    .option('--t <x>', 'blend amount toward b, 0 to 1', Number, 0.5)
     .requiredOption('--name <name>', 'name for the new patch')
-    .action(async (a: string, b: string, opts: { t: number; name: string }) => {
+    .option('--force', 'replace an existing patch of that name')
+    .action(async (a: string, b: string, opts: { t: number; name: string; force?: boolean }) => {
+      if (!Number.isFinite(opts.t) || opts.t < 0 || opts.t > 1) throw new BeepsError('E_USAGE', `--t takes a number from 0 to 1, got ${opts.t}`, { received: opts.t });
       const p = openProject(io.projectDir());
       const child = { ...crossover(loadPatch(p, a), loadPatch(p, b), opts.t), name: opts.name };
-      mkdirSync(p.paths.patches, { recursive: true });
-      const file = join(p.paths.patches, `${child.name}.json`);
-      writeFileSync(file, JSON.stringify(child, null, 2) + '\n');
-      io.emit({ saved: file, name: child.name });
+      io.emit({ saved: savePatch(p, child, { force: !!opts.force }), name: child.name, parents: [a, b], t: opts.t });
     });
 
   const setCmd = program.command('set').description('candidate sets: create one from patches you already authored');
@@ -189,7 +191,11 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), renderOptions(p)));
       const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority }] : []));
       const siblings = siblingsOf(p, patches);
-      io.emit({ kit: lintKit(members, p.project), sounds: members.map(m => ({ name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }) })) });
+      const checked = new Map(members.map(m => [m.patch.name, { name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }), ...noticeField(scaleSnapNotices(m.patch, p.project.scale)) }]));
+      // A sound that failed to render stays in the list, in kit order, as a failure: the kit rules ran without it and the exit code says so.
+      const sounds = out.map((o, i) => (o.ok ? checked.get(o.patch.name)! : { name: o.patchName ?? k.sounds[i].name, ok: false, error: o.error }));
+      io.emit({ kit: lintKit(members, p.project), sounds });
+      if (out.some(o => !o.ok)) process.exitCode = 1;
     });
 
   const taste = program.command('taste').description('the learned taste profile: show, fit, stats');

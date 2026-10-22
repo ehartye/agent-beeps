@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command, CommanderError } from 'commander';
-import { toErrorJson } from './errors.ts';
+import { BeepsError, toErrorJson } from './errors.ts';
 import { registerPatchCommands } from './commands/patches.ts';
 import { registerCapabilities } from './commands/capabilities.ts';
 import { registerAuditionCommands } from './commands/audition.ts';
@@ -55,7 +55,7 @@ export async function main(argv: string[]): Promise<void> {
   } catch (e) {
     if (e instanceof CommanderError) {
       if (e.code === 'commander.helpDisplayed' || e.code === 'commander.version' || e.code === 'commander.help') return;
-      console.error(JSON.stringify({ error: { code: 'E_USAGE', message: e.message.replace(/^error: /, '') } }));
+      console.error(JSON.stringify({ error: toErrorJson(new BeepsError('E_USAGE', e.message.replace(/^error: /, ''))) }));
       process.exitCode = 2;
       return;
     }

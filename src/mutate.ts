@@ -76,8 +76,10 @@ export function perturb(patch: Patch, rand: () => number, archetype?: Archetype)
   return patch;
 }
 
-/** Interpolate shared numeric leaves (log-space for frequencies and times); structure from `a`. */
-export function crossover(a: Patch, b: Patch, t: number): Patch {
+export type Blend = { ok: true; patch: Patch } | { ok: false; issue: { message: string; pointer?: string; hint?: string } };
+
+/** Interpolate shared numeric leaves (log-space for frequencies and times); structure from `a`. Reports a blend that is not a valid patch as data. */
+export function blend(a: Patch, b: Patch, t: number): Blend {
   const out = structuredClone(a) as any;
   const bLeaves = new Map(leaves(b).map(l => [pointer(l.path), l.value]));
   for (const leaf of leaves(a)) {
@@ -89,7 +91,16 @@ export function crossover(a: Patch, b: Patch, t: number): Patch {
     setAt(out, leaf.path, logish ? Math.exp((1 - t) * Math.log(x) + t * Math.log(y)) : (1 - t) * x + t * y);
   }
   const r = parsePatch(out);
-  return r.ok ? r.patch : a;
+  return r.ok ? { ok: true, patch: r.patch } : { ok: false, issue: r.issues[0] };
+}
+
+/** The blend of two patches. A blend that is not a valid patch is an E_SCHEMA error, never the first parent handed back as if it were the result. */
+export function crossover(a: Patch, b: Patch, t: number): Patch {
+  const r = blend(a, b, t);
+  if (r.ok) return r.patch;
+  throw new BeepsError('E_SCHEMA', `blending ${a.name} and ${b.name} at t=${t} is not a valid patch: ${r.issue.message}`, {
+    pointer: r.issue.pointer, hint: r.issue.hint ?? 'try a t closer to 0 or 1, or blend patches whose parameters are closer together',
+  });
 }
 
 
@@ -103,7 +114,8 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
   const tag = (seed % 0xffff).toString(16);
   const kids: Patch[] = [];
   for (let i = 0; i < count * 6; i++) {
-    let child = opts.like ? crossover(opts.parent, opts.like, 0.25 + 0.5 * rand()) : opts.parent;
+    // A blend that is not valid falls back to the parent here on purpose: the child is then a plain perturbation of it.
+    let child = opts.like ? (b => (b.ok ? b.patch : opts.parent))(blend(opts.parent, opts.like, 0.25 + 0.5 * rand())) : opts.parent;
     child = perturb(child, rand, archetype);
     if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) continue; // unchanged: not a variation
     kids.push({ ...child, name: `${base}-m${tag}-${i + 1}` });
