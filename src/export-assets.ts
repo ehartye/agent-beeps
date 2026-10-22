@@ -102,6 +102,7 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
         for (const n of names) sum = addChannels(sum, readChannels(layerFiles[n]));
         const t = sum ? stateTrim(sum, sr, p.project.musicLoudness) : { lufs: -99, trimDb: 0 };
         stateTrimDb[state] = t.trimDb; stateLufs[state] = t.lufs;
+        if ('clamped' in t && t.clamped) warnings.push(`state "${state}" needs ${t.clamped.requestedDb} dB to reach the music loudness; the limit is +-12 dB, so it plays at ${t.clamped.appliedDb} dB and sits ${Math.abs(Math.round((t.clamped.requestedDb - t.clamped.appliedDb) * 10) / 10)} dB ${t.clamped.requestedDb < t.clamped.appliedDb ? 'louder' : 'quieter'} than its target`);
       }
     }
     const sounding = new Set(compileSong(s).events.map(e => e.track));

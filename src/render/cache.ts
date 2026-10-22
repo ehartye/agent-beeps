@@ -13,6 +13,18 @@ export const TRIM_MAX_DB = 24;
 
 export const clampTrimDb = (x: number): number => Math.max(TRIM_MIN_DB, Math.min(TRIM_MAX_DB, x));
 
+const round2 = (x: number) => Math.round(x * 100) / 100;
+
+/**
+ * The trim for one sound: loudness first, held under the true-peak ceiling, then inside the range above. `clamped` is present only
+ * when that range, not the sound, set the trim, so the sound sits further from its target than the output would otherwise say.
+ */
+export function chooseTrim(loudDb: number, ceilingDb: number): { trimDb: number; clamped?: { requestedDb: number; appliedDb: number } } {
+  const requested = Math.min(loudDb, ceilingDb);
+  const trimDb = round2(clampTrimDb(requested));
+  return { trimDb, ...(trimDb !== round2(requested) ? { clamped: { requestedDb: round2(requested), appliedDb: trimDb } } : {}) };
+}
+
 /** The parsed meta.json of a cached render when it and every one of `files` exist in `dir`; otherwise undefined (a miss). */
 export function lookup<M = Record<string, any>>(dir: string, files: readonly string[]): M | undefined {
   const meta = join(dir, CACHE_META);

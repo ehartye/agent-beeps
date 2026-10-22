@@ -12,7 +12,7 @@ import type { Song } from '../schema/song.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
-import { clampTrimDb, commit, lookup } from './cache.ts';
+import { chooseTrim, commit, lookup } from './cache.ts';
 
 /**
  * Bump when song rendering or measurement changes, so cached renders are redone.
@@ -58,7 +58,8 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
     if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new BeepsError('E_RENDER', `song rendered near-silence (${f.integratedLufs} LUFS)`);
     const loud = target - f.integratedLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
-    const trimDb = fixedTrim ?? Math.round(clampTrimDb(Math.min(loud, ceiling)) * 100) / 100;
+    const chosen = fixedTrim === undefined ? chooseTrim(loud, ceiling) : undefined;
+    const trimDb = fixedTrim ?? chosen!.trimDb;
     const delivered = applyTrimAndClip(authored, trimDb);
     // Report the arc and sections at the level they play, like every other number the agent reads.
     f.arc = f.arc.map(v => Math.round((v + trimDb) * 10) / 10);
@@ -70,6 +71,7 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
       truePeakDb: Math.round(truePeakDb(delivered, r.sampleRate) * 100) / 100,
       clippedSamples: clippedSamples(delivered),
       ...(fixedTrim === undefined && ceiling < loud ? { peakLimited: true } : {}),
+      ...(chosen?.clamped ? { trimClamped: chosen.clamped } : {}),
     };
     commit(dir, {
       files: { 'delivered.wav': writeWav(delivered, r.sampleRate), 'song.json': JSON.stringify(song, null, 2), 'look.png': await host.songLook(r.id, { ...f, trimDb }, song.title ?? song.name) },

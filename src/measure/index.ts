@@ -7,6 +7,9 @@ import { pitchTrack } from './pitch.ts';
 
 export interface PcmTaps { sampleRate: number; authored: Float32Array[]; delivered: Float32Array[] }
 
+/** The loudness trim the sound needed was further than the pipeline allows (cache.ts), so it sits above or below its target. */
+export interface TrimClamped { requestedDb: number; appliedDb: number }
+
 export interface Features {
   durationSec: number;
   samplePeakDb: number; truePeakDb: number; dcOffset: number; clippedSamples: number;
@@ -16,7 +19,7 @@ export interface Features {
   sharpness: number; roughness: number; fluctuation: number;
   pitchHz: number; pitchStrength: number; pitchDirection: number; voicedFraction: number;
   /** peakLimited: the loudness trim was capped so the true peak stays under the ceiling (spiky sounds sit below target by design). */
-  delivered: { samplePeakDb: number; truePeakDb: number; momentaryMaxLufs: number; clippedSamples: number; peakLimited?: boolean };
+  delivered: { samplePeakDb: number; truePeakDb: number; momentaryMaxLufs: number; clippedSamples: number; peakLimited?: boolean; trimClamped?: TrimClamped };
 }
 
 const r = (x: number, digits = 4) => (Number.isFinite(x) ? Math.round(x * 10 ** digits) / 10 ** digits : x);

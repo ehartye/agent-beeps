@@ -27,7 +27,7 @@ export interface SongFeatures {
   seamEndLufs?: number;
   /** Loop songs: how the last sample meets the first (boundary step and slope jump in dB against the file's typical step, last zero-crossing phase). */
   seam?: SeamMetrics;
-  delivered?: { integratedLufs: number; truePeakDb: number; clippedSamples: number; peakLimited?: boolean };
+  delivered?: { integratedLufs: number; truePeakDb: number; clippedSamples: number; peakLimited?: boolean; trimClamped?: { requestedDb: number; appliedDb: number } };
 }
 
 const N = 2048;

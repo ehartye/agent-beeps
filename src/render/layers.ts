@@ -59,11 +59,12 @@ export const layerWavPath = (wav: string, layer: string): string => `${wav.repla
 export const readChannels = (wavPath: string): Float32Array[] => readWav(readFileSync(wavPath)).channels;
 
 /** The gain that brings a state (the sum of its layers) to the music loudness, kept under -1.5 dBFS sample peak and within +-12 dB. */
-export function stateTrim(sum: Float32Array[], sampleRate: number, targetLufs: number): { lufs: number; peakDb: number; trimDb: number } {
+export function stateTrim(sum: Float32Array[], sampleRate: number, targetLufs: number): { lufs: number; peakDb: number; trimDb: number; clamped?: { requestedDb: number; appliedDb: number } } {
   const lufs = integrated(sum, sampleRate).lufs, peakDb = samplePeakDb(sum);
   if (!Number.isFinite(lufs)) return { lufs: -99, peakDb: -99, trimDb: 0 };
-  const trimDb = Math.round(Math.max(-12, Math.min(12, targetLufs - lufs, -1.5 - peakDb)) * 10) / 10;
-  return { lufs: Math.round(lufs * 10) / 10, peakDb: Math.round(peakDb * 10) / 10, trimDb };
+  const requested = Math.round(Math.min(targetLufs - lufs, -1.5 - peakDb) * 10) / 10;
+  const trimDb = Math.round(Math.max(-12, Math.min(12, requested)) * 10) / 10;
+  return { lufs: Math.round(lufs * 10) / 10, peakDb: Math.round(peakDb * 10) / 10, trimDb, ...(trimDb !== requested ? { clamped: { requestedDb: requested, appliedDb: trimDb } } : {}) };
 }
 
 /** The song with only these tracks: their patterns and sections stay, everything else (and the adaptive block) is dropped, so lint judges the state as its own piece. */

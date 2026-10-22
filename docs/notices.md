@@ -21,6 +21,10 @@ A notice is something a command did on your behalf that the input did not say: a
 | `N_STEERING_CANCELLED` | info | The prompt asked for opposite things (brighter and darker, shorter and longer), so neither steered the selection. | keep one of the two words in the prompt, or pick candidates by looking at the sheet |
 | `N_STEERING_UNUSED` | info | The prompt was read as directions, but the usable candidate pool was no larger than the set, so there was nothing to choose between and steering changed nothing. | ask for a smaller --count, or generate again; use mutate --toward to move a chosen candidate in a direction |
 | `N_OPTION_IGNORED` | warn | An option was accepted but had no effect, because what it configures already exists. | edit the existing file (for example .agent-beeps/project.json) to change it |
+| `N_TRIM_CLAMPED` | warn | The loudness trim the sound needs is further than the pipeline allows, so it was held at the limit and the sound sits above or below its loudness target. | a sound that far from the target is usually mis-gained: raise or lower its loudest layer (gainDb), or check that it is not near-silent or extremely loud |
+| `N_INPUT_CLAMPED` | warn | A runtime input value was outside its declared range, so the nearest end of the range was used. | pass a value inside the input's declared min and max, or widen the range in the patch's xRuntime block |
+| `N_KIT_REPLACED` | warn | Adding a sound replaced an entry of the same name in the project kit, and the replaced entry carried a value that is now different or gone. | read replaced for the previous priority, trim and seed; add with --priority to set the priority you want |
+| `N_NAME_SHADOWED` | warn | A project patch or song has the same name as a library one, so the library entry is hidden and the project one is used. | rename the project entry if you meant the library one, or call the library entry by a name it does not share |
 
 ## Errors
 

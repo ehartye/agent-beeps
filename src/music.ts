@@ -51,9 +51,13 @@ export function saveSong(p: OpenProject, song: Song, { force = false } = {}): st
   return file;
 }
 
-export function listSongs(p: OpenProject): { name: string; title?: string; source: string; file: string }[] {
-  const own = existsSync(p.paths.songs) ? readdirSync(p.paths.songs).filter(f => f.endsWith('.json')).map(f => ({ name: f.slice(0, -5), source: 'project', file: join(p.paths.songs, f) })) : [];
+/** `shadows` is set on a project song that hides a library song of the same name (the library one is not listed or loadable by that name). */
+export function listSongs(p: OpenProject): { name: string; title?: string; source: string; file: string; shadows?: string }[] {
   const lib = librarySongFiles().map(s => ({ name: s.name, source: `library/${s.collection}`, file: s.file }));
+  const own = existsSync(p.paths.songs) ? readdirSync(p.paths.songs).filter(f => f.endsWith('.json')).map(f => {
+    const name = f.slice(0, -5), hidden = lib.find(l => l.name === name);
+    return { name, source: 'project', file: join(p.paths.songs, f), ...(hidden ? { shadows: hidden.source } : {}) };
+  }) : [];
   return [...own, ...lib.filter(l => !own.some(o => o.name === l.name))].map(s => {
     try { const song = songOrThrow(readJsonFile(s.file), s.file); return { ...s, ...(song.title ? { title: song.title } : {}) }; } catch { return s; }
   });
@@ -81,6 +85,15 @@ export function libraryInstruments() {
     const patch = parseOrThrow(readJsonFile(join(INSTRUMENTS_DIR, f)), f);
     return { name: patch.name, ...(patch.meta?.description ? { description: patch.meta.description } : {}), tags: patch.tags, ...instrumentInfo(patch) };
   });
+}
+
+/** Instrument names a song uses that resolve to a project patch hiding a bundled library instrument of the same name (a song's own instruments, which win over both, are not shadows). */
+export function shadowedInstruments(p: OpenProject, song: Song): string[] {
+  const names = new Set<string>();
+  for (const spec of [...Object.values(song.tracks).map(t => t.instrument), ...Object.values(song.instruments)]) {
+    if (typeof spec === 'string') names.add(spec); else if (isOverride(spec)) names.add(spec.base);
+  }
+  return [...names].filter(n => !(n in song.instruments) && existsSync(join(p.paths.patches, `${n}.json`)) && existsSync(join(INSTRUMENTS_DIR, `${n}.json`)));
 }
 
 /** A project patch of that name, else a bundled library instrument; null when there is neither. */

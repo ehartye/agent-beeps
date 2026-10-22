@@ -10,7 +10,7 @@ import { loadPatch, openProject, parseOrThrow, readJsonFile, savePatch, type Ope
 import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
-import { addToKit, readKit, removeFromKit, writeKit } from '../kit.ts';
+import { addToKit, kitSeed, readKit, removeFromKit, writeKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
 import { appendVerdicts, globalTasteDir, globalVerdictsFile, readVerdicts } from '../taste/verdicts.ts';
@@ -21,9 +21,9 @@ import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } fro
 import { DeliveryResultsHead, deliveryPrefsFile, foldResults, globalDeliveryPrefsFile, importPreferences, preferencesFromResults, readDelivery, readDeliveryEvents, readDeliveryPrefs, summarizePreferences } from '../audition/delivery.ts';
 import { int, withHost } from './shared.ts';
 import { renderOptions } from '../render/options.ts';
-import { noticeField } from '../notices.ts';
+import { notice, noticeField } from '../notices.ts';
 import { reportJson } from '../set-report.ts';
-import { scaleSnapNotices, variantNotices } from '../patch-notices.ts';
+import { renderNotices, variantNotices } from '../patch-notices.ts';
 
 export const setJson = (s: CandidateSet) => ({
   set: s.id, archetype: s.archetype, family: s.family, prompt: s.prompt, parent: s.parent, sheet: s.sheet,
@@ -78,12 +78,14 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
   const own = projectPatches(p);
   const siblings = siblingsOf(p, patches, own);
   // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
-  const notes = kitRuleNotes(patches, own, readKit(p.paths.root).sounds.map(s => s.name));
-  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), renderOptions(p)));
+  const kit = readKit(p.paths.root);
+  const notes = kitRuleNotes(patches, own, kit.sounds.map(s => s.name));
+  // A kit sound is judged at the seed it ships with (the one the owner auditioned), like render and export; any other patch at seed 1.
+  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch, seed: kitSeed(kit, patch.name) })), renderOptions(p)));
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
   const text = new Map(loadRules().map(r => [r.id, r.statement]));
   const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...scaleSnapNotices(o.patch, p.project.scale), ...variantNotices(o.patch)]) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...renderNotices(o.patch, o.features, p.project.scale), ...variantNotices(o.patch)]) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
   const failed = reports.some(r => r.errors.length);
   if (brief) {
     // A patch with a notice is not "clean": a notice is something the render did that the patch did not say.
@@ -170,11 +172,17 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .action(async (ref: string, opts: { priority?: number }) => {
       const p = openProject(io.projectDir());
       const patch = loadPatch(p, ref);
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch }], renderOptions(p)));
+      const before = readKit(p.paths.root);
+      const previous = before.sounds.find(s => s.name === patch.name);
+      // Re-adding a sound keeps the seed the owner auditioned: it is part of which sound this is, and the trim is measured at it.
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed: previous?.seed }], renderOptions(p)));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
-      const k = addToKit(readKit(p.paths.root), { name: patch.name, family: patch.family, priority: opts.priority ?? patch.meta?.priority ?? 3, trimDb: o.trimDb });
+      const entry = { name: patch.name, family: patch.family, priority: opts.priority ?? patch.meta?.priority ?? 3, trimDb: o.trimDb, ...(previous?.seed !== undefined ? { seed: previous.seed } : {}) };
+      const k = addToKit(before, entry);
       writeKit(p.paths.root, k);
-      io.emit(k);
+      // The entry it replaced, when something it carried is different now: the old priority is gone unless the caller set it again.
+      const lost = previous && (previous.priority !== entry.priority || previous.trimDb !== entry.trimDb);
+      io.emit({ ...k, ...(previous ? { replaced: previous } : {}), ...noticeField(lost ? [notice('N_KIT_REPLACED', { message: `${patch.name} was already in the kit and has been replaced: priority ${previous.priority} -> ${entry.priority}, trim ${previous.trimDb ?? 'none'} -> ${entry.trimDb} dB${previous.seed !== undefined ? `; its audition seed ${previous.seed} was kept` : ''}`, requested: previous, applied: entry })] : []) });
     });
   kit.command('remove <name>')
     .description('take a sound out of the project kit (the patch file stays)')
@@ -190,10 +198,10 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const k = readKit(p.paths.root);
       const patches = k.sounds.map(s => loadPatch(p, s.name));
-      const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch })), renderOptions(p)));
-      const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority }] : []));
+      const out = await withHost(host => renderAndMeasure(host, patches.map((patch, i) => ({ patch, seed: k.sounds[i].seed })), renderOptions(p)));
+      const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority, seed: k.sounds[i].seed ?? 1 }] : []));
       const siblings = siblingsOf(p, patches);
-      const checked = new Map(members.map(m => [m.patch.name, { name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }), ...noticeField(scaleSnapNotices(m.patch, p.project.scale)) }]));
+      const checked = new Map(members.map(m => [m.patch.name, { name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }), seed: k.sounds[members.indexOf(m)]?.seed ?? 1, ...noticeField(renderNotices(m.patch, m.features, p.project.scale)) }]));
       // A sound that failed to render stays in the list, in kit order, as a failure: the kit rules ran without it and the exit code says so.
       const sounds = out.map((o, i) => (o.ok ? checked.get(o.patch.name)! : { name: o.patchName ?? k.sounds[i].name, ok: false, error: o.error }));
       io.emit({ kit: lintKit(members, p.project), sounds });

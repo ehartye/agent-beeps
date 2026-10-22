@@ -3,8 +3,9 @@ import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
-import { openProject, readJsonFile, type OpenProject } from '../project.ts';
-import { findInstrument, libraryInstruments, listSongs, midiName, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
+import { listPatches, openProject, readJsonFile, type OpenProject } from '../project.ts';
+import { findInstrument, libraryInstruments, listSongs, midiName, shadowedInstruments, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
+import { notice, noticeField } from '../notices.ts';
 import { readFileSync } from 'node:fs';
 import { readWav } from '../audio/wav.ts';
 import { applyTrimAndClip, measureSong } from '../measure/song.ts';
@@ -37,6 +38,17 @@ import { mapPool } from '../pool.ts';
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
 /** What the agent reads first about a rendered song; the full features are in meta.json. */
+/** One notice per instrument a song names that a project patch of the same name has taken over from the library. */
+const shadowNotices = (p: OpenProject, song: Song) => shadowedInstruments(p, song).map(name => notice('N_NAME_SHADOWED', {
+  message: `${song.name} plays the project patch "${name}", not the library instrument of the same name`, requested: `library/${name}`, applied: 'project patch',
+}));
+
+/** A song whose trim was held at the limit plays away from its loudness target by the difference. */
+const songTrimNotices = (r: RenderedSong) => {
+  const c = r.features.delivered?.trimClamped;
+  return c ? [notice('N_TRIM_CLAMPED', { message: `${r.song.name} needs ${c.requestedDb} dB of trim to reach the music loudness; the limit is ${c.appliedDb} dB, so it plays ${c.requestedDb < c.appliedDb ? 'louder' : 'quieter'} than the target`, requested: c.requestedDb, applied: c.appliedDb })] : [];
+};
+
 export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record<string, Patch> = {}) {
   const f = r.features;
   return {
@@ -51,6 +63,7 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
     ...(r.excerpt ? { excerpt: r.excerpt } : { lint: lintSong(r.song, f, p.project, instruments) }),
     // name@hash per track: when a render changes without a song edit, this says which instrument moved.
     instruments: Object.fromEntries(Object.entries(instruments).map(([t, x]) => [t, `${x.name}@${sha256(canonicalJson(x)).slice(0, 8)}`])),
+    ...noticeField([...shadowNotices(p, r.song), ...songTrimNotices(r)]),
   };
 }
 
@@ -101,7 +114,13 @@ const STEM_PEAK_AUDIBLE_DB = 12;
 export function registerSongCommands(program: Command, io: Io) {
   const instruments = program.command('instruments')
     .description('list the bundled instrument patches songs can play by name')
-    .action(() => io.emit({ instruments: libraryInstruments() }));
+    .action(() => {
+      // A project patch with a library instrument's name hides it from every song in this project: mark those, so the list is not read as what a song will play.
+      let own = new Set<string>();
+      try { own = new Set(listPatches(openProject(io.projectDir())).map(x => x.name)); } catch { /* no project: nothing can shadow */ }
+      const list = libraryInstruments().map(i => (own.has(i.name) ? { ...i, shadowedBy: 'project patch' } : i));
+      io.emit({ instruments: list, ...noticeField(list.filter(i => 'shadowedBy' in i).map(i => notice('N_NAME_SHADOWED', { message: `the project patch "${i.name}" hides the library instrument of the same name`, requested: `library/${i.name}`, applied: 'project patch' }))) });
+    });
 
   instruments.command('rebase <name>')
     .description('print the song-instrument override that builds an instrument at another register, so a part written far from its root plays as built')
@@ -140,13 +159,17 @@ export function registerSongCommands(program: Command, io: Io) {
 
   song.command('list')
     .description('project songs and bundled library songs')
-    .action(() => io.emit({ songs: listSongs(openProject(io.projectDir())) }));
+    .action(() => {
+      const songs = listSongs(openProject(io.projectDir()));
+      io.emit({ songs, ...noticeField(songs.filter(s => s.shadows).map(s => notice('N_NAME_SHADOWED', { message: `the project song "${s.name}" hides the library song of the same name (${s.shadows})`, requested: s.shadows, applied: 'project song' }))) });
+    });
 
   song.command('check <refs...>')
     .description('validate songs and print their outline (sections, notes and range per track) without rendering')
     .action((refs: string[]) => {
       const p = openProject(io.projectDir());
-      io.emit({ songs: refs.map(r => { const s = loadSong(p, r); return songOutline(s, resolveInstruments(p, s)); }) });
+      const loaded = refs.map(r => loadSong(p, r));
+      io.emit({ songs: loaded.map(s => songOutline(s, resolveInstruments(p, s))), ...noticeField(loaded.flatMap(s => shadowNotices(p, s))) });
     });
 
   song.command('compat <refs...>')

@@ -7,13 +7,13 @@ import { applyBatch } from '../batch.ts';
 import { initProject, listPatches, loadPatch, openProject, parseOrThrow, pathsFor, readJsonFile, savePatch, syncPatches } from '../project.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { sha256 } from '../hash.ts';
-import { readKit } from '../kit.ts';
+import { kitSeed, readKit } from '../kit.ts';
 import { int, outcomeJson, summary, withHost } from './shared.ts';
 import { exportRole } from '../export-manifest.ts';
 import { exportPatchOne, exportPatchVariants } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
-import { requireDeclaredVariant, scaleSnapNotices, variantNotices } from '../patch-notices.ts';
+import { renderNotices, requireDeclaredVariant, trimNotices, variantNotices } from '../patch-notices.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
   program.command('init')
@@ -66,18 +66,19 @@ export function registerPatchCommands(program: Command, io: Io) {
 
   program.command('render <refs...>')
     .description('render, loudness-trim and measure patches (names, set candidate names, or .json paths)')
-    .option('--seed <n>', 'render seed', int, 1)
+    .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .option('--variants', 'render every declared variant')
-    .action(async (refs: string[], opts: { seed: number; variants?: boolean }) => {
+    .action(async (refs: string[], opts: { seed?: number; variants?: boolean }) => {
       const p = openProject(io.projectDir());
       const patches = refs.map(r => loadPatch(p, r));
+      const kit = readKit(p.paths.root);
       const items = patches.flatMap(patch => {
         const n = opts.variants ? patch.variation?.variants ?? 1 : 1;
-        return Array.from({ length: n }, (_, variant) => ({ patch, seed: opts.seed, variant }));
+        return Array.from({ length: n }, (_, variant) => ({ patch, seed: opts.seed ?? kitSeed(kit, patch.name) ?? 1, variant }));
       });
       const out = await withHost(host => renderAndMeasure(host, items, renderOptions(p)));
       // Scale-snap notices ride on a patch's first render only; the variants share the same pitches.
-      const renders = out.map(o => (o.ok && o.variant === 0 ? { ...outcomeJson(o), ...noticeField(scaleSnapNotices(o.patch, p.project.scale)) } : outcomeJson(o)));
+      const renders = out.map(o => (o.ok ? { ...outcomeJson(o), ...noticeField(o.variant === 0 ? renderNotices(o.patch, o.features, p.project.scale) : trimNotices(o.patch.name, o.features)) } : outcomeJson(o)));
       const variantNote = opts.variants ? patches.flatMap(patch => variantNotices(patch, { requested: true })) : [];
       io.emit({ renders, ...noticeField(variantNote) });
       if (out.some(o => !o.ok)) process.exitCode = 1;
@@ -85,30 +86,32 @@ export function registerPatchCommands(program: Command, io: Io) {
 
   program.command('measure <ref>')
     .description('full measured features of one patch')
-    .option('--seed <n>', 'render seed', int, 1)
+    .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .option('--variant <n>', 'variant index', int, 0)
-    .action(async (ref: string, opts: { seed: number; variant: number }) => {
+    .action(async (ref: string, opts: { seed?: number; variant: number }) => {
       const p = openProject(io.projectDir());
       const patch = loadPatch(p, ref);
       requireDeclaredVariant(patch, opts.variant);
-      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed: opts.seed, variant: opts.variant }], renderOptions(p)));
+      const seed = opts.seed ?? kitSeed(readKit(p.paths.root), patch.name) ?? 1;
+      const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed, variant: opts.variant }], renderOptions(p)));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
-      io.emit({ name: o.patch.name, key: o.key, trimDb: o.trimDb, features: o.features, ...noticeField(scaleSnapNotices(o.patch, p.project.scale)) });
+      io.emit({ name: o.patch.name, key: o.key, trimDb: o.trimDb, features: o.features, ...noticeField(renderNotices(o.patch, o.features, p.project.scale)) });
     });
 
   program.command('look <refs...>')
     .description('look image (waveform + spectrogram + features); several refs make a contact sheet')
     .option('--out <png>', 'where to write the image: a contact sheet for several refs, a copy of the look image for one')
-    .option('--seed <n>', 'render seed', int, 1)
-    .action(async (refs: string[], opts: { out?: string; seed: number }) => {
+    .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
+    .action(async (refs: string[], opts: { out?: string; seed?: number }) => {
       const p = openProject(io.projectDir());
       const patches = refs.map(r => loadPatch(p, r));
       await withHost(async host => {
-        const out = await renderAndMeasure(host, patches.map(patch => ({ patch, seed: opts.seed })), renderOptions(p));
+        const kit = readKit(p.paths.root);
+        const out = await renderAndMeasure(host, patches.map(patch => ({ patch, seed: opts.seed ?? kitSeed(kit, patch.name) ?? 1 })), renderOptions(p));
         const failed = out.find(o => !o.ok);
         if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
         const rendered = out as Rendered[];
-        const snap = (r: Rendered) => noticeField(scaleSnapNotices(r.patch, p.project.scale));
+        const snap = (r: Rendered) => noticeField(renderNotices(r.patch, r.features, p.project.scale));
         if (rendered.length === 1) {
           // One ref already has its look image beside the render; --out asked for a copy of it at that path, so write one.
           if (opts.out) { mkdirSync(dirname(resolve(opts.out)), { recursive: true }); copyFileSync(rendered[0].lookPath, resolve(opts.out)); }
@@ -160,13 +163,13 @@ export function registerPatchCommands(program: Command, io: Io) {
         const dest = resolve(opts.wav);
         const { first, wavs, manifest, posts } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest, post }));
         const postOut = posts.map(postJson);
-        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}), ...noticeField([...scaleSnapNotices(patch, p.project.scale), ...variantNotices(patch, { requested: true })]) });
+        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}), ...noticeField([...renderNotices(patch, first.features, p.project.scale), ...variantNotices(patch, { requested: true })]) });
         return;
       }
       requireDeclaredVariant(patch, opts.variant);
       const dest = resolve(opts.wav);
       const { rendered: o, manifest, post: done } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest, post }));
       const extra = postJson(done);
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}), ...noticeField(scaleSnapNotices(patch, p.project.scale)) });
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}), ...noticeField(renderNotices(patch, o.features, p.project.scale)) });
     });
 }
