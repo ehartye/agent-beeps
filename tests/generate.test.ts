@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mulberry32 } from '../runtime/engine/rng.js';
 import { farthestPoint, generate } from '../src/generate.ts';
-import { crossover, directionScore, mutate, perturb } from '../src/mutate.ts';
+import { blend, crossover, directionScore, mutate, perturb } from '../src/mutate.ts';
+import { BeepsError } from '../src/errors.ts';
 import { getArchetype } from '../src/archetypes.ts';
 import { parsePatch } from '../src/schema/patch.ts';
 import { featureVector, FEATURE_NAMES } from '../src/measure/index.ts';
@@ -50,6 +51,24 @@ describe('perturb and crossover', () => {
     const b = { ...coin(), layers: [{ ...coin().layers[0], amp: { ...coin().layers[0].amp, decay: 0.48 } }] };
     expect(crossover(a, b, 0).layers[0].amp.decay).toBeCloseTo(0.12);
     expect(crossover(a, b, 0.5).layers[0].amp.decay).toBeCloseTo(Math.sqrt(0.12 * 0.48), 3);
+  });
+
+  it('crossover refuses a blend that is not a valid patch instead of handing back the first parent', () => {
+    const a = coin();
+    const b = { ...coin(), layers: [{ ...coin().layers[0], amp: { ...coin().layers[0].amp, decay: 0.48 } }] };
+    let thrown: unknown;
+    try { crossover(a, b, 400); } catch (e) { thrown = e; }
+    expect(thrown).toBeInstanceOf(BeepsError);
+    expect((thrown as BeepsError).code).toBe('E_SCHEMA');
+    expect((thrown as BeepsError).message).toMatch(/not a valid patch/);
+    expect((thrown as BeepsError).pointer).toBeTruthy();
+  });
+
+  it('blend reports the failure as data, for callers that fall back on purpose', () => {
+    const a = coin();
+    const b = { ...coin(), layers: [{ ...coin().layers[0], amp: { ...coin().layers[0].amp, decay: 0.48 } }] };
+    expect(blend(a, b, 0.5).ok).toBe(true);
+    expect(blend(a, b, 400).ok).toBe(false);
   });
 
   it('scores movement along requested directions', () => {

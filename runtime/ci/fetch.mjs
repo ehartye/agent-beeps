@@ -5,25 +5,60 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, renameSync, writeFileSy
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 //#region src/errors.ts
+const ERROR_CATEGORIES = {
+	E_USAGE: "input",
+	E_SCHEMA: "input",
+	E_NOT_FOUND: "input",
+	E_CONFLICT: "input",
+	E_PROJECT: "input",
+	E_PREDICTION_REQUIRED: "input",
+	E_BUDGET: "input",
+	E_BROWSER_MISSING: "environment",
+	E_RUNTIME_MISSING: "environment",
+	E_TOOLCHAIN: "environment",
+	E_RENDER: "outcome",
+	E_VERIFY: "outcome",
+	E_NONDETERMINISTIC: "outcome",
+	E_LOCK: "transient",
+	E_SERVER: "transient",
+	E_STORE: "transient",
+	E_INTERNAL: "bug"
+};
+Object.keys(ERROR_CATEGORIES);
+/** The rejected value as an agent reads it: JSON, cut to 80 characters. */
+const echo = (v) => {
+	const s = typeof v === "string" ? v : JSON.stringify(v) ?? String(v);
+	return s.length > 80 ? s.slice(0, 79) + "…" : s;
+};
+/** Both fields follow from the code, so no throw site names them. */
+const triage = (code) => ({
+	category: ERROR_CATEGORIES[code],
+	retryable: ERROR_CATEGORIES[code] === "transient"
+});
 /** An error an agent can act on: a stable code, the JSON pointer at fault, a hint, and structured details. */
 var BeepsError = class extends Error {
 	code;
 	pointer;
 	hint;
+	received;
 	details;
+	/** `received` is the value that was rejected (found at `pointer`); it is echoed to the caller, truncated. */
 	constructor(code, message, extra = {}) {
 		super(message);
 		this.code = code;
 		this.pointer = extra.pointer;
 		this.hint = extra.hint;
+		this.received = extra.received;
 		this.details = extra.details ?? {};
 	}
 	toJson() {
 		return {
 			code: this.code,
+			...triage(this.code),
 			message: this.message,
 			...this.pointer !== void 0 ? { pointer: this.pointer } : {},
 			...this.hint !== void 0 ? { hint: this.hint } : {},
+			...this.received !== void 0 ? { received: echo(this.received) } : {},
 			...this.details
 		};
 	}

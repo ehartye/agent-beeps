@@ -2,6 +2,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { BeepsError } from './errors.ts';
+import { tryGetPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 import { defaultProject, parseProject, type Project } from './schema/project.ts';
 
@@ -65,7 +66,7 @@ export function parseOrThrow(input: unknown, where: string): Patch {
   const r = parsePatch(input);
   if (r.ok) return r.patch;
   const first = r.issues[0];
-  throw new BeepsError('E_SCHEMA', `${where}: ${first.message}${r.issues.length > 1 ? ` (+${r.issues.length - 1} more)` : ''}`, { pointer: first.pointer, hint: first.hint });
+  throw new BeepsError('E_SCHEMA', `${where}: ${first.message}${r.issues.length > 1 ? ` (+${r.issues.length - 1} more)` : ''}`, { pointer: first.pointer, hint: first.hint, ...(first.pointer ? { received: tryGetPointer(input, first.pointer) } : {}) });
 }
 
 export function readJsonFile(path: string): unknown {

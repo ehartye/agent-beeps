@@ -21,7 +21,7 @@
 | `beeps archetypes` | list the SFX archetypes generate can sample |
 | `beeps generate` | sample an archetype, render and measure, and keep a diverse, lint-clean candidate set |
 | `beeps mutate` | breed variations of a patch toward directions (brighter, darker, punchier, softer, shorter, longer, less-harsh, more-character) |
-| `beeps crossover` | blend two patches (structure from a) and save the result as a project patch |
+| `beeps crossover` | blend two patches (structure from a) and save the result as a project patch; a blend that is not a valid patch is an error, and an existing name needs --force |
 | `beeps lint` | check patches against the cited craft rules (renders them to measure); exits 1 only when a patch has errors, warnings exit 0; notes (e.g. "kit-level rules run only in kit check") are informational |
 | `beeps family` | emit N similar patches from one template patch plus a table of rows; {{param}} placeholders and /json/pointer columns override the template, optional seeded ranges and jitter; every row is validated (E_SCHEMA names the row and pointer); deterministic |
 | `beeps serve` | start (or reuse) the LAN audition server; prints its URL |
