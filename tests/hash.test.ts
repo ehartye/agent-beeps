@@ -17,6 +17,6 @@ describe('hash', () => {
 describe('BeepsError', () => {
   it('serializes code, pointer and hint', () => {
     const e = new BeepsError('E_SCHEMA', 'bad', { pointer: '/a', hint: 'h' });
-    expect(e.toJson()).toEqual({ code: 'E_SCHEMA', message: 'bad', pointer: '/a', hint: 'h' });
+    expect(e.toJson()).toEqual({ code: 'E_SCHEMA', category: 'input', retryable: false, message: 'bad', pointer: '/a', hint: 'h' });
   });
 });
