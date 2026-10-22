@@ -2,6 +2,8 @@
 import { mulberry32, noiseSamples } from './rng.js';
 import { sumInto, sumNodes } from './sum.js';
 import { scheduleEnvelope, validateEnvelope, validateEnvelopeSchedule } from './envelope.js';
+import { dbToGain } from './units.js';
+import { MAX_SAMPLE_FRAMES, SAMPLE_RATE_HZ } from './limits.js';
 
 /** @typedef {import('../../src/schema/patch.ts').Source} Source */
 /**
@@ -14,7 +16,6 @@ import { scheduleEnvelope, validateEnvelope, validateEnvelopeSchedule } from './
  * @property {(t: number) => void} stop
  */
 
-const db = (/** @type {number} */ x) => 10 ** (x / 20);
 export const nyquistSafe = (/** @type {BaseAudioContext} */ ctx, /** @type {number} */ hz) => hz < 0.45 * ctx.sampleRate;
 
 /** 808 metal: six detuned squares in deliberately inharmonic ratios. */
@@ -197,9 +198,9 @@ export function sampleBuffer(src, samples) {
   if (src.type !== 'sample') return undefined;
   const buffer = samples && Object.hasOwn(samples, src.asset) ? samples[src.asset] : undefined;
   if (!buffer) throw new Error(`missing prepared sample buffer: ${src.asset}`);
-  if (buffer.sampleRate !== 48000) throw new RangeError(`sample ${src.asset} must be 48 kHz`);
+  if (buffer.sampleRate !== SAMPLE_RATE_HZ) throw new RangeError(`sample ${src.asset} must be 48 kHz`);
   if (buffer.numberOfChannels !== 1 && buffer.numberOfChannels !== 2) throw new RangeError(`sample ${src.asset} must have 1 or 2 channels`);
-  if (!Number.isSafeInteger(buffer.length) || buffer.length < 1 || buffer.length > 480000) throw new RangeError(`sample ${src.asset} frames must be in 1..480000`);
+  if (!Number.isSafeInteger(buffer.length) || buffer.length < 1 || buffer.length > MAX_SAMPLE_FRAMES) throw new RangeError(`sample ${src.asset} frames must be in 1..${MAX_SAMPLE_FRAMES}`);
   return buffer;
 }
 
@@ -276,7 +277,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
     mods.forEach((m, i) => sumInto(ctx, m, ops[i].frequency));
     parts.push(ops[0]);
   } else if (src.type === 'additive') {
-    const total = src.partials.reduce((a, [, g]) => a + db(g), 0) || 1;
+    const total = src.partials.reduce((a, [, g]) => a + dbToGain(g), 0) || 1;
     for (const [ratio, gainDb, decay] of src.partials) {
       if (!nyquistSafe(ctx, pitchHz * ratio)) continue;
       const o = ctx.createOscillator();
@@ -287,7 +288,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
       nodes.push(o); pitch.push({ param: o.frequency, ratio }); detune.push(o.detune);
       // Each partial decays on its own clock: that independence is what makes additive sound physical.
       onStart.push(t => {
-        g.gain.setValueAtTime(db(gainDb) / total, t);
+        g.gain.setValueAtTime(dbToGain(gainDb) / total, t);
         g.gain.setTargetAtTime(0, t, decay / 5);
       });
     }
@@ -303,7 +304,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
       bp.Q.value = q;
       const g = ctx.createGain();
       // A bandpass passes a sliver of an impulse; scale by Q so modes ring at a usable level.
-      g.gain.value = db(gainDb) * q * 4;
+      g.gain.value = dbToGain(gainDb) * q * 4;
       parts.push(exciter.connect(bp).connect(g));
       pitch.push({ param: bp.frequency, ratio });
       modalDetune.push(bp.detune);
@@ -397,7 +398,7 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
       bp.frequency.value = hz;
       bp.Q.value = q;
       const g = ctx.createGain();
-      g.gain.value = db(gainDb);
+      g.gain.value = dbToGain(gainDb);
       parts.push(drive.connect(bp).connect(g));
     }
   } else if (src.type === 'metal') {
@@ -418,6 +419,9 @@ export function buildSource(ctx, src, { pitchHz, seed, length, samples }) {
       bp.Q.value = 1.5;
       parts.push(sum.connect(bp));
     }
+  } else {
+    // Without this a type added to the schema but not here would build an empty mix and play as silence.
+    throw new Error(`unknown source type "${/** @type {{ type?: string }} */ (src).type}"`);
   }
 
   sumInto(ctx, parts, mix);

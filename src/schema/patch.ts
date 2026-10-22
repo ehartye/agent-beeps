@@ -217,6 +217,8 @@ export type Source = Layer['source'];
 export interface Issue { pointer: string; message: string; hint?: string }
 export type ParseResult = { ok: true; patch: Patch } | { ok: false; issues: Issue[] };
 
+// This file ships alone in the runtime package (tests/runtime/package.test.ts), so its pointer escaping and lookups stay local
+// instead of importing src/pointer.ts, which depends on the CLI error class.
 export const pointerOf = (path: readonly PropertyKey[]): string =>
   path.length ? '/' + path.map(p => String(p).replaceAll('~', '~0').replaceAll('/', '~1')).join('/') : '';
 
