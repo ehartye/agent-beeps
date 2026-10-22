@@ -209,6 +209,18 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.20.0
+
+Honest feedback, second step: candidate sets and the commands around them now say what they dropped or ignored. No sound or music
+changes; no render, hash or cache key moves.
+
+- **`generate` and `mutate`:** the result carries a `report` (`requested`, `kept`, `tried`, `dropped` with a reason each, `notSelected`; `mutate` adds `unchanged` and, with `--like`, `blendFallbacks`) and always `tried = kept + notSelected + dropped.length`. `N_SHORT_SET` says the set is smaller than asked for; `N_STEERING_CANCELLED` and `N_STEERING_UNUSED` say when prompt words steered nothing. A set with nothing in it is `E_RENDER` (with the first drops in `details`), not an empty result. `mutate --count` is checked (1 to 8), and a parent that does not render is an error instead of a quiet "no direction".
+- **`batch`:** removing an array entry that is not an index in range is an error naming the operation (it used to remove the first entry); removing a key the patch does not have is listed under `noops`, not `changed`.
+- **`init`:** on an existing project, `--scale` and `--target` change nothing and the result says so (`existing`, `ignored`, `N_OPTION_IGNORED`).
+- **`look`:** with one ref, `--out` now writes the image there.
+- **`compress`, `player selftest`:** a bitrate that is 0 or not a number, and a `--port` that is not an integer, are usage errors instead of quietly using the default.
+- **Skill:** `beeps-compose` names the new codes in its "read the notices" block.
+
 ## What changed in 0.19.0
 
 Honest feedback: the places where a command quietly did something other than what the caller asked now say so. No sound or

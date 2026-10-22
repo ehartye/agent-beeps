@@ -87,11 +87,19 @@ export function replacePointer(obj: unknown, ptr: string, value: unknown): void 
   else throw new BeepsError('E_USAGE', `no object at the parent of ${ptr}`, { pointer: ptr });
 }
 
-export function removePointer(obj: unknown, ptr: string): void {
+/** Removes the value at `ptr`; false when an object key was not there. An array entry must be a canonical index inside the array (E_USAGE otherwise, never a different entry). */
+export function removePointer(obj: unknown, ptr: string): boolean {
   const keys = parsePointer(ptr);
+  if (!keys.length) throw new BeepsError('E_USAGE', 'cannot remove the root of a document', { pointer: ptr });
   const parent = keys.length > 1 ? getPointer(obj, '/' + keys.slice(0, -1).map(escapePointer).join('/')) : obj;
   if (!isContainer(parent)) throw new BeepsError('E_USAGE', `no object at the parent of ${ptr}`);
   const last = keys[keys.length - 1];
-  if (Array.isArray(parent)) parent.splice(Number(last), 1);
-  else delete parent[last];
+  if (Array.isArray(parent)) {
+    if (!hasKey(parent, last)) throw new BeepsError('E_USAGE', `no array index ${last} at ${ptr}`, { pointer: ptr, hint: `use an index from 0 to ${parent.length - 1}`, received: last });
+    parent.splice(Number(last), 1);
+    return true;
+  }
+  if (!Object.hasOwn(parent, last)) return false;
+  delete parent[last];
+  return true;
 }

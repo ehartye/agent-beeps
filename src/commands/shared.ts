@@ -31,6 +31,13 @@ export function outcomeJson(o: RenderOutcome) {
   return o.ok ? { ok: true, ...summary(o) } : { ok: false, name: o.patchName, error: o.error };
 }
 
+/** A number above zero (a bitrate): commander reports anything else as a usage error naming the option, instead of the option quietly falling back to its default. */
+export const positive = (v: string) => {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) throw new InvalidArgumentError(`expected a number above 0, got "${v}"`);
+  return n;
+};
+
 export const int = (v: string) => {
   const n = Number(v);
   // Commander reports this as a usage error (E_USAGE, exit 2) naming the option.

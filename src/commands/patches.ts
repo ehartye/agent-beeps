@@ -1,10 +1,10 @@
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
 import { applyBatch } from '../batch.ts';
-import { initProject, listPatches, loadPatch, openProject, parseOrThrow, readJsonFile, savePatch, syncPatches } from '../project.ts';
+import { initProject, listPatches, loadPatch, openProject, parseOrThrow, pathsFor, readJsonFile, savePatch, syncPatches } from '../project.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { sha256 } from '../hash.ts';
 import { readKit } from '../kit.ts';
@@ -12,7 +12,7 @@ import { int, outcomeJson, summary, withHost } from './shared.ts';
 import { exportRole } from '../export-manifest.ts';
 import { exportPatchOne, exportPatchVariants } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
-import { noticeField } from '../notices.ts';
+import { notice, noticeField } from '../notices.ts';
 import { requireDeclaredVariant, scaleSnapNotices, variantNotices } from '../patch-notices.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
@@ -22,11 +22,15 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--target <lufs>', 'max momentary loudness target for one-shots', parseFloat)
     .action((opts: { scale?: string; target?: number }) => {
       const [root, mode] = opts.scale?.split(':') ?? [];
+      const existing = existsSync(pathsFor(resolve(io.projectDir())).projectFile);
       const p = initProject(io.projectDir(), {
         ...(opts.target !== undefined ? { targetLoudness: opts.target } : {}),
         scale: { ...(root ? { root } : {}), ...(mode ? { mode: mode as never } : {}) },
       });
-      io.emit({ root: p.paths.root, dir: p.paths.dir, project: p.project });
+      // An existing project.json is never rewritten, so an option given now changed nothing: say so rather than echo the old values as if they were new.
+      const ignored = existing ? [...(opts.scale ? ['--scale'] : []), ...(opts.target !== undefined ? ['--target'] : [])] : [];
+      const notices = ignored.map(option => notice('N_OPTION_IGNORED', { message: `${option} was ignored: ${p.paths.projectFile} already exists and was not rewritten`, requested: option, applied: 'existing project.json' }));
+      io.emit({ root: p.paths.root, dir: p.paths.dir, project: p.project, ...(existing ? { existing: true } : {}), ...(ignored.length ? { ignored } : {}), ...noticeField(notices) });
     });
 
   program.command('list')
@@ -94,7 +98,7 @@ export function registerPatchCommands(program: Command, io: Io) {
 
   program.command('look <refs...>')
     .description('look image (waveform + spectrogram + features); several refs make a contact sheet')
-    .option('--out <png>', 'where to write a contact sheet')
+    .option('--out <png>', 'where to write the image: a contact sheet for several refs, a copy of the look image for one')
     .option('--seed <n>', 'render seed', int, 1)
     .action(async (refs: string[], opts: { out?: string; seed: number }) => {
       const p = openProject(io.projectDir());
@@ -105,7 +109,12 @@ export function registerPatchCommands(program: Command, io: Io) {
         if (failed && !failed.ok) throw new BeepsError('E_RENDER', `${failed.patchName}: ${failed.error}`);
         const rendered = out as Rendered[];
         const snap = (r: Rendered) => noticeField(scaleSnapNotices(r.patch, p.project.scale));
-        if (rendered.length === 1) { io.emit({ ...summary(rendered[0]), ...snap(rendered[0]) }); return; }
+        if (rendered.length === 1) {
+          // One ref already has its look image beside the render; --out asked for a copy of it at that path, so write one.
+          if (opts.out) { mkdirSync(dirname(resolve(opts.out)), { recursive: true }); copyFileSync(rendered[0].lookPath, resolve(opts.out)); }
+          io.emit({ ...summary(rendered[0]), ...(opts.out ? { out: resolve(opts.out) } : {}), ...snap(rendered[0]) });
+          return;
+        }
         const path = resolve(opts.out ?? join(p.paths.renders, `sheet-${sha256(rendered.map(r => r.key).join()).slice(0, 12)}.png`));
         mkdirSync(dirname(path), { recursive: true });
         await contactSheet(host, rendered, rendered.map((r, i) => `${i + 1} · ${r.patch.name}`), path);

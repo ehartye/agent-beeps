@@ -35,13 +35,18 @@ const WORDS: [RegExp, string[]][] = [
   [/\b(not harsh|smooth|clean|pleasant)\b/i, ['less-harsh']],
 ];
 
-export function promptDirections(prompt: string | undefined | null): string[] {
-  if (!prompt) return [];
+/** What a prompt asks for: the directions that steer, and each opposite pair that cancelled itself out. */
+export function readPrompt(prompt: string | undefined | null): { directions: string[]; cancelled: [string, string][] } {
+  if (!prompt) return { directions: [], cancelled: [] };
   const out = new Set<string>();
   for (const [re, dirs] of WORDS) if (re.test(prompt)) dirs.forEach(d => out.add(d));
   // "not harsh" must not also read as a request for character
   if (/\bnot (harsh|gritty|crunchy)\b/i.test(prompt)) out.delete('more-character');
-  if (out.has('brighter') && out.has('darker')) { out.delete('brighter'); out.delete('darker'); }
-  if (out.has('shorter') && out.has('longer')) { out.delete('shorter'); out.delete('longer'); }
-  return [...out];
+  const cancelled: [string, string][] = [];
+  for (const pair of [['brighter', 'darker'], ['shorter', 'longer']] as const) {
+    if (out.has(pair[0]) && out.has(pair[1])) { out.delete(pair[0]); out.delete(pair[1]); cancelled.push([pair[0], pair[1]]); }
+  }
+  return { directions: [...out], cancelled };
 }
+
+export const promptDirections = (prompt: string | undefined | null): string[] => readPrompt(prompt).directions;

@@ -9,7 +9,9 @@ import type { OpenProject } from './project.ts';
 import { openRenderHost, type RenderHost } from './render/host.ts';
 import { renderAndMeasure, type Rendered } from './render/pipeline.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
-import { finishSet, usable } from './generate.ts';
+import { finishSet } from './generate.ts';
+import { requireCandidates, screen, setNotices, setReport, type SetReport } from './set-report.ts';
+import type { Notice } from './notices.ts';
 import type { CandidateSet } from './sets.ts';
 import { appendEvent, candidatesFromSet, FEATURE_SCALES, foldSession, loadModel, readEvents, readSession, type SessionState } from './audition/session.ts';
 import { setCandidatePatch, readSet } from './sets.ts';
@@ -104,7 +106,9 @@ export function crossover(a: Patch, b: Patch, t: number): Patch {
 }
 
 
-export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: Patch; toward?: string[]; like?: Patch; count?: number; seed?: number; parentSet?: string | null; prompt?: string | null }): Promise<CandidateSet> {
+export type Mutated = CandidateSet & { report: SetReport; notices: Notice[] };
+
+export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: Patch; toward?: string[]; like?: Patch; count?: number; seed?: number; parentSet?: string | null; prompt?: string | null }): Promise<Mutated> {
   const count = opts.count ?? 4;
   const seed = opts.seed ?? Math.floor(Math.random() * 1e6);
   const rand = mulberry32(seed);
@@ -113,30 +117,40 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
   const base = (opts.parent.archetype ?? opts.parent.family).slice(0, 24);
   const tag = (seed % 0xffff).toString(16);
   const kids: Patch[] = [];
+  let unchanged = 0, blendFallbacks = 0;
   for (let i = 0; i < count * 6; i++) {
-    // A blend that is not valid falls back to the parent here on purpose: the child is then a plain perturbation of it.
-    let child = opts.like ? (b => (b.ok ? b.patch : opts.parent))(blend(opts.parent, opts.like, 0.25 + 0.5 * rand())) : opts.parent;
+    // A blend that is not valid falls back to the parent here on purpose (the child is then a plain perturbation of it) and is counted in the report.
+    let child = opts.parent;
+    if (opts.like) {
+      const b = blend(opts.parent, opts.like, 0.25 + 0.5 * rand());
+      if (b.ok) child = b.patch; else blendFallbacks++;
+    }
     child = perturb(child, rand, archetype);
-    if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) continue; // unchanged: not a variation
+    if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) { unchanged++; continue; } // unchanged: not a variation
     kids.push({ ...child, name: `${base}-m${tag}-${i + 1}` });
   }
   const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], renderOptions(p));
-  const pool = usable(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), renderOptions(p)), p);
-  const pv = parentR.ok ? featureVector(parentR.features) : null;
+  // Without the parent's measurements --toward has nothing to measure movement against; that is a failure, not a quiet zero.
+  if (!parentR.ok) throw new BeepsError('E_RENDER', `${opts.parent.name} did not render, so its variations cannot be judged against it: ${parentR.error}`);
+  const { usable: pool, dropped } = screen(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), renderOptions(p)), p);
+  const pv = featureVector(parentR.features);
   const model = loadModel(p);
   const scored = pool.map(r => {
     const v = featureVector(r.features);
-    const dir = pv && toward.length ? directionScore(pv, v, toward) : 0;
-    const novelty = pv ? Math.sqrt(v.reduce((s, x, i) => s + ((x - pv[i]) / FEATURE_SCALES[i]) ** 2, 0)) : 0;
+    const dir = toward.length ? directionScore(pv, v, toward) : 0;
+    const novelty = Math.sqrt(v.reduce((s, x, i) => s + ((x - pv[i]) / FEATURE_SCALES[i]) ** 2, 0));
     const taste = model.n >= 10 ? utility(model, v.map((x, i) => x / FEATURE_SCALES[i])).u : 0;
     return { r, dir, score: (toward.length ? dir : novelty) + 0.3 * taste };
   }).sort((a, b) => b.score - a.score);
   const keep = scored.slice(0, count);
+  const report = setReport(count, pool, dropped, keep.length, { unchanged, ...(opts.like ? { blendFallbacks } : {}) });
+  requireCandidates(report, `variation of ${opts.parent.name}`);
   const weak = new Set(keep.filter(k => toward.length && k.dir <= 0).map(k => k.r.patch.name));
-  return finishSet(host, p, keep.map(k => k.r as Rendered), {
+  const set = await finishSet(host, p, keep.map(k => k.r as Rendered), {
     archetype: opts.parent.archetype ?? null, family: opts.parent.family, prompt: opts.prompt ?? null,
     parent: opts.parentSet ?? null, idPrefix: `${base}-mut`, weak,
   });
+  return { ...set, report, notices: setNotices(report) };
 }
 
 /** Hand-off mode: the server breeds the next round itself when the owner asks to refine. */
@@ -154,7 +168,6 @@ export async function autoRefine(p: OpenProject, sessionId: string, state: Sessi
       like: likeC ? setCandidatePatch(p, likeC.setId, likeC.name) : undefined,
       toward: req.directions, count: 4, parentSet: champ.setId,
     });
-    if (!set.candidates.length) throw new BeepsError('E_RENDER', 'no mutation passed the craft rules');
     // Re-read the session: the owner may have shipped or closed it while this round was breeding.
     const fresh = foldSession(readSession(p, sessionId), readEvents(p, sessionId));
     if (fresh.stage !== 'waiting') return;

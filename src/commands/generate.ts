@@ -22,6 +22,7 @@ import { DeliveryResultsHead, deliveryPrefsFile, foldResults, globalDeliveryPref
 import { int, withHost } from './shared.ts';
 import { renderOptions } from '../render/options.ts';
 import { noticeField } from '../notices.ts';
+import { reportJson } from '../set-report.ts';
 import { scaleSnapNotices, variantNotices } from '../patch-notices.ts';
 
 export const setJson = (s: CandidateSet) => ({
@@ -107,7 +108,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       if (opts.count < 2 || opts.count > 8) throw new BeepsError('E_USAGE', '--count must be 2 to 8 (auditions stay small to avoid fatigue)');
       const p = openProject(io.projectDir());
       const set = await withHost(host => generate(host, p, { archetype, count: opts.count, seed: opts.seed, prompt: opts.prompt }));
-      io.emit({ ...setJson(set), steering: set.steering });
+      io.emit({ ...setJson(set), steering: set.steering, ...reportJson(set) });
     });
 
   program.command('mutate <ref>')
@@ -117,12 +118,13 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--count <n>', 'candidates to keep', int, 4)
     .option('--seed <n>', 'seed', int)
     .action(async (ref: string, opts: { toward: string; like?: string; count: number; seed?: number }) => {
+      if (opts.count < 1 || opts.count > 8) throw new BeepsError('E_USAGE', '--count must be 1 to 8 (auditions stay small to avoid fatigue)', { received: opts.count });
       const p = openProject(io.projectDir());
       const toward = opts.toward.split(',').filter(Boolean);
       const bad = toward.filter(d => !(d in DIRECTIONS) && d !== 'surprise');
       if (bad.length) throw new BeepsError('E_USAGE', `unknown direction ${bad.join(', ')}`, { hint: `one of ${Object.keys(DIRECTIONS).join(', ')}` });
       const set = await withHost(host => mutate(host, p, { parent: loadPatch(p, ref), like: opts.like ? loadPatch(p, opts.like) : undefined, toward, count: opts.count, seed: opts.seed }));
-      io.emit(setJson(set));
+      io.emit({ ...setJson(set), ...reportJson(set) });
     });
 
   program.command('crossover <a> <b>')

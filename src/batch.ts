@@ -16,7 +16,8 @@ const Op = z.discriminatedUnion('op', [
 export const OpsSchema = z.array(Op).min(1);
 export type BatchOp = z.infer<typeof Op>;
 
-export interface BatchResult { applied: number; dryRun: boolean; changed: string[]; deleted: string[] }
+/** `noops` lists the operations that changed nothing (a remove of a key the patch does not have), by index, so "applied" is not read as "changed". */
+export interface BatchResult { applied: number; dryRun: boolean; changed: string[]; deleted: string[]; noops?: { operationIndex: number; op: string; name: string; pointer: string }[] }
 
 export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } = {}): BatchResult {
   const parsed = OpsSchema.safeParse(rawOps);
@@ -27,6 +28,7 @@ export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } =
   const state = new Map<string, Patch>(listPatches(p).map(x => [x.name, x]));
   const changed = new Set<string>();
   const deleted = new Set<string>();
+  const noops: NonNullable<BatchResult['noops']> = [];
   parsed.data.forEach((op, operationIndex) => {
     const fail = (message: string, extra: { pointer?: string; hint?: string } = {}): never => {
       throw new BeepsError('E_SCHEMA', `operation ${operationIndex} (${op.op}): ${message}`, { ...extra, details: { operationIndex } });
@@ -45,10 +47,12 @@ export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } =
       if (!current) return fail(`no patch "${op.name}"`);
       if (op.op === 'delete') { state.delete(op.name); deleted.add(op.name); changed.delete(op.name); return; }
       const copy = structuredClone(current) as unknown;
+      let removed = true;
       try {
         if (op.op === 'set') setPointer(copy, op.pointer, op.value);
-        else removePointer(copy, op.pointer);
+        else removed = removePointer(copy, op.pointer);
       } catch (e) { fail((e as Error).message, { pointer: op.pointer }); }
+      if (!removed) { noops.push({ operationIndex, op: op.op, name: op.name, pointer: op.pointer }); return; }
       const patch = validate(copy);
       if (patch.name !== op.name) fail('renaming via set is not supported', { pointer: '/name' });
       state.set(op.name, patch); changed.add(op.name);
@@ -61,5 +65,5 @@ export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } =
       if (existsSync(f)) rmSync(f);
     }
   }
-  return { applied: parsed.data.length, dryRun, changed: [...changed], deleted: [...deleted] };
+  return { applied: parsed.data.length, dryRun, changed: [...changed], deleted: [...deleted], ...(noops.length ? { noops } : {}) };
 }

@@ -17,6 +17,10 @@ A notice is something a command did on your behalf that the input did not say: a
 | `N_SCALE_SNAP` | warn | A pitched layer renders at a different pitch than written, because the project scale snaps pitches to its notes. | write a pitch that is in the scale, change the scale in .agent-beeps/project.json, or set scale.snap to false to render pitches as written |
 | `N_VARIANTS_IDENTICAL` | warn | The patch declares several variants, but nothing in its variation block changes the sound, so every variant renders the same samples. | add variation.pitchCents (needs a pitched layer) or variation.gainDb, or author sibling patches that differ |
 | `N_NO_VARIANTS` | info | Variants were requested for a patch that declares no variants, so one render was made. | declare variation.variants in the patch (see the beeps-compose skill) before asking for variants |
+| `N_SHORT_SET` | warn | A command returned fewer candidates than were asked for, because the rest failed to render or broke an error-level craft rule. | read report.dropped for each candidate and why, then rerun with another --seed or a looser prompt; do not describe the set as the size you asked for |
+| `N_STEERING_CANCELLED` | info | The prompt asked for opposite things (brighter and darker, shorter and longer), so neither steered the selection. | keep one of the two words in the prompt, or pick candidates by looking at the sheet |
+| `N_STEERING_UNUSED` | info | The prompt was read as directions, but the usable candidate pool was no larger than the set, so there was nothing to choose between and steering changed nothing. | ask for a smaller --count, or generate again; use mutate --toward to move a chosen candidate in a direction |
+| `N_OPTION_IGNORED` | warn | An option was accepted but had no effect, because what it configures already exists. | edit the existing file (for example .agent-beeps/project.json) to change it |
 
 ## Errors
 
