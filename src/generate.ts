@@ -2,7 +2,6 @@
 // failures, then pick a diverse subset by farthest-point selection in taste-feature space.
 import { join } from 'node:path';
 import { getArchetype, loadArchetypes, sampleArchetype, type Archetype } from './archetypes.ts';
-import { lintPatch } from './lint.ts';
 import { featureVector } from './measure/index.ts';
 import type { OpenProject } from './project.ts';
 import type { RenderHost } from './render/host.ts';
@@ -11,8 +10,10 @@ import type { Patch } from './schema/patch.ts';
 import { candidateFromRendered, newId, writeSet, type CandidateSet } from './sets.ts';
 import { loadModel, tasteVectors } from './audition/session.ts';
 import { utility } from './taste/model.ts';
-import { directionScore, promptDirections } from './directions.ts';
+import { directionScore, readPrompt } from './directions.ts';
 import { renderOptions } from './render/options.ts';
+import type { Notice } from './notices.ts';
+import { requireCandidates, screen, setNotices, setReport, type SetReport } from './set-report.ts';
 
 const dist2 = (a: number[], b: number[]) => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0);
 
@@ -28,11 +29,6 @@ export function farthestPoint(points: number[][], k: number, start: number | num
     points.forEach((p, i) => { nearest[i] = Math.min(nearest[i], dist2(p, points[best])); });
   }
   return chosen;
-}
-
-/** Keep renders that passed and have no error-level lint findings. */
-export function usable(rendered: Awaited<ReturnType<typeof renderAndMeasure>>, p: OpenProject): Rendered[] {
-  return rendered.flatMap(r => (r.ok && lintPatch(r.patch, r.features, p.project).errors.length === 0 ? [r] : []));
 }
 
 /** Choose `count` diverse candidates; start from the taste model's favourite once it has data. */
@@ -79,15 +75,20 @@ export function familyMembers(a: Archetype): Archetype[] {
   return loadArchetypes().filter(x => x.family === a.family);
 }
 
-export async function generate(host: RenderHost, p: OpenProject, opts: { archetype: string; count?: number; seed?: number; prompt?: string }): Promise<CandidateSet & { steering: string[] }> {
+export type Generated = CandidateSet & { steering: string[]; report: SetReport; notices: Notice[] };
+
+export async function generate(host: RenderHost, p: OpenProject, opts: { archetype: string; count?: number; seed?: number; prompt?: string }): Promise<Generated> {
   const count = opts.count ?? 6;
   const seed = opts.seed ?? Math.floor(Math.random() * 1e6);
   const a = getArchetype(opts.archetype);
   const members = familyMembers(a);
   const per = Math.ceil((count * 4) / members.length);
   const samples = members.flatMap((m, k) => sampleArchetype(m, seed + k * 1009, per));
-  const pool = usable(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), renderOptions(p)), p);
-  const steering = promptDirections(opts.prompt);
-  const set = await finishSet(host, p, selectDiverse(p, pool, count, steering), { archetype: a.name, family: a.family, prompt: opts.prompt ?? null, parent: null, idPrefix: a.name });
-  return { ...set, steering };
+  const { usable: pool, dropped } = screen(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), renderOptions(p)), p);
+  const prompt = readPrompt(opts.prompt);
+  const chosen = selectDiverse(p, pool, count, prompt.directions);
+  const report = setReport(count, pool, dropped, chosen.length);
+  requireCandidates(report, `${a.name} candidate`);
+  const set = await finishSet(host, p, chosen, { archetype: a.name, family: a.family, prompt: opts.prompt ?? null, parent: null, idPrefix: a.name });
+  return { ...set, steering: prompt.directions, report, notices: setNotices(report, { ...prompt, applied: pool.length > count }) };
 }

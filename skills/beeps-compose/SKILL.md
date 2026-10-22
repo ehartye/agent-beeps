@@ -24,7 +24,10 @@ A command that changed something you did not ask for says so in a `notices` arra
 never call a sound "as written" while a notice says otherwise.
 - `N_SCALE_SNAP`: the project scale moved a pitch (466 Hz is another note). Write in-scale pitches, or set `scale.snap` to false.
 - `N_VARIANTS_IDENTICAL`: the declared variants render the same samples. Add `pitchCents` (pitched layers) or `gainDb`.
+- `generate` and `mutate` return a `report` (`requested`, `kept`, `dropped` with a reason each). `N_SHORT_SET` means the set is smaller than
+  you asked for: say so and why. `N_STEERING_CANCELLED` and `N_STEERING_UNUSED`: the prompt words steered nothing. An empty set is `E_RENDER`.
 - `kit check` lists a sound that failed to render as `ok: false` and exits 1. `crossover` errors on an invalid blend and needs `--force` to overwrite.
+- `batch` lists `noops` (a remove of a key the patch did not have); `init` on an existing project reports what it `ignored`.
 - You cannot hear: state what the measurements and the look image show, not what the sound "feels" like.
 
 ## Recorded-source or hybrid SFX

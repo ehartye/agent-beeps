@@ -12,6 +12,7 @@ import { RUNTIME_DIR, serveStatic } from '../render/host.ts';
 import { parseSelftestFormats, writeSelftest } from '../selftest.ts';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
 import { PLAYER_VERSION } from '../../runtime/player/version.js';
+import { int, positive } from './shared.ts';
 
 /** Runtime files the vendored player needs (relative to runtime/): its modules and the engine modules they import. */
 export const PLAYER_FILES = [
@@ -42,10 +43,10 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .action((dir: string) => io.emit(bundleDir(resolve(dir))));
   program.command('compress <dir> <outDir>')
     .description('re-encode an exported bundle (WAVs and *.wav.json sidecars) as Ogg Opus in <outDir>, verify frame counts, alignment and loop wraps, and write its index.json')
-    .option('--music-kbps <n>', 'music and adaptive layers (default 56)', Number)
-    .option('--ambience-kbps <n>', 'ambience beds (default 48)', Number)
-    .option('--sfx-kbps <n>', 'sound effects (default 72)', Number)
-    .option('--mix-kbps <n>', "the full-mix file of an adaptive song, which the player does not load (it plays the layers); default: same as music", Number)
+    .option('--music-kbps <n>', 'music and adaptive layers (default 56)', positive)
+    .option('--ambience-kbps <n>', 'ambience beds (default 48)', positive)
+    .option('--sfx-kbps <n>', 'sound effects (default 72)', positive)
+    .option('--mix-kbps <n>', "the full-mix file of an adaptive song, which the player does not load (it plays the layers); default: same as music", positive)
     .option('--format <opus|mp3>', 'output format: opus (Ogg Opus, default) or mp3 (the fallback for browsers with no Ogg Opus decoder; default kbps 80/64/96)', 'opus')
     .option('--no-strict', 'report a file that does not verify instead of failing')
     .action((dir: string, outDir: string, o: { musicKbps?: number; ambienceKbps?: number; sfxKbps?: number; mixKbps?: number; format: string; strict: boolean }) => {
@@ -72,7 +73,7 @@ export function registerPlayerCommands(program: Command, io: Io) {
     .description('write a static self-test page (beeps-selftest/) that decodes a known loop in the delivered formats through the vendored player and prints frame delta and lead per audio-context rate, with a copyable result: open it on a real iPhone or Safari')
     .option('--formats <list>', 'encodes to include, besides the WAV control: opus, mp3', 'opus,mp3')
     .option('--serve', 'also serve the page on the LAN until interrupted, and print the URLs')
-    .option('--port <n>', 'port for --serve (default: any free port)', Number)
+    .option('--port <n>', 'port for --serve (default: any free port)', int)
     .action(async (dir: string | undefined, o: { formats: string; serve?: boolean; port?: number }) => {
       const r = writeSelftest(dir ?? '.', parseSelftestFormats(o.formats));
       if (!o.serve) { io.emit({ ...r, hint: 'serve the folder over HTTP (or add --serve) and open index.html in the browser to test; iOS needs HTTP(S), not file://' }); return; }

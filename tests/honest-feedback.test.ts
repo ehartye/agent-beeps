@@ -1,38 +1,17 @@
 // Phase 1 of the honest-feedback spec, end to end: each of these used to leave the agent believing something false.
 import { describe, expect, it } from 'vitest';
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromiumAvailable } from '../src/render/host.ts';
 import { coin, patch } from './helpers/patches.ts';
+import { add, beeps, project } from './helpers/cli.ts';
 
-const bin = join(import.meta.dirname, '..', 'scripts', 'beeps.mjs');
 const hasChromium = await chromiumAvailable();
-
-function beeps(cwd: string, ...args: string[]) {
-  const r = spawnSync(process.execPath, [bin, ...args], { cwd, encoding: 'utf8', windowsHide: true });
-  const parse = (s: string) => { try { return JSON.parse(s); } catch { return undefined; } };
-  return { status: r.status, out: parse(r.stdout), err: parse(r.stderr)?.error };
-}
 
 const layer = (source: Record<string, unknown>) => ({ source, amp: { attack: 0.005, decay: 0.2, sustain: 0, release: 0.05 } });
 const sine466 = patch({ schema: 'beeps/patch@1', name: 'off-key', family: 'test', duration: 0.3, layers: [layer({ type: 'osc', wave: 'sine', pitch: 466 })] });
 const silent = patch({ ...coin(), name: 'silent', layers: [{ ...coin().layers[0], gainDb: -60, filter: { type: 'lowpass', cutoff: 5, resonanceDb: 0 } }] });
 const flat = patch({ schema: 'beeps/patch@1', name: 'flat', family: 'test', duration: 0.3, variation: { variants: 3 }, layers: [layer({ type: 'osc', wave: 'sine', pitch: 'C4' })] });
-
-function project(scale?: string) {
-  const dir = mkdtempSync(join(tmpdir(), 'beeps-honest-'));
-  expect(beeps(dir, 'init', ...(scale ? ['--scale', scale] : [])).status).toBe(0);
-  return dir;
-}
-function add(dir: string, ...patches: object[]) {
-  for (const p of patches) {
-    const file = join(dir, `${(p as { name: string }).name}.src.json`);
-    writeFileSync(file, JSON.stringify(p));
-    expect(beeps(dir, 'new', file, '--force').status).toBe(0);
-  }
-}
 
 describe.skipIf(!hasChromium)('scale snap is reported', () => {
   it('render, measure and look say which pitch the scale moved', () => {

@@ -28,6 +28,26 @@ export const NOTICE_REGISTRY = {
     summary: 'Variants were requested for a patch that declares no variants, so one render was made.',
     hint: 'declare variation.variants in the patch (see the beeps-compose skill) before asking for variants',
   },
+  N_SHORT_SET: {
+    severity: 'warn',
+    summary: 'A command returned fewer candidates than were asked for, because the rest failed to render or broke an error-level craft rule.',
+    hint: 'read report.dropped for each candidate and why, then rerun with another --seed or a looser prompt; do not describe the set as the size you asked for',
+  },
+  N_STEERING_CANCELLED: {
+    severity: 'info',
+    summary: 'The prompt asked for opposite things (brighter and darker, shorter and longer), so neither steered the selection.',
+    hint: 'keep one of the two words in the prompt, or pick candidates by looking at the sheet',
+  },
+  N_STEERING_UNUSED: {
+    severity: 'info',
+    summary: 'The prompt was read as directions, but the usable candidate pool was no larger than the set, so there was nothing to choose between and steering changed nothing.',
+    hint: 'ask for a smaller --count, or generate again; use mutate --toward to move a chosen candidate in a direction',
+  },
+  N_OPTION_IGNORED: {
+    severity: 'warn',
+    summary: 'An option was accepted but had no effect, because what it configures already exists.',
+    hint: 'edit the existing file (for example .agent-beeps/project.json) to change it',
+  },
 } as const satisfies Record<string, NoticeEntry>;
 
 export type NoticeCode = keyof typeof NOTICE_REGISTRY;
