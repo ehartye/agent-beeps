@@ -21,7 +21,7 @@ describe('stateTrim', () => {
   });
 
   it('reads silence as no trim', () => {
-    expect(stateTrim([new Float32Array(SR)], SR, -20)).toEqual({ lufs: -99, peakDb: -99, trimDb: 0 });
+    expect(stateTrim([new Float32Array(SR)], SR, -20)).toEqual({ silent: true, lufs: null, peakDb: null, trimDb: 0 });
   });
 });
 
