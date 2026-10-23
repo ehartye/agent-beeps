@@ -100,10 +100,11 @@ export function play(name: HookSound, { dryRun = process.env.BEEPS_HOOKS_DRY_RUN
   const cmd = playCommand(process.platform, file, hasExecutable);
   if (!cmd) return { played: false, reason: 'no audio player found (afplay, paplay, aplay or play)' };
   const text = [cmd.command, ...cmd.args].join(' ');
-  if (dryRun) return { played: true, command: text, reason: 'dry run: not started' };
   try {
+    // The stamp is written before the dry-run return, so a dry run rate-limits exactly as a real one does.
     writeFileSync(stamp, '');
     utimesSync(stamp, new Date(now), new Date(now));
+    if (dryRun) return { played: true, command: text, reason: 'dry run: not started' };
     spawn(cmd.command, cmd.args, { detached: true, stdio: 'ignore', windowsHide: true }).unref();
     return { played: true, command: text };
   } catch (e) { return { played: false, reason: (e as Error).message }; }
