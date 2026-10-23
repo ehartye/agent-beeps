@@ -1,0 +1,230 @@
+{
+  "schema": "beeps/song@1",
+  "name": "slow-rain-reading",
+  "title": "Slow Rain Reading",
+  "description": "A rainy afternoon with a book: a soft wash of filtered noise, a warm pad in B-flat, a handful of piano notes and a high glass sparkle now and then.",
+  "tags": [
+    "focus",
+    "ambient",
+    "texture"
+  ],
+  "bpm": 62,
+  "loop": false,
+  "seed": 420108,
+  "progressions": {
+    "a": [
+      [
+        "Bbmaj9",
+        8
+      ],
+      [
+        "Gm9",
+        8
+      ],
+      [
+        "Ebmaj9",
+        8
+      ],
+      [
+        "F6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "rain": {
+      "instrument": "nebula",
+      "gainDb": -25,
+      "sends": {
+        "reverb": -16
+      }
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -18,
+      "highpass": 110,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "C5",
+          "/layers/0/filter/cutoff": 5200
+        }
+      },
+      "gainDb": -13,
+      "pan": -0.1,
+      "sends": {
+        "reverb": -11
+      },
+      "humanize": 0.35
+    },
+    "spark": {
+      "instrument": "shimmer",
+      "gainDb": -28,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -8,
+        "delay": -16
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -23
+    }
+  },
+  "patterns": {
+    "rain-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "C4",
+          32,
+          0.6
+        ]
+      ]
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "piano-a": {
+      "bars": 8,
+      "notes": [
+        [
+          4,
+          "D5",
+          2,
+          0.5
+        ],
+        [
+          6,
+          "F5",
+          2,
+          0.5
+        ],
+        [
+          16,
+          "G4",
+          2,
+          0.5
+        ],
+        [
+          18,
+          "Bb4",
+          2,
+          0.5
+        ],
+        [
+          28,
+          "C5",
+          2,
+          0.5
+        ],
+        [
+          30,
+          "E5",
+          2,
+          0.5
+        ]
+      ]
+    },
+    "spark-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "F6",
+          2,
+          0.4
+        ],
+        [
+          24,
+          "D6",
+          2,
+          0.4
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "rain": "rain-a",
+        "pad": "pad-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "rain": "rain-a",
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "rain": "rain-a",
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-a",
+        "spark": "spark-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "rain": "rain-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -26
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "space",
+      "returnDb": -10
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "schema": "beeps/song@1",
+  "name": "quiet-desk",
+  "title": "Quiet Desk",
+  "description": "The slowest piece in the set: a felt piano plays one note per beat in a rising and falling arpeggio in F, with a pad breathing underneath. It leaves almost everything out.",
+  "tags": [
+    "focus",
+    "piano",
+    "minimal"
+  ],
+  "bpm": 56,
+  "loop": false,
+  "seed": 420106,
+  "progressions": {
+    "a": [
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Bbmaj9",
+        8
+      ],
+      [
+        "C6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "Eb4",
+          "/layers/0/filter/cutoff": 3092
+        }
+      },
+      "gainDb": -12,
+      "pan": -0.08,
+      "sends": {
+        "reverb": -11
+      },
+      "humanize": 0.3
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -20,
+      "highpass": 110,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -22
+    },
+    "bell": {
+      "instrument": "glass-bell",
+      "gainDb": -26,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9
+      }
+    }
+  },
+  "patterns": {
+    "piano-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "piano-b": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 3
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "bell-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "A5",
+          2,
+          0.45
+        ],
+        [
+          28,
+          "F5",
+          4,
+          0.45
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "piano": "piano-a",
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "piano": "piano-b",
+        "pad": "pad-a",
+        "low": "low-a",
+        "bell": "bell-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "piano": "piano-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "piano": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

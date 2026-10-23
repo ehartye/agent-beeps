@@ -1,0 +1,185 @@
+{
+  "schema": "beeps/song@1",
+  "name": "index-cards",
+  "title": "Index Cards",
+  "description": "Sorting and shuffling: two soft plucked voices in E minor take turns on an interlocking pattern, a pad and a low note keep the floor, and nothing else happens.",
+  "tags": [
+    "focus",
+    "interlock",
+    "quiet"
+  ],
+  "bpm": 76,
+  "loop": false,
+  "seed": 420107,
+  "progressions": {
+    "a": [
+      [
+        "Em9",
+        8
+      ],
+      [
+        "Cmaj9",
+        8
+      ],
+      [
+        "Gmaj9",
+        8
+      ],
+      [
+        "D6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "lft": {
+      "instrument": {
+        "base": "soft-pluck",
+        "set": {
+          "/layers/0/source/pitch": "C4",
+          "/layers/0/filter/cutoff": 3000,
+          "/layers/0/filter/env/to": 900,
+          "/layers/1/source/pitch": "C5"
+        }
+      },
+      "gainDb": -17,
+      "pan": -0.35,
+      "sends": {
+        "reverb": -13,
+        "delay": -22
+      },
+      "humanize": 0.15
+    },
+    "rgt": {
+      "instrument": {
+        "base": "arp-blip",
+        "set": {
+          "/layers/0/source/pitch": "Ab4",
+          "/layers/0/filter/cutoff": 2857
+        }
+      },
+      "gainDb": -26,
+      "pan": 0.35,
+      "sends": {
+        "reverb": -12,
+        "delay": -20
+      },
+      "humanize": 0.15
+    },
+    "pad": {
+      "instrument": "string-pad",
+      "gainDb": -26,
+      "highpass": 150,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -22
+    }
+  },
+  "patterns": {
+    "l-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 2,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 3,
+        "rhythm": "x.x. x.x. x.x. x.x."
+      }
+    },
+    "r-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 2,
+        "shape": "down",
+        "octaves": 1,
+        "octave": 4,
+        "rhythm": ".x.x .x.x .x.x .x.x"
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "lft": "l-a",
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "lft": "l-a",
+        "rgt": "r-a",
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "lft": "l-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "lft": {
+          "gainDb": -26
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

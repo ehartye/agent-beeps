@@ -1,0 +1,46 @@
+[
+  {
+    "id": "hosting",
+    "title": "Dinner Party",
+    "tagline": "Hosting guests and cooking for them, from chopping to the last cup of coffee.",
+    "musicLoudness": -22,
+    "order": ["chopping-board", "simmer", "doors-open", "wine-pour", "first-course", "table-talk", "second-helping", "dessert-plates", "candlelight", "last-guests-linger"],
+    "brief": [
+      "The brief is that people have to be able to talk. Every track stays between 60 and 108 bpm, keeps its melody understated and soft, and leaves the middle of the spectrum free for voices. Nothing has a hook that asks to be sung along to.",
+      "The set follows the evening: two prep tracks with a little lift for the kitchen, then arrival, the first glass, the starter, the main course, seconds, dessert and a slow, nearly empty close. Styles shift between bossa nova, ballad, soft soul, light funk and a waltz so a long evening does not feel looped."
+    ],
+    "sources": [
+      { "label": "Dinner-party tempo and volume guidance (commercial blogs; consistent on conversation-first volume and 60 to 110 bpm, not rigorous)", "url": "https://djwillgill.com/how-different-playlists-uplift-small-and-large-events/" },
+      { "label": "Restaurant music strategy by concept (tempo bands)", "url": "https://activaire.com/blog/restaurant-music-strategy" }
+    ]
+  },
+  {
+    "id": "focus",
+    "title": "Deep Focus",
+    "tagline": "Studying and working: steady, quiet and slow to change.",
+    "musicLoudness": -24,
+    "order": ["blank-page", "library-hours", "deep-work", "flow-state", "margin-notes", "quiet-desk", "index-cards", "slow-rain-reading", "checkpoint", "long-division"],
+    "brief": [
+      "The brief is that nothing should pull the eye off the page. No lyrics, no melodic hook, no sudden entrances: each section changes by one layer at a time, tempos sit between 56 and 84 bpm, and the level barely moves from the first bar to the last.",
+      "The evidence behind focus music is thin. The one tempo comparison found, a small experiment of unconfirmed origin, had slow instrumental music (60 to 70 bpm) do as well as or slightly better than silence for word recall, and fast music (120 to 130 bpm) do worst. Claims that a particular tempo entrains brain waves are not supported by anything found. Treat this as a sensible default rather than a prescription; the music that works is the music you stop noticing."
+    ],
+    "sources": [
+      { "label": "Background music while studying (qualitative study; says empirical work on slide-based learning is scarce)", "url": "https://public-pages-files-2025.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2025.1637073/pdf" }
+    ]
+  },
+  {
+    "id": "pump",
+    "title": "Get Pumped",
+    "tagline": "A warm-up, a climb through the tempos and a victory lap.",
+    "musicLoudness": -16,
+    "order": ["warm-up-lap", "crowd-noise", "rise-up", "ignition", "breakthrough", "pressure", "final-set", "iron-will", "sprint-finish", "victory-lap"],
+    "brief": [
+      "The brief is drive. Hard kicks, bass on the offbeat, brass hooks and a build and drop in every track, in the 118 to 150 bpm range. Exercise-music research recommends roughly 120 to 140 bpm for most work, a slower start for warm-ups and little extra benefit above about 145, and advises against heavy syncopation, which is why the grooves here lean on the beat.",
+      "The set climbs on purpose: it opens at 118 bpm, rises through the 120s and 130s, peaks at 150 and ends on a 120 bpm cool-down. Much of the reported benefit figures come from secondary coverage rather than the papers, so take the numbers as a guide."
+    ],
+    "sources": [
+      { "label": "Karageorghis et al. 2011, Research Quarterly for Exercise and Sport: tempo preference across exercise intensity", "url": "https://shura.shu.ac.uk/18185/" },
+      { "label": "Les Mills on workout music tempo ranges", "url": "https://www.lesmills.com/articles/workout-music" }
+    ]
+  }
+]

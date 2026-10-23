@@ -21,6 +21,19 @@ mkdirSync(resolve(out,'booth'),{recursive:true});
 for(const file of ['style.css','album.css'])copyFileSync(resolve(root,'runtime/audition',file),resolve(out,'booth',file));
 cpSync(resolve(root,'runtime/engine'),resolve(out,'engine'),{recursive:true});
 copyFileSync(resolve(root,'LICENSE'),resolve(out,'LICENSE'));
+// The playlists page ships beside the booth. Its sealed manifest (node scripts/render-playlists.mjs --seal) must match every file.
+const playlists=JSON.parse(readFileSync(resolve(root,'playlists/manifest.json'),'utf8'));
+for(const [path,expected] of Object.entries(playlists.files)){
+  const actual=createHash('sha256').update(readFileSync(resolve(root,path))).digest('hex');
+  if(actual!==expected)throw new Error(`${path} changed since it was sealed. Run node scripts/render-playlists.mjs --seal.`);
+}
+const tracks=JSON.parse(readFileSync(resolve(root,'playlists/tracks.json'),'utf8'));
+for(const set of tracks.sets)for(const t of set.tracks)for(const ref of [t.mp3,t.look,t.recipe]){
+  if(!(`playlists/${ref.replace('./','')}` in playlists.files))throw new Error(`${set.id}/${t.id}: ${ref} is not in the playlists manifest`);
+}
+mkdirSync(resolve(out,'playlists'),{recursive:true});
+for(const file of ['index.html','app.js','style.css','tracks.json'])copyFileSync(resolve(root,'playlists',file),resolve(out,'playlists',file));
+for(const dir of ['media','songs'])cpSync(resolve(root,'playlists',dir),resolve(out,'playlists',dir),{recursive:true});
 writeFileSync(resolve(out,'.nojekyll'),'');
 if(!existsSync(resolve(out,'media/matter.mp3')))throw new Error('Missing reel');
-console.log(`Showcase built at ${out}; ${Object.keys(manifest.files).length} source/media hashes verified.`);
+console.log(`Showcase built at ${out}; ${Object.keys(manifest.files).length} source/media hashes verified; ${Object.keys(playlists.files).length} playlist files verified.`);

@@ -1,0 +1,214 @@
+{
+  "schema": "beeps/song@1",
+  "name": "checkpoint",
+  "title": "Checkpoint",
+  "description": "Progress marks: a steady bass pulse in A major under bright, soft electric-piano chords and a high glass sparkle. The liveliest piece in the set, for when the work needs a little forward motion.",
+  "tags": [
+    "focus",
+    "pulse",
+    "bright"
+  ],
+  "bpm": 84,
+  "loop": false,
+  "seed": 420109,
+  "progressions": {
+    "a": [
+      [
+        "Amaj9",
+        8
+      ],
+      [
+        "F#m9",
+        8
+      ],
+      [
+        "Dmaj9",
+        8
+      ],
+      [
+        "E6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "keys": {
+      "instrument": "e-piano",
+      "gainDb": -15,
+      "pan": -0.12,
+      "sends": {
+        "reverb": -14
+      },
+      "humanize": 0.2,
+      "spread": 0.3
+    },
+    "bass": {
+      "instrument": {
+        "base": "pulse-bass",
+        "set": {
+          "/layers/0/source/pitch": "A2",
+          "/layers/0/filter/cutoff": 2355,
+          "/layers/0/filter/env/to": 437,
+          "/layers/1/source/pitch": "A2"
+        }
+      },
+      "gainDb": -21,
+      "keytrack": 0.4
+    },
+    "pad": {
+      "instrument": "glass-pad",
+      "gainDb": -29,
+      "highpass": 150,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -13
+      }
+    },
+    "spark": {
+      "instrument": "shimmer",
+      "gainDb": -29,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -8,
+        "delay": -16
+      }
+    },
+    "tick": {
+      "instrument": "hat",
+      "gainDb": -36,
+      "pan": 0.2
+    }
+  },
+  "patterns": {
+    "keys-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ ____ x___ ____"
+      }
+    },
+    "keys-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ __x_ x___ __x_"
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x.x. x.x. x.x. x.x.",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "spark-a": {
+      "bars": 8,
+      "notes": [
+        [
+          8,
+          "E6",
+          2,
+          0.4
+        ],
+        [
+          20,
+          "C#6",
+          2,
+          0.4
+        ],
+        [
+          28,
+          "B5",
+          4,
+          0.4
+        ]
+      ]
+    },
+    "tick": {
+      "bars": 1,
+      "steps": "x... x... x... x..."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a",
+        "pad": "pad-a",
+        "tick": "tick"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "keys": "keys-b",
+        "bass": "bass-a",
+        "pad": "pad-a",
+        "tick": "tick",
+        "spark": "spark-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "keys": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

@@ -1,0 +1,812 @@
+{
+  "schema": "beeps/song@1",
+  "name": "victory-lap",
+  "title": "Victory Lap",
+  "description": "Crossing the line: a bright four-on-the-floor in C major with open brass, a rising hook and a pad that carries the last bars home.",
+  "tags": [
+    "pump",
+    "triumph",
+    "major"
+  ],
+  "bpm": 120,
+  "loop": false,
+  "seed": 430110,
+  "instruments": {
+    "punch-kick": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 170
+          },
+          "pitchEnv": [
+            {
+              "at": 0.07,
+              "to": 46,
+              "curve": "exp"
+            }
+          ],
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.32,
+            "sustain": 0,
+            "release": 0.06
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "gainDb": -14,
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.012,
+            "sustain": 0,
+            "release": 0.01
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 2500
+          }
+        }
+      ]
+    },
+    "clap": {
+      "duration": 0.25,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.13,
+            "sustain": 0,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 1500,
+            "q": 1.2
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "pink"
+          },
+          "gainDb": -6,
+          "amp": {
+            "attack": 0.012,
+            "decay": 0.09,
+            "sustain": 0,
+            "release": 0.06
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 1100,
+            "q": 0.9
+          }
+        }
+      ]
+    },
+    "open-hat": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "metal",
+            "base": 40,
+            "bands": [
+              7000,
+              10000
+            ]
+          },
+          "gainDb": -4,
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.28,
+            "sustain": 0,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 6500
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "C",
+        4
+      ],
+      [
+        "G",
+        4
+      ],
+      [
+        "Am",
+        4
+      ],
+      [
+        "F",
+        4
+      ],
+      [
+        "C",
+        4
+      ],
+      [
+        "G",
+        4
+      ],
+      [
+        "F",
+        4
+      ],
+      [
+        "G",
+        4
+      ]
+    ],
+    "b": [
+      [
+        "F",
+        4
+      ],
+      [
+        "C",
+        4
+      ],
+      [
+        "G",
+        4
+      ],
+      [
+        "Am",
+        4
+      ],
+      [
+        "F",
+        4
+      ],
+      [
+        "C",
+        4
+      ],
+      [
+        "G",
+        4
+      ],
+      [
+        "G",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "kick": {
+      "instrument": "punch-kick",
+      "gainDb": -7
+    },
+    "clap": {
+      "instrument": "clap",
+      "gainDb": -17,
+      "pan": 0.05
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -27,
+      "pan": 0.2
+    },
+    "ohat": {
+      "instrument": "open-hat",
+      "gainDb": -28,
+      "pan": -0.2
+    },
+    "perc": {
+      "instrument": "tom",
+      "gainDb": -15,
+      "pan": -0.1
+    },
+    "bass": {
+      "instrument": {
+        "base": "pulse-bass",
+        "set": {
+          "/layers/0/source/pitch": "Ab2",
+          "/layers/0/filter/cutoff": 2222,
+          "/layers/0/filter/env/to": 413,
+          "/layers/1/source/pitch": "Ab2"
+        }
+      },
+      "gainDb": -9,
+      "keytrack": 0.5
+    },
+    "stab": {
+      "instrument": {
+        "base": "synth-brass",
+        "set": {
+          "/layers/0/source/pitch": "Ab4",
+          "/layers/0/filter/cutoff": 794,
+          "/layers/0/filter/env/to": 4127
+        }
+      },
+      "gainDb": -18,
+      "pan": -0.15,
+      "spread": 0.4,
+      "sends": {
+        "reverb": -18
+      }
+    },
+    "arp": {
+      "instrument": "pluck",
+      "gainDb": -22,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -16,
+        "delay": -14
+      },
+      "humanize": 0.1
+    },
+    "lead": {
+      "instrument": {
+        "base": "synth-brass",
+        "set": {
+          "/layers/0/source/pitch": "C6",
+          "/layers/0/filter/cutoff": 2000,
+          "/layers/0/filter/env/to": 10400
+        }
+      },
+      "gainDb": -13,
+      "pan": 0.05,
+      "sends": {
+        "reverb": -14,
+        "delay": -16
+      }
+    },
+    "pad": {
+      "instrument": "string-pad",
+      "gainDb": -22,
+      "highpass": 140,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "riser": {
+      "instrument": "nebula",
+      "gainDb": -22,
+      "sends": {
+        "reverb": -10
+      }
+    }
+  },
+  "patterns": {
+    "kick": {
+      "bars": 1,
+      "steps": "x... x... x... x..."
+    },
+    "clap": {
+      "bars": 1,
+      "steps": ".... x... .... x..."
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "ohat": {
+      "bars": 1,
+      "steps": "..x. ..x. ..x. ..x."
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": ".x.x .x.x .x.x .x.x",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "bass-b": {
+      "bars": 8,
+      "bass": {
+        "progression": "b",
+        "octave": 2,
+        "rhythm": ".x.x .x.x .x.x .x.x",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "bass-lite": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... x... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "stab-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 4,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ ..x_ x___ ...."
+      }
+    },
+    "stab-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 4,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ ..x_ x___ ...."
+      }
+    },
+    "arp-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "arp-b": {
+      "bars": 8,
+      "arp": {
+        "progression": "b",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "lead-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E5",
+          1,
+          0.78
+        ],
+        [
+          1,
+          "G5",
+          1,
+          0.78
+        ],
+        [
+          2,
+          "C6",
+          2,
+          0.78
+        ],
+        [
+          4,
+          "D6",
+          2,
+          0.78
+        ],
+        [
+          6,
+          "B5",
+          2,
+          0.78
+        ],
+        [
+          8,
+          "C6",
+          1,
+          0.78
+        ],
+        [
+          9,
+          "E6",
+          1,
+          0.78
+        ],
+        [
+          10,
+          "A5",
+          2,
+          0.78
+        ],
+        [
+          12,
+          "A5",
+          1,
+          0.78
+        ],
+        [
+          13,
+          "C6",
+          1,
+          0.78
+        ],
+        [
+          14,
+          "F6",
+          2,
+          0.78
+        ],
+        [
+          16,
+          "E6",
+          2,
+          0.78
+        ],
+        [
+          18,
+          "G6",
+          2,
+          0.78
+        ],
+        [
+          20,
+          "D6",
+          1,
+          0.78
+        ],
+        [
+          21,
+          "B5",
+          1,
+          0.78
+        ],
+        [
+          22,
+          "G5",
+          2,
+          0.78
+        ],
+        [
+          24,
+          "A5",
+          1,
+          0.78
+        ],
+        [
+          25,
+          "C6",
+          1,
+          0.78
+        ],
+        [
+          26,
+          "F6",
+          2,
+          0.78
+        ],
+        [
+          28,
+          "D6",
+          2,
+          0.78
+        ],
+        [
+          30,
+          "B5",
+          2,
+          0.78
+        ]
+      ]
+    },
+    "lead-b": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "A5",
+          2,
+          0.78
+        ],
+        [
+          2,
+          "C6",
+          2,
+          0.78
+        ],
+        [
+          4,
+          "G5",
+          1,
+          0.78
+        ],
+        [
+          5,
+          "C6",
+          1,
+          0.78
+        ],
+        [
+          6,
+          "E6",
+          2,
+          0.78
+        ],
+        [
+          8,
+          "B5",
+          2,
+          0.78
+        ],
+        [
+          10,
+          "D6",
+          2,
+          0.78
+        ],
+        [
+          12,
+          "C6",
+          1,
+          0.78
+        ],
+        [
+          13,
+          "E6",
+          1,
+          0.78
+        ],
+        [
+          14,
+          "A5",
+          2,
+          0.78
+        ],
+        [
+          16,
+          "F6",
+          2,
+          0.78
+        ],
+        [
+          18,
+          "A5",
+          2,
+          0.78
+        ],
+        [
+          20,
+          "E6",
+          2,
+          0.78
+        ],
+        [
+          22,
+          "G6",
+          2,
+          0.78
+        ],
+        [
+          24,
+          "D6",
+          1,
+          0.78
+        ],
+        [
+          25,
+          "B5",
+          1,
+          0.78
+        ],
+        [
+          26,
+          "G5",
+          2,
+          0.78
+        ],
+        [
+          28,
+          "C6",
+          4,
+          0.78
+        ]
+      ]
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "riser-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "C4",
+          32,
+          0.8
+        ]
+      ]
+    },
+    "roll-a": {
+      "bars": 4,
+      "steps": ".... .... x... ...."
+    },
+    "roll-b": {
+      "bars": 2,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "roll-c": {
+      "bars": 1,
+      "steps": "xxxx xxxx xxxx xxxx"
+    },
+    "roll-d": {
+      "bars": 1,
+      "steps": "x... .... .... ...."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "bass": "bass-lite",
+        "pad": "pad-a"
+      },
+      "mix": {
+        "bass": {
+          "gainDb": -12
+        }
+      },
+      "bars": 8
+    },
+    "build": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "clap": [
+          "roll-a",
+          "roll-b",
+          "roll-c",
+          "roll-d"
+        ],
+        "bass": "bass-lite",
+        "pad": "pad-a",
+        "riser": "riser-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -14
+        }
+      },
+      "ramp": true,
+      "bars": 8
+    },
+    "drop": {
+      "play": {
+        "kick": "kick",
+        "clap": "clap",
+        "hat": "hat",
+        "ohat": "ohat",
+        "bass": "bass-a",
+        "stab": "stab-a",
+        "arp": "arp-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -60
+        },
+        "bass": {
+          "gainDb": -9
+        }
+      },
+      "bars": 8
+    },
+    "hook": {
+      "play": {
+        "kick": "kick",
+        "clap": "clap",
+        "hat": "hat",
+        "ohat": "ohat",
+        "bass": "bass-b",
+        "stab": "stab-b",
+        "arp": "arp-b",
+        "lead": "lead-a"
+      },
+      "bars": 8
+    },
+    "break": {
+      "play": {
+        "pad": "pad-b",
+        "arp": "arp-b",
+        "lead": "lead-b",
+        "hat": "hat"
+      },
+      "mix": {
+        "arp": {
+          "gainDb": -18
+        },
+        "lead": {
+          "gainDb": -16
+        }
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "bass": "bass-lite",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "kick": {
+          "gainDb": -16
+        },
+        "bass": {
+          "gainDb": -18
+        },
+        "pad": {
+          "gainDb": -26
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "build",
+    "drop",
+    "hook",
+    "break",
+    "build",
+    "drop",
+    "hook",
+    "hook",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -12
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.3,
+      "returnDb": -20
+    }
+  }
+}

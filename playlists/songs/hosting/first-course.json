@@ -1,0 +1,611 @@
+{
+  "schema": "beeps/song@1",
+  "name": "first-course",
+  "title": "First Course",
+  "description": "The starter arrives: a minor-key bossa with a rim clave and shaker, soft electric-piano chords and a glassy bell tune that lilts rather than leads.",
+  "tags": [
+    "dinner",
+    "bossa",
+    "minor"
+  ],
+  "bpm": 92,
+  "loop": false,
+  "seed": 410105,
+  "instruments": {
+    "upright": {
+      "duration": 1.2,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "triangle",
+            "pitch": "A2"
+          },
+          "amp": {
+            "attack": 0.012,
+            "decay": 0.55,
+            "sustain": 0.18,
+            "release": 0.2
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 875,
+            "resonanceDb": 0
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": "A2"
+          },
+          "gainDb": -3,
+          "amp": {
+            "attack": 0.01,
+            "decay": 0.4,
+            "sustain": 0.3,
+            "release": 0.18
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "Am9",
+        4
+      ],
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "Bm7b5",
+        2
+      ],
+      [
+        "E7b9",
+        2
+      ],
+      [
+        "Am9",
+        4
+      ],
+      [
+        "Fmaj9",
+        4
+      ],
+      [
+        "Dm7",
+        2
+      ],
+      [
+        "E7",
+        2
+      ],
+      [
+        "Am9",
+        4
+      ],
+      [
+        "Am9",
+        4
+      ]
+    ],
+    "b": [
+      [
+        "Cmaj9",
+        4
+      ],
+      [
+        "Fmaj9",
+        4
+      ],
+      [
+        "Bm7b5",
+        2
+      ],
+      [
+        "E7b9",
+        2
+      ],
+      [
+        "Am9",
+        4
+      ],
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "G13",
+        4
+      ],
+      [
+        "E7sus4",
+        2
+      ],
+      [
+        "E7b9",
+        2
+      ],
+      [
+        "Am9",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "keys": {
+      "instrument": {
+        "base": "e-piano",
+        "set": {
+          "/layers/0/source/pitch": "D4",
+          "/layers/1/source/pitch": "D4",
+          "/layers/1/filter/cutoff": 3592,
+          "/layers/1/filter/env/to": 1347,
+          "/layers/2/source/pitch": "D4"
+        }
+      },
+      "gainDb": -12,
+      "pan": -0.15,
+      "sends": {
+        "reverb": -15
+      },
+      "humanize": 0.3,
+      "spread": 0.3
+    },
+    "bass": {
+      "instrument": "upright",
+      "gainDb": -9
+    },
+    "tune": {
+      "instrument": "glass-bell",
+      "gainDb": -17,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -12,
+        "delay": -18
+      },
+      "humanize": 0.2
+    },
+    "pad": {
+      "instrument": {
+        "base": "warm-pad",
+        "set": {
+          "/layers/0/source/pitch": "D4",
+          "/layers/0/filter/cutoff": 1347,
+          "/layers/1/source/pitch": "D4"
+        }
+      },
+      "gainDb": -29,
+      "highpass": 140,
+      "sends": {
+        "reverb": -16
+      }
+    },
+    "rim": {
+      "instrument": "rim",
+      "gainDb": -23,
+      "pan": 0.1
+    },
+    "shk": {
+      "instrument": "shaker",
+      "gainDb": -27,
+      "pan": -0.2
+    },
+    "drum": {
+      "instrument": "hand-drum",
+      "gainDb": -23,
+      "pan": 0.25
+    }
+  },
+  "patterns": {
+    "keys-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x_.x _.x_ ..x_ x_.."
+      }
+    },
+    "keys-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x_.x _.x_ ..x_ x_.."
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x.....x. x.....x.",
+        "tones": [
+          0,
+          2,
+          0,
+          2
+        ]
+      }
+    },
+    "bass-b": {
+      "bars": 8,
+      "bass": {
+        "progression": "b",
+        "octave": 2,
+        "rhythm": "x.....x. x.....x.",
+        "tones": [
+          0,
+          2,
+          0,
+          2
+        ]
+      }
+    },
+    "tune-a": {
+      "bars": 8,
+      "notes": [
+        [
+          2,
+          "E5",
+          1,
+          0.55
+        ],
+        [
+          3,
+          "A5",
+          1,
+          0.55
+        ],
+        [
+          4,
+          "C6",
+          2,
+          0.55
+        ],
+        [
+          6,
+          "B5",
+          1,
+          0.55
+        ],
+        [
+          7,
+          "A5",
+          1,
+          0.55
+        ],
+        [
+          8,
+          "E5",
+          2,
+          0.55
+        ],
+        [
+          12,
+          "D5",
+          1,
+          0.55
+        ],
+        [
+          13,
+          "F5",
+          1,
+          0.55
+        ],
+        [
+          14,
+          "A5",
+          2,
+          0.55
+        ],
+        [
+          16,
+          "G5",
+          1,
+          0.55
+        ],
+        [
+          17,
+          "F5",
+          1,
+          0.55
+        ],
+        [
+          18,
+          "E5",
+          2,
+          0.55
+        ],
+        [
+          20,
+          "C6",
+          1,
+          0.55
+        ],
+        [
+          21,
+          "B5",
+          1,
+          0.55
+        ],
+        [
+          22,
+          "A5",
+          2,
+          0.55
+        ],
+        [
+          24,
+          "G#5",
+          1,
+          0.55
+        ],
+        [
+          25,
+          "B5",
+          1,
+          0.55
+        ],
+        [
+          26,
+          "A5",
+          2,
+          0.55
+        ],
+        [
+          28,
+          "A5",
+          4,
+          0.55
+        ]
+      ]
+    },
+    "tune-b": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "G5",
+          1.5,
+          0.55
+        ],
+        [
+          1.5,
+          "E5",
+          0.5,
+          0.55
+        ],
+        [
+          2,
+          "C5",
+          1,
+          0.55
+        ],
+        [
+          3,
+          "E5",
+          1,
+          0.55
+        ],
+        [
+          4,
+          "G5",
+          4,
+          0.55
+        ],
+        [
+          8,
+          "A5",
+          1.5,
+          0.55
+        ],
+        [
+          9.5,
+          "F5",
+          0.5,
+          0.55
+        ],
+        [
+          10,
+          "C5",
+          1,
+          0.55
+        ],
+        [
+          11,
+          "F5",
+          1,
+          0.55
+        ],
+        [
+          12,
+          "A5",
+          2,
+          0.55
+        ],
+        [
+          14,
+          "G#5",
+          2,
+          0.55
+        ],
+        [
+          16,
+          "B5",
+          2,
+          0.55
+        ],
+        [
+          18,
+          "E5",
+          1,
+          0.55
+        ],
+        [
+          19,
+          "G#5",
+          1,
+          0.55
+        ],
+        [
+          20,
+          "A5",
+          4,
+          0.55
+        ],
+        [
+          24,
+          "D5",
+          1,
+          0.55
+        ],
+        [
+          25,
+          "F5",
+          1,
+          0.55
+        ],
+        [
+          26,
+          "A5",
+          2,
+          0.55
+        ],
+        [
+          28,
+          "G5",
+          1,
+          0.55
+        ],
+        [
+          29,
+          "F5",
+          1,
+          0.55
+        ],
+        [
+          30,
+          "E5",
+          2,
+          0.55
+        ]
+      ]
+    },
+    "clave": {
+      "bars": 2,
+      "steps": "x.....x.....x... ....x...x......."
+    },
+    "shake": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "thump": {
+      "bars": 1,
+      "steps": "..o. ..x. ..o. ..x."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "keys": "keys-a",
+        "shk": "shake"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a",
+        "pad": "pad-a",
+        "rim": "clave",
+        "shk": "shake",
+        "drum": "thump"
+      },
+      "bars": 8
+    },
+    "tune": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a",
+        "pad": "pad-a",
+        "tune": "tune-a",
+        "rim": "clave",
+        "shk": "shake",
+        "drum": "thump"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "keys": "keys-b",
+        "bass": "bass-b",
+        "pad": "pad-b",
+        "tune": "tune-b",
+        "rim": "clave",
+        "shk": "shake",
+        "drum": "thump"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a",
+        "shk": "shake"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "keys": {
+          "gainDb": -16
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "tune",
+    "b",
+    "a",
+    "tune",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -9
+    }
+  }
+}

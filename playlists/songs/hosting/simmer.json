@@ -1,0 +1,323 @@
+{
+  "schema": "beeps/song@1",
+  "name": "simmer",
+  "title": "Simmer",
+  "description": "A pot on a low flame: felt piano and a warm pad in D minor, a slow root-and-fifth pulse and a soft answer in the upper register. Steady and unhurried.",
+  "tags": [
+    "prep",
+    "warm",
+    "unhurried"
+  ],
+  "bpm": 84,
+  "loop": false,
+  "seed": 410103,
+  "instruments": {
+    "upright": {
+      "duration": 1.2,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "triangle",
+            "pitch": "Bb2"
+          },
+          "amp": {
+            "attack": 0.012,
+            "decay": 0.55,
+            "sustain": 0.18,
+            "release": 0.2
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 927,
+            "resonanceDb": 0
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": "Bb2"
+          },
+          "gainDb": -3,
+          "amp": {
+            "attack": 0.01,
+            "decay": 0.4,
+            "sustain": 0.3,
+            "release": 0.18
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "Bbmaj7",
+        4
+      ],
+      [
+        "Gm9",
+        4
+      ],
+      [
+        "A7sus4",
+        2
+      ],
+      [
+        "A7",
+        2
+      ],
+      [
+        "Dm9",
+        4
+      ],
+      [
+        "Fmaj7",
+        4
+      ],
+      [
+        "Em7b5",
+        2
+      ],
+      [
+        "A7b9",
+        2
+      ],
+      [
+        "Dm9",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "Ab4",
+          "/layers/0/filter/cutoff": 4127
+        }
+      },
+      "gainDb": -10,
+      "pan": -0.1,
+      "sends": {
+        "reverb": -13
+      },
+      "humanize": 0.3
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -24,
+      "highpass": 120,
+      "spread": 0.4,
+      "sends": {
+        "reverb": -15
+      }
+    },
+    "bass": {
+      "instrument": "upright",
+      "gainDb": -15
+    },
+    "answer": {
+      "instrument": "glass-bell",
+      "gainDb": -22,
+      "pan": 0.25,
+      "sends": {
+        "reverb": -10,
+        "delay": -18
+      }
+    },
+    "brush": {
+      "instrument": "shaker",
+      "gainDb": -29
+    }
+  },
+  "patterns": {
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "piano-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 4,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ .... ..x_ __.."
+      }
+    },
+    "piano-b": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... x... ....",
+        "tones": [
+          0,
+          2
+        ]
+      }
+    },
+    "answer-a": {
+      "bars": 8,
+      "notes": [
+        [
+          6,
+          "F5",
+          1,
+          0.5
+        ],
+        [
+          7,
+          "A5",
+          1,
+          0.5
+        ],
+        [
+          8,
+          "G5",
+          2,
+          0.5
+        ],
+        [
+          10,
+          "E5",
+          2,
+          0.5
+        ],
+        [
+          16,
+          "D5",
+          1,
+          0.5
+        ],
+        [
+          17,
+          "F5",
+          2,
+          0.5
+        ],
+        [
+          20,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          21,
+          "C#5",
+          1,
+          0.5
+        ],
+        [
+          22,
+          "D5",
+          2,
+          0.5
+        ],
+        [
+          28,
+          "A5",
+          1,
+          0.5
+        ],
+        [
+          29,
+          "F5",
+          1,
+          0.5
+        ],
+        [
+          30,
+          "D5",
+          2,
+          0.5
+        ]
+      ]
+    },
+    "tick": {
+      "bars": 1,
+      "steps": "x... x... x... x..."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "piano": "piano-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "pad": "pad-a",
+        "piano": "piano-a",
+        "bass": "bass-a",
+        "brush": "tick"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "pad": "pad-a",
+        "piano": "piano-b",
+        "bass": "bass-a",
+        "answer": "answer-a",
+        "brush": "tick"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "pad": "pad-a",
+        "piano": "piano-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -28
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -10
+    }
+  }
+}
