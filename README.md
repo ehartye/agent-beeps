@@ -209,6 +209,15 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.22.0
+
+Honest feedback, fourth step: unknown keys and the places a song loses something are reported. No sound or music changes; no render, hash or cache key moves.
+
+- **Unknown keys:** the project, an instrument override (`{base, set}`) and a batch operation are strict schemas now. For this release a stray key is stripped and reported (`N_UNKNOWN_KEY`, with a pointer) so an existing file still loads; a misspelled `scale` or `value` no longer leaves a default in silence. From 0.25.0 it is an `E_SCHEMA` error. A project-file notice appears in the `notices` of whichever command read the project.
+- **Songs:** `song new`, `song check` and `song render` report a pattern that runs past its section (`N_PATTERN_TRUNCATED`) and a master delay whose tail the render caps at 8 s (`N_DELAY_TAIL_CAPPED`, also for a patch delay in `render`, `export` and `lint`). `song stems` lists `omitted` tracks and marks a silent stem `silent: true` instead of a bare `null`; a silent adaptive state is `silent: true` with `null` levels instead of -99.
+- **Build and albums:** `build` returns `warnings` (song-layer sums, channels that differ) and `notices` for `variants` and `seed` set on a song recipe, which were hashed and never used. `album open` ends its progress with the `failures` (index, name, error); `album list` counts `ready` and `failed`.
+- **Skill:** the notice guide covers the new codes.
+
 ## What changed in 0.21.0
 
 Honest feedback, third step: the state behind a result is reported. No sound or music changes; no render, hash or cache key moves.

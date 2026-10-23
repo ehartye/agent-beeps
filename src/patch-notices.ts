@@ -45,8 +45,25 @@ export function trimNotices(name: string, features: Features): Notice[] {
   })];
 }
 
+/** The longest a delay line is kept ringing (runtime/engine/fx.js delayTail caps it); a feedback loop that would last longer is cut here. */
+const DELAY_TAIL_CAP_SEC = 8;
+
+/** A notice when a delay's repeats would take longer than the cap to fade 40 dB. The formula is the engine's own, without its cap. */
+export function delayTailNotice(pointer: string, time: number, feedback: number): Notice[] {
+  if (feedback <= 0) return [];
+  const full = time * Math.ceil(Math.log(0.01) / Math.log(feedback));
+  if (full <= DELAY_TAIL_CAP_SEC) return [];
+  return [notice('N_DELAY_TAIL_CAPPED', {
+    message: `the delay at ${pointer} (${hz2(time)} s apart, feedback ${feedback}) would ring for about ${Math.round(full * 10) / 10} s; the render keeps ${DELAY_TAIL_CAP_SEC} s`,
+    pointer, requested: Math.round(full * 10) / 10, applied: DELAY_TAIL_CAP_SEC,
+  })];
+}
+
 /** Everything a render of `patch` did on the caller's behalf: pitches the scale moved, and a trim held at its limit. */
-export const renderNotices = (patch: Patch, features: Features, scale: Scale): Notice[] => [...scaleSnapNotices(patch, scale), ...trimNotices(patch.name, features)];
+export const renderNotices = (patch: Patch, features: Features, scale: Scale): Notice[] => [
+  ...scaleSnapNotices(patch, scale), ...trimNotices(patch.name, features),
+  ...(patch.fx?.delay ? delayTailNotice('/fx/delay', patch.fx.delay.time, patch.fx.delay.feedback) : []),
+];
 
 /** True when the patch declares several variants that cannot differ: no gain spread, and no pitch spread that any layer would follow. */
 export function variantsIdentical(patch: Patch): boolean {

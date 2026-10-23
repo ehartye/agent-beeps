@@ -10,7 +10,7 @@ import { sha256 } from '../hash.ts';
 import { kitSeed, readKit } from '../kit.ts';
 import { int, outcomeJson, summary, withHost } from './shared.ts';
 import { exportRole } from '../export-manifest.ts';
-import { exportPatchOne, exportPatchVariants } from '../export-assets.ts';
+import { CHANNELS_DIFFER, exportPatchOne, exportPatchVariants } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { renderNotices, requireDeclaredVariant, trimNotices, variantNotices } from '../patch-notices.ts';
@@ -142,7 +142,7 @@ export function registerPatchCommands(program: Command, io: Io) {
       const post = { ...(opts.channels === 1 ? { channels: 1 as const } : {}), ...(opts.trimTail !== undefined ? { trimTailDb: opts.trimTail } : {}) };
       const postJson = (r?: { channels: number; identicalChannels?: boolean; trimmedTailSec?: number }): { channels?: number; trimmedTailSec?: number } => {
         if (!r) return {};
-        if (r.identicalChannels === false) warnings.push('the rendered channels differ (the stereo reverb, or a panned layer): --channels 1 averaged them, so the reverb sits about 3 dB lower and the sidecar loudness is the stereo measurement');
+        if (r.identicalChannels === false) warnings.push(CHANNELS_DIFFER);
         return { channels: r.channels, ...(r.trimmedTailSec !== undefined ? { trimmedTailSec: r.trimmedTailSec } : {}) };
       };
       const p = openProject(io.projectDir());

@@ -25,3 +25,16 @@ an error with `category` and `retryable`. Do not describe a result as "as writte
 - Render, measure, look, lint and kit check use the seed recorded in the kit for a kit sound, the same one export uses, unless you pass `--seed`.
 - `kit check` lists a sound that failed to render as `ok: false` and exits 1. `crossover` errors on an invalid blend and needs `--force` to overwrite.
 - `batch` lists `noops` (a remove of a key the patch did not have); `init` on an existing project reports what it `ignored` (`N_OPTION_IGNORED`).
+
+## Files and documents
+
+- `N_UNKNOWN_KEY`: a key the schema does not know was ignored (in `project.json`, an instrument override, a batch operation). It is almost always a typo; whatever it was meant to set kept its default. From 0.25.0 it is an `E_SCHEMA` error.
+- `N_OPTION_IGNORED`: an option or recipe field was accepted and had no effect (`init` on an existing project; `variants` or `seed` on a song recipe).
+- `build` returns `warnings` for what an export said while building (layers that do not sum, channels that differ) and `notices` for ignored recipe fields.
+
+## Songs
+
+- `N_PATTERN_TRUNCATED` (`song new`, `song check`, `song render`): a pattern is longer than its section, so notes past the end never sound. Lengthen the section or shorten the pattern.
+- `N_DELAY_TAIL_CAPPED`: a delay would ring longer than the 8 seconds the render keeps. Lower its feedback or time.
+- `song stems` lists `omitted` tracks (no section plays them) and marks a stem `silent: true` (with `loudnessLufs: null`) when none of its notes sounded. A silent adaptive state has `silent: true` and `null` levels, not -99.
+- `album open` ends its stderr progress with `failures` (index, name, error) when a track failed; `album list` counts `ready` and `failed` tracks.
