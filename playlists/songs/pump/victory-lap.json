@@ -194,27 +194,22 @@
   "tracks": {
     "kick": {
       "instrument": "punch-kick",
-      "gainDb": -7
+      "gainDb": -14
     },
     "clap": {
       "instrument": "clap",
-      "gainDb": -17,
+      "gainDb": -15,
       "pan": 0.05
     },
     "hat": {
       "instrument": "hat",
-      "gainDb": -27,
+      "gainDb": -22,
       "pan": 0.2
     },
     "ohat": {
       "instrument": "open-hat",
-      "gainDb": -28,
+      "gainDb": -23,
       "pan": -0.2
-    },
-    "perc": {
-      "instrument": "tom",
-      "gainDb": -15,
-      "pan": -0.1
     },
     "bass": {
       "instrument": {
@@ -226,7 +221,7 @@
           "/layers/1/source/pitch": "Ab2"
         }
       },
-      "gainDb": -9,
+      "gainDb": -17,
       "keytrack": 0.5
     },
     "stab": {
@@ -238,7 +233,7 @@
           "/layers/0/filter/env/to": 4127
         }
       },
-      "gainDb": -18,
+      "gainDb": -16,
       "pan": -0.15,
       "spread": 0.4,
       "sends": {
@@ -247,7 +242,7 @@
     },
     "arp": {
       "instrument": "pluck",
-      "gainDb": -22,
+      "gainDb": -20,
       "pan": 0.2,
       "sends": {
         "reverb": -16,
@@ -684,7 +679,7 @@
       },
       "mix": {
         "bass": {
-          "gainDb": -12
+          "gainDb": -20
         }
       },
       "bars": 8
@@ -726,7 +721,7 @@
           "gainDb": -60
         },
         "bass": {
-          "gainDb": -9
+          "gainDb": -17
         }
       },
       "bars": 8
@@ -774,10 +769,10 @@
       },
       "mix": {
         "kick": {
-          "gainDb": -16
+          "gainDb": -22
         },
         "bass": {
-          "gainDb": -18
+          "gainDb": -26
         },
         "pad": {
           "gainDb": -26

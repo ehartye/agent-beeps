@@ -39,7 +39,7 @@
           "/layers/0/source/pitch": "Db5"
         }
       },
-      "gainDb": -14,
+      "gainDb": -20,
       "pan": -0.12,
       "sends": {
         "reverb": -12,
@@ -54,7 +54,7 @@
           "/layers/0/source/pitch": "A5"
         }
       },
-      "gainDb": -24,
+      "gainDb": -26,
       "pan": 0.3,
       "sends": {
         "reverb": -9,
@@ -63,7 +63,7 @@
     },
     "pad": {
       "instrument": "warm-pad",
-      "gainDb": -21,
+      "gainDb": -17,
       "highpass": 120,
       "spread": 0.5,
       "sends": {
