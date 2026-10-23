@@ -209,6 +209,16 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.21.0
+
+Honest feedback, third step: the state behind a result is reported. No sound or music changes; no render, hash or cache key moves.
+
+- **Loudness trim:** a sound whose trim hit its limit (+24 / -36 dB for patches and songs, +-12 dB for an adaptive state) now says so: `N_TRIM_CLAMPED` in `render`, `measure`, `look`, `lint`, `export`, `kit check` and `song render`, `features.delivered.trimClamped` in the render's `meta.json`, and a warning from a song export with `--layers`. Before, `trimDb` quietly showed the limit.
+- **Runtime inputs:** `runtime look` and `runtime live` check `--set` / `--input` / `--to` before rendering anything: a value that is not a number, or an input the patch does not declare, is a usage error. A value outside the declared range is clamped and says so (`N_INPUT_CLAMPED`); `params` echoes what was used.
+- **Kit and seeds:** `render`, `measure`, `look`, `lint` and `kit check` now use the seed recorded in the kit for a kit sound, as `export` already did (an explicit `--seed` still wins), and report it; they used seed 1, so a checked sound could differ from the one that shipped. `kit add` on an existing entry keeps its audition seed, returns the entry it replaced as `replaced`, and warns (`N_KIT_REPLACED`) when its priority or trim changed.
+- **Names:** a project patch or song with a library name hides the library one; `instruments` marks `shadowedBy`, `song list` marks `shadows`, and `song check` and `song render` warn when a song plays a shadowing patch (`N_NAME_SHADOWED`).
+- **Skill:** the notice guide moved to `skills/beeps-compose/references/notices.md`, linked from `beeps-compose`.
+
 ## What changed in 0.20.0
 
 Honest feedback, second step: candidate sets and the commands around them now say what they dropped or ignored. No sound or music

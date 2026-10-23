@@ -55,6 +55,9 @@ export function writeKit(dir: string, kit: Kit): string {
   return path;
 }
 
+/** The render seed the owner auditioned for a kit sound, when one was recorded. */
+export const kitSeed = (kit: Kit, name: string): number | undefined => kit.sounds.find(s => s.name === name)?.seed;
+
 /** Adds an entry, replacing any entry with the same name in place. Returns a new kit. */
 export function addToKit(kit: Kit, entry: KitEntry): Kit {
   const r = KitEntrySchema.safeParse(entry);

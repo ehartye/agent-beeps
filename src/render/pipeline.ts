@@ -10,7 +10,7 @@ import { measure, type Features } from '../measure/index.ts';
 import type { Patch } from '../schema/patch.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
-import { clampTrimDb, commit, lookup } from './cache.ts';
+import { chooseTrim, commit, lookup } from './cache.ts';
 import { createSampleWavSnapshot, type EncodedSampleWavs } from '../samples/transport.ts';
 
 /** Loudness offsets (LU re project target) by family: quiet UI, fuller impacts. */
@@ -99,6 +99,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   const pass1 = await host.render(misses.map(i => ({ patch: keyed[i].patch, opts: { seed: keyed[i].seed, variant: keyed[i].variant, scale, sampleWavs: samples[i] } })));
   const trims: number[] = [];
   const limited: boolean[] = [];
+  const clamped: (Features['delivered']['trimClamped'])[] = [];
   const features: (Features | undefined)[] = [];
   pass1.forEach((r, j) => {
     const i = misses[j];
@@ -111,7 +112,9 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
     // would otherwise be flattened. Peak-limited sounds sit below target by design.
     const loud = targetFor(keyed[i].patch, project) - f.momentaryMaxLufs;
     const ceiling = PEAK_CEILING_DB - f.truePeakDb;
-    trims[j] = Math.round(clampTrimDb(Math.min(loud, ceiling)) * 100) / 100;
+    const t = chooseTrim(loud, ceiling);
+    trims[j] = t.trimDb;
+    clamped[j] = t.clamped;
     limited[j] = ceiling < loud;
   });
 
@@ -123,7 +126,7 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
     const { i, j } = live[n];
     if (!r.ok) { out[i] = { ok: false, patchName: keyed[i].patch.name, error: r.error }; return; }
     const d = measure({ sampleRate: r.sampleRate, authored: r.delivered, delivered: r.delivered });
-    const f: Features = { ...features[j]!, delivered: { samplePeakDb: d.samplePeakDb, truePeakDb: d.truePeakDb, momentaryMaxLufs: d.momentaryMaxLufs, clippedSamples: d.clippedSamples, ...(limited[j] ? { peakLimited: true } : {}) } };
+    const f: Features = { ...features[j]!, delivered: { samplePeakDb: d.samplePeakDb, truePeakDb: d.truePeakDb, momentaryMaxLufs: d.momentaryMaxLufs, clippedSamples: d.clippedSamples, ...(limited[j] ? { peakLimited: true } : {}), ...(clamped[j] ? { trimClamped: clamped[j] } : {}) } };
     const k = keyed[i];
     const mono = mixToMono(r.authored);
     looks.push({ i, mono, f, files: { 'delivered.wav': writeWav(r.delivered, r.sampleRate), 'patch.json': JSON.stringify(k.patch, null, 2) } });

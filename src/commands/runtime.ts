@@ -22,6 +22,8 @@ import { cueFile, cuesFor, cueText, makeCue, type Cue } from '../runtime/cue.ts'
 import { diffTap, featuresOf } from '../runtime/compare.ts';
 import { renderKinds, runLive, runParity, runPerf, type EngineName } from '../runtime/harness.ts';
 import { withHost, int } from './shared.ts';
+import { noticeField } from '../notices.ts';
+import { parseInputPairs, resolveInputs } from '../runtime/inputs.ts';
 import { samplePaths } from '../samples/store.ts';
 import { cueSources, readDeliveredFile, writeCueDelivery } from '../runtime/delivery.ts';
 import { validateDeliveredDependencies } from '../runtime/dependencies.ts';
@@ -211,7 +213,8 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .requiredOption('--out <dir>', 'where baked.png and runtime.png go')
     .action(async (ref: string, o: Common & { set: string[]; snap: boolean; variant: number; out: string }) => {
       const { project, patches, seeds, sampleObjectsDir } = context(io, [ref], o);
-      const params = Object.fromEntries(o.set.map(kv => { const [k, v] = kv.split('='); return [k, Number(v)]; }));
+      // Checked before anything renders: an input the patch does not declare, or a value that is not a number, costs no browser.
+      const { params, notices } = resolveInputs(patches[0], parseInputPairs(o.set));
       const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
       const r = await renderKinds(cue, params, { variant: o.variant, noSnap: !o.snap, sampleWavs: resolveSampleWavs(cue.patch, sampleObjectsDir) });
       mkdirSync(resolve(o.out), { recursive: true });
@@ -225,7 +228,7 @@ export function registerRuntimeCommands(program: Command, io: Io) {
           writeFileSync(files[kind], png);
         }
       });
-      io.emit({ files, diff: diffTap(r.baked.delivered, r.runtime.delivered), features: { baked: featuresOf(r.baked), runtime: featuresOf(r.runtime) }, params });
+      io.emit({ files, diff: diffTap(r.baked.delivered, r.runtime.delivered), features: { baked: featuresOf(r.baked), runtime: featuresOf(r.runtime) }, params, ...noticeField(notices) });
     });
 
   common(rt.command('live <ref>'))
@@ -236,8 +239,10 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .option('--tau <sec>', 'smoothing time constant', Number, 0.03)
     .action(async (ref: string, o: Common & { input: string; to: number; at: number; tau: number }) => {
       const { project, patches, seeds, sampleObjectsDir } = context(io, [ref], o);
+      if (!patches[0].xRuntime) throw new BeepsError('E_USAGE', `${patches[0].name} declares no xRuntime inputs`);
+      if (!Number.isFinite(o.to)) throw new BeepsError('E_USAGE', `--to takes a number, got ${o.to}`, { received: String(o.to) });
+      const { params: { [o.input]: to }, notices } = resolveInputs(patches[0], { [o.input]: o.to });
       const [cue] = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
-      if (!cue.patch.xRuntime) throw new BeepsError('E_USAGE', `${cue.id} declares no xRuntime inputs`);
-      io.emit({ live: await runLive(cue, { input: o.input, to: o.to, at: o.at, tau: o.tau }, { sampleWavs: resolveSampleWavs(cue.patch, sampleObjectsDir) }) });
+      io.emit({ live: await runLive(cue, { input: o.input, to, at: o.at, tau: o.tau }, { sampleWavs: resolveSampleWavs(cue.patch, sampleObjectsDir) }), ...noticeField(notices) });
     });
 }

@@ -3,6 +3,7 @@
 // the commands that wrap a render report what it did.
 import { hzToMidi, noteToHz, snapToScale } from '../runtime/engine/notes.js';
 import { BeepsError } from './errors.ts';
+import type { Features } from './measure/index.ts';
 import { notice, type Notice } from './notices.ts';
 import type { Patch } from './schema/patch.ts';
 import type { Scale } from './schema/project.ts';
@@ -33,6 +34,19 @@ export function scaleSnapNotices(patch: Patch, scale: Scale): Notice[] {
   });
   return out;
 }
+
+/** A notice when the loudness trim was held at its limit, so a render's `trimDb` is not the trim the sound needed. */
+export function trimNotices(name: string, features: Features): Notice[] {
+  const c = features.delivered.trimClamped;
+  if (!c) return [];
+  return [notice('N_TRIM_CLAMPED', {
+    message: `${name} needs ${c.requestedDb} dB of trim to reach its loudness target; the limit is ${c.appliedDb} dB, so it plays ${c.requestedDb < c.appliedDb ? 'louder' : 'quieter'} than the target by ${Math.abs(Math.round((c.requestedDb - c.appliedDb) * 100) / 100)} dB`,
+    requested: c.requestedDb, applied: c.appliedDb,
+  })];
+}
+
+/** Everything a render of `patch` did on the caller's behalf: pitches the scale moved, and a trim held at its limit. */
+export const renderNotices = (patch: Patch, features: Features, scale: Scale): Notice[] => [...scaleSnapNotices(patch, scale), ...trimNotices(patch.name, features)];
 
 /** True when the patch declares several variants that cannot differ: no gain spread, and no pitch spread that any layer would follow. */
 export function variantsIdentical(patch: Patch): boolean {
