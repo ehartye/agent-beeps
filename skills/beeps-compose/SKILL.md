@@ -71,7 +71,8 @@ whole recording and proposes crop windows with a ready `prepare` line each
 Wrote a brief ("a 200 ms confirm chime, bright, rising, short tail")? Put it in the patch as `xExpect` so a tool checks it: `lint`, `kit check` and
 `build` return an `expectations` verdict (pass, fail or unmeasurable, with the measured value, a pointer to the entry and a hint) and exit 1 on a miss.
 Use it for a regenerated or refined sound (`mutate` can drift out of the brief) and for a regression gate. It is not a craft rule: rules are
-general and cited, an expectation is this sound's own contract. Kinds and units: `docs/expectations.md`.
+general and cited, an expectation is this sound's own contract. Kinds and units: `docs/expectations.md`. No numbers yet? `lint <name> --derive-expect`
+prints a block the sound passes as it measures now: edit it and save it. `mutate` drops children that miss the parent's block (`--ignore-expect` keeps them).
 
 ## Render, measure, look
 

@@ -108,7 +108,7 @@ export function crossover(a: Patch, b: Patch, t: number): Patch {
 
 export type Mutated = CandidateSet & { report: SetReport; notices: Notice[] };
 
-export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: Patch; toward?: string[]; like?: Patch; count?: number; seed?: number; parentSet?: string | null; prompt?: string | null }): Promise<Mutated> {
+export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: Patch; toward?: string[]; like?: Patch; count?: number; seed?: number; parentSet?: string | null; prompt?: string | null; ignoreExpect?: boolean }): Promise<Mutated> {
   const count = opts.count ?? 4;
   const seed = opts.seed ?? Math.floor(Math.random() * 1e6);
   const rand = mulberry32(seed);
@@ -127,12 +127,14 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
     }
     child = perturb(child, rand, archetype);
     if (JSON.stringify(child.layers) === JSON.stringify(opts.parent.layers)) { unchanged++; continue; } // unchanged: not a variation
-    kids.push({ ...child, name: `${base}-m${tag}-${i + 1}` });
+    // The brief stays with the parent: children are checked against it below, and do not carry it on.
+    const { xExpect: _brief, ...bare } = child;
+    kids.push({ ...bare, name: `${base}-m${tag}-${i + 1}` });
   }
   const [parentR] = await renderAndMeasure(host, [{ patch: opts.parent, seed }], renderOptions(p));
   // Without the parent's measurements --toward has nothing to measure movement against; that is a failure, not a quiet zero.
   if (!parentR.ok) throw new BeepsError('E_RENDER', `${opts.parent.name} did not render, so its variations cannot be judged against it: ${parentR.error}`);
-  const { usable: pool, dropped } = screen(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), renderOptions(p)), p);
+  const { usable: pool, dropped } = screen(await renderAndMeasure(host, kids.map(patch => ({ patch, seed })), renderOptions(p)), p, opts.ignoreExpect ? undefined : opts.parent.xExpect);
   const pv = featureVector(parentR.features);
   const model = loadModel(p);
   const scored = pool.map(r => {

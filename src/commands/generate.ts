@@ -24,6 +24,7 @@ import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { reportJson } from '../set-report.ts';
 import { renderWithExpectations } from '../expect-run.ts';
+import { deriveExpectations } from '../expect.ts';
 import { renderNotices, variantNotices } from '../patch-notices.ts';
 
 export const setJson = (s: CandidateSet) => ({
@@ -75,7 +76,7 @@ export async function createSet(p: OpenProject, patches: Patch[], opts: { prompt
 }
 
 /** Lint patches (names, files or in-memory): the JSON lint prints, and whether any patch has errors. */
-export async function lintPatches(p: OpenProject, patches: Patch[], brief: boolean): Promise<{ payload: Record<string, unknown>; failed: boolean }> {
+export async function lintPatches(p: OpenProject, patches: Patch[], brief: boolean, { derive = false } = {}): Promise<{ payload: Record<string, unknown>; failed: boolean }> {
   const own = projectPatches(p);
   const siblings = siblingsOf(p, patches, own);
   // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
@@ -86,12 +87,12 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
   const text = new Map(loadRules().map(r => [r.id, r.statement]));
   const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-  const reports = out.map((o, i) => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...renderNotices(o.patch, o.features, p.project.scale), ...variantNotices(o.patch)]), ...(expectations[i] ? { expectations: expectations[i] } : {}) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+  const reports = out.map((o, i) => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...renderNotices(o.patch, o.features, p.project.scale), ...variantNotices(o.patch)]), ...(expectations[i] ? { expectations: expectations[i] } : {}), ...(derive ? { derived: { xExpect: deriveExpectations(o.features) } } : {}) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
   // A failed expectation fails the command like an error does, but it is not an error: it is the author's own contract, with no cited source.
   const failed = reports.some((r, i) => r.errors.length || expectations[i]?.passed === false);
   if (brief) {
     // A patch with a notice is not "clean": a notice is something the render did that the patch did not say.
-    const quiet = (r: (typeof reports)[number]) => !r.errors.length && !r.warnings.length && !('notices' in r) && !('expectations' in r && r.expectations?.passed === false);
+    const quiet = (r: (typeof reports)[number]) => !r.errors.length && !r.warnings.length && !('notices' in r) && !('derived' in r) && !('expectations' in r && r.expectations?.passed === false);
     const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
     return { failed, payload: { reports: reports.filter(r => !quiet(r)).map(({ judgement: _j, ...r }) => r), clean: reports.filter(quiet).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) } };
   }
@@ -121,13 +122,14 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .option('--like <ref>', 'cross toward another patch')
     .option('--count <n>', 'candidates to keep', int, 4)
     .option('--seed <n>', 'seed', int)
-    .action(async (ref: string, opts: { toward: string; like?: string; count: number; seed?: number }) => {
+    .option('--ignore-expect', 'keep children that miss the xExpect block of the patch they were bred from (by default they are dropped, and the report says which checks dropped them)')
+    .action(async (ref: string, opts: { toward: string; like?: string; count: number; seed?: number; ignoreExpect?: boolean }) => {
       if (opts.count < 1 || opts.count > 8) throw new BeepsError('E_USAGE', '--count must be 1 to 8 (auditions stay small to avoid fatigue)', { received: opts.count });
       const p = openProject(io.projectDir());
       const toward = opts.toward.split(',').filter(Boolean);
       const bad = toward.filter(d => !(d in DIRECTIONS) && d !== 'surprise');
       if (bad.length) throw new BeepsError('E_USAGE', `unknown direction ${bad.join(', ')}`, { hint: `one of ${Object.keys(DIRECTIONS).join(', ')}` });
-      const set = await withHost(host => mutate(host, p, { parent: loadPatch(p, ref), like: opts.like ? loadPatch(p, opts.like) : undefined, toward, count: opts.count, seed: opts.seed }));
+      const set = await withHost(host => mutate(host, p, { parent: loadPatch(p, ref), like: opts.like ? loadPatch(p, opts.like) : undefined, toward, count: opts.count, seed: opts.seed, ignoreExpect: !!opts.ignoreExpect }));
       io.emit({ ...setJson(set), ...reportJson(set) });
     });
 
@@ -157,9 +159,10 @@ export function registerGenerateCommands(program: Command, io: Io) {
   program.command('lint <refs...>')
     .description('check patches against the cited craft rules (renders them to measure); exits 1 only when a patch has errors, warnings exit 0; notes (e.g. "kit-level rules run only in kit check") are informational')
     .option('--brief', 'for many patches: list only those with errors or warnings, name the clean ones, and give the judgement rules once')
-    .action(async (refs: string[], opts: { brief?: boolean }) => {
+    .option('--derive-expect', 'also print, per patch, an xExpect block the sound passes as it measures now (with room around each number), to edit and save: pins a sound as it is')
+    .action(async (refs: string[], opts: { brief?: boolean; deriveExpect?: boolean }) => {
       const p = openProject(io.projectDir());
-      const { payload, failed } = await lintPatches(p, refs.map(r => loadPatch(p, r)), !!opts.brief);
+      const { payload, failed } = await lintPatches(p, refs.map(r => loadPatch(p, r)), !!opts.brief, { derive: !!opts.deriveExpect });
       io.emit(payload);
       if (failed) process.exitCode = 1;
     });
