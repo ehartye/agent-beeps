@@ -7,6 +7,7 @@ import { listPatches, openProject, readJsonFile, type OpenProject } from '../pro
 import { findInstrument, libraryInstruments, listSongs, midiName, shadowedInstruments, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { notice, noticeField } from '../notices.ts';
 import { songNotices } from '../song-notices.ts';
+import { DEFAULT_WINDOW_BARS, parseBars, songRoll } from '../song-roll.ts';
 import { requireSafeOutput } from '../path-safety.ts';
 import { readFileSync } from 'node:fs';
 import { readWav } from '../audio/wav.ts';
@@ -173,6 +174,16 @@ export function registerSongCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const loaded = refs.map(r => loadSong(p, r));
       io.emit({ songs: loaded.map(s => songOutline(s, resolveInstruments(p, s))), ...noticeField(loaded.flatMap(s => shadowNotices(p, s))) });
+    });
+
+  song.command('roll <ref>')
+    .description('a song as text, one window of bars: a step grid for rhythm parts and a piano roll for pitched ones, built from the notes the renderer will play (the text twin of the look image)')
+    .option('--section <name>', 'section to show (default: the first of the form)')
+    .option('--track <name...>', 'tracks to show (default: every track that sounds in the window)')
+    .option('--bars <range>', `bars within the section, such as 1-8 (default 1-${DEFAULT_WINDOW_BARS}); the result names the next window`)
+    .action((ref: string, opts: { section?: string; track?: string[]; bars?: string }) => {
+      const p = openProject(io.projectDir());
+      io.emit(songRoll(loadSong(p, ref), { section: opts.section, tracks: opts.track, bars: opts.bars ? parseBars(opts.bars) : undefined }));
     });
 
   song.command('compat <refs...>')

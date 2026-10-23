@@ -8,7 +8,10 @@ import { openProject, parseOrThrow, readJsonFile, savePatch } from '../project.t
 import { importSample, parseSamplePrep, parseSamplePreparedReceipt, prepareSample, prepareSampleWav } from '../samples/prepare.ts';
 import { readSampleObject, samplePaths, SOURCE_MAX_FRAMES } from '../samples/store.ts';
 import { bundleSamples, syncSampleBundle } from '../samples/bundle.ts';
-import { runOverview } from '../samples/overview-run.ts';
+import { readSource, resolveSource, runOverview } from '../samples/overview-run.ts';
+import { digestAudio } from '../samples/digest.ts';
+import { sec, SR } from '../samples/overview.ts';
+import { positiveInt } from './shared.ts';
 
 interface PrepareOptions { recipe?: string; start?: string; end?: string; fadeIn?: string; fadeOut?: string; gain?: string; name?: string; family?: string; force?: boolean }
 const number = (text: string, label: string) => {
@@ -86,6 +89,19 @@ export function registerSampleCommands(program: Command, io: Io): void {
         gapDb: options.gapDb === undefined ? 40 : number(options.gapDb, '--gap-db'),
         minGapMs: options.minGap === undefined ? 200 : number(options.minGap, '--min-gap'),
       }));
+    });
+  sample.command('digest <source>').description('the same recording as a text table, one row per time window: level, brightness, steady pitch and event count (the text twin of overview, for an agent that cannot view the image); <source> is a sha256 sample ID or an audio file')
+    .option('--windows <n>', 'number of equal windows (default 24, at most 120)', positiveInt, 24)
+    .option('--start <seconds>', 'view range start (default 0)').option('--end <seconds>', 'view range end (default the whole source)')
+    .action((source: string, options: { windows: number; start?: string; end?: string }) => {
+      const { byId, project } = resolveSource(source, io.projectDir());
+      const loaded = readSource(source, byId, project), total = loaded.channels[0].length;
+      const startFrame = options.start === undefined ? 0 : Math.round(number(options.start, '--start') * SR);
+      const endFrame = options.end === undefined ? total : Math.round(number(options.end, '--end') * SR);
+      if (startFrame < 0 || startFrame >= total) throw new BeepsError('E_SCHEMA', `--start is outside the source (0 to ${sec(total)} s)`, { pointer: '/startFrame' });
+      if (endFrame > total || endFrame <= startFrame) throw new BeepsError('E_SCHEMA', `--end must be after --start and no later than ${sec(total)} s`, { pointer: '/endFrame' });
+      const d = digestAudio(loaded.channels, { startFrame, endFrame, windows: options.windows });
+      io.emit({ source: { ...(loaded.file !== undefined ? { file: loaded.file } : {}), normalizedId: loaded.normalizedId, durationSec: sec(total) }, ...d, next: 'beeps sample overview <source> proposes crop windows; narrow a window with --start and --end and run digest again for more detail' });
     });
   sample.command('bundle <refs...>').description('publish a portable source bundle; default includes only prepared dependencies')
     .requiredOption('--out <directory>', 'fresh output directory (an identical existing bundle is allowed)')

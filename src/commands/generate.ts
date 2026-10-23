@@ -24,6 +24,7 @@ import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { reportJson } from '../set-report.ts';
 import { renderWithExpectations } from '../expect-run.ts';
+import { registerGoldenCommands } from './golden.ts';
 import { deriveExpectations } from '../expect.ts';
 import { renderNotices, variantNotices } from '../patch-notices.ts';
 
@@ -198,6 +199,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       writeKit(p.paths.root, k);
       io.emit(k);
     });
+  registerGoldenCommands(kit, io);
   kit.command('check')
     .description('render every kit sound and run patch and kit rules (one "no", priorities, families, key, masking)')
     .action(async () => {

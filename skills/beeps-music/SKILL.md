@@ -51,7 +51,8 @@ filters. `fixed: true`, `root` and `transpose` only change what you hear (song-f
 - `beeps song new song.json` validates, saves, and prints the outline; `--force` replaces.
   Edit the saved file and run `beeps song check <name>` for the outline without rendering: every
   section's start time, and each track's note count, written `range` and `sounds` range with the
-  instrument's layers included. Catch an octave slip or two parts in one band here.
+  instrument's layers included. Catch an octave slip or two parts in one band here. `beeps song roll <name> [--section s] [--bars 1-8]` draws the notes
+  as text (a step grid for rhythm parts, a piano roll for pitched ones, one sixteenth per column) when you cannot view the look image.
 - Errors are `E_SCHEMA` with a JSON `pointer` and a `hint`: fix exactly that field.
 - Chords are symbols (`Dm9`, `Bbmaj7`, `C6/9`, `F#m7b5`, `Gsus4`, `C/E`) and are voice-led for
   you. Arps and bass lines read the same progression, so harmony stays consistent across parts.
