@@ -8,6 +8,7 @@ import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { mixToMono } from '../audio/mono.ts';
 import { BeepsError } from '../errors.ts';
+import { requireSafeOutput } from '../path-safety.ts';
 import { lintPatch } from '../lint.ts';
 import { measure } from '../measure/index.ts';
 import { findProjectRoot, loadPatch, openProject, parseOrThrow, readJsonFile } from '../project.ts';
@@ -66,6 +67,7 @@ export function registerRuntimeCommands(program: Command, io: Io) {
     .action(async (refs: string[], o: Common & { out: string }) => {
       const { project, patches, seeds, sampleObjectsDir } = context(io, refs, o);
       const cues = await withHost(host => cuesFor(host, patches, project, { seeds, sampleObjectsDir }));
+      for (const cue of cues) requireSafeOutput(join(resolve(o.out), cueFile(cue.id)), {}, 'a cue file');
       mkdirSync(resolve(o.out), { recursive: true });
       for (const cue of cues) {
         const sources = cueSources(cue.patch, cue.id, sampleObjectsDir);

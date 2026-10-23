@@ -209,6 +209,15 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.27.0
+
+Safer outputs, a generated reference, worked examples. No sound or music changes; no render, hash or cache key moves.
+
+- **Path safety:** a command that writes a path it was given checks it first (`src/path-safety.ts`). An output that is, or sits around, an input, or that differs from an existing file only in case (one file on Windows and macOS), is `E_CONFLICT` before anything is written; the wrong extension is `E_USAGE`. Applied to `export` and `song export` (`--wav`), `look --out`, `sample overview --out`, `compress` (the output folder may not be, contain or sit inside the source), `song stems --out`, `family --out` and `runtime export --out`. `compress` now checks before it looks for ffmpeg.
+- **Reference:** [`docs/reference.md`](docs/reference.md) is generated from the files: the archetypes with how each is built, the sound collections, the instruments and every craft rule. Every archetype file now carries a required `recipe` sentence (also in `beeps archetypes`); a drift test keeps the page current.
+- **Worked examples:** `beeps-compose` opens with the four-step loop and links three complete runs (a UI chime, an impact that must stay short, a training-video bed) with the fields to read at each step; a test checks their commands and flags against the CLI.
+- **Song notices:** `N_PARTIAL_ABOVE_NYQUIST` (an instrument partial at the highest written note would sound at or above 0.45 of the sample rate) and `N_CUTOFF_CAPPED` (a keytracked cutoff would pass the engine's 22 kHz cap) in `song check` and `song render`, computed from the document without changing the engine. These were the two items deferred in 0.25.0.
+
 ## What changed in 0.26.0
 
 Strict schemas: the step after the warning. **Breaking for a file that carries a key the format does not know.** No sound or music changes; no render, hash or cache key moves.

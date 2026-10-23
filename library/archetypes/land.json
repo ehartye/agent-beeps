@@ -3,6 +3,7 @@
   "name": "land",
   "family": "land",
   "description": "Low lowpassed thud: a sine pitch drop with a brown-noise tick",
+  "recipe": "A sine with a falling pitch drop (the thud) plus a brown-noise tick, lowpassed.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "land",

@@ -3,6 +3,7 @@
   "name": "ui-hover",
   "family": "ui-hover",
   "description": "Very short, quiet sine or triangle touch for hover feedback",
+  "recipe": "A very short quiet sine or triangle touch with a soft attack.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "ui-hover",

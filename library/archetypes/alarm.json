@@ -3,6 +3,7 @@
   "name": "alarm",
   "family": "alarm",
   "description": "Two-tone square alternation, deliberately identical every time",
+  "recipe": "One square oscillator that alternates between two fixed pitches at a fixed rate; only the pitch pair, rate and filter vary, never the pattern.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "alarm",

@@ -3,6 +3,7 @@
   "name": "coin-arp",
   "family": "coin",
   "description": "Three-note sparkle: a fast rising in-scale arpeggio on a soft pulse, with a high shimmer tail",
+  "recipe": "A triangle arpeggio of three in-scale notes stepped by pitchEnv, over an additive shimmer layer an octave and more above.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "coin-arp",

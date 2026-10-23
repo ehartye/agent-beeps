@@ -26,6 +26,8 @@ const ArchetypeFile = z.strictObject({
   name: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
   family: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
   description: z.string().min(1),
+  /** What the sound is built from, in a sentence: the layers and the knobs that vary. Required, so the generated reference says how a sound is made. */
+  recipe: z.string().min(20),
   template: z.unknown(),
   ranges: z.record(z.string(), RangeSchema),
 });
@@ -34,6 +36,7 @@ export interface Archetype {
   name: string;
   family: string;
   description: string;
+  recipe: string;
   template: Patch;
   ranges: Record<string, Range>;
 }
@@ -88,7 +91,7 @@ function validate(file: string, raw: unknown): Archetype {
     }
     seen.add(ptr);
   }
-  return { name: a.name, family: a.family, description: a.description, template, ranges: a.ranges };
+  return { name: a.name, family: a.family, description: a.description, recipe: a.recipe, template, ranges: a.ranges };
 }
 
 export function loadArchetypes(dir: string = ARCHETYPES_DIR): Archetype[] {

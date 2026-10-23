@@ -3,6 +3,7 @@
   "name": "hit",
   "family": "hit",
   "description": "Short noise burst over a low modal body with a faint metallic edge",
+  "recipe": "A short white-noise burst over a low modal body with a faint metal layer for the edge.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "hit",

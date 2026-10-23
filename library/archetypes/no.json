@@ -3,6 +3,7 @@
   "name": "no",
   "family": "no",
   "description": "The one soft no: a gentle falling third on triangle, never a buzzer",
+  "recipe": "Two triangle oscillators a falling minor third apart, soft attack, no buzz.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "no",

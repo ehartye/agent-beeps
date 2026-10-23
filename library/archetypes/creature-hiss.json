@@ -3,6 +3,7 @@
   "name": "creature-hiss",
   "family": "creature",
   "description": "Hiss: breath noise only, through narrow high formants (a snake, a cat, steam)",
+  "recipe": "A voice source with breath noise only, through narrow high formants.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-hiss",

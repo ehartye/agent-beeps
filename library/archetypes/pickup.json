@@ -3,6 +3,7 @@
   "name": "pickup",
   "family": "pickup",
   "description": "Bell-ish additive chime answered by a second chime a fourth, fifth or octave above",
+  "recipe": "Two additive bell-like chimes, the second a fourth, fifth or octave above the first.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "pickup",

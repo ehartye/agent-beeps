@@ -3,6 +3,7 @@
   "name": "creature-huff",
   "family": "creature",
   "description": "Huff or snuffle: mostly breath noise through loose formants, a faint voiced core",
+  "recipe": "A voice source that is mostly breath noise through loose formants, with a faint voiced core.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-huff",

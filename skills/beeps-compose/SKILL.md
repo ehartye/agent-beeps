@@ -12,11 +12,15 @@ is not installed. Work from the project root; `beeps init` creates `.agent-beeps
 You cannot hear. You can read measurements and **look** at each render's `look.png` (waveform,
 spectrogram, feature strip). The owner's ear is the judge: finish by auditioning (beeps-audition).
 
-## Read before composing
+## The loop (start here)
 
-1. `beeps capabilities --no-schema` - source types, archetypes, refine directions and short notes.
-2. `beeps taste show` - what this owner has preferred so far (skip nothing marked `strong`).
-3. The beeps-craft skill when choosing a synthesis method or checking a sound "feels right".
+1. `beeps taste show`, then `beeps generate <archetype> --count 6 --prompt "<what it is for>"`. Archetypes, with how each is built: [reference](../../docs/reference.md).
+2. **Look** at the contact sheet it prints; read the `report` and any `notices` ([notices](references/notices.md)).
+3. `beeps lint <names> --brief`; fix every error, justify every warning.
+4. `beeps predict` then `beeps audition open` (beeps-audition): the owner decides. Export the winner and run `beeps kit check`.
+
+Three complete runs (a UI chime, a stinger, a training-video bed) with the fields to read at each step: [worked examples](references/worked-examples.md).
+Choosing a method or judging a render: beeps-craft. Everything below is for when the loop is not enough.
 
 ## Read the `notices` before you describe a result
 
@@ -26,24 +30,15 @@ A command that changed, dropped or ignored something you asked for says so in `n
 
 ## Recorded-source or hybrid SFX
 
-For a recording used in a patch, read [hybrid sources](references/hybrid-sources.md) directly.
-Import → prepare a named sample patch → edit/add procedural layers → save → render/lint/look →
-**bundle the final edited patch**. A bundle made before the edit is stale. Default to prepared-only;
-`--include-preparation` also shares normalized source snapshots, possibly with outtakes, never
-original encoded imports, import receipts or private paths. For native playback, resume in the user
-gesture, await `loadCueAssets`, then build a fresh voice per play; cancel obsolete pending work.
-Keep ordinary procedural work on the generate path below; songs/music remain beeps-music.
-A recording longer than ten seconds? `beeps sample overview <normalizedId|file>` first: it images the
-whole recording and proposes crop windows with a ready `prepare` line each
-([hybrid sources](references/hybrid-sources.md)).
+A recording used in a patch: read [hybrid sources](references/hybrid-sources.md) first. Import, prepare a named sample patch, add procedural
+layers, save, render/lint/look, then **bundle the final edited patch** (a bundle made before the edit is stale). A recording over ten seconds:
+`beeps sample overview <normalizedId|file>` images it and proposes crop windows with a ready `prepare` line each. Songs are beeps-music.
 
 ## Generate first, author second
 
-- `beeps archetypes` lists the starting points (coin, pickup, jump, land, hit, explosion, laser,
-  powerup, powerdown, ui-click, ui-hover, confirm, no, blip, whoosh, alarm), plus the `creature`
-  family (voice-source animal calls: `creature` samples all of them; `creature-yip`, `-growl`,
-  `-bleat`, `-low`, `-cluck`, `-huff`, `-hiss`). Start a creature from these instead of hand-building
-  it from oscillators and noise.
+- `beeps archetypes` lists the starting points with their family and recipe (the table is also in [reference](../../docs/reference.md)). The `creature`
+  family is voice-source animal calls: `creature` samples all of them, or pick `creature-yip`, `-growl`, `-bleat`, `-low`, `-cluck`, `-huff`, `-hiss`
+  instead of hand-building one from oscillators and noise.
 - `beeps generate <archetype> --count 6 --prompt "<what it is for>"` oversamples, renders, drops
   lint failures, and keeps a diverse set (taste-ranked once the model has data). Words in the prompt
   steer it (soft, warm, dark, bright, short, punchy...; `steering` shows what it read). It prints the

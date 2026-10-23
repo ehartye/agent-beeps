@@ -3,6 +3,7 @@
   "name": "laser",
   "family": "laser",
   "description": "Square or saw zap with a fast exponential pitch drop through a closing lowpass",
+  "recipe": "A square or saw oscillator with a fast exponential pitch drop through a closing lowpass.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "laser",

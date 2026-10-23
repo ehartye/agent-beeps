@@ -88,6 +88,16 @@ export const NOTICE_REGISTRY = {
     summary: 'The patch declares runtime inputs, and this baked render used each input at its default. A game that sets the inputs plays other sounds.',
     hint: 'beeps runtime check lints the patch at the corners of its inputs, and beeps runtime look draws a chosen input value',
   },
+  N_PARTIAL_ABOVE_NYQUIST: {
+    severity: 'warn',
+    summary: 'At the highest note a track plays, an instrument partial or layer would sound at or above 0.45 of the sample rate, so it aliases or is dropped.',
+    hint: 'write the part lower, use an instrument with fewer high partials, or set the track transpose/root so the top notes stay lower',
+  },
+  N_CUTOFF_CAPPED: {
+    severity: 'warn',
+    summary: 'A keytracked filter cutoff would follow the highest note past the 22 kHz cap the engine applies, so the filter stops opening there and the top notes are darker than the keytrack suggests.',
+    hint: 'lower the keytrack, start the cutoff lower, or accept that the top notes stop brightening',
+  },
 } as const satisfies Record<string, NoticeEntry>;
 
 export type NoticeCode = keyof typeof NOTICE_REGISTRY;

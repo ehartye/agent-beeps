@@ -3,6 +3,7 @@
   "name": "confirm",
   "family": "confirm",
   "description": "Two ascending in-scale FM bell notes",
+  "recipe": "Two FM bell notes, the second an in-scale step above the first, each a short struck tone with no reverb.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "confirm",

@@ -82,7 +82,7 @@ export class Collector {
 const fmt = (x: number, d = 3) => String(Math.round(x * 10 ** d) / 10 ** d);
 
 /** Every declared frequency that reaches an oscillator or resonator, with the pointer that declares it. */
-function declaredFrequencies(patch: Patch): { hz: number; pointer: string }[] {
+export function declaredFrequencies(patch: Patch): { hz: number; pointer: string }[] {
   const out: { hz: number; pointer: string }[] = [];
   patch.layers.forEach((layer, i) => {
     const src = layer.source;
