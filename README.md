@@ -215,6 +215,7 @@ Five archetypes the target use cases were missing. No change to any existing sou
 
 - **`notification`** (a soft two-note chime, rounder and longer than `confirm`), **`stinger`** (a hard hit with a bell tail), **`fanfare`** (four stepped sawtooth notes, the last held), **`riser`** (noise and a tone that climb together and cut off, 1.5 to 3 s) and **`transition`** (a swell of filtered air over a low body, 0.6 to 1.4 s). Each has its own family, a `recipe` sentence, and is in [`docs/reference.md`](docs/reference.md).
 - Each was sampled across 40 seeds and rendered and linted in a test: all 40 pass every error-level craft rule, so `generate` keeps a full set. I looked at their contact sheets; the owner's listen is still the acceptance for how they sound.
+- The engine graph golden file gains 60 hashes (546 to 606) for the new archetypes; no existing hash moved.
 - Known: `generate` candidates carry `N_SCALE_SNAP` notices, because the sampler draws free frequencies that the project scale then moves (true of every pitched archetype, not only these).
 
 ## What changed in 0.28.0

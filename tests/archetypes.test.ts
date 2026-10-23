@@ -10,8 +10,8 @@ import { chromiumAvailable, openRenderHost, type RenderHost } from '../src/rende
 import { renderAndMeasure, type Rendered } from '../src/render/pipeline.ts';
 import { noteToHz } from '../runtime/engine/notes.js';
 
-const NAMES = ['alarm', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-yip', 'explosion', 'hit', 'jump', 'land', 'laser', 'no', 'pickup',
-  'powerdown', 'powerup', 'ui-click', 'ui-hover', 'whoosh'];
+const NAMES = ['alarm', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-yip', 'explosion', 'fanfare', 'hit', 'jump', 'land', 'laser', 'no', 'notification', 'pickup',
+  'powerdown', 'powerup', 'riser', 'stinger', 'transition', 'ui-click', 'ui-hover', 'whoosh'];
 
 const all = loadArchetypes();
 const hz = (v: unknown) => noteToHz(v as string | number);
@@ -48,7 +48,7 @@ describe('JSON pointers', () => {
 });
 
 describe('archetype library', () => {
-  it('holds the v1 archetypes (16 families, coin with three structures), sorted by name', () => {
+  it('holds the archetypes (coin with three structures), sorted by name', () => {
     expect(all.map(a => a.name)).toEqual(NAMES);
   });
 
