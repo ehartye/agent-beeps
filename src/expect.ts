@@ -4,6 +4,7 @@
 // a failure, because a contract that cannot be checked is not met.
 import { noteToHz } from '../runtime/engine/notes.js';
 import type { Features } from './measure/index.ts';
+import { noteName } from './patch-notices.ts';
 import type { Expectation, ExpectKind, Patch } from './schema/patch.ts';
 
 export type Outcome = 'pass' | 'fail' | 'unmeasurable';
@@ -169,3 +170,34 @@ export const EXPECT_REGISTRY: Record<ExpectKind, ExpectEntry> = {
   'no-clipping': { reads: 'delivered.clippedSamples', fields: 'none', unit: 'samples', summary: 'No delivered sample is clipped.' },
   'peak-limited': { reads: 'delivered.peakLimited', fields: 'is: true or false', unit: 'yes/no', summary: 'Whether the trim stopped at the true-peak ceiling, so the sound sits below its loudness target by design.' },
 };
+
+// ---- writing the numbers: pin a sound as it is ----
+
+const up = (x: number, step: number) => Math.round(Math.ceil(x / step - 1e-9) * step * 1e6) / 1e6;
+const down = (x: number, step: number) => Math.round(Math.floor(x / step + 1e-9) * step * 1e6) / 1e6;
+const THIRD_OCTAVE = 2 ** (1 / 3);
+
+/**
+ * An `xExpect` block that the sound passes as it is measured now, with room around each number: duration 25 % over, attack and tail 50 %
+ * over (with a floor), centroid within a third of an octave, pitch within 50 cents, direction as measured. It is a starting point to edit
+ * ("this chime must stay this chime"), printed by `lint --derive-expect`; it describes one render, so a looser brief is the author's to write.
+ */
+export function deriveExpectations(f: Features): Expectation[] {
+  const out: Expectation[] = [
+    { check: 'duration', max: up(f.durationSec * 1.25, 0.05) },
+    { check: 'attack', max: up(Math.max(f.attackSec * 1.5, 0.002), 0.001) },
+    { check: 'tail', max: up(Math.max(f.tailSec * 1.5, 0.05), 0.01) },
+    { check: 'centroid', min: down(f.centroidHz / THIRD_OCTAVE, 10), max: up(f.centroidHz * THIRD_OCTAVE, 10) },
+  ];
+  if (f.pitchStrength >= PITCHED_STRENGTH && f.pitchHz > 0) {
+    const name = noteName(f.pitchHz);
+    const off = Math.abs(1200 * Math.log2(f.pitchHz / noteToHz(name)));
+    // The note when the render sits on it (a scale-snapped sound does); the measured frequency when it sits between notes.
+    out.push(off <= 30 ? { check: 'pitch', note: name, toleranceCents: 50, minStrength: PITCHED_STRENGTH } : { check: 'pitch', hz: Math.round(f.pitchHz * 100) / 100, toleranceCents: 50, minStrength: PITCHED_STRENGTH });
+    out.push({ check: 'pitch-direction', is: direction(f.pitchDirection) });
+  }
+  out.push({ check: 'true-peak' });
+  if (f.delivered.clippedSamples === 0) out.push({ check: 'no-clipping' });
+  if (f.delivered.peakLimited === true) out.push({ check: 'peak-limited', is: true });
+  return out;
+}

@@ -209,6 +209,14 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.24.0
+
+Patch expectations, second step: write the numbers for an existing sound, and keep refinement inside the brief. No sound or music changes; no render, hash or cache key moves.
+
+- **`lint --derive-expect`:** prints, per patch, `derived.xExpect`: a block the sound passes as it measures now, with room around each number (duration 25 % over, attack and tail 50 % over with a floor, centroid within a third of an octave, pitch within 50 cents, direction as measured). Edit it and save it into the patch to hold a sound still. The rules are in [`docs/expectations.md`](docs/expectations.md).
+- **`mutate`:** checks every child against the `xExpect` block of the patch it was bred from and drops the ones that miss; the set's `report` counts them (`dropped` with reason `expectation` and the kinds missed, and `expectationMisses`). Children do not carry the block. A direction that contradicts it drops everything and fails with `E_RENDER` and a hint; `--ignore-expect` keeps the children.
+- **Skill:** `beeps-compose` mentions both.
+
 ## What changed in 0.23.0
 
 Patch expectations: a patch can say how the sound must measure, and the tools that already render it check the claim. No sound or music changes; no render, hash or cache key moves, and no library patch gains an expectation.

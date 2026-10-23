@@ -9,7 +9,7 @@ import type { Patch } from './schema/patch.ts';
 import type { Scale } from './schema/project.ts';
 
 const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const noteName = (hz: number) => { const m = Math.round(hzToMidi(hz)); return `${NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`; };
+export const noteName = (hz: number) => { const m = Math.round(hzToMidi(hz)); return `${NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`; };
 const hz2 = (hz: number) => Math.round(hz * 100) / 100;
 
 /** A difference under this many cents is the same note to the ear; the snap is not worth reporting. */
