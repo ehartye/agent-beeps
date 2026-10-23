@@ -10,22 +10,22 @@ Brief: soft, short, two rising notes, under 400 ms.
 ```text
 beeps init
 beeps taste show
-beeps generate confirm --count 4 --prompt "soft short notification chime"
+beeps generate notification --count 4 --prompt "soft short notification chime"
 ```
 
-Read in the result: `report` (`requested`, `kept`, `dropped`: a short set says so with `N_SHORT_SET`), `steering` (the prompt words it read: here `softer`,
+(`confirm` is the snappier "ok"; `notification` is rounder and rings longer.) Read in the result: `report` (`requested`, `kept`, `dropped`: a short set says so with `N_SHORT_SET`), `steering` (the prompt words it read: here `softer`,
 `less-harsh`, `shorter`), `seed` (print it so the set can be asked for again), each candidate's `features` (`energyLengthSec`, `attackSec`,
 `centroidHz`, `pitchHz` or `pitchReason`). **Open `sheet`** and look at the strips: two onsets, nothing ringing past the intended end.
 
 ```text
-beeps lint confirm-985691-6 --brief
+beeps lint <pick> --brief
 ```
 
 `errors` fail the command; `warnings` need a reason; a `notices` entry such as `N_SCALE_SNAP` says the render differs from the number in the patch (a
 generated pitch the project scale moved). Then hold the sound still while the owner decides:
 
 ```text
-beeps lint confirm-985691-6 --derive-expect      # prints derived.xExpect; paste it into the patch, tighten duration to 0.4
+beeps lint <pick> --derive-expect      # prints derived.xExpect; paste it into the patch, tighten duration to 0.4
 beeps predict --set <set-id> --pick 2 --shortlist 2,3 --why "shortest, no ring"
 beeps audition open --set <set-id> --prompt "notification chime" --mode live --context kit
 ```
@@ -34,7 +34,8 @@ After the owner ships one: `beeps kit check` (every kit sound, with its `expecta
 
 ## 2. An impact that must stay short
 
-Brief: a punchy hit, never longer than 250 ms, however many times it is refined.
+Brief: a punchy hit, never longer than 250 ms, however many times it is refined. (A longer accent, a hit with a bell tail, is `beeps generate stinger`; the
+other shapes the library has are `fanfare` (four stepped notes), `riser` (a tension build that cuts off at the top) and `transition` (a swell for a scene change).)
 
 ```text
 beeps generate hit --count 6 --prompt "punchy short"

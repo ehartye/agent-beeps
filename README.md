@@ -209,6 +209,14 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.29.0
+
+Five archetypes the target use cases were missing. No change to any existing sound; no render key moves.
+
+- **`notification`** (a soft two-note chime, rounder and longer than `confirm`), **`stinger`** (a hard hit with a bell tail), **`fanfare`** (four stepped sawtooth notes, the last held), **`riser`** (noise and a tone that climb together and cut off, 1.5 to 3 s) and **`transition`** (a swell of filtered air over a low body, 0.6 to 1.4 s). Each has its own family, a `recipe` sentence, and is in [`docs/reference.md`](docs/reference.md).
+- Each was sampled across 40 seeds and rendered and linted in a test: all 40 pass every error-level craft rule, so `generate` keeps a full set. I looked at their contact sheets; the owner's listen is still the acceptance for how they sound.
+- Known: `generate` candidates carry `N_SCALE_SNAP` notices, because the sampler draws free frequencies that the project scale then moves (true of every pitched archetype, not only these).
+
 ## What changed in 0.28.0
 
 Text readback, a spectrogram difference and a golden-kit gate. The spec had these as 0.28.0 and 0.29.0; they shipped together. No sound or music changes; no render, hash or cache key moves.

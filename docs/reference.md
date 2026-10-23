@@ -25,14 +25,19 @@ Everything here is read from the shipped files, so it is current. `beeps archety
 | `creature-low` | creature | A voice source with a soft glottal slope and slow vibrato through deep rounded formants, about a second long. | 10 |
 | `creature-yip` | creature | A voice source whose f0 snaps up and settles, through bright formants with a little jitter. | 9 |
 | `explosion` | explosion | White noise blast closing into a brown-noise rumble, thinning debris grains and a low sine thump, through a room reverb. | 8 |
+| `fanfare` | fanfare | Four staggered sawtooth notes (root, third, fifth, octave) through a lowpass that opens on each note, the last one held longest, over a small room reverb. | 9 |
 | `hit` | hit | A short white-noise burst over a low modal body with a faint metal layer for the edge. | 7 |
 | `jump` | jump | One square oscillator with a rising pitchEnv glide and a short decay. | 6 |
 | `land` | land | A sine with a falling pitch drop (the thud) plus a brown-noise tick, lowpassed. | 6 |
 | `laser` | laser | A square or saw oscillator with a fast exponential pitch drop through a closing lowpass. | 8 |
 | `no` | no | Two triangle oscillators a falling minor third apart, soft attack, no buzz. | 6 |
+| `notification` | notification | Two FM bell notes a fourth or fifth apart with a low modulation index, the second ringing longer, through a small room reverb and held a few dB under a confirm. | 7 |
 | `pickup` | pickup | Two additive bell-like chimes, the second a fourth, fifth or octave above the first. | 6 |
 | `powerdown` | powerdown | A triangle oscillator with a falling glide and a slow wobble from a pitch LFO. | 6 |
 | `powerup` | powerup | Four square oscillators stepping root, third, fifth and octave in the project scale, each a short note. | 8 |
+| `riser` | riser | A white-noise layer through a bandpass that sweeps from low to high while its level swells, over a sawtooth whose pitch climbs about an octave and a half, both ending in a short release. | 11 |
+| `stinger` | stinger | A short lowpassed white-noise burst and a low modal body for the hit, with an FM bell a fifth above ringing out as the tail, through a small room reverb. | 8 |
+| `transition` | transition | Two white-noise layers, a bandpass that sweeps upward over a swelling envelope and a faint highpass hiss, over a sine swell an octave or two below that fades with the noise. | 11 |
 | `ui-click` | ui-click | A single modal tick of about 30 ms: a damped resonator excited by a short impulse. | 5 |
 | `ui-hover` | ui-hover | A very short quiet sine or triangle touch with a soft attack. | 5 |
 | `whoosh` | whoosh | Two white-noise layers: a bandpass whose centre sweeps upward over a swelling envelope, and a faint airy highpass hiss. | 7 |
