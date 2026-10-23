@@ -51,6 +51,20 @@ async function drawOverview(openHost: () => Promise<RenderHost>, req: OverviewRe
   return image;
 }
 
+/** Whether `source` is a sample ID, and the project it needs. A project is optional only for a file; a corrupt one is an error either way, never "no project". */
+export function resolveSource(source: string, projectDir: string): { byId: boolean; project: OpenProject | undefined } {
+  const byId = source.startsWith('sha256:');
+  if (byId) assertSampleId(source);
+  const root = findProjectRoot(projectDir), project = root ? openProject(root) : undefined;
+  if (byId && !project) throw new BeepsError('E_PROJECT', 'a sample ID needs a project', { hint: 'run "beeps init" in the project root, or pass an audio file' });
+  return { byId, project };
+}
+
+/** The decoded channels of a sample ID or an audio file, with the normalized ID the prepare lines use. */
+export function readSource(source: string, byId: boolean, project: OpenProject | undefined): Loaded {
+  return project && byId ? loadId(source as SampleId, project) : loadFile(source);
+}
+
 export async function runOverview(req: OverviewRequest, openHost: () => Promise<RenderHost> = openRenderHost) {
   if (!(req.gapDb > 0 && req.gapDb <= 100)) throw new BeepsError('E_SCHEMA', '--gap-db must be above 0 and at most 100');
   if (!(req.minGapMs >= 10 && req.minGapMs <= 10000)) throw new BeepsError('E_SCHEMA', '--min-gap must be 10 to 10000 ms');
@@ -59,14 +73,10 @@ export async function runOverview(req: OverviewRequest, openHost: () => Promise<
   if (req.startSec !== undefined && req.startSec < 0) throw new BeepsError('E_SCHEMA', '--start must not be negative');
   if (req.endSec !== undefined && req.endSec <= (req.startSec ?? 0)) throw new BeepsError('E_SCHEMA', '--end must be after --start');
   if (!req.image && req.out) throw new BeepsError('E_USAGE', '--out needs an image: drop --no-image');
-  const byId = req.source.startsWith('sha256:');
-  if (byId) assertSampleId(req.source);
-  // A project is optional only for a file; a corrupt one is an error either way, never "no project".
-  const root = findProjectRoot(req.projectDir), project = root ? openProject(root) : undefined;
-  if (byId && !project) throw new BeepsError('E_PROJECT', 'a sample ID needs a project', { hint: 'run "beeps init" in the project root, or pass an audio file' });
+  const { byId, project } = resolveSource(req.source, req.projectDir);
   if (req.image && !req.out && !project) throw new BeepsError('E_USAGE', 'outside a project the image needs --out <png> (or pass --no-image)');
 
-  const loaded = project && byId ? loadId(req.source as SampleId, project) : loadFile(req.source), total = loaded.channels[0].length;
+  const loaded = readSource(req.source, byId, project), total = loaded.channels[0].length;
   const startFrame = req.startSec === undefined ? 0 : Math.round(req.startSec * SR);
   const endFrame = req.endSec === undefined ? total : Math.round(req.endSec * SR);
   if (startFrame >= total) throw new BeepsError('E_SCHEMA', `--start is beyond the source length ${sec(total)} s`, { pointer: '/startFrame' });
