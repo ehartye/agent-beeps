@@ -44,7 +44,9 @@ beeps mutate <pick> --toward punchier --count 4
 
 `mutate` checks each child against the parent's `xExpect`: read `report.dropped` (reason `expectation`) and `report.expectationMisses` (which kinds missed).
 If everything is dropped the error says so and names `--ignore-expect`; do not pass it to get a longer sound, change the block if the brief changed.
-Children do not carry the block: paste it into the one you keep.
+Children do not carry the block: paste it into the one you keep. Compare a refined child with its parent as numbers and a picture with
+`beeps diff <parent> <child>` (red is energy the child has more of), and once the sound is in the kit run `beeps kit golden bless` so a later engine or
+toolchain change is judged by what it did to the sound: `beeps kit golden check` says identical, equivalent or different, with what moved.
 
 ## 3. A training-video bed
 

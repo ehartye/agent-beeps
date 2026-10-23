@@ -10,21 +10,24 @@ import type { Features } from './measure/index.ts';
 
 export const GOLDEN_DIR = 'golden';
 
-export const TiersSchema = z.strictObject({
+/** How far a render may move and still be the same sound. */
+export const DEFAULT_TIERS = {
   /** Absolute seconds: the rendered length and the audible length. */
-  durationSec: z.number().positive().default(0.01),
-  tailSec: z.number().positive().default(0.05),
-  attackSec: z.number().positive().default(0.002),
+  durationSec: 0.01,
+  tailSec: 0.05,
+  attackSec: 0.002,
   /** Relative change in the spectral centroid, percent. */
-  centroidPct: z.number().positive().default(5),
+  centroidPct: 5,
   /** Root-mean-square difference over the eight log bands, dB. */
-  bandRmsDb: z.number().positive().default(1.5),
+  bandRmsDb: 1.5,
   /** Absolute change in the loudest moment's loudness, LU. */
-  loudnessLu: z.number().positive().default(0.3),
+  loudnessLu: 0.3,
   /** Change of a steady pitch, cents. */
-  pitchCents: z.number().positive().default(20),
-});
-export type Tiers = z.output<typeof TiersSchema>;
+  pitchCents: 20,
+};
+export type Tiers = typeof DEFAULT_TIERS;
+/** A sound's own overrides: only the tolerances it names. */
+export const TiersOverrideSchema = z.strictObject(Object.fromEntries(Object.keys(DEFAULT_TIERS).map(k => [k, z.number().positive().optional()])) as Record<keyof Tiers, z.ZodOptional<z.ZodNumber>>);
 
 const Measured = z.strictObject({
   durationSec: z.number(), energyLengthSec: z.number(), tailSec: z.number(), attackSec: z.number(), centroidHz: z.number(),
@@ -43,7 +46,7 @@ export const GoldenSchema = z.strictObject({
   measured: Measured,
   bands: z.array(z.number()),
   /** Overrides of the default tolerances for this sound (a noisy sound can take a looser band tolerance). */
-  tiers: TiersSchema.partial().optional(),
+  tiers: TiersOverrideSchema.optional(),
 });
 export type Golden = z.output<typeof GoldenSchema>;
 
@@ -99,7 +102,7 @@ export function judgeGolden(g: Golden, now: { wavSha256: string; features: Featu
     return Math.sqrt(a.reduce((s, v, i) => s + (b[i] - v) ** 2, 0) / a.length);
   })();
   if (now.wavSha256 === g.wavSha256) return { verdict: 'identical', timbreDistanceDb: 0, moved: [] };
-  const t = TiersSchema.parse(g.tiers ?? {});
+  const t: Tiers = { ...DEFAULT_TIERS, ...g.tiers };
   const m = measuredOf(now.features), was = g.measured;
   const moved: Moved[] = [];
   const check = (feature: string, a: number, b: number, change: number, limit: number, unit: string) => {

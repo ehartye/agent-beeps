@@ -93,7 +93,7 @@ describe('song roll', () => {
     expect(beeps(dir, 'song', 'new', file).status).toBe(0);
     const r = beeps(dir, 'song', 'roll', 'lead', '--section', 'a', '--track', 'lead', '--bars', '1-1');
     expect(r.status).toBe(0);
-    expect(r.out.tracks.lead.rows[0].cells).toBe('................');
+    expect(r.out.tracks.lead.rows[0].cells).toBe('....o#######....');
     expect(r.out.text).toContain('bars 1-1 of 2');
     expect(beeps(dir, 'song', 'roll', 'lead', '--bars', 'x').err.code).toBe('E_USAGE');
   });

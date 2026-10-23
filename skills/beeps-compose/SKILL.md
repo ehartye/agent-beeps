@@ -32,7 +32,8 @@ A command that changed, dropped or ignored something you asked for says so in `n
 
 A recording used in a patch: read [hybrid sources](references/hybrid-sources.md) first. Import, prepare a named sample patch, add procedural
 layers, save, render/lint/look, then **bundle the final edited patch** (a bundle made before the edit is stale). A recording over ten seconds:
-`beeps sample overview <normalizedId|file>` images it and proposes crop windows with a ready `prepare` line each. Songs are beeps-music.
+`beeps sample overview <normalizedId|file>` images it and proposes crop windows with a ready `prepare` line each; `beeps sample digest` is the same view as a text table
+(level, brightness, steady pitch, events per window) for when you cannot view the image. Songs are beeps-music.
 
 ## Generate first, author second
 
@@ -72,6 +73,8 @@ prints a block the sound passes as it measures now: edit it and save it. `mutate
 ## Render, measure, look
 
 - `beeps render <name...> [--variants]` - loudness-trimmed renders with key features.
+- Before and after a change (a refine round, an engine update): `beeps diff <a> <b>` gives the signed spectrogram difference as dB per band and per third of the
+  sound, with an image; `beeps kit golden bless` then `check` tells you whether each kit sound is identical, equivalent within tolerances, or different.
 - `beeps look <name>` (one look.png) or `beeps look a b c` (a contact sheet). Check: the onset is
   where you expect, nothing rings past the energy length you intended, pitch moves the right way,
   noise sits in the band you meant.

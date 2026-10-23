@@ -63,6 +63,9 @@ beeps sample overview <normalizedId>
 beeps sample overview take.wav --out shape.png --start 40 --end 70   # zoom into a stretch
 ```
 
+`beeps sample digest <normalizedId|file> --windows 24` prints the same recording as a table, one row per window: rms and peak dB, centroid, a steady pitch
+if there is one, and the events that start in it. Narrow `--start` and `--end` to read a stretch in more detail.
+
 A file needs no project to be overviewed, but then the image needs `--out <png>`; import and prepare
 still need a project. The PNG (default `.agent-beeps/renders/overviews/<key>.png`; **open it**) shows
 the waveform, the per-second loudness arc and a spectrogram, with numbered bands for the segments. The

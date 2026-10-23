@@ -209,6 +209,15 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.28.0
+
+Text readback, a spectrogram difference and a golden-kit gate. The spec had these as 0.28.0 and 0.29.0; they shipped together. No sound or music changes; no render, hash or cache key moves.
+
+- **`beeps song roll <song>`:** a song as text for an agent that cannot view the look image, built from the notes the renderer will play. A step grid for rhythm parts and a piano roll for pitched ones (highest pitch first, one column per sixteenth, `o` starts a note, `#` holds it), 8 bars per call by default (`--section`, `--track`, `--bars 9-16`), with `next` naming the following window and `rowsOmitted` when a part has more than 18 pitches.
+- **`beeps sample digest <id|file>`:** the text twin of `sample overview`: one row per time window (`--windows`, 24 by default) with rms and peak dB, centroid, a steady pitch and the events that start in it; `--start` and `--end` narrow it.
+- **`beeps diff <a> <b>`:** a signed spectrogram difference between two patches (rendered at their kit seeds) or audio files. The JSON gives mean dB per octave band over the whole sound and per third of it, the feature deltas and hints; the image (`--out`, or under `.agent-beeps/renders/diffs`) is blue-white-red on a frequency by time grid, red where the second sound has more energy.
+- **`beeps kit golden bless|check`:** a blessed render of each kit sound in `.agent-beeps/golden/` and a check that classifies today's render as `identical` (same samples), `equivalent` (different samples, every measure inside its tolerance) or `different` (with what moved, by how much, and the timbre distance in dB). Tolerances are in the file and can be overridden per sound. Exit 1 on `different`, on a sound with no blessing and on one that will not render.
+
 ## What changed in 0.27.0
 
 Safer outputs, a generated reference, worked examples. No sound or music changes; no render, hash or cache key moves.

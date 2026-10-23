@@ -71,7 +71,8 @@ export function spectrogramDiff(a: Float32Array, b: Float32Array, sr: number): S
   const ga = grid(a, sr, cols, totalSec), gb = grid(b, sr, cols, totalSec);
   let top = -Infinity;
   for (let i = 0; i < ga.length; i++) top = Math.max(top, ga[i], gb[i]);
-  const floor = top - FLOOR_DB;
+  // Relative to the loudest cell, and never below an absolute floor, so two silent sounds are silent rather than "equal".
+  const floor = Math.max(top - FLOOR_DB, -150);
   const diff = new Float64Array(ga.length), active = new Uint8Array(ga.length);
   let sum = 0, n = 0;
   for (let i = 0; i < ga.length; i++) {
