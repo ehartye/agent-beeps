@@ -1,0 +1,209 @@
+{
+  "schema": "beeps/song@1",
+  "name": "deep-work",
+  "title": "Deep Work",
+  "description": "Long, uninterrupted hours: a low drone and slow strings in D dorian, with a faint sonar ping and a glass partial that appear once every few bars.",
+  "tags": [
+    "focus",
+    "drone",
+    "dark"
+  ],
+  "bpm": 60,
+  "loop": false,
+  "seed": 420103,
+  "progressions": {
+    "a": [
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "G13",
+        8
+      ],
+      [
+        "Dm9",
+        8
+      ],
+      [
+        "Am7",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "drone": {
+      "instrument": "drone",
+      "gainDb": -24,
+      "highpass": 55,
+      "sends": {
+        "reverb": -14
+      }
+    },
+    "strings": {
+      "instrument": {
+        "base": "string-pad",
+        "set": {
+          "/layers/0/source/pitch": "Eb4",
+          "/layers/0/filter/cutoff": 3092
+        }
+      },
+      "gainDb": -19,
+      "highpass": 150,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "pad": {
+      "instrument": {
+        "base": "warm-pad",
+        "set": {
+          "/layers/0/source/pitch": "Eb4",
+          "/layers/0/filter/cutoff": 1427,
+          "/layers/1/source/pitch": "Eb4"
+        }
+      },
+      "gainDb": -24,
+      "highpass": 110,
+      "spread": 0.4,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "ping": {
+      "instrument": "sonar",
+      "gainDb": -24,
+      "pan": 0.25,
+      "sends": {
+        "reverb": -9,
+        "delay": -14
+      }
+    },
+    "glass": {
+      "instrument": "shimmer",
+      "gainDb": -30,
+      "pan": -0.3,
+      "sends": {
+        "reverb": -8
+      }
+    }
+  },
+  "patterns": {
+    "drone-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "D2",
+          32,
+          0.7
+        ]
+      ]
+    },
+    "strings-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "ping-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "A5",
+          4,
+          0.5
+        ],
+        [
+          24,
+          "D5",
+          4,
+          0.5
+        ]
+      ]
+    },
+    "glass-a": {
+      "bars": 8,
+      "notes": [
+        [
+          16,
+          "F6",
+          2,
+          0.4
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "drone": "drone-a",
+        "pad": "pad-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "drone": "drone-a",
+        "strings": "strings-a",
+        "pad": "pad-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "drone": "drone-a",
+        "strings": "strings-a",
+        "pad": "pad-a",
+        "ping": "ping-a",
+        "glass": "glass-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "drone": "drone-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -30
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "space",
+      "returnDb": -10
+    }
+  }
+}

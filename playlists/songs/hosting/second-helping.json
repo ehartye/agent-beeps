@@ -1,0 +1,461 @@
+{
+  "schema": "beeps/song@1",
+  "name": "second-helping",
+  "title": "Second Helping",
+  "description": "Seconds all round: a bright, light funk in C with staccato electric-piano stabs, a bouncing bass and a tight little backbeat. It lifts the table without pushing it.",
+  "tags": [
+    "dinner",
+    "funk",
+    "upbeat"
+  ],
+  "bpm": 108,
+  "swing": 0.1,
+  "loop": false,
+  "seed": 410108,
+  "progressions": {
+    "a": [
+      [
+        "Cmaj7",
+        2
+      ],
+      [
+        "Dm7",
+        2
+      ],
+      [
+        "Em7",
+        2
+      ],
+      [
+        "Dm7",
+        2
+      ],
+      [
+        "Cmaj7",
+        2
+      ],
+      [
+        "Dm7",
+        2
+      ],
+      [
+        "Em7",
+        2
+      ],
+      [
+        "A7",
+        2
+      ],
+      [
+        "Dm7",
+        4
+      ],
+      [
+        "G13",
+        4
+      ],
+      [
+        "Cmaj7",
+        4
+      ],
+      [
+        "A7b9",
+        4
+      ]
+    ],
+    "b": [
+      [
+        "Fmaj7",
+        4
+      ],
+      [
+        "Em7",
+        4
+      ],
+      [
+        "Dm7",
+        4
+      ],
+      [
+        "G7sus4",
+        2
+      ],
+      [
+        "G7",
+        2
+      ],
+      [
+        "Fmaj7",
+        4
+      ],
+      [
+        "Em7",
+        2
+      ],
+      [
+        "A7",
+        2
+      ],
+      [
+        "Dm7",
+        4
+      ],
+      [
+        "G13",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "keys": {
+      "instrument": {
+        "base": "e-piano",
+        "set": {
+          "/layers/0/source/pitch": "D4",
+          "/layers/1/source/pitch": "D4",
+          "/layers/1/filter/cutoff": 3592,
+          "/layers/1/filter/env/to": 1347,
+          "/layers/2/source/pitch": "D4"
+        }
+      },
+      "gainDb": -13,
+      "pan": -0.15,
+      "sends": {
+        "reverb": -17
+      },
+      "humanize": 0.3,
+      "spread": 0.3
+    },
+    "bass": {
+      "instrument": {
+        "base": "pulse-bass",
+        "set": {
+          "/layers/0/source/pitch": "Ab2",
+          "/layers/0/filter/cutoff": 2222,
+          "/layers/0/filter/env/to": 413,
+          "/layers/1/source/pitch": "Ab2"
+        }
+      },
+      "gainDb": -16,
+      "keytrack": 0.5,
+      "humanize": 0.2
+    },
+    "tune": {
+      "instrument": "soft-lead",
+      "gainDb": -19,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -14,
+        "delay": -20
+      },
+      "humanize": 0.2
+    },
+    "pluck": {
+      "instrument": {
+        "base": "soft-pluck",
+        "set": {
+          "/layers/0/source/pitch": "F#4",
+          "/layers/0/filter/cutoff": 4243,
+          "/layers/0/filter/env/to": 1273,
+          "/layers/1/source/pitch": "F#5"
+        }
+      },
+      "gainDb": -23,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -16
+      }
+    },
+    "kick": {
+      "instrument": "kick",
+      "gainDb": -17
+    },
+    "snare": {
+      "instrument": "snare",
+      "gainDb": -27
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -30,
+      "pan": 0.2
+    }
+  },
+  "patterns": {
+    "keys-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x... ..x. .x.. x..."
+      }
+    },
+    "keys-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x... ..x. .x.. x..."
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x.x. ..x. x... .x..",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "bass-b": {
+      "bars": 8,
+      "bass": {
+        "progression": "b",
+        "octave": 2,
+        "rhythm": "x.x. ..x. x... .x..",
+        "tones": [
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    },
+    "tune-a": {
+      "bars": 8,
+      "notes": [
+        [
+          1,
+          "E5",
+          0.5,
+          0.58
+        ],
+        [
+          1.5,
+          "G5",
+          0.5,
+          0.58
+        ],
+        [
+          2,
+          "C6",
+          1.5,
+          0.58
+        ],
+        [
+          3.5,
+          "B5",
+          0.5,
+          0.58
+        ],
+        [
+          4,
+          "G5",
+          1,
+          0.58
+        ],
+        [
+          5,
+          "E5",
+          2,
+          0.58
+        ],
+        [
+          10,
+          "D5",
+          0.5,
+          0.58
+        ],
+        [
+          10.5,
+          "F5",
+          0.5,
+          0.58
+        ],
+        [
+          11,
+          "A5",
+          1,
+          0.58
+        ],
+        [
+          12,
+          "G5",
+          0.5,
+          0.58
+        ],
+        [
+          12.5,
+          "F5",
+          1,
+          0.58
+        ],
+        [
+          13.5,
+          "D5",
+          2.5,
+          0.58
+        ],
+        [
+          17,
+          "E5",
+          0.5,
+          0.58
+        ],
+        [
+          17.5,
+          "G5",
+          0.5,
+          0.58
+        ],
+        [
+          18,
+          "B5",
+          1,
+          0.58
+        ],
+        [
+          19,
+          "A5",
+          1,
+          0.58
+        ],
+        [
+          20,
+          "G5",
+          1,
+          0.58
+        ],
+        [
+          21,
+          "E5",
+          3,
+          0.58
+        ],
+        [
+          25,
+          "C5",
+          1,
+          0.58
+        ],
+        [
+          26,
+          "D5",
+          1,
+          0.58
+        ],
+        [
+          27,
+          "E5",
+          1,
+          0.58
+        ],
+        [
+          28,
+          "E5",
+          4,
+          0.58
+        ]
+      ]
+    },
+    "pluck-b": {
+      "bars": 8,
+      "arp": {
+        "progression": "b",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "kick": {
+      "bars": 1,
+      "steps": "x... .... x.x. ...."
+    },
+    "snare": {
+      "bars": 1,
+      "steps": ".... x... .... x..o"
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.xx x.xx x.xx x.xx"
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "keys": "keys-a",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "tune": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a",
+        "tune": "tune-a",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "keys": "keys-b",
+        "bass": "bass-b",
+        "pluck": "pluck-b",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "keys": "keys-a",
+        "bass": "bass-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "tune",
+    "b",
+    "a",
+    "tune",
+    "b",
+    "tune",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -9
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "schema": "beeps/song@1",
+  "name": "library-hours",
+  "title": "Library Hours",
+  "description": "Long tables and low lamps: a soft plucked arpeggio in A minor that keeps the same shape all the way through, a pad underneath and a barely-there tick.",
+  "tags": [
+    "focus",
+    "steady",
+    "arpeggio"
+  ],
+  "bpm": 72,
+  "loop": false,
+  "seed": 420102,
+  "progressions": {
+    "a": [
+      [
+        "Am9",
+        8
+      ],
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "Cmaj9",
+        8
+      ],
+      [
+        "Em7",
+        4
+      ],
+      [
+        "G6",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "arp": {
+      "instrument": {
+        "base": "soft-pluck",
+        "set": {
+          "/layers/0/source/pitch": "Db5",
+          "/layers/0/filter/cutoff": 6357,
+          "/layers/0/filter/env/to": 1907,
+          "/layers/1/source/pitch": "Db6"
+        }
+      },
+      "gainDb": -16,
+      "pan": -0.15,
+      "sends": {
+        "reverb": -13,
+        "delay": -22
+      },
+      "humanize": 0.15
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -22,
+      "highpass": 120,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -23
+    },
+    "top": {
+      "instrument": {
+        "base": "glass-bell",
+        "set": {
+          "/layers/0/source/pitch": "D6"
+        }
+      },
+      "gainDb": -25,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9,
+        "delay": -18
+      }
+    },
+    "tick": {
+      "instrument": "rim",
+      "gainDb": -34,
+      "pan": 0.1
+    }
+  },
+  "patterns": {
+    "arp-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 2,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "top-a": {
+      "bars": 8,
+      "notes": [
+        [
+          8,
+          "E6",
+          2,
+          0.45
+        ],
+        [
+          20,
+          "D6",
+          2,
+          0.45
+        ],
+        [
+          28,
+          "B5",
+          4,
+          0.45
+        ]
+      ]
+    },
+    "tick": {
+      "bars": 1,
+      "steps": "x... .... .... ...."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "arp": "arp-a",
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "arp": "arp-a",
+        "pad": "pad-a",
+        "low": "low-a",
+        "top": "top-a",
+        "tick": "tick"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "arp": "arp-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "arp": {
+          "gainDb": -24
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

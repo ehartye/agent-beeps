@@ -1,0 +1,286 @@
+{
+  "schema": "beeps/song@1",
+  "name": "blank-page",
+  "title": "Blank Page",
+  "description": "Starting a task: a warm pad in C and a felt piano that plays a three-note motif and then waits. Nothing moves faster than a breath.",
+  "tags": [
+    "focus",
+    "calm",
+    "piano"
+  ],
+  "bpm": 64,
+  "loop": false,
+  "seed": 420101,
+  "progressions": {
+    "a": [
+      [
+        "Cmaj9",
+        8
+      ],
+      [
+        "Am9",
+        8
+      ],
+      [
+        "Fmaj9",
+        8
+      ],
+      [
+        "G6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -16,
+      "highpass": 110,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "Eb5",
+          "/layers/0/filter/cutoff": 6184
+        }
+      },
+      "gainDb": -12,
+      "pan": -0.08,
+      "sends": {
+        "reverb": -11
+      },
+      "humanize": 0.35
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -24
+    },
+    "air": {
+      "instrument": "shimmer",
+      "gainDb": -28,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -8
+      }
+    }
+  },
+  "patterns": {
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "piano-a": {
+      "bars": 8,
+      "notes": [
+        [
+          4,
+          "E5",
+          2,
+          0.5
+        ],
+        [
+          6,
+          "G5",
+          1,
+          0.5
+        ],
+        [
+          7,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          16,
+          "C5",
+          2,
+          0.5
+        ],
+        [
+          18,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          19,
+          "C5",
+          1,
+          0.5
+        ],
+        [
+          24,
+          "D5",
+          2,
+          0.5
+        ],
+        [
+          26,
+          "G5",
+          2,
+          0.5
+        ]
+      ]
+    },
+    "piano-b": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "G5",
+          2,
+          0.5
+        ],
+        [
+          2,
+          "E5",
+          2,
+          0.5
+        ],
+        [
+          8,
+          "A4",
+          2,
+          0.5
+        ],
+        [
+          10,
+          "C5",
+          1,
+          0.5
+        ],
+        [
+          11,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          16,
+          "A5",
+          2,
+          0.5
+        ],
+        [
+          18,
+          "F5",
+          2,
+          0.5
+        ],
+        [
+          24,
+          "G5",
+          1,
+          0.5
+        ],
+        [
+          25,
+          "D5",
+          1,
+          0.5
+        ],
+        [
+          26,
+          "B4",
+          2,
+          0.5
+        ]
+      ]
+    },
+    "air-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "E6",
+          2,
+          0.4
+        ],
+        [
+          28,
+          "B5",
+          2,
+          0.4
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-b",
+        "air": "air-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

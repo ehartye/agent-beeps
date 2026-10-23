@@ -1,0 +1,232 @@
+{
+  "schema": "beeps/song@1",
+  "name": "flow-state",
+  "title": "Flow State",
+  "description": "Momentum without push: electric-piano chords in E-flat over a soft, even pulse and a rounded bass, steady enough to disappear into.",
+  "tags": [
+    "focus",
+    "pulse",
+    "light"
+  ],
+  "bpm": 80,
+  "loop": false,
+  "seed": 420104,
+  "progressions": {
+    "a": [
+      [
+        "Ebmaj9",
+        8
+      ],
+      [
+        "Cm9",
+        8
+      ],
+      [
+        "Abmaj9",
+        8
+      ],
+      [
+        "Bb6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "keys": {
+      "instrument": "e-piano",
+      "gainDb": -14,
+      "pan": -0.12,
+      "sends": {
+        "reverb": -14
+      },
+      "humanize": 0.25,
+      "spread": 0.3
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -26,
+      "highpass": 130,
+      "sends": {
+        "reverb": -13
+      }
+    },
+    "bass": {
+      "instrument": {
+        "base": "sub-bass",
+        "set": {
+          "/layers/0/source/pitch": "A2",
+          "/layers/1/source/pitch": "A3",
+          "/layers/1/filter/cutoff": 1514
+        }
+      },
+      "gainDb": -17,
+      "humanize": 0.15
+    },
+    "pulse": {
+      "instrument": "shaker",
+      "gainDb": -29
+    },
+    "tick": {
+      "instrument": "rim",
+      "gainDb": -33,
+      "pan": 0.15
+    },
+    "tune": {
+      "instrument": "soft-lead",
+      "gainDb": -24,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -12,
+        "delay": -20
+      },
+      "humanize": 0.2
+    }
+  },
+  "patterns": {
+    "keys-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ ____ x___ ____"
+      }
+    },
+    "keys-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x___ ..x_ x___ ..x_"
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... x... ....",
+        "tones": [
+          0,
+          2
+        ]
+      }
+    },
+    "tune-a": {
+      "bars": 8,
+      "notes": [
+        [
+          8,
+          "Bb4",
+          2,
+          0.5
+        ],
+        [
+          10,
+          "D5",
+          2,
+          0.5
+        ],
+        [
+          20,
+          "G4",
+          2,
+          0.5
+        ],
+        [
+          22,
+          "Bb4",
+          2,
+          0.5
+        ],
+        [
+          24,
+          "C5",
+          4,
+          0.5
+        ]
+      ]
+    },
+    "pulse": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "tick": {
+      "bars": 1,
+      "steps": "x... .... x... ...."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a",
+        "bass": "bass-a",
+        "pulse": "pulse"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "keys": "keys-b",
+        "pad": "pad-a",
+        "bass": "bass-a",
+        "pulse": "pulse",
+        "tick": "tick",
+        "tune": "tune-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "keys": {
+          "gainDb": -20
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

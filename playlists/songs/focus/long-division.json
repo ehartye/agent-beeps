@@ -1,0 +1,216 @@
+{
+  "schema": "beeps/song@1",
+  "name": "long-division",
+  "title": "Long Division",
+  "description": "Working it out one step at a time: slow strings in B minor under a patient, repeating two-note piano figure, with a low note holding the floor.",
+  "tags": [
+    "focus",
+    "strings",
+    "ostinato"
+  ],
+  "bpm": 66,
+  "loop": false,
+  "seed": 420110,
+  "progressions": {
+    "a": [
+      [
+        "Bm9",
+        8
+      ],
+      [
+        "Gmaj9",
+        8
+      ],
+      [
+        "Dmaj9",
+        8
+      ],
+      [
+        "A6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "strings": {
+      "instrument": {
+        "base": "string-pad",
+        "set": {
+          "/layers/0/source/pitch": "D4",
+          "/layers/0/filter/cutoff": 2918
+        }
+      },
+      "gainDb": -20,
+      "highpass": 140,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "Db5",
+          "/layers/0/filter/cutoff": 5509
+        }
+      },
+      "gainDb": -15,
+      "pan": -0.1,
+      "sends": {
+        "reverb": -12
+      },
+      "humanize": 0.3
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -22
+    },
+    "pad": {
+      "instrument": {
+        "base": "warm-pad",
+        "set": {
+          "/layers/0/source/pitch": "D4",
+          "/layers/0/filter/cutoff": 1347,
+          "/layers/1/source/pitch": "D4"
+        }
+      },
+      "gainDb": -26,
+      "highpass": 120,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "bell": {
+      "instrument": {
+        "base": "glass-bell",
+        "set": {
+          "/layers/0/source/pitch": "E6"
+        }
+      },
+      "gainDb": -27,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9,
+        "delay": -17
+      }
+    }
+  },
+  "patterns": {
+    "strings-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "piano-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "converge",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "bell-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "F#6",
+          2,
+          0.4
+        ],
+        [
+          24,
+          "D6",
+          2,
+          0.4
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "strings": "strings-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "strings": "strings-a",
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "strings": "strings-a",
+        "pad": "pad-a",
+        "low": "low-a",
+        "piano": "piano-a",
+        "bell": "bell-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "strings": "strings-a",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "strings": {
+          "gainDb": -28
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

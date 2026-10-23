@@ -1,0 +1,454 @@
+{
+  "schema": "beeps/song@1",
+  "name": "candlelight",
+  "title": "Candlelight",
+  "description": "The room gets softer: a very slow pad in E major, single piano notes and a distant bell that rings once a bar or less. It makes space for the people at the table.",
+  "tags": [
+    "dinner",
+    "quiet",
+    "ambient"
+  ],
+  "bpm": 66,
+  "loop": false,
+  "seed": 410107,
+  "progressions": {
+    "a": [
+      [
+        "Emaj9",
+        4
+      ],
+      [
+        "C#m9",
+        4
+      ],
+      [
+        "Amaj9",
+        4
+      ],
+      [
+        "B6/9",
+        4
+      ],
+      [
+        "Emaj9",
+        4
+      ],
+      [
+        "C#m9",
+        4
+      ],
+      [
+        "Amaj9",
+        4
+      ],
+      [
+        "B6/9",
+        4
+      ]
+    ],
+    "b": [
+      [
+        "Amaj9",
+        4
+      ],
+      [
+        "G#m7",
+        4
+      ],
+      [
+        "C#m9",
+        4
+      ],
+      [
+        "F#m9",
+        2
+      ],
+      [
+        "B13",
+        2
+      ],
+      [
+        "Amaj9",
+        4
+      ],
+      [
+        "G#m7",
+        4
+      ],
+      [
+        "C#m9",
+        4
+      ],
+      [
+        "B6/9",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "pad": {
+      "instrument": {
+        "base": "warm-pad",
+        "set": {
+          "/layers/0/source/pitch": "F4",
+          "/layers/0/filter/cutoff": 1602,
+          "/layers/1/source/pitch": "F4"
+        }
+      },
+      "gainDb": -17,
+      "highpass": 120,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "strings": {
+      "instrument": {
+        "base": "string-pad",
+        "set": {
+          "/layers/0/source/pitch": "F4",
+          "/layers/0/filter/cutoff": 3471
+        }
+      },
+      "gainDb": -26,
+      "highpass": 160,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "piano": {
+      "instrument": {
+        "base": "felt-piano",
+        "set": {
+          "/layers/0/source/pitch": "D5",
+          "/layers/0/filter/cutoff": 5837
+        }
+      },
+      "gainDb": -11,
+      "pan": -0.08,
+      "sends": {
+        "reverb": -11
+      },
+      "humanize": 0.35
+    },
+    "bell": {
+      "instrument": "glass-bell",
+      "gainDb": -20,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9,
+        "delay": -16
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -22
+    }
+  },
+  "patterns": {
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "strings-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "strings-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "low-b": {
+      "bars": 8,
+      "bass": {
+        "progression": "b",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "piano-a": {
+      "bars": 8,
+      "notes": [
+        [
+          2,
+          "G#4",
+          1,
+          0.5
+        ],
+        [
+          3,
+          "B4",
+          1,
+          0.5
+        ],
+        [
+          4,
+          "B4",
+          2,
+          0.5
+        ],
+        [
+          8,
+          "E5",
+          2,
+          0.5
+        ],
+        [
+          10,
+          "D#5",
+          2,
+          0.5
+        ],
+        [
+          16,
+          "C#5",
+          1,
+          0.5
+        ],
+        [
+          17,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          18,
+          "G#5",
+          2,
+          0.5
+        ],
+        [
+          24,
+          "F#5",
+          2,
+          0.5
+        ],
+        [
+          26,
+          "D#5",
+          2,
+          0.5
+        ],
+        [
+          28,
+          "B4",
+          4,
+          0.5
+        ]
+      ]
+    },
+    "piano-b": {
+      "bars": 8,
+      "notes": [
+        [
+          1,
+          "C#5",
+          1,
+          0.5
+        ],
+        [
+          2,
+          "E5",
+          2,
+          0.5
+        ],
+        [
+          8,
+          "B4",
+          1,
+          0.5
+        ],
+        [
+          9,
+          "G#4",
+          1,
+          0.5
+        ],
+        [
+          10,
+          "B4",
+          2,
+          0.5
+        ],
+        [
+          14,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          15,
+          "G#5",
+          1,
+          0.5
+        ],
+        [
+          16,
+          "F#5",
+          2,
+          0.5
+        ],
+        [
+          18,
+          "D#5",
+          2,
+          0.5
+        ],
+        [
+          20,
+          "B4",
+          4,
+          0.5
+        ],
+        [
+          26,
+          "C#5",
+          1,
+          0.5
+        ],
+        [
+          27,
+          "E5",
+          1,
+          0.5
+        ],
+        [
+          28,
+          "G#5",
+          4,
+          0.5
+        ]
+      ]
+    },
+    "bell-a": {
+      "bars": 8,
+      "notes": [
+        [
+          8,
+          "B5",
+          1,
+          0.5
+        ],
+        [
+          20,
+          "G#5",
+          1,
+          0.5
+        ],
+        [
+          28,
+          "E5",
+          4,
+          0.5
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "pad": "pad-a",
+        "strings": "strings-a",
+        "low": "low-a",
+        "piano": "piano-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -17
+        }
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "pad": "pad-b",
+        "strings": "strings-b",
+        "low": "low-b",
+        "piano": "piano-b",
+        "bell": "bell-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -10
+    }
+  }
+}

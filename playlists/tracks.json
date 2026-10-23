@@ -1,0 +1,901 @@
+{
+  "schema": "beeps/playlists@1",
+  "sets": [
+    {
+      "id": "hosting",
+      "title": "Dinner Party",
+      "tagline": "Hosting guests and cooking for them, from chopping to the last cup of coffee.",
+      "brief": [
+        "The brief is that people have to be able to talk. Every track stays between 60 and 108 bpm, keeps its melody understated and soft, and leaves the middle of the spectrum free for voices. Nothing has a hook that asks to be sung along to.",
+        "The set follows the evening: two prep tracks with a little lift for the kitchen, then arrival, the first glass, the starter, the main course, seconds, dessert and a slow, nearly empty close. Styles shift between bossa nova, ballad, soft soul, light funk and a waltz so a long evening does not feel looped."
+      ],
+      "sources": [
+        {
+          "label": "Dinner-party tempo and volume guidance (commercial blogs; consistent on conversation-first volume and 60 to 110 bpm, not rigorous)",
+          "url": "https://djwillgill.com/how-different-playlists-uplift-small-and-large-events/"
+        },
+        {
+          "label": "Restaurant music strategy by concept (tempo bands)",
+          "url": "https://activaire.com/blog/restaurant-music-strategy"
+        }
+      ],
+      "tracks": [
+        {
+          "id": "chopping-board",
+          "title": "Chopping Board",
+          "description": "Kitchen-counter music: a bouncing plucked figure in G over soft brushed backbeats, bright enough to keep the knife moving and plain enough to talk over.",
+          "tags": [
+            "prep",
+            "upbeat",
+            "acoustic"
+          ],
+          "bpm": 98,
+          "durationSec": 178.9,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -5.8,
+          "loop": false,
+          "mp3": "./media/chopping-board.mp3",
+          "look": "./media/chopping-board.png",
+          "recipe": "./songs/hosting/chopping-board.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "simmer",
+          "title": "Simmer",
+          "description": "A pot on a low flame: felt piano and a warm pad in D minor, a slow root-and-fifth pulse and a soft answer in the upper register. Steady and unhurried.",
+          "tags": [
+            "prep",
+            "warm",
+            "unhurried"
+          ],
+          "bpm": 84,
+          "durationSec": 166.3,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -3.6,
+          "loop": false,
+          "mp3": "./media/simmer.mp3",
+          "look": "./media/simmer.png",
+          "recipe": "./songs/hosting/simmer.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2 LU over 166 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"piano\" writes F3-Bb5 for an instrument rooted at Ab4 (415 Hz): the whole patch is retuned 15 semitones down and sounds at 175 Hz, far from the register its filters and envelopes were built for."
+              }
+            ]
+          }
+        },
+        {
+          "id": "doors-open",
+          "title": "Doors Open",
+          "description": "Guests arriving: a light bossa nova groove in F, electric piano comping over a walking-pace bass and a quiet rim clave, with a marimba tune that stays out of the way of hellos.",
+          "tags": [
+            "hosting",
+            "arrival",
+            "bossa"
+          ],
+          "bpm": 104,
+          "durationSec": 168.7,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -7.6,
+          "loop": false,
+          "mp3": "./media/doors-open.mp3",
+          "look": "./media/doors-open.png",
+          "recipe": "./songs/hosting/doors-open.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.4 LU over 169 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "wine-pour",
+          "title": "Wine Pour",
+          "description": "A jazz ballad in B-flat for the first glass: ninth chords on a felt piano, a soft string pad, a sung line on a mellow lead and a lazy upright underneath.",
+          "tags": [
+            "dinner",
+            "jazz",
+            "ballad"
+          ],
+          "bpm": 72,
+          "durationSec": 165.5,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -3.3,
+          "loop": false,
+          "mp3": "./media/wine-pour.mp3",
+          "look": "./media/wine-pour.png",
+          "recipe": "./songs/hosting/wine-pour.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"pad\" writes C3-F5 for an instrument rooted at Eb4 (311 Hz): the whole patch is retuned 15 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To"
+              }
+            ]
+          }
+        },
+        {
+          "id": "first-course",
+          "title": "First Course",
+          "description": "The starter arrives: a minor-key bossa with a rim clave and shaker, soft electric-piano chords and a glassy bell tune that lilts rather than leads.",
+          "tags": [
+            "dinner",
+            "bossa",
+            "minor"
+          ],
+          "bpm": 92,
+          "durationSec": 172,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -6.9,
+          "loop": false,
+          "mp3": "./media/first-course.mp3",
+          "look": "./media/first-course.png",
+          "recipe": "./songs/hosting/first-course.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 1.6 LU over 172 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"keys\" writes C3-E5 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 14 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"pad\" writes C3-E5 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 14 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To "
+              }
+            ]
+          }
+        },
+        {
+          "id": "table-talk",
+          "title": "Table Talk",
+          "description": "Talk over the main course: a loose, soft soul groove in E-flat with a ghosted backbeat, a rounded bass line and electric-piano chords that sit behind voices.",
+          "tags": [
+            "dinner",
+            "soul",
+            "groove"
+          ],
+          "bpm": 100,
+          "durationSec": 158.6,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -7.6,
+          "loop": false,
+          "mp3": "./media/table-talk.mp3",
+          "look": "./media/table-talk.png",
+          "recipe": "./songs/hosting/table-talk.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 1.2 LU over 159 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"keys\" writes C3-G5 for an instrument rooted at E4 (330 Hz): the whole patch is retuned 16 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"pad\" writes C3-G5 for an instrument rooted at E4 (330 Hz): the whole patch is retuned 16 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To "
+              }
+            ]
+          }
+        },
+        {
+          "id": "second-helping",
+          "title": "Second Helping",
+          "description": "Seconds all round: a bright, light funk in C with staccato electric-piano stabs, a bouncing bass and a tight little backbeat. It lifts the table without pushing it.",
+          "tags": [
+            "dinner",
+            "funk",
+            "upbeat"
+          ],
+          "bpm": 108,
+          "durationSec": 162.5,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -6.6,
+          "loop": false,
+          "mp3": "./media/second-helping.mp3",
+          "look": "./media/second-helping.png",
+          "recipe": "./songs/hosting/second-helping.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 1.8 LU over 163 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"keys\" writes C3-E5 for an instrument rooted at D4 (294 Hz): the whole patch is retuned 14 semitones down and sounds at 131 Hz, far from the register its filters and envelopes were built for. To"
+              }
+            ]
+          }
+        },
+        {
+          "id": "dessert-plates",
+          "title": "Dessert Plates",
+          "description": "Something sweet: a gentle waltz in G, a marimba melody over felt piano and a plucked bass, light enough to keep the conversation going over coffee.",
+          "tags": [
+            "dinner",
+            "waltz",
+            "sweet"
+          ],
+          "bpm": 96,
+          "durationSec": 155,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -1.7,
+          "loop": false,
+          "mp3": "./media/dessert-plates.mp3",
+          "look": "./media/dessert-plates.png",
+          "recipe": "./songs/hosting/dessert-plates.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.4 LU over 155 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "candlelight",
+          "title": "Candlelight",
+          "description": "The room gets softer: a very slow pad in E major, single piano notes and a distant bell that rings once a bar or less. It makes space for the people at the table.",
+          "tags": [
+            "dinner",
+            "quiet",
+            "ambient"
+          ],
+          "bpm": 66,
+          "durationSec": 180.9,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -10.5,
+          "loop": false,
+          "mp3": "./media/candlelight.mp3",
+          "look": "./media/candlelight.png",
+          "recipe": "./songs/hosting/candlelight.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"pad\" writes Db3-Ab5 for an instrument rooted at F4 (349 Hz): the whole patch is retuned 16 semitones down and sounds at 139 Hz, far from the register its filters and envelopes were built for. T"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"strings\" writes Db3-Ab5 for an instrument rooted at F4 (349 Hz): the whole patch is retuned 16 semitones down and sounds at 139 Hz, far from the register its filters and envelopes were built fo"
+              }
+            ]
+          }
+        },
+        {
+          "id": "last-guests-linger",
+          "title": "Last Guests Linger",
+          "description": "The end of the evening: a slow string pad and a handful of piano notes in F, warm and unhurried, with nothing in it that asks to be listened to.",
+          "tags": [
+            "dinner",
+            "late",
+            "slow"
+          ],
+          "bpm": 60,
+          "durationSec": 166.3,
+          "loudnessLufs": -22,
+          "targetLufs": -22,
+          "truePeakDb": -7.8,
+          "loop": false,
+          "mp3": "./media/last-guests-linger.mp3",
+          "look": "./media/last-guests-linger.png",
+          "recipe": "./songs/hosting/last-guests-linger.json",
+          "lint": {
+            "warnings": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "title": "Deep Focus",
+      "tagline": "Studying and working: steady, quiet and slow to change.",
+      "brief": [
+        "The brief is that nothing should pull the eye off the page. No lyrics, no melodic hook, no sudden entrances: each section changes by one layer at a time, tempos sit between 56 and 84 bpm, and the level barely moves from the first bar to the last.",
+        "The evidence behind focus music is thin. The one tempo comparison found, a small experiment of unconfirmed origin, had slow instrumental music (60 to 70 bpm) do as well as or slightly better than silence for word recall, and fast music (120 to 130 bpm) do worst. Claims that a particular tempo entrains brain waves are not supported by anything found. Treat this as a sensible default rather than a prescription; the music that works is the music you stop noticing."
+      ],
+      "sources": [
+        {
+          "label": "Background music while studying (qualitative study; says empirical work on slide-based learning is scarce)",
+          "url": "https://public-pages-files-2025.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2025.1637073/pdf"
+        }
+      ],
+      "tracks": [
+        {
+          "id": "blank-page",
+          "title": "Blank Page",
+          "description": "Starting a task: a warm pad in C and a felt piano that plays a three-note motif and then waits. Nothing moves faster than a breath.",
+          "tags": [
+            "focus",
+            "calm",
+            "piano"
+          ],
+          "bpm": 64,
+          "durationSec": 216.3,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -13,
+          "loop": false,
+          "mp3": "./media/blank-page.mp3",
+          "look": "./media/blank-page.png",
+          "recipe": "./songs/focus/blank-page.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 1.5 LU over 216 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "library-hours",
+          "title": "Library Hours",
+          "description": "Long tables and low lamps: a soft plucked arpeggio in A minor that keeps the same shape all the way through, a pad underneath and a barely-there tick.",
+          "tags": [
+            "focus",
+            "steady",
+            "arpeggio"
+          ],
+          "bpm": 72,
+          "durationSec": 193,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -10.5,
+          "loop": false,
+          "mp3": "./media/library-hours.mp3",
+          "look": "./media/library-hours.png",
+          "recipe": "./songs/focus/library-hours.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.7 LU over 193 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "deep-work",
+          "title": "Deep Work",
+          "description": "Long, uninterrupted hours: a low drone and slow strings in D dorian, with a faint sonar ping and a glass partial that appear once every few bars.",
+          "tags": [
+            "focus",
+            "drone",
+            "dark"
+          ],
+          "bpm": 60,
+          "durationSec": 239.2,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -10.1,
+          "loop": false,
+          "mp3": "./media/deep-work.mp3",
+          "look": "./media/deep-work.png",
+          "recipe": "./songs/focus/deep-work.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"strings\" writes D3-E5 for an instrument rooted at Eb4 (311 Hz): the whole patch is retuned 13 semitones down and sounds at 147 Hz, far from the register its filters and envelopes were built for"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"pad\" writes D3-E5 for an instrument rooted at Eb4 (311 Hz): the whole patch is retuned 13 semitones down and sounds at 147 Hz, far from the register its filters and envelopes were built for. To"
+              }
+            ]
+          }
+        },
+        {
+          "id": "flow-state",
+          "title": "Flow State",
+          "description": "Momentum without push: electric-piano chords in E-flat over a soft, even pulse and a rounded bass, steady enough to disappear into.",
+          "tags": [
+            "focus",
+            "pulse",
+            "light"
+          ],
+          "bpm": 80,
+          "durationSec": 198.3,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -8.5,
+          "loop": false,
+          "mp3": "./media/flow-state.mp3",
+          "look": "./media/flow-state.png",
+          "recipe": "./songs/focus/flow-state.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.4 LU over 198 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "margin-notes",
+          "title": "Margin Notes",
+          "description": "Small marks in the margin: a slow marimba figure in G, a few glass bell notes, a pad and a deep note under the bar. It repeats and changes very little.",
+          "tags": [
+            "focus",
+            "mallet",
+            "gentle"
+          ],
+          "bpm": 68,
+          "durationSec": 204,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -7.4,
+          "loop": false,
+          "mp3": "./media/margin-notes.mp3",
+          "look": "./media/margin-notes.png",
+          "recipe": "./songs/focus/margin-notes.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 1.9 LU over 204 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"mallet\" writes C4-D6 for an instrument rooted at Db5 (554 Hz): the whole patch is retuned 13 semitones up and sounds at 1175 Hz, far from the register its filters and envelopes were built for. "
+              }
+            ]
+          }
+        },
+        {
+          "id": "quiet-desk",
+          "title": "Quiet Desk",
+          "description": "The slowest piece in the set: a felt piano plays one note per beat in a rising and falling arpeggio in F, with a pad breathing underneath. It leaves almost everything out.",
+          "tags": [
+            "focus",
+            "piano",
+            "minimal"
+          ],
+          "bpm": 56,
+          "durationSec": 212,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -11.6,
+          "loop": false,
+          "mp3": "./media/quiet-desk.mp3",
+          "look": "./media/quiet-desk.png",
+          "recipe": "./songs/focus/quiet-desk.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2 LU over 212 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"piano\" writes Bb2-G5 for an instrument rooted at Eb4 (311 Hz): the whole patch is retuned 17 semitones down and sounds at 117 Hz, far from the register its filters and envelopes were built for."
+              }
+            ]
+          }
+        },
+        {
+          "id": "index-cards",
+          "title": "Index Cards",
+          "description": "Sorting and shuffling: two soft plucked voices in E minor take turns on an interlocking pattern, a pad and a low note keep the floor, and nothing else happens.",
+          "tags": [
+            "focus",
+            "interlock",
+            "quiet"
+          ],
+          "bpm": 76,
+          "durationSec": 207.6,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -7.6,
+          "loop": false,
+          "mp3": "./media/index-cards.mp3",
+          "look": "./media/index-cards.png",
+          "recipe": "./songs/focus/index-cards.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.8 LU over 208 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-written-pitch",
+                "message": "track \"lft\" writes A2-D5 for an instrument rooted at C4 (262 Hz): the whole patch is retuned 15 semitones down and sounds at 110 Hz, far from the register its filters and envelopes were built for. To "
+              }
+            ]
+          }
+        },
+        {
+          "id": "slow-rain-reading",
+          "title": "Slow Rain Reading",
+          "description": "A rainy afternoon with a book: a soft wash of filtered noise, a warm pad in B-flat, a handful of piano notes and a high glass sparkle now and then.",
+          "tags": [
+            "focus",
+            "ambient",
+            "texture"
+          ],
+          "bpm": 62,
+          "durationSec": 231.9,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -12.4,
+          "loop": false,
+          "mp3": "./media/slow-rain-reading.mp3",
+          "look": "./media/slow-rain-reading.png",
+          "recipe": "./songs/focus/slow-rain-reading.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2 LU over 232 s: sections do not rise and fall; thin or drop parts in some sections"
+              }
+            ]
+          }
+        },
+        {
+          "id": "checkpoint",
+          "title": "Checkpoint",
+          "description": "Progress marks: a steady bass pulse in A major under bright, soft electric-piano chords and a high glass sparkle. The liveliest piece in the set, for when the work needs a little forward motion.",
+          "tags": [
+            "focus",
+            "pulse",
+            "bright"
+          ],
+          "bpm": 84,
+          "durationSec": 190.2,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -7.9,
+          "loop": false,
+          "mp3": "./media/checkpoint.mp3",
+          "look": "./media/checkpoint.png",
+          "recipe": "./songs/focus/checkpoint.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "long-division",
+          "title": "Long Division",
+          "description": "Working it out one step at a time: slow strings in B minor under a patient, repeating two-note piano figure, with a low note holding the floor.",
+          "tags": [
+            "focus",
+            "strings",
+            "ostinato"
+          ],
+          "bpm": 66,
+          "durationSec": 210,
+          "loudnessLufs": -24,
+          "targetLufs": -24,
+          "truePeakDb": -10.4,
+          "loop": false,
+          "mp3": "./media/long-division.mp3",
+          "look": "./media/long-division.png",
+          "recipe": "./songs/focus/long-division.json",
+          "lint": {
+            "warnings": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "pump",
+      "title": "Get Pumped",
+      "tagline": "A warm-up, a climb through the tempos and a victory lap.",
+      "brief": [
+        "The brief is drive. Hard kicks, bass on the offbeat, brass hooks and a build and drop in every track, in the 118 to 150 bpm range. Exercise-music research recommends roughly 120 to 140 bpm for most work, a slower start for warm-ups and little extra benefit above about 145, and advises against heavy syncopation, which is why the grooves here lean on the beat.",
+        "The set climbs on purpose: it opens at 118 bpm, rises through the 120s and 130s, peaks at 150 and ends on a 120 bpm cool-down. Much of the reported benefit figures come from secondary coverage rather than the papers, so take the numbers as a guide."
+      ],
+      "sources": [
+        {
+          "label": "Karageorghis et al. 2011, Research Quarterly for Exercise and Sport: tempo preference across exercise intensity",
+          "url": "https://shura.shu.ac.uk/18185/"
+        },
+        {
+          "label": "Les Mills on workout music tempo ranges",
+          "url": "https://www.lesmills.com/articles/workout-music"
+        }
+      ],
+      "tracks": [
+        {
+          "id": "warm-up-lap",
+          "title": "Warm-Up Lap",
+          "description": "Getting loose: a steady four-on-the-floor in D minor with an offbeat bass, brass stabs and a hook that climbs. The easiest way into the set.",
+          "tags": [
+            "pump",
+            "warmup",
+            "minor"
+          ],
+          "bpm": 118,
+          "durationSec": 172.3,
+          "loudnessLufs": -16.2,
+          "targetLufs": -16,
+          "truePeakDb": -1.9,
+          "loop": false,
+          "mp3": "./media/warm-up-lap.mp3",
+          "look": "./media/warm-up-lap.png",
+          "recipe": "./songs/pump/warm-up-lap.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "55% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "crowd-noise",
+          "title": "Crowd Noise",
+          "description": "Everybody in: a stomp-and-clap groove in D major, brass stabs on every beat and a call-and-answer hook made for a room full of people.",
+          "tags": [
+            "pump",
+            "stomp",
+            "major"
+          ],
+          "bpm": 124,
+          "durationSec": 164.4,
+          "loudnessLufs": -16.1,
+          "targetLufs": -16,
+          "truePeakDb": -1.7,
+          "loop": false,
+          "mp3": "./media/crowd-noise.mp3",
+          "look": "./media/crowd-noise.png",
+          "recipe": "./songs/pump/crowd-noise.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "47% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rise-up",
+          "title": "Rise Up",
+          "description": "An anthem in G major: a stomping kick and clap, big open brass chords and a hook that everyone can hum back after one pass.",
+          "tags": [
+            "pump",
+            "anthem",
+            "major"
+          ],
+          "bpm": 126,
+          "durationSec": 161.9,
+          "loudnessLufs": -16.3,
+          "targetLufs": -16,
+          "truePeakDb": -1.9,
+          "loop": false,
+          "mp3": "./media/rise-up.mp3",
+          "look": "./media/rise-up.png",
+          "recipe": "./songs/pump/rise-up.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "54% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "ignition",
+          "title": "Ignition",
+          "description": "The engine catches: a driving 128 in A minor with a pumping kick, a bright plucked arp and a brass hook that climbs into the chorus.",
+          "tags": [
+            "pump",
+            "driving",
+            "minor"
+          ],
+          "bpm": 128,
+          "durationSec": 159.5,
+          "loudnessLufs": -16.3,
+          "targetLufs": -16,
+          "truePeakDb": -1.9,
+          "loop": false,
+          "mp3": "./media/ignition.mp3",
+          "look": "./media/ignition.png",
+          "recipe": "./songs/pump/ignition.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "56% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "breakthrough",
+          "title": "Breakthrough",
+          "description": "Pushing through the wall: a breakbeat in F minor that opens into a major lift at the end of every phrase, with a long riser before each drop.",
+          "tags": [
+            "pump",
+            "rising",
+            "minor",
+            "breaks"
+          ],
+          "bpm": 130,
+          "durationSec": 157.2,
+          "loudnessLufs": -17.1,
+          "targetLufs": -16,
+          "truePeakDb": -1.7,
+          "loop": false,
+          "mp3": "./media/breakthrough.mp3",
+          "look": "./media/breakthrough.png",
+          "recipe": "./songs/pump/breakthrough.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "57% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "pressure",
+          "title": "Pressure",
+          "description": "Squeezed and tight: a syncopated breakbeat in C minor over a stuttering bass, hard clap backbeats and a brass line that leans on the offbeat.",
+          "tags": [
+            "pump",
+            "tense",
+            "minor",
+            "breaks"
+          ],
+          "bpm": 132,
+          "durationSec": 154.9,
+          "loudnessLufs": -16.6,
+          "targetLufs": -16,
+          "truePeakDb": -1.5,
+          "loop": false,
+          "mp3": "./media/pressure.mp3",
+          "look": "./media/pressure.png",
+          "recipe": "./songs/pump/pressure.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "56% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "final-set",
+          "title": "Final Set",
+          "description": "One more push: a tireless 136 in B minor, a bright arp that never stops climbing, and a hook that lifts a step higher each time it comes round.",
+          "tags": [
+            "pump",
+            "push",
+            "minor"
+          ],
+          "bpm": 136,
+          "durationSec": 150.6,
+          "loudnessLufs": -16.3,
+          "targetLufs": -16,
+          "truePeakDb": -2,
+          "loop": false,
+          "mp3": "./media/final-set.mp3",
+          "look": "./media/final-set.png",
+          "recipe": "./songs/pump/final-set.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "52% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "iron-will",
+          "title": "Iron Will",
+          "description": "Heavy and unmoving: half-time drums at 140 in E minor, a grinding low bass, tom hits on the offbeat and a brass riff that repeats like a lifted weight.",
+          "tags": [
+            "pump",
+            "heavy",
+            "minor",
+            "halftime"
+          ],
+          "bpm": 140,
+          "durationSec": 146.5,
+          "loudnessLufs": -17.3,
+          "targetLufs": -16,
+          "truePeakDb": -1.9,
+          "loop": false,
+          "mp3": "./media/iron-will.mp3",
+          "look": "./media/iron-will.png",
+          "recipe": "./songs/pump/iron-will.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "58% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sprint-finish",
+          "title": "Sprint Finish",
+          "description": "All out: 150 bpm in A minor with sixteenth hats, a bright square-wave lead and a bass that never lets up. The fastest piece in the set.",
+          "tags": [
+            "pump",
+            "fast",
+            "minor"
+          ],
+          "bpm": 150,
+          "durationSec": 137.3,
+          "loudnessLufs": -17.3,
+          "targetLufs": -16,
+          "truePeakDb": -1.7,
+          "loop": false,
+          "mp3": "./media/sprint-finish.mp3",
+          "look": "./media/sprint-finish.png",
+          "recipe": "./songs/pump/sprint-finish.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "58% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "victory-lap",
+          "title": "Victory Lap",
+          "description": "Crossing the line: a bright four-on-the-floor in C major with open brass, a rising hook and a pad that carries the last bars home.",
+          "tags": [
+            "pump",
+            "triumph",
+            "major"
+          ],
+          "bpm": 120,
+          "durationSec": 169.6,
+          "loudnessLufs": -16.3,
+          "targetLufs": -16,
+          "truePeakDb": -1.8,
+          "loop": false,
+          "mp3": "./media/victory-lap.mp3",
+          "look": "./media/victory-lap.png",
+          "recipe": "./songs/pump/victory-lap.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "57% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

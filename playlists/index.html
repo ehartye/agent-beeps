@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Playlists</title>
+<meta name="description" content="Thirty original instrumental tracks in three sets: dinner and hosting, study and focus, and getting pumped. Composed and rendered with agent-beeps.">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body data-set="hosting">
+<a class="skip" href="#tracks">Skip to the track list</a>
+<header class="top">
+  <p class="eyebrow">Thirty original tracks, composed with <a href="https://github.com/ehartye/agent-beeps">agent-beeps</a></p>
+  <h1>Three Playlists</h1>
+  <nav class="tabs" role="tablist" aria-label="Playlists" id="tabs"></nav>
+</header>
+
+<main>
+  <section class="intro" id="intro" aria-live="polite"></section>
+  <ol class="tracks" id="tracks"></ol>
+  <section class="notes" aria-labelledby="notes-h">
+    <h2 id="notes-h">How these were made</h2>
+    <p>Every track is a plain JSON score (chords, patterns, sections, mix moves) played by synthesized instruments and rendered offline in a browser. Nothing is sampled or recorded. Open a track's <em>score</em> link to read exactly what plays, bar by bar. Each set is levelled to its own loudness target so a dinner party, a study session and a workout each sit at a sensible volume.</p>
+    <p class="fine">The tempo and level choices follow what could be found about each situation, and the evidence is uneven; each set's notes say which parts are well supported and which are convention.</p>
+  </section>
+</main>
+
+<footer class="dock" id="dock" hidden>
+  <div class="now">
+    <img id="dock-look" alt="" width="96" height="40">
+    <div class="now-text"><strong id="dock-title">Nothing playing</strong><span id="dock-sub"></span></div>
+  </div>
+  <div class="controls">
+    <button id="prev" type="button" aria-label="Previous track">&#9198;</button>
+    <button id="play" type="button" aria-label="Play">&#9654;</button>
+    <button id="next" type="button" aria-label="Next track">&#9197;</button>
+  </div>
+  <div class="seek">
+    <span id="cur">0:00</span>
+    <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+    <span id="dur">0:00</span>
+  </div>
+  <div class="extras">
+    <button id="repeat" type="button" aria-label="Repeat: off" title="Repeat: off">Repeat off</button>
+    <label class="vol"><span class="sr">Volume</span><input id="vol" type="range" min="0" max="100" value="80"></label>
+  </div>
+</footer>
+<audio id="audio" preload="none"></audio>
+<script src="./app.js" type="module"></script>
+</body>
+</html>

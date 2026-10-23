@@ -1,0 +1,206 @@
+{
+  "schema": "beeps/song@1",
+  "name": "margin-notes",
+  "title": "Margin Notes",
+  "description": "Small marks in the margin: a slow marimba figure in G, a few glass bell notes, a pad and a deep note under the bar. It repeats and changes very little.",
+  "tags": [
+    "focus",
+    "mallet",
+    "gentle"
+  ],
+  "bpm": 68,
+  "loop": false,
+  "seed": 420105,
+  "progressions": {
+    "a": [
+      [
+        "Gmaj9",
+        8
+      ],
+      [
+        "Em9",
+        8
+      ],
+      [
+        "Cmaj9",
+        8
+      ],
+      [
+        "D6/9",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "mallet": {
+      "instrument": {
+        "base": "mallet",
+        "set": {
+          "/layers/0/source/pitch": "Db5"
+        }
+      },
+      "gainDb": -20,
+      "pan": -0.12,
+      "sends": {
+        "reverb": -12,
+        "delay": -22
+      },
+      "humanize": 0.2
+    },
+    "bell": {
+      "instrument": {
+        "base": "glass-bell",
+        "set": {
+          "/layers/0/source/pitch": "A5"
+        }
+      },
+      "gainDb": -26,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -9,
+        "delay": -17
+      }
+    },
+    "pad": {
+      "instrument": "warm-pad",
+      "gainDb": -17,
+      "highpass": 120,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -12
+      }
+    },
+    "low": {
+      "instrument": "sub-bass",
+      "gainDb": -22
+    }
+  },
+  "patterns": {
+    "mallet-a": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "up",
+        "octaves": 2,
+        "octave": 4
+      }
+    },
+    "mallet-b": {
+      "bars": 8,
+      "arp": {
+        "progression": "a",
+        "rate": 1,
+        "shape": "updown",
+        "octaves": 1,
+        "octave": 4
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "low-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x... .... .... ....",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "bell-a": {
+      "bars": 8,
+      "notes": [
+        [
+          8,
+          "B5",
+          2,
+          0.45
+        ],
+        [
+          10,
+          "D6",
+          2,
+          0.45
+        ],
+        [
+          24,
+          "G5",
+          2,
+          0.45
+        ],
+        [
+          26,
+          "E5",
+          2,
+          0.45
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "mallet": "mallet-a",
+        "pad": "pad-a",
+        "low": "low-a"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "mallet": "mallet-b",
+        "pad": "pad-a",
+        "low": "low-a",
+        "bell": "bell-a"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "mallet": "mallet-b",
+        "pad": "pad-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "mallet": {
+          "gainDb": -24
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "b",
+    "a",
+    "b",
+    "a",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -9
+    }
+  }
+}

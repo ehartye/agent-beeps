@@ -1,0 +1,526 @@
+{
+  "schema": "beeps/song@1",
+  "name": "table-talk",
+  "title": "Table Talk",
+  "description": "Talk over the main course: a loose, soft soul groove in E-flat with a ghosted backbeat, a rounded bass line and electric-piano chords that sit behind voices.",
+  "tags": [
+    "dinner",
+    "soul",
+    "groove"
+  ],
+  "bpm": 100,
+  "swing": 0.12,
+  "loop": false,
+  "seed": 410106,
+  "progressions": {
+    "a": [
+      [
+        "Ebmaj9",
+        4
+      ],
+      [
+        "Cm9",
+        4
+      ],
+      [
+        "Abmaj9",
+        4
+      ],
+      [
+        "Bb13",
+        4
+      ],
+      [
+        "Ebmaj9",
+        4
+      ],
+      [
+        "Cm9",
+        4
+      ],
+      [
+        "Fm9",
+        4
+      ],
+      [
+        "Bb13",
+        4
+      ]
+    ],
+    "b": [
+      [
+        "Abmaj9",
+        4
+      ],
+      [
+        "Gm7",
+        4
+      ],
+      [
+        "Cm9",
+        4
+      ],
+      [
+        "F9",
+        4
+      ],
+      [
+        "Abmaj9",
+        4
+      ],
+      [
+        "Bb13",
+        4
+      ],
+      [
+        "Gm7",
+        2
+      ],
+      [
+        "C7",
+        2
+      ],
+      [
+        "Fm9",
+        4
+      ]
+    ]
+  },
+  "tracks": {
+    "keys": {
+      "instrument": {
+        "base": "e-piano",
+        "set": {
+          "/layers/0/source/pitch": "E4",
+          "/layers/1/source/pitch": "E4",
+          "/layers/1/filter/cutoff": 4032,
+          "/layers/1/filter/env/to": 1512,
+          "/layers/2/source/pitch": "E4"
+        }
+      },
+      "gainDb": -12,
+      "pan": -0.12,
+      "sends": {
+        "reverb": -15
+      },
+      "humanize": 0.35,
+      "spread": 0.3
+    },
+    "bass": {
+      "instrument": {
+        "base": "pulse-bass",
+        "set": {
+          "/layers/0/source/pitch": "A2",
+          "/layers/0/filter/cutoff": 2355,
+          "/layers/0/filter/env/to": 437,
+          "/layers/1/source/pitch": "A2"
+        }
+      },
+      "gainDb": -17,
+      "keytrack": 0.4,
+      "humanize": 0.25
+    },
+    "tune": {
+      "instrument": {
+        "base": "mallet",
+        "set": {
+          "/layers/0/source/pitch": "Db5"
+        }
+      },
+      "gainDb": -17,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -13,
+        "delay": -20
+      },
+      "humanize": 0.25
+    },
+    "kick": {
+      "instrument": "kick",
+      "gainDb": -18
+    },
+    "snare": {
+      "instrument": "snare",
+      "gainDb": -28
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -31,
+      "pan": 0.2
+    },
+    "pad": {
+      "instrument": {
+        "base": "warm-pad",
+        "set": {
+          "/layers/0/source/pitch": "E4",
+          "/layers/0/filter/cutoff": 1512,
+          "/layers/1/source/pitch": "E4"
+        }
+      },
+      "gainDb": -29,
+      "highpass": 140,
+      "sends": {
+        "reverb": -16
+      }
+    }
+  },
+  "patterns": {
+    "keys-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x_.x _.x_ ..x_ ..x_"
+      }
+    },
+    "keys-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "x_.x _.x_ ..x_ ..x_"
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "pad-b": {
+      "bars": 8,
+      "chords": {
+        "progression": "b",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "bass-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x..x ..x. x... ..x.",
+        "tones": [
+          0,
+          2,
+          0,
+          1
+        ]
+      }
+    },
+    "bass-b": {
+      "bars": 8,
+      "bass": {
+        "progression": "b",
+        "octave": 2,
+        "rhythm": "x..x ..x. x... ..x.",
+        "tones": [
+          0,
+          2,
+          0,
+          1
+        ]
+      }
+    },
+    "tune-a": {
+      "bars": 8,
+      "notes": [
+        [
+          3,
+          "G4",
+          0.5,
+          0.58
+        ],
+        [
+          3.5,
+          "Bb4",
+          0.5,
+          0.58
+        ],
+        [
+          4,
+          "C5",
+          2,
+          0.58
+        ],
+        [
+          6,
+          "Bb4",
+          1,
+          0.58
+        ],
+        [
+          7,
+          "G4",
+          1,
+          0.58
+        ],
+        [
+          11,
+          "Eb5",
+          0.5,
+          0.58
+        ],
+        [
+          11.5,
+          "D5",
+          0.5,
+          0.58
+        ],
+        [
+          12,
+          "C5",
+          2,
+          0.58
+        ],
+        [
+          14,
+          "Bb4",
+          2,
+          0.58
+        ],
+        [
+          18,
+          "G4",
+          1,
+          0.58
+        ],
+        [
+          19,
+          "Ab4",
+          1,
+          0.58
+        ],
+        [
+          20,
+          "C5",
+          2,
+          0.58
+        ],
+        [
+          22,
+          "Eb5",
+          1,
+          0.58
+        ],
+        [
+          23,
+          "D5",
+          1,
+          0.58
+        ],
+        [
+          24,
+          "Bb4",
+          4,
+          0.58
+        ]
+      ]
+    },
+    "tune-b": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "Ab4",
+          1,
+          0.58
+        ],
+        [
+          1,
+          "C5",
+          1,
+          0.58
+        ],
+        [
+          2,
+          "Eb5",
+          2,
+          0.58
+        ],
+        [
+          4,
+          "D5",
+          2,
+          0.58
+        ],
+        [
+          6,
+          "C5",
+          2,
+          0.58
+        ],
+        [
+          8,
+          "Bb4",
+          4,
+          0.58
+        ],
+        [
+          14,
+          "G4",
+          1,
+          0.58
+        ],
+        [
+          15,
+          "Bb4",
+          1,
+          0.58
+        ],
+        [
+          16,
+          "D5",
+          2,
+          0.58
+        ],
+        [
+          18,
+          "C5",
+          1,
+          0.58
+        ],
+        [
+          19,
+          "Bb4",
+          1,
+          0.58
+        ],
+        [
+          20,
+          "Ab4",
+          4,
+          0.58
+        ],
+        [
+          24,
+          "C5",
+          1,
+          0.58
+        ],
+        [
+          25,
+          "Eb5",
+          1,
+          0.58
+        ],
+        [
+          26,
+          "G5",
+          2,
+          0.58
+        ],
+        [
+          28,
+          "F5",
+          2,
+          0.58
+        ],
+        [
+          30,
+          "Eb5",
+          2,
+          0.58
+        ]
+      ]
+    },
+    "kick": {
+      "bars": 1,
+      "steps": "x... .... ..x. ...."
+    },
+    "snare": {
+      "bars": 1,
+      "steps": ".... x... .... x..o"
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.xo"
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "keys": "keys-a",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "a": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a",
+        "bass": "bass-a",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "tune": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a",
+        "bass": "bass-a",
+        "tune": "tune-a",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "b": {
+      "play": {
+        "keys": "keys-b",
+        "pad": "pad-b",
+        "bass": "bass-b",
+        "tune": "tune-b",
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat"
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "keys": "keys-a",
+        "pad": "pad-a",
+        "bass": "bass-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "keys": {
+          "gainDb": -16
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "a",
+    "tune",
+    "b",
+    "a",
+    "tune",
+    "b",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -9
+    }
+  }
+}
