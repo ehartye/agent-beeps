@@ -3,6 +3,7 @@
   "name": "ui-click",
   "family": "ui-click",
   "description": "Tiny modal tick for buttons and toggles",
+  "recipe": "A single modal tick of about 30 ms: a damped resonator excited by a short impulse.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "ui-click",

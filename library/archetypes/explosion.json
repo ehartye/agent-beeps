@@ -3,6 +3,7 @@
   "name": "explosion",
   "family": "explosion",
   "description": "Bright noise blast closing into a brown-noise rumble, thinning debris grains and a low sine thump",
+  "recipe": "White noise blast closing into a brown-noise rumble, thinning debris grains and a low sine thump, through a room reverb.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "explosion",

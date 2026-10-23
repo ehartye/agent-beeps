@@ -3,6 +3,7 @@
   "name": "powerup",
   "family": "powerup",
   "description": "Rising four-note in-scale arpeggio: root, third, fifth, octave",
+  "recipe": "Four square oscillators stepping root, third, fifth and octave in the project scale, each a short note.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "powerup",

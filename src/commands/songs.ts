@@ -7,6 +7,7 @@ import { listPatches, openProject, readJsonFile, type OpenProject } from '../pro
 import { findInstrument, libraryInstruments, listSongs, midiName, shadowedInstruments, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { notice, noticeField } from '../notices.ts';
 import { songNotices } from '../song-notices.ts';
+import { requireSafeOutput } from '../path-safety.ts';
 import { readFileSync } from 'node:fs';
 import { readWav } from '../audio/wav.ts';
 import { applyTrimAndClip, measureSong } from '../measure/song.ts';
@@ -64,7 +65,7 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
     ...(r.excerpt ? { excerpt: r.excerpt } : { lint: lintSong(r.song, f, p.project, instruments) }),
     // name@hash per track: when a render changes without a song edit, this says which instrument moved.
     instruments: Object.fromEntries(Object.entries(instruments).map(([t, x]) => [t, `${x.name}@${sha256(canonicalJson(x)).slice(0, 8)}`])),
-    ...noticeField([...shadowNotices(p, r.song), ...songTrimNotices(r), ...songNotices(r.song)]),
+    ...noticeField([...shadowNotices(p, r.song), ...songTrimNotices(r), ...songNotices(r.song, instruments, p.project.sampleRate)]),
   };
 }
 
@@ -97,7 +98,7 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
       const sounds = v.lo === null || v.hi === null || !span ? null : `${midiName(at(v.lo) + span.low)}-${midiName(at(v.hi) + span.high)}`;
       return [k, { notes: v.notes, range: notes, ...(sounds && sounds !== notes ? { sounds } : {}), ...(v.notes === 0 ? { silent: true } : {}) }];
     })),
-    ...noticeField(songNotices(song)),
+    ...noticeField(songNotices(song, instruments)),
   };
 }
 
@@ -241,7 +242,7 @@ export function registerSongCommands(program: Command, io: Io) {
         stems: tracks.map((t, i) => {
           const f = stems[i].features;
           const dest = opts.out ? join(resolve(opts.out), `${s.name}-${t}.wav`) : undefined;
-          if (dest) copyFileSync(stems[i].wavPath, dest);
+          if (dest) { requireSafeOutput(dest, {}, 'a stem file'); copyFileSync(stems[i].wavPath, dest); }
           // A stem with no sound has no integrated level (-Infinity, which JSON writes as null): say it is silent instead of printing a bare null.
           const lufs = f.delivered?.integratedLufs;
           const silent = lufs === undefined || !Number.isFinite(lufs);
@@ -323,6 +324,7 @@ export function registerSongCommands(program: Command, io: Io) {
     .option('--trim-tail <dBFS>', 'non-loop songs: drop the end after the last sample at or above this level (e.g. -60), with a 10 ms fade; an opening that renders its whole reverb tail ends where it is audible. Default: off', parseFloat)
     .action(async (ref: string, opts: { wav: string; manifest?: boolean; role?: string; layers?: boolean; trimTail?: number; verifyDeterminism?: boolean }) => {
       if (opts.trimTail !== undefined && !(opts.trimTail < 0 && opts.trimTail >= -120)) throw new BeepsError('E_USAGE', '--trim-tail takes a level in dBFS from -120 to just below 0, e.g. -60');
+      requireSafeOutput(resolve(opts.wav), { ext: '.wav' }, '--wav');
       const role = exportRole(opts.role, opts.manifest, 'music');
       const p = openProject(io.projectDir());
       const s = loadSong(p, ref);

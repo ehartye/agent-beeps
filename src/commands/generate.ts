@@ -103,7 +103,7 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
 export function registerGenerateCommands(program: Command, io: Io) {
   program.command('archetypes')
     .description('list the SFX archetypes generate can sample')
-    .action(() => io.emit({ archetypes: loadArchetypes().map(a => ({ name: a.name, family: a.family, description: a.description, ranges: Object.keys(a.ranges).length })) }));
+    .action(() => io.emit({ archetypes: loadArchetypes().map(a => ({ name: a.name, family: a.family, description: a.description, recipe: a.recipe, ranges: Object.keys(a.ranges).length })) }));
 
   program.command('generate <archetype>')
     .description('sample an archetype, render and measure, and keep a diverse, lint-clean candidate set')

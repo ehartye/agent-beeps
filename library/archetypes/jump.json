@@ -3,6 +3,7 @@
   "name": "jump",
   "family": "jump",
   "description": "Rising pitch glide, the classic platformer jump",
+  "recipe": "One square oscillator with a rising pitchEnv glide and a short decay.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "jump",

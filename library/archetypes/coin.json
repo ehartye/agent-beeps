@@ -3,6 +3,7 @@
   "name": "coin",
   "family": "coin",
   "description": "Classic two-step square/triangle blip that jumps up an in-scale interval",
+  "recipe": "One square oscillator that holds a note, then steps to a second in-scale pitch (pitchEnv step) with a short decay and a lowpass.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "coin",

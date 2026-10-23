@@ -1,6 +1,9 @@
 // Notices about a song as it will render: the places the sequencer or the effects cut something the song wrote. These run in the CLI
 // layer (the engine stays silent) from the song document alone, so `song check` can say them without rendering.
-import { patternEvents } from '../runtime/engine/sequence.js';
+import { compileSong, patternEvents } from '../runtime/engine/sequence.js';
+import { trackShift } from '../runtime/engine/song.js';
+import { declaredFrequencies } from './lint.ts';
+import type { Patch } from './schema/patch.ts';
 import { mulberry32 } from '../runtime/engine/rng.js';
 import { notice, type Notice } from './notices.ts';
 import type { Song } from './schema/song.ts';
@@ -65,5 +68,51 @@ export function songDelayNotices(song: Song): Notice[] {
   return d ? delayTailNotice('/master/delay', (d.beats * 60) / song.bpm, d.feedback) : [];
 }
 
-/** Everything about a song's document that cuts something the song wrote. */
-export const songNotices = (song: Song): Notice[] => [...patternTruncationNotices(song), ...songDelayNotices(song), ...unusedFieldNotices(song)];
+/** The engine's cap on a keytracked cutoff, Hz (runtime/engine/transpose.js). */
+const KEYTRACK_CEILING_HZ = 22000;
+
+/**
+ * What the highest written note of each track does to its instrument: a declared partial or layer that lands at or above 0.45 of the sample rate
+ * (aliased or dropped), and a keytracked cutoff the engine would cap. Computed from the document and the instruments, as the engine moves the
+ * instrument by `trackShift` semitones for each note; the engine itself stays silent about both.
+ */
+export function registerNotices(song: Song, instruments: Record<string, Patch>, sampleRate: number): Notice[] {
+  const out: Notice[] = [];
+  const top = new Map<string, number>();
+  for (const e of compileSong(song).events) if (e.midi !== null) top.set(e.track, Math.max(top.get(e.track) ?? -Infinity, e.midi));
+  const limit = 0.45 * sampleRate;
+  for (const [track, t] of Object.entries(song.tracks)) {
+    const p = instruments[track], midi = top.get(track);
+    const shiftOf = p && midi !== undefined ? trackShift(t, p) : null;
+    if (!p || midi === undefined || !shiftOf) continue;
+    const semitones = shiftOf(midi), ratio = 2 ** (semitones / 12);
+    const worst = declaredFrequencies(p).reduce<{ hz: number; pointer: string } | undefined>((w, f) => (!w || f.hz > w.hz ? f : w), undefined);
+    if (worst && worst.hz * ratio >= limit) {
+      out.push(notice('N_PARTIAL_ABOVE_NYQUIST', {
+        message: `track "${track}": at its highest note (${Math.round(top.get(track)!)} as MIDI, shifted ${Math.round(semitones * 10) / 10} semitones) ${worst.pointer} would sound at ${Math.round(worst.hz * ratio)} Hz, at or above ${Math.round(limit)} Hz (0.45 x sample rate)`,
+        pointer: `/tracks/${track}`, requested: Math.round(worst.hz * ratio), applied: Math.round(limit),
+      }));
+    }
+    if (t.keytrack > 0) {
+      for (const [i, layer] of p.layers.entries()) {
+        const f = layer.filter;
+        if (!f) continue;
+        const reach = Math.max(f.cutoff, f.env?.to ?? 0) * ratio ** t.keytrack;
+        if (reach > KEYTRACK_CEILING_HZ) {
+          out.push(notice('N_CUTOFF_CAPPED', {
+            message: `track "${track}": the layer ${i} cutoff would follow the highest note up to ${Math.round(reach)} Hz; the engine caps a keytracked cutoff at ${KEYTRACK_CEILING_HZ} Hz`,
+            pointer: `/tracks/${track}/keytrack`, requested: Math.round(reach), applied: KEYTRACK_CEILING_HZ,
+          }));
+          break;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/** Everything about a song's document that cuts something the song wrote; with the instruments, what its highest notes do to them. */
+export const songNotices = (song: Song, instruments?: Record<string, Patch>, sampleRate = 48000): Notice[] => [
+  ...patternTruncationNotices(song), ...songDelayNotices(song), ...unusedFieldNotices(song),
+  ...(instruments ? registerNotices(song, instruments, sampleRate) : []),
+];

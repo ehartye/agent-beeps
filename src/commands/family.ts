@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
+import { requireSafeOutput } from '../path-safety.ts';
 import { buildFamily, parseInlineRow, parseTable, type Row } from '../family.ts';
 import { openProject, readJsonFile, savePatch } from '../project.ts';
 import { createSet, lintPatches, setJson } from './generate.ts';
@@ -51,6 +52,7 @@ export function registerFamilyCommands(program: Command, io: Io) {
 
       const toProject = !opts.out || !!opts.save;
       const files = (opts.out ? [resolve(opts.out)] : []).flatMap(dir => patches.map(x => join(dir, `${x.name}.json`)));
+      for (const f of files) requireSafeOutput(f, {}, 'a patch file');
       if (!opts.force && !opts.dryRun) {
         const clash = patches.find((x, i) => (toProject && existsSync(join(p.paths.patches, `${x.name}.json`))) || (opts.out && existsSync(files[i])));
         if (clash) throw new BeepsError('E_CONFLICT', `patch "${clash.name}" already exists`, { hint: 'pass --force to replace it, or --dry-run to only validate' });

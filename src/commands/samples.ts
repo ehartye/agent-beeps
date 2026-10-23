@@ -1,8 +1,9 @@
-import { lstatSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, lstatSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { BeepsError } from '../errors.ts';
+import { requireSafeOutput } from '../path-safety.ts';
 import { openProject, parseOrThrow, readJsonFile, savePatch } from '../project.ts';
 import { importSample, parseSamplePrep, parseSamplePreparedReceipt, prepareSample, prepareSampleWav } from '../samples/prepare.ts';
 import { readSampleObject, samplePaths, SOURCE_MAX_FRAMES } from '../samples/store.ts';
@@ -77,6 +78,7 @@ export function registerSampleCommands(program: Command, io: Io): void {
     .option('--gap-db <dB>', 'a gap is this far under the loudest frame (default 40)').option('--min-gap <ms>', 'shortest gap that splits segments (default 200)')
     .option('--no-image', 'JSON only: skip the browser')
     .action(async (source: string, options: { start?: string; end?: string; out?: string; gapDb?: string; minGap?: string; image: boolean }) => {
+      if (options.out) requireSafeOutput(resolve(options.out), { ext: '.png', inputs: existsSync(source) ? [source] : [] }, '--out');
       io.emit(await runOverview({
         source, projectDir: io.projectDir(), image: options.image, out: options.out,
         startSec: options.start === undefined ? undefined : number(options.start, '--start'),

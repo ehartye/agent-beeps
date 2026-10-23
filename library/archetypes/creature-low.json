@@ -3,6 +3,7 @@
   "name": "creature-low",
   "family": "creature",
   "description": "Low call, a moo or a big beast: soft glottal slope, slow vibrato, deep rounded formants",
+  "recipe": "A voice source with a soft glottal slope and slow vibrato through deep rounded formants, about a second long.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-low",

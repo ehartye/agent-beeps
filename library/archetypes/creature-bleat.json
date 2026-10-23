@@ -3,6 +3,7 @@
   "name": "creature-bleat",
   "family": "creature",
   "description": "Bleat: mid f0 with fast, deep vibrato and tremolo (the wobble) through bright nasal formants",
+  "recipe": "A voice source (glottal pulses through formants) with deep fast vibrato and tremolo for the wobble.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-bleat",

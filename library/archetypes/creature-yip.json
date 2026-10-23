@@ -3,6 +3,7 @@
   "name": "creature-yip",
   "family": "creature",
   "description": "Short high yip: f0 snaps up then settles, bright formants, a touch of jitter",
+  "recipe": "A voice source whose f0 snaps up and settles, through bright formants with a little jitter.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-yip",

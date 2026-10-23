@@ -3,6 +3,7 @@
   "name": "blip",
   "family": "blip",
   "description": "About 30 ms square or triangle text blip at speaking-voice pitch",
+  "recipe": "A single square or triangle oscillator of about 30 ms at speaking-voice pitch with a near-instant envelope; pitch, wave and filter vary.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "blip",

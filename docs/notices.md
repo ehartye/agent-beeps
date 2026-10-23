@@ -29,6 +29,8 @@ A notice is something a command did on your behalf that the input did not say: a
 | `N_DELAY_TAIL_CAPPED` | info | The feedback tail of a delay is longer than the render keeps (8 seconds), so the end of the tail was cut. | lower the delay feedback or time, or accept that the tail ends at 8 seconds |
 | `N_UNUSED_FIELD` | warn | A field is valid but has no effect where it is written, so it changes nothing: a rhythm field on a pattern that has no steps, or extra numbers after a note tuple's velocity. | move the field to where it applies, or remove it |
 | `N_RUNTIME_AT_DEFAULTS` | info | The patch declares runtime inputs, and this baked render used each input at its default. A game that sets the inputs plays other sounds. | beeps runtime check lints the patch at the corners of its inputs, and beeps runtime look draws a chosen input value |
+| `N_PARTIAL_ABOVE_NYQUIST` | warn | At the highest note a track plays, an instrument partial or layer would sound at or above 0.45 of the sample rate, so it aliases or is dropped. | write the part lower, use an instrument with fewer high partials, or set the track transpose/root so the top notes stay lower |
+| `N_CUTOFF_CAPPED` | warn | A keytracked filter cutoff would follow the highest note past the 22 kHz cap the engine applies, so the filter stops opening there and the top notes are darker than the keytrack suggests. | lower the keytrack, start the cutoff lower, or accept that the top notes stop brightening |
 
 ## Errors
 

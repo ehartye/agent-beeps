@@ -13,6 +13,7 @@ import { exportRole } from '../export-manifest.ts';
 import { CHANNELS_DIFFER, exportPatchOne, exportPatchVariants, staleVariantFiles } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
+import { requireSafeOutput } from '../path-safety.ts';
 import { renderNotices, requireDeclaredVariant, trimNotices, variantNotices } from '../patch-notices.ts';
 
 export function registerPatchCommands(program: Command, io: Io) {
@@ -103,6 +104,7 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--out <png>', 'where to write the image: a contact sheet for several refs, a copy of the look image for one')
     .option('--seed <n>', 'render seed (default: the seed recorded in the kit, else 1)', int)
     .action(async (refs: string[], opts: { out?: string; seed?: number }) => {
+      if (opts.out) requireSafeOutput(resolve(opts.out), { ext: '.png' }, '--out');
       const p = openProject(io.projectDir());
       const patches = refs.map(r => loadPatch(p, r));
       await withHost(async host => {
@@ -136,6 +138,7 @@ export function registerPatchCommands(program: Command, io: Io) {
     .option('--channels <n>', 'output channels: 2 (default, as rendered) or 1 (identical channels keep their samples exactly; channels that differ are averaged)', int)
     .option('--trim-tail <dBFS>', 'drop the end after the last sample at or above this level (e.g. -60), with a 10 ms fade over the kept quiet samples; trims long effect tails. Default: off', parseFloat)
     .action(async function (this: Command, ref: string, opts: { wav: string; seed?: number; variant: number; variants?: boolean | string; manifest?: boolean; role?: string; channels?: number; trimTail?: number }) {
+      requireSafeOutput(resolve(opts.wav), { ext: '.wav' }, '--wav');
       const role = exportRole(opts.role, opts.manifest, 'sfx');
       if (opts.channels !== undefined && opts.channels !== 1 && opts.channels !== 2) throw new BeepsError('E_USAGE', '--channels takes 1 or 2');
       if (opts.trimTail !== undefined && !(opts.trimTail < 0 && opts.trimTail >= -120)) throw new BeepsError('E_USAGE', '--trim-tail takes a level in dBFS from -120 to just below 0, e.g. -60');

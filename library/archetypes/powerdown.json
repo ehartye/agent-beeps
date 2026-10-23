@@ -3,6 +3,7 @@
   "name": "powerdown",
   "family": "powerdown",
   "description": "Falling, slightly wobbling glide: the sound of losing a power",
+  "recipe": "A triangle oscillator with a falling glide and a slow wobble from a pitch LFO.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "powerdown",

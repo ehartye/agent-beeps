@@ -42,3 +42,5 @@ an error with `category` and `retryable`. Do not describe a result as "as writte
 - `N_RUNTIME_AT_DEFAULTS` (info): the patch has `xRuntime` inputs and this baked render used each at its default; `beeps runtime check` lints the corners.
 - Lists say what they left out: `album list` (`unreadable`), `bundle` (`skipped`), `audition status` (`malformedEvents`), `export` (`replaced`, `stale` variant files), `family` (short CSV rows in `warnings`).
 - `pitchHz: null` comes with a `pitchReason`. `generate` and `mutate` print the `seed` they used, so a good set can be asked for again.
+- `N_PARTIAL_ABOVE_NYQUIST` and `N_CUTOFF_CAPPED` (`song check`, `song render`): at a track's highest written note, an instrument partial would sound at or above 0.45 of the sample rate (it aliases or is dropped), or a keytracked cutoff would pass the engine's 22 kHz cap. Write the part lower or lower the keytrack.
+- An output path that is, or sits around, an input, or that differs from an existing file only in case, is `E_CONFLICT` before anything is written; a `--wav` that does not end in `.wav` (or a PNG `--out` that does not end in `.png`) is `E_USAGE`.

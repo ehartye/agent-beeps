@@ -3,6 +3,7 @@
   "name": "creature",
   "family": "creature",
   "description": "Generic voiced animal call: glottal pulse train with a gentle falling f0, vibrato and jitter through three vowel-like formants",
+  "recipe": "A voice source with a gentle falling f0, vibrato and jitter through a set of formants; the family archetype the others specialise.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature",

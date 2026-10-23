@@ -3,6 +3,7 @@
   "name": "whoosh",
   "family": "whoosh",
   "description": "Swelling wide-band noise whose bandpass centre sweeps upward, over a faint airy hiss",
+  "recipe": "Two white-noise layers: a bandpass whose centre sweeps upward over a swelling envelope, and a faint airy highpass hiss.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "whoosh",

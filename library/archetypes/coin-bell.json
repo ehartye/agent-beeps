@@ -3,6 +3,7 @@
   "name": "coin-bell",
   "family": "coin",
   "description": "Two struck FM bell tones a small in-scale interval apart: a softer, rounder coin",
+  "recipe": "Two struck FM bell notes a small in-scale interval apart, with the second delayed slightly, through a short room reverb.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "coin-bell",

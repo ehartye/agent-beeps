@@ -8,6 +8,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { seamMetrics, seamWarning, type SeamMetrics } from './measure/seam.ts';
 import { BeepsError } from './errors.ts';
+import { requireDistinctDirs } from './path-safety.ts';
 import { readWav } from './audio/wav.ts';
 import { bundleDir } from './bundle.ts';
 import { encoderLead } from './audio/container.ts';
@@ -196,9 +197,9 @@ function sidecarsOf(dir: string): string[] {
  * sidecars and an index.json. Every encoded file is decoded again and checked against its source.
  */
 export function compressBundle(srcDir: string, outDir: string, opts: CompressOptions = {}) {
-  const ffmpeg = findFfmpeg();
   const src = resolve(srcDir), out = resolve(outDir);
-  if (src === out) throw new BeepsError('E_USAGE', 'the output directory must differ from the source directory');
+  requireDistinctDirs(src, out);
+  const ffmpeg = findFfmpeg();
   mkdirSync(out, { recursive: true });
   const fmt = FORMATS[opts.format ?? 'opus'];
   const kbpsFor = (role: ExportManifest['role']) => opts.kbps?.[role] ?? fmt.defaultKbps[role];

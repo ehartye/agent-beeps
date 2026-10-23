@@ -3,6 +3,7 @@
   "name": "creature-growl",
   "family": "creature",
   "description": "Low growl: buzzy glottal pulses with heavy jitter and fast tremolo through low formants",
+  "recipe": "A voice source with heavy jitter and fast tremolo through low formants.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-growl",

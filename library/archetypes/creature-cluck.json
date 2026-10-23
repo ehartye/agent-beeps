@@ -3,6 +3,7 @@
   "name": "creature-cluck",
   "family": "creature",
   "description": "Cluck: a very short voiced pop, f0 dropping fast through mid formants",
+  "recipe": "A voice source of about 90 ms whose f0 drops fast through mid formants.",
   "template": {
     "schema": "beeps/patch@1",
     "name": "creature-cluck",
