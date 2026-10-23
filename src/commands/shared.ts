@@ -10,6 +10,11 @@ export function withHost<T>(fn: (host: RenderHost) => Promise<T>, { verifyDeterm
   return withRenderHost(fn, { verifyDeterminism });
 }
 
+/** The pitch an agent can trust: the median pitch when it is steady enough to be one, else null with the reason (null alone reads as "unknown"). */
+export const pitchOf = (f: { pitchHz: number; pitchStrength: number }) => (f.pitchStrength >= 0.7
+  ? { pitchHz: f.pitchHz }
+  : { pitchHz: null, pitchReason: `no steady pitch (strength ${f.pitchStrength}, needs 0.7)` });
+
 /** The features an agent reads first; the full set lives in the render's meta.json. */
 export function summary(r: Rendered) {
   const f = r.features;
@@ -19,7 +24,7 @@ export function summary(r: Rendered) {
     features: {
       energyLengthSec: f.energyLengthSec, attackSec: f.attackSec, tailSec: f.tailSec,
       centroidHz: f.centroidHz, sharpness: f.sharpness, roughness: f.roughness, flatness: f.flatness,
-      pitchHz: f.pitchStrength >= 0.7 ? f.pitchHz : null, pitchDirection: f.pitchDirection,
+      ...pitchOf(f), pitchDirection: f.pitchDirection,
       loudnessLufs: f.delivered.momentaryMaxLufs, truePeakDb: f.delivered.truePeakDb,
       // true: the trim stopped at the true-peak ceiling, so the sound sits below its loudness target and lowering its loudest layer may make it quieter.
       peakLimited: f.delivered.peakLimited === true,
@@ -42,5 +47,12 @@ export const int = (v: string) => {
   const n = Number(v);
   // Commander reports this as a usage error (E_USAGE, exit 2) naming the option.
   if (!Number.isInteger(n)) throw new InvalidArgumentError(`expected an integer, got "${v}"`);
+  return n;
+};
+
+/** An integer of 1 or more (a worker count): 0 or less is a usage error naming the option, not a quiet 1. */
+export const positiveInt = (v: string) => {
+  const n = int(v);
+  if (n < 1) throw new InvalidArgumentError(`expected an integer of 1 or more, got "${v}"`);
   return n;
 };

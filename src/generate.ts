@@ -75,7 +75,8 @@ export function familyMembers(a: Archetype): Archetype[] {
   return loadArchetypes().filter(x => x.family === a.family);
 }
 
-export type Generated = CandidateSet & { steering: string[]; report: SetReport; notices: Notice[] };
+/** `seed` is the one used: the caller's, or the random one drawn when none was given, so a good set can be asked for again. */
+export type Generated = CandidateSet & { seed: number; steering: string[]; report: SetReport; notices: Notice[] };
 
 export async function generate(host: RenderHost, p: OpenProject, opts: { archetype: string; count?: number; seed?: number; prompt?: string }): Promise<Generated> {
   const count = opts.count ?? 6;
@@ -90,5 +91,5 @@ export async function generate(host: RenderHost, p: OpenProject, opts: { archety
   const report = setReport(count, pool, dropped, chosen.length);
   requireCandidates(report, `${a.name} candidate`);
   const set = await finishSet(host, p, chosen, { archetype: a.name, family: a.family, prompt: opts.prompt ?? null, parent: null, idPrefix: a.name });
-  return { ...set, steering: prompt.directions, report, notices: setNotices(report, { ...prompt, applied: pool.length > count }) };
+  return { ...set, seed, steering: prompt.directions, report, notices: setNotices(report, { ...prompt, applied: pool.length > count }) };
 }

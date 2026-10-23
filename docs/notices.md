@@ -28,6 +28,8 @@ A notice is something a command did on your behalf that the input did not say: a
 | `N_UNKNOWN_KEY` | warn | A document had a key that its schema does not know, so the key was ignored and whatever it was meant to set kept its default. A misspelled key looks exactly like this. | check the spelling against the format reference; from 0.25.0 an unknown key is an E_SCHEMA error instead of a notice |
 | `N_PATTERN_TRUNCATED` | warn | A pattern is longer than the section that plays it, so the notes past the end of the section were cut off and never sound. | lengthen the section, shorten the pattern, or split the pattern so its tail has a section to play in |
 | `N_DELAY_TAIL_CAPPED` | info | The feedback tail of a delay is longer than the render keeps (8 seconds), so the end of the tail was cut. | lower the delay feedback or time, or accept that the tail ends at 8 seconds |
+| `N_UNUSED_FIELD` | warn | A field is valid but has no effect where it is written, so it changes nothing: a rhythm field on a pattern that has no steps, or extra numbers after a note tuple's velocity. | move the field to where it applies, or remove it |
+| `N_RUNTIME_AT_DEFAULTS` | info | The patch declares runtime inputs, and this baked render used each input at its default. A game that sets the inputs plays other sounds. | beeps runtime check lints the patch at the corners of its inputs, and beeps runtime look draws a chosen input value |
 
 ## Errors
 

@@ -9,7 +9,7 @@ import { openStore } from '../build/store.ts';
 import { ciExport, storePull, storePush, storeStatus } from '../build/store-ops.ts';
 import { verifyOutputs, verifyParity } from '../build/verify.ts';
 import type { EngineName } from '../runtime/harness.ts';
-import { int } from './shared.ts';
+import { positiveInt } from './shared.ts';
 
 const list = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean);
 
@@ -33,7 +33,7 @@ export function registerBuildCommands(program: Command, io: Io) {
     .option('--adopt', 'take over a lock written by another tool, or by an older toolchain: verify its output hashes and re-key it, with no rendering (keeps the locked files)')
     .option('--allow-toolchain-change', 'rebuild even though the engine, pipeline, Chromium or ffmpeg differs from the lock (re-renders what the store lacks)')
     .option('--verify-determinism', 'render every song twice and fail the asset (E_NONDETERMINISTIC) when the two renders differ in any sample; doubles song render time')
-    .option('--jobs <n>', 'parallel render hosts (default: the config\'s, 3)', int)
+    .option('--jobs <n>', 'parallel render hosts (default: the config\'s, 3)', positiveInt)
     .action(async (o: { config?: string; target?: string; only?: string[]; all?: boolean; check?: boolean; pull?: boolean; push?: boolean; store?: string; adopt?: boolean; allowToolchainChange?: boolean; verifyDeterminism?: boolean; jobs?: number }) => {
       const cfg = cfgFor(o);
       if (o.target) cfg.target = o.target;

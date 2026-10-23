@@ -38,3 +38,7 @@ an error with `category` and `retryable`. Do not describe a result as "as writte
 - `N_DELAY_TAIL_CAPPED`: a delay would ring longer than the 8 seconds the render keeps. Lower its feedback or time.
 - `song stems` lists `omitted` tracks (no section plays them) and marks a stem `silent: true` (with `loudnessLufs: null`) when none of its notes sounded. A silent adaptive state has `silent: true` and `null` levels, not -99.
 - `album open` ends its stderr progress with `failures` (index, name, error) when a track failed; `album list` counts `ready` and `failed` tracks.
+- `N_UNUSED_FIELD` (`song new`, `song check`, `song render`): `hitBeats` or `note` on a pattern with no `steps`, or more than four values in a note tuple. They change nothing.
+- `N_RUNTIME_AT_DEFAULTS` (info): the patch has `xRuntime` inputs and this baked render used each at its default; `beeps runtime check` lints the corners.
+- Lists say what they left out: `album list` (`unreadable`), `bundle` (`skipped`), `audition status` (`malformedEvents`), `export` (`replaced`, `stale` variant files), `family` (short CSV rows in `warnings`).
+- `pitchHz: null` comes with a `pitchReason`. `generate` and `mutate` print the `seed` they used, so a good set can be asked for again.

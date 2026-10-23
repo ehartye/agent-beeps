@@ -28,7 +28,7 @@ export function parseCell(raw: string): unknown {
   return s;
 }
 
-export function parseCsv(text: string): Row[] {
+export function parseCsv(text: string, warn?: (message: string) => void): Row[] {
   const lines: string[][] = [];
   let cur: string[] = [], field = '', quoted = false;
   const src = text.replace(/^﻿/, '');
@@ -49,6 +49,8 @@ export function parseCsv(text: string): Row[] {
   const header = rows[0].map(h => h.trim());
   return rows.slice(1).map((r, i) => {
     if (r.length > header.length) throw new BeepsError('E_USAGE', `CSV row ${i + 1} has ${r.length} cells but the header has ${header.length}`);
+    // A short row reads its missing cells as empty; say so, since a dropped trailing comma and an intended blank look the same in the output.
+    if (r.length < header.length) warn?.(`CSV row ${i + 1} has ${r.length} of ${header.length} cells: ${header.slice(r.length).join(', ')} read as empty`);
     return Object.fromEntries(header.map((h, j) => [h, parseCell(r[j] ?? '')]));
   });
 }
@@ -64,8 +66,8 @@ export function parseInlineRow(text: string): Row {
   return row;
 }
 
-export function parseTable(text: string, fileName: string): Row[] {
-  if (/\.csv$/i.test(fileName)) return parseCsv(text);
+export function parseTable(text: string, fileName: string, warn?: (message: string) => void): Row[] {
+  if (/\.csv$/i.test(fileName)) return parseCsv(text, warn);
   let json: unknown;
   try { json = JSON.parse(text); } catch (e) { throw new BeepsError('E_USAGE', `${fileName}: not valid JSON (${(e as Error).message}); use .json or .csv`); }
   const r = z.array(z.record(z.string(), z.unknown())).min(1).safeParse(json);

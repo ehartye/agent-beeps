@@ -13,6 +13,7 @@ import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
 import { PEAK_CEILING_DB } from './pipeline.ts';
 import { chooseTrim, commit, lookup } from './cache.ts';
+import { countNonFinite, nonFiniteMessage } from '../audio/finite.ts';
 
 /**
  * Bump when song rendering or measurement changes, so cached renders are redone.
@@ -54,6 +55,8 @@ export async function renderSong(host: RenderHost, song: Song, instruments: Reco
   const r = await host.renderSong(song, instruments, only ? { only } : {});
   try {
     const authored = await host.pullSong(r.id, r.frames);
+    const broken = countNonFinite(authored);
+    if (broken) throw new BeepsError('E_RENDER', nonFiniteMessage('song', broken));
     const f = measureSong(authored, r.sampleRate, r.sections, { loop: song.loop });
     if (fixedTrim === undefined && !(f.integratedLufs > -70)) throw new BeepsError('E_RENDER', `song rendered near-silence (${f.integratedLufs} LUFS)`);
     const loud = target - f.integratedLufs;

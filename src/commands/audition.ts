@@ -7,7 +7,7 @@ import { BeepsError } from '../errors.ts';
 import { openProject, type OpenProject } from '../project.ts';
 import { readSet } from '../sets.ts';
 import {
-  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readReveal, readSession,
+  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readAgentCursor, readEvents, readEventsChecked, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
 import { AuditionServer, DEFAULT_PORT, SERVER_API, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
@@ -51,8 +51,11 @@ export async function ensureServer(opts: { host?: string; port?: number } = {}):
 
 const brief = (p: OpenProject, id: string) => {
   const session = readSession(p, id);
-  const state = foldSession(session, readEvents(p, id));
+  const { events, malformed } = readEventsChecked(p, id);
+  const state = foldSession(session, events);
   return {
+    // Lines the log could not read are lost events: the stage below is folded from the rest, so say so.
+    ...(malformed ? { malformedEvents: malformed } : {}),
     id, stage: session.flow === 'explore' && state.stage !== 'abandoned' ? 'explore' : state.stage, flow: session.flow, round: state.round, prompt: session.prompt, mode: session.mode,
     champion: state.champion, shortlist: state.shortlist, loved: state.loved, duds: state.duds,
     duels: state.duels.length, pendingRefine: state.pendingRefine, shipped: state.shipped,
@@ -148,10 +151,13 @@ export function registerAuditionCommands(program: Command, io: Io) {
       if (opts.album) items.push(...sourcesFromAlbum(p, opts.album, role));
       if (!items.length) throw new BeepsError('E_USAGE', 'name a bundle directory, WAV files, --set or --album');
       const catalog = opts.catalog ? Object.fromEntries(opts.catalog.split(',').map(kv => { const [k, v] = kv.split('='); if (!['music', 'ambience', 'sfx'].includes(k) || !(Number(v) >= 0)) throw new BeepsError('E_USAGE', `--catalog wants role=seconds pairs (music, ambience, sfx), not "${kv}"`); return [k, Number(v)]; })) : undefined;
-      const presets = resolvePresets(opts.presets?.split(',').map(x => x.trim()).filter(Boolean), { anchor: opts.anchor });
+      const asked = opts.presets?.split(',').map(x => x.trim()).filter(Boolean);
+      const presets = resolvePresets(asked, { anchor: opts.anchor });
+      // The hidden WAV reference is always in the test (the ratings mean nothing without it): say so when the caller's list left it out.
+      const added = asked?.length ? presets.map(x => x.id).filter(id => !asked.includes(id)) : [];
       const d = createDelivery(p, items, presets, { title: opts.title, catalog, log: s => console.error(s) });
       const dir = join(p.paths.dir, 'delivery', d.id);
-      const out: Record<string, unknown> = { id: d.id, items: d.items.length, presets: d.presets.map(x => x.id), roles: [...new Set(d.items.map(i => i.role))], totals: byteTotals(d).map(t => ({ preset: t.preset, bytes: t.bytes, bytesPerSec: t.bytesPerSec, ...(t.projectedBytes !== undefined ? { projectedBytes: t.projectedBytes } : {}) })), dir, encoder: d.encoder };
+      const out: Record<string, unknown> = { id: d.id, items: d.items.length, presets: d.presets.map(x => x.id), ...(added.length ? { addedPresets: added } : {}), roles: [...new Set(d.items.map(i => i.role))], totals: byteTotals(d).map(t => ({ preset: t.preset, bytes: t.bytes, bytesPerSec: t.bytesPerSec, ...(t.projectedBytes !== undefined ? { projectedBytes: t.projectedBytes } : {}) })), dir, encoder: d.encoder };
       if (opts.serve) {
         const info = await ensureServer();
         registerProject(p.paths.root);
@@ -179,15 +185,15 @@ export function registerAuditionCommands(program: Command, io: Io) {
     .action(async (opts: { id: string; timeout: number }) => {
       const p = openProject(io.projectDir());
       const cursorFile = join(sessionDir(p, opts.id), 'agent-cursor');
-      const cursor = existsSync(cursorFile) ? Number(readFileSync(cursorFile, 'utf8')) : 0;
+      const { cursor, reset: cursorReset } = readAgentCursor(cursorFile);
       const found = await waitFor<StoredEvent>(async () => readEvents(p, opts.id).find(e => e.seq > cursor && ACTIONABLE.has(e.type)), opts.timeout * 1000);
-      if (!found) { io.emit({ timeout: true, session: brief(p, opts.id) }); return; }
+      if (!found) { io.emit({ timeout: true, session: brief(p, opts.id), ...(cursorReset ? { cursorReset: true } : {}) }); return; }
       writeFileSync(cursorFile, String(found.seq));
       const s = brief(p, opts.id);
       const todo = found.type === 'refine'
         ? `breed candidates from #${found.champion} toward ${found.directions.join(', ') || 'surprise'}: beeps mutate <champion-name> --toward ... then beeps audition round --id ${opts.id} --set <new set>`
         : found.type === 'ship' ? 'read the reveal (beeps audition status), wire the shipped patch into the app' : 'the owner abandoned this audition';
-      io.emit({ event: found, session: s, todo });
+      io.emit({ event: found, session: s, todo, ...(cursorReset ? { cursorReset: true } : {}) });
     });
 
   audition.command('round')

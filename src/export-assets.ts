@@ -1,8 +1,8 @@
 // Export a patch or a song as delivered WAVs (+ the portable sidecar). The CLI export commands and `beeps build` share this,
 // so a build writes exactly the files `beeps export --manifest` and `beeps song export --manifest` write.
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { toMono, trimTail } from './audio/post.ts';
-import { basename, dirname } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { BeepsError } from './errors.ts';
 import { readWav } from './audio/wav.ts';
 import { compileSong } from '../runtime/engine/sequence.js';
@@ -62,6 +62,14 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
     ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true, ...offsetExtra(patch, p), ...identity }, `${o.dest}.json`)
     : undefined;
   return { first: ok[0], rendered: ok, wavs, manifest, posts };
+}
+
+/** Variant files `<stem>.<n>.wav` beside `dest` that an export did not write: left by an earlier export with more variants, and picked up by `beeps bundle` as if current. */
+export function staleVariantFiles(dest: string, written: string[]): string[] {
+  const stem = basename(dest).replace(/\.wav$/i, ''), dir = dirname(dest);
+  if (!existsSync(dir)) return [];
+  const keep = new Set(written.map(f => basename(f)));
+  return readdirSync(dir).filter(f => f.startsWith(stem + '.') && /^\.\d+\.wav$/i.test(f.slice(stem.length)) && !keep.has(f)).sort().map(f => join(dir, f));
 }
 
 /** One variant of a patch as `dest`. */

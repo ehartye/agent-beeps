@@ -63,6 +63,7 @@ export function delayTailNotice(pointer: string, time: number, feedback: number)
 export const renderNotices = (patch: Patch, features: Features, scale: Scale): Notice[] => [
   ...scaleSnapNotices(patch, scale), ...trimNotices(patch.name, features),
   ...(patch.fx?.delay ? delayTailNotice('/fx/delay', patch.fx.delay.time, patch.fx.delay.feedback) : []),
+  ...(patch.xRuntime ? [notice('N_RUNTIME_AT_DEFAULTS', { message: `${patch.name} declares runtime inputs (${Object.keys(patch.xRuntime.inputs).join(', ')}); this render used each at its default`, pointer: '/xRuntime' })] : []),
 ];
 
 /** True when the patch declares several variants that cannot differ: no gain spread, and no pitch spread that any layer would follow. */

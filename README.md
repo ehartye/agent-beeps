@@ -209,6 +209,16 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.25.0
+
+Honest feedback, Phase 3: the small places a command told the caller less than it did. No sound or music changes; no render, hash or cache key moves.
+
+- **Reasons for missing numbers:** a pitch that is `null` carries `pitchReason`; `generate` and `mutate` print the `seed` they used (the random one when none was given); a render with samples that are NaN or infinite fails with the count instead of writing silence or clicks; `taste` says whether it read the project or the global profile only.
+- **Lists that left things out:** `album list` names albums it could not read (`unreadable`); `bundle` lists symbolic links and hidden directories holding sidecars that it did not search (`skipped`); `audition status` and `wait` count log lines that could not be read (`malformedEvents`) and say when the agent cursor was unreadable and restarted (`cursorReset`); `lint` notes project patch files that are not valid patches and so were left out of the sibling checks; `family` warns about CSV rows with fewer cells than the header; `audition formats` lists the presets it added (`addedPresets`, the hidden WAV reference).
+- **Things that were accepted and did nothing:** `N_UNUSED_FIELD` for `hitBeats` and `note` on a pattern with no `steps` and for extra numbers on a note tuple (`song new`, `song check`, `song render`); `export` reports `replaced` and lists variant files an earlier export left beside the new one (`stale`); `--jobs 0` and `--worst 0` are usage errors instead of a quiet 1 or "all"; `instruments rebase` counts the cutoffs it held at the edge of the range (`clampedCutoffs`).
+- **Runtime inputs:** a baked render of a patch with an `xRuntime` block says it used each input at its default (`N_RUNTIME_AT_DEFAULTS`, info).
+- **Not changed, on purpose:** keytracked cutoffs capped inside the engine, and song partials above 0.45 of the sample rate, would need per-note engine instrumentation and are covered by `song-register` and the patch-level `nyquist` rule; a set candidate with a project patch's name still resolves to the project patch first (documented in the `loadPatch` hint); archetype sampling redraws are deterministic and fail loudly after ten.
+
 ## What changed in 0.24.0
 
 Patch expectations, second step: write the numbers for an existing sound, and keep refinement inside the brief. No sound or music changes; no render, hash or cache key moves.

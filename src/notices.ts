@@ -83,6 +83,16 @@ export const NOTICE_REGISTRY = {
     summary: 'The feedback tail of a delay is longer than the render keeps (8 seconds), so the end of the tail was cut.',
     hint: 'lower the delay feedback or time, or accept that the tail ends at 8 seconds',
   },
+  N_UNUSED_FIELD: {
+    severity: 'warn',
+    summary: 'A field is valid but has no effect where it is written, so it changes nothing: a rhythm field on a pattern that has no steps, or extra numbers after a note tuple\'s velocity.',
+    hint: 'move the field to where it applies, or remove it',
+  },
+  N_RUNTIME_AT_DEFAULTS: {
+    severity: 'info',
+    summary: 'The patch declares runtime inputs, and this baked render used each input at its default. A game that sets the inputs plays other sounds.',
+    hint: 'beeps runtime check lints the patch at the corners of its inputs, and beeps runtime look draws a chosen input value',
+  },
 } as const satisfies Record<string, NoticeEntry>;
 
 export type NoticeCode = keyof typeof NOTICE_REGISTRY;
