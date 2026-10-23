@@ -43,6 +43,22 @@ export function patternTruncationNotices(song: Song): Notice[] {
   return out;
 }
 
+/** Fields that parse and do nothing where they are: `hitBeats` and `note` belong to `steps` patterns, and a note tuple has four values at most (start, note, length, velocity). `stepsPerBeat` cannot be told from its default once parsed, so it is not checked. */
+export function unusedFieldNotices(song: Song): Notice[] {
+  const out: Notice[] = [];
+  for (const [name, p] of Object.entries(song.patterns)) {
+    if (!p.steps) {
+      for (const field of ['hitBeats', 'note'] as const) {
+        if (p[field] !== undefined) out.push(notice('N_UNUSED_FIELD', { message: `pattern "${name}" sets ${field}, which only a steps pattern reads`, pointer: `/patterns/${name}/${field}`, requested: field }));
+      }
+    }
+    (p.notes ?? []).forEach((n, i) => {
+      if (Array.isArray(n) && n.length > 4) out.push(notice('N_UNUSED_FIELD', { message: `pattern "${name}" note ${i} has ${n.length} values; only the first four (start, note, length, velocity) are read`, pointer: `/patterns/${name}/notes/${i}`, requested: n.length, applied: 4 }));
+    });
+  }
+  return out;
+}
+
 /** The song's master delay, when its feedback tail is longer than the 8 seconds the render keeps. */
 export function songDelayNotices(song: Song): Notice[] {
   const d = song.master.delay;
@@ -50,4 +66,4 @@ export function songDelayNotices(song: Song): Notice[] {
 }
 
 /** Everything about a song's document that cuts something the song wrote. */
-export const songNotices = (song: Song): Notice[] => [...patternTruncationNotices(song), ...songDelayNotices(song)];
+export const songNotices = (song: Song): Notice[] => [...patternTruncationNotices(song), ...songDelayNotices(song), ...unusedFieldNotices(song)];

@@ -40,9 +40,10 @@ export function registerFamilyCommands(program: Command, io: Io) {
       if (opts.set && opts.dryRun) throw new BeepsError('E_USAGE', '--set renders and writes a candidate set; drop --dry-run');
       if (opts.save && !opts.out) throw new BeepsError('E_USAGE', '--save only adds to --out; without --out the patches are saved to the project anyway');
       const rows: Row[] = [];
+      const tableWarnings: string[] = [];
       if (opts.table) {
         if (!existsSync(opts.table)) throw new BeepsError('E_NOT_FOUND', `no table file ${opts.table}`);
-        rows.push(...parseTable(readFileSync(opts.table, 'utf8'), opts.table));
+        rows.push(...parseTable(readFileSync(opts.table, 'utf8'), opts.table, m => tableWarnings.push(m)));
       }
       for (const r of opts.row ?? []) rows.push(parseInlineRow(r));
       const p = openProject(io.projectDir());
@@ -66,7 +67,7 @@ export function registerFamilyCommands(program: Command, io: Io) {
         dryRun: !!opts.dryRun, count: patches.length, seed: opts.seed,
         patches: patches.map(x => ({ name: x.name, family: x.family, tags: x.tags })),
         ...(written.length ? { written } : {}),
-        ...(unusedParams.length ? { warnings: [`row columns never used by a {{placeholder}}: ${unusedParams.join(', ')}`] } : {}),
+        ...(unusedParams.length || tableWarnings.length ? { warnings: [...tableWarnings, ...(unusedParams.length ? [`row columns never used by a {{placeholder}}: ${unusedParams.join(', ')}`] : [])] } : {}),
       };
       let failed = false;
       if (opts.lint) {

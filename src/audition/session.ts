@@ -153,6 +153,16 @@ export function readEventsChecked(p: OpenProject, id: string): { events: StoredE
 
 export const readEvents = (p: OpenProject, id: string): StoredEvent[] => readEventsChecked(p, id).events;
 
+/**
+ * The agent's place in a session's event log (the last event `audition wait` returned). A file that is missing starts at 0; one that is not a
+ * number would make every event look old and the wait run out its timeout, so it also starts at 0 and says `reset`.
+ */
+export function readAgentCursor(file: string): { cursor: number; reset: boolean } {
+  if (!existsSync(file)) return { cursor: 0, reset: false };
+  const n = Number(readFileSync(file, 'utf8'));
+  return Number.isFinite(n) ? { cursor: n, reset: false } : { cursor: 0, reset: true };
+}
+
 export interface SessionState {
   stage: 'lineup' | 'duel' | 'refine' | 'waiting' | 'shipped' | 'abandoned';
   round: number;

@@ -7,7 +7,7 @@ import { BeepsError } from '../errors.ts';
 import { openProject, type OpenProject } from '../project.ts';
 import { readSet } from '../sets.ts';
 import {
-  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readEventsChecked, readReveal, readSession,
+  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readAgentCursor, readEvents, readEventsChecked, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
 import { AuditionServer, DEFAULT_PORT, SERVER_API, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
@@ -151,10 +151,13 @@ export function registerAuditionCommands(program: Command, io: Io) {
       if (opts.album) items.push(...sourcesFromAlbum(p, opts.album, role));
       if (!items.length) throw new BeepsError('E_USAGE', 'name a bundle directory, WAV files, --set or --album');
       const catalog = opts.catalog ? Object.fromEntries(opts.catalog.split(',').map(kv => { const [k, v] = kv.split('='); if (!['music', 'ambience', 'sfx'].includes(k) || !(Number(v) >= 0)) throw new BeepsError('E_USAGE', `--catalog wants role=seconds pairs (music, ambience, sfx), not "${kv}"`); return [k, Number(v)]; })) : undefined;
-      const presets = resolvePresets(opts.presets?.split(',').map(x => x.trim()).filter(Boolean), { anchor: opts.anchor });
+      const asked = opts.presets?.split(',').map(x => x.trim()).filter(Boolean);
+      const presets = resolvePresets(asked, { anchor: opts.anchor });
+      // The hidden WAV reference is always in the test (the ratings mean nothing without it): say so when the caller's list left it out.
+      const added = asked?.length ? presets.map(x => x.id).filter(id => !asked.includes(id)) : [];
       const d = createDelivery(p, items, presets, { title: opts.title, catalog, log: s => console.error(s) });
       const dir = join(p.paths.dir, 'delivery', d.id);
-      const out: Record<string, unknown> = { id: d.id, items: d.items.length, presets: d.presets.map(x => x.id), roles: [...new Set(d.items.map(i => i.role))], totals: byteTotals(d).map(t => ({ preset: t.preset, bytes: t.bytes, bytesPerSec: t.bytesPerSec, ...(t.projectedBytes !== undefined ? { projectedBytes: t.projectedBytes } : {}) })), dir, encoder: d.encoder };
+      const out: Record<string, unknown> = { id: d.id, items: d.items.length, presets: d.presets.map(x => x.id), ...(added.length ? { addedPresets: added } : {}), roles: [...new Set(d.items.map(i => i.role))], totals: byteTotals(d).map(t => ({ preset: t.preset, bytes: t.bytes, bytesPerSec: t.bytesPerSec, ...(t.projectedBytes !== undefined ? { projectedBytes: t.projectedBytes } : {}) })), dir, encoder: d.encoder };
       if (opts.serve) {
         const info = await ensureServer();
         registerProject(p.paths.root);
@@ -182,10 +185,7 @@ export function registerAuditionCommands(program: Command, io: Io) {
     .action(async (opts: { id: string; timeout: number }) => {
       const p = openProject(io.projectDir());
       const cursorFile = join(sessionDir(p, opts.id), 'agent-cursor');
-      // A cursor that is not a number would make every event look old and the wait run out its timeout: start from the beginning and say so.
-      const stored = existsSync(cursorFile) ? Number(readFileSync(cursorFile, 'utf8')) : 0;
-      const cursor = Number.isFinite(stored) ? stored : 0;
-      const cursorReset = !Number.isFinite(stored);
+      const { cursor, reset: cursorReset } = readAgentCursor(cursorFile);
       const found = await waitFor<StoredEvent>(async () => readEvents(p, opts.id).find(e => e.seq > cursor && ACTIONABLE.has(e.type)), opts.timeout * 1000);
       if (!found) { io.emit({ timeout: true, session: brief(p, opts.id), ...(cursorReset ? { cursorReset: true } : {}) }); return; }
       writeFileSync(cursorFile, String(found.seq));

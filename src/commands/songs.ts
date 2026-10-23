@@ -176,11 +176,10 @@ export function registerSongCommands(program: Command, io: Io) {
 
   song.command('compat <refs...>')
     .description('plan crossfades between songs without rendering: tempo, loop length, estimated key, and per pair the tempo relation, phase-lock and harmony agreement')
-    .option('--worst <n>', 'print only the n weakest pairs', int)
+    .option('--worst <n>', 'print only the n weakest pairs', positiveInt)
     .action((refs: string[], opts: { worst?: number }) => {
       const p = openProject(io.projectDir());
       const plan = planScore(refs.map(r => loadSong(p, r)));
-      if (opts.worst !== undefined && opts.worst < 1) throw new BeepsError('E_USAGE', '--worst takes a count of 1 or more', { received: String(opts.worst) });
       if (opts.worst) plan.pairs = plan.pairs.sort((a, b) => a.harmony - b.harmony).slice(0, opts.worst);
       io.emit(plan);
     });

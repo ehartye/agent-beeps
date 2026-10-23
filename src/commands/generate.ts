@@ -215,6 +215,8 @@ export function registerGenerateCommands(program: Command, io: Io) {
       if (out.some(o => !o.ok) || expectations.some(e => e?.passed === false)) process.exitCode = 1;
     });
 
+  // Outside a project the taste commands read and write the owner's global profile only; say so rather than look like a project's.
+  const tasteScope = (root?: string) => (root ? 'project and global' : 'global only (no .agent-beeps project here)');
   const taste = program.command('taste').description('the learned taste profile: show, fit, stats');
   const fitNow = (root?: string) => {
     const global = readVerdicts(globalVerdictsFile());
@@ -229,7 +231,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       try { root = openProject(io.projectDir()).paths.root; } catch { root = undefined; }
       const { model, global, project, summary } = fitNow(root);
       const delivery = summarizePreferences([...readDeliveryPrefs(globalDeliveryPrefsFile()), ...(root ? readDeliveryPrefs(join(root, '.agent-beeps', 'taste', 'delivery.jsonl')) : [])]);
-      io.emit({ verdicts: { global: global.rows.length, project: project.rows.length, malformed: global.malformed + project.malformed }, projectLayer: !!model.projectLayer, preferences: summary.preferences, summary: summary.markdown, ...(delivery.length ? { delivery } : {}) });
+      io.emit({ scope: tasteScope(root), verdicts: { global: global.rows.length, project: project.rows.length, malformed: global.malformed + project.malformed }, projectLayer: !!model.projectLayer, preferences: summary.preferences, summary: summary.markdown, ...(delivery.length ? { delivery } : {}) });
     });
   taste.command('fit')
     .description('refit from the verdict logs and write model.json and summary.md')
@@ -241,7 +243,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'model.json'), JSON.stringify(model, null, 2) + '\n');
       writeFileSync(join(dir, 'summary.md'), summary.markdown);
-      io.emit({ model: join(dir, 'model.json'), summary: join(dir, 'summary.md'), verdicts: model.n });
+      io.emit({ scope: tasteScope(root), model: join(dir, 'model.json'), summary: join(dir, 'summary.md'), verdicts: model.n });
     });
   taste.command('import <file>')
     .description('log the thumbs from a listening page (a game\'s "click through every sound" export) as taste verdicts: liked beats disliked within a family')
@@ -291,6 +293,6 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .action(() => {
       let root: string | undefined;
       try { root = openProject(io.projectDir()).paths.root; } catch { root = undefined; }
-      io.emit({ project: predictionStats({ project: root }), all: predictionStats() });
+      io.emit({ scope: tasteScope(root), project: predictionStats({ project: root }), all: predictionStats() });
     });
 }

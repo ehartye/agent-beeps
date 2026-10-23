@@ -86,7 +86,7 @@ export function loadPatch(p: OpenProject, ref: string): Patch {
       if (existsSync(cand)) return parseOrThrow(readJsonFile(cand), cand);
     }
   }
-  throw new BeepsError('E_NOT_FOUND', `no patch "${ref}"`, { hint: 'use a name from "beeps list", a set candidate name, or a path to a .json patch' });
+  throw new BeepsError('E_NOT_FOUND', `no patch "${ref}"`, { hint: 'use a name from "beeps list", a set candidate name (a project patch of the same name wins over it), or a path to a .json patch' });
 }
 
 export function savePatch(p: OpenProject, patch: Patch, { force = false } = {}): string {

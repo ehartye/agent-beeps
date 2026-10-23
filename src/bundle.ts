@@ -9,10 +9,16 @@ import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts'
  * Every `*.wav.json`, `*.ogg.json` or `*.mp3.json` sidecar under `dir`, as paths relative to it (posix separators), sorted.
  * Never follows a symlink or (on Windows) a junction — `Dirent.isSymbolicLink()` reports the entry
  * itself, not its target, so a link back into an ancestor directory can't cause an infinite walk.
- * Skips dot-directories (`.git`, …) and `node_modules`.
+ * Skips dot-directories (`.git`, …) and `node_modules`. A skipped symbolic link, or a hidden directory that holds a sidecar, is listed in `skipped`
+ * so a sound that is missing from the catalog is not a mystery; `.git`, `node_modules` and hidden directories with no sidecar are not worth a line.
  */
-function listSidecars(dir: string): string[] {
-  const out: string[] = [];
+function listSidecars(dir: string): { sidecars: string[]; skipped: string[] } {
+  const out: string[] = [], skipped: string[] = [];
+  const holdsSidecar = (current: string): boolean => {
+    try {
+      return readdirSync(current, { withFileTypes: true }).some(e => !e.isSymbolicLink() && (e.isDirectory() ? e.name !== 'node_modules' && holdsSidecar(join(current, e.name)) : /\.(wav|ogg|mp3)\.json$/.test(e.name)));
+    } catch { return false; }
+  };
   const walk = (current: string) => {
     let entries;
     try {
@@ -21,10 +27,11 @@ function listSidecars(dir: string): string[] {
       throw new BeepsError('E_NOT_FOUND', `${current}: ${(e as Error).message}`);
     }
     for (const entry of entries) {
-      if (entry.isSymbolicLink()) continue;
       const full = join(current, entry.name);
+      if (entry.isSymbolicLink()) { skipped.push(`${relative(dir, full).split(sep).join('/')} (symbolic link, not followed)`); continue; }
       if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (entry.name === 'node_modules') continue;
+        if (entry.name.startsWith('.')) { if (entry.name !== '.git' && holdsSidecar(full)) skipped.push(`${relative(dir, full).split(sep).join('/')}/ (hidden directory, not searched)`); continue; }
         walk(full);
       } else if (entry.isFile() && /\.(wav|ogg|mp3)\.json$/.test(entry.name)) {
         out.push(relative(dir, full).split(sep).join('/'));
@@ -32,7 +39,7 @@ function listSidecars(dir: string): string[] {
     }
   };
   walk(dir);
-  return out.sort();
+  return { sidecars: out.sort(), skipped: skipped.sort() };
 }
 
 /**
@@ -62,7 +69,7 @@ function assetPath(dir: string, rel: string, field: string, raw: string): string
 }
 
 /** The catalog bundleDir would write for `dir`, without writing it. */
-export function catalogText(dir: string): { index: string; text: string; assets: string[] } {
+export function catalogText(dir: string): { index: string; text: string; assets: string[]; skipped: string[] } {
   const index = join(dir, 'index.json');
   if (existsSync(index)) {
     let previous: unknown;
@@ -74,7 +81,7 @@ export function catalogText(dir: string): { index: string; text: string; assets:
       throw new BeepsError('E_CONFLICT', `${index} already exists and is not a beeps/audio-bundle@1 catalog`, { hint: 'move or remove the existing index.json before bundling this directory' });
     }
   }
-  const sidecars = listSidecars(dir);
+  const { sidecars, skipped } = listSidecars(dir);
   // A Map, not a plain object: an asset id of "constructor" (or any other Object.prototype name)
   // must never be mistaken for an inherited property.
   const assets = new Map<string, ExportManifest>();
@@ -105,13 +112,14 @@ export function catalogText(dir: string): { index: string; text: string; assets:
     from.set(m.id, rel);
   }
   const text = JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n';
-  return { index, text, assets: [...assets.keys()] };
+  return { index, text, assets: [...assets.keys()], skipped };
 }
 
-export function bundleDir(dir: string, { skipUnchanged = false }: { skipUnchanged?: boolean } = {}): { index: string; assets: string[]; written: boolean } {
-  const { index, text, assets } = catalogText(dir);
+export function bundleDir(dir: string, { skipUnchanged = false }: { skipUnchanged?: boolean } = {}): { index: string; assets: string[]; written: boolean; skipped?: string[] } {
+  const { index, text, assets, skipped } = catalogText(dir);
+  const note = skipped.length ? { skipped } : {};
   // `skipUnchanged` (beeps build): a catalog that is already byte-identical is not rewritten, so its mtime and any watcher stay quiet.
-  if (skipUnchanged && existsSync(index) && readFileSync(index, 'utf8') === text) return { index, assets, written: false };
+  if (skipUnchanged && existsSync(index) && readFileSync(index, 'utf8') === text) return { index, assets, written: false, ...note };
   writeFileSync(index, text);
-  return { index, assets, written: true };
+  return { index, assets, written: true, ...note };
 }

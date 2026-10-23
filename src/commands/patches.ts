@@ -10,7 +10,7 @@ import { sha256 } from '../hash.ts';
 import { kitSeed, readKit } from '../kit.ts';
 import { int, outcomeJson, summary, withHost } from './shared.ts';
 import { exportRole } from '../export-manifest.ts';
-import { CHANNELS_DIFFER, exportPatchOne, exportPatchVariants } from '../export-assets.ts';
+import { CHANNELS_DIFFER, exportPatchOne, exportPatchVariants, staleVariantFiles } from '../export-assets.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { renderNotices, requireDeclaredVariant, trimNotices, variantNotices } from '../patch-notices.ts';
@@ -161,15 +161,21 @@ export function registerPatchCommands(program: Command, io: Io) {
         const declared = patch.variation?.variants ?? 1;
         if (n > declared) warnings.push(`--variants ${n} exceeds the patch's declared ${declared} variant(s)`);
         const dest = resolve(opts.wav);
+        const replaced = existsSync(dest.replace(/\.wav$/i, '') + '.0.wav');
         const { first, wavs, manifest, posts } = await withHost(host => exportPatchVariants(host, p, patch, { dest, seed, n, role, manifest: !!opts.manifest, post }));
         const postOut = posts.map(postJson);
-        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}), ...noticeField([...renderNotices(patch, first.features, p.project.scale), ...variantNotices(patch, { requested: true })]) });
+        const stale = staleVariantFiles(dest, wavs);
+        if (stale.length) warnings.push(`${stale.length} earlier variant file${stale.length === 1 ? '' : 's'} beside this export ${stale.length === 1 ? 'was' : 'were'} not rewritten and ${stale.length === 1 ? 'is' : 'are'} out of date: ${stale.map(f => basename(f)).join(', ')} (beeps bundle would list them)`);
+        io.emit({ ...summary(first), wav: wavs[0], wavs, ...(posts[0] ? { channels: posts[0].channels, ...(postOut.some(x => 'trimmedTailSec' in x) ? { trimmedTailSec: postOut.map(x => x.trimmedTailSec ?? 0) } : {}) } : {}), ...(manifest ? { manifest } : {}), ...(replaced ? { replaced: true } : {}), ...(stale.length ? { stale } : {}), ...(warnings.length ? { warnings: [...new Set(warnings)] } : {}), ...noticeField([...renderNotices(patch, first.features, p.project.scale), ...variantNotices(patch, { requested: true })]) });
         return;
       }
       requireDeclaredVariant(patch, opts.variant);
       const dest = resolve(opts.wav);
+      const replaced = existsSync(dest);
       const { rendered: o, manifest, post: done } = await withHost(host => exportPatchOne(host, p, patch, { dest, seed, variant: opts.variant, role, manifest: !!opts.manifest, post }));
       const extra = postJson(done);
-      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(warnings.length ? { warnings } : {}), ...noticeField(renderNotices(patch, o.features, p.project.scale)) });
+      const stale = staleVariantFiles(dest, []);
+      if (stale.length) warnings.push(`${stale.length} variant file${stale.length === 1 ? '' : 's'} from an earlier export sit beside this one: ${stale.map(f => basename(f)).join(', ')} (beeps bundle would list them)`);
+      io.emit({ ...summary(o), wav: dest, renderedWav: o.wavPath, ...extra, ...(manifest ? { manifest } : {}), ...(replaced ? { replaced: true } : {}), ...(stale.length ? { stale } : {}), ...(warnings.length ? { warnings } : {}), ...noticeField(renderNotices(patch, o.features, p.project.scale)) });
     });
 }
