@@ -1,6 +1,6 @@
 {
   "name": "agent-beeps",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "type": "module",
   "description": "Procedural and recorded-source hybrid game/UI SFX, plus procedural game music for coding agents: editable Web Audio patches and songs, deterministic sample preparation, portable source bundles, verified baked/live delivery, measurements, craft lint and owner auditions with a learned taste model.",

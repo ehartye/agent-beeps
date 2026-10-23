@@ -1,0 +1,54 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "stinger",
+  "family": "stinger",
+  "description": "A short accent that marks a moment: a hard hit with a bell tail",
+  "recipe": "A short lowpassed white-noise burst and a low modal body for the hit, with an FM bell a fifth above ringing out as the tail, through a small room reverb.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "stinger",
+    "family": "stinger",
+    "archetype": "stinger",
+    "tags": ["accent"],
+    "duration": 0.7,
+    "layers": [
+      {
+        "source": { "type": "noise", "color": "white" },
+        "gainDb": -6,
+        "amp": { "attack": 0.005, "decay": 0.05, "sustain": 0, "release": 0.03 },
+        "filter": { "type": "lowpass", "cutoff": 5000, "resonanceDb": 0 }
+      },
+      {
+        "source": { "type": "modal", "pitch": 140, "exciter": "noiseBurst", "modes": [[1, 18, 0], [2.4, 14, -6], [4.1, 10, -12]] },
+        "amp": { "attack": 0.005, "decay": 0.25, "sustain": 0, "release": 0.05 }
+      },
+      {
+        "source": {
+          "type": "fm",
+          "pitch": 660,
+          "operators": [
+            { "ratio": 1, "index": 0 },
+            { "ratio": 3.5, "index": 1 }
+          ],
+          "algorithm": [[1, 0]]
+        },
+        "start": 0.03,
+        "gainDb": -8,
+        "amp": { "attack": 0.005, "decay": 0.5, "sustain": 0, "release": 0.1 },
+        "filter": { "type": "lowpass", "cutoff": 6000, "resonanceDb": 0 }
+      }
+    ],
+    "fx": { "reverb": { "preset": "small", "sendDb": -18 } },
+    "meta": { "priority": 2, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/layers/0/filter/cutoff": { "min": 2500, "max": 8000, "scale": "log" },
+    "/layers/0/amp/decay": { "min": 0.03, "max": 0.09, "scale": "log" },
+    "/layers/1/source/pitch": { "min": 90, "max": 220, "scale": "log" },
+    "/layers/1/amp/decay": { "min": 0.15, "max": 0.4, "scale": "log" },
+    "/layers/2/source/pitch": { "min": 440, "max": 990, "scale": "log" },
+    "/layers/2/source/operators/1/index": { "min": 0.4, "max": 1.6, "scale": "lin" },
+    "/layers/2/amp/decay": { "min": 0.3, "max": 0.7, "scale": "log" },
+    "/layers/2/gainDb": { "min": -12, "max": -5, "scale": "lin" }
+  }
+}
