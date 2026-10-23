@@ -6,6 +6,7 @@ import { BeepsError } from '../errors.ts';
 import { listPatches, openProject, readJsonFile, type OpenProject } from '../project.ts';
 import { findInstrument, libraryInstruments, listSongs, midiName, shadowedInstruments, soloSong, loadSong, resolveInstruments, saveSong, songOrThrow } from '../music.ts';
 import { notice, noticeField } from '../notices.ts';
+import { songNotices } from '../song-notices.ts';
 import { readFileSync } from 'node:fs';
 import { readWav } from '../audio/wav.ts';
 import { applyTrimAndClip, measureSong } from '../measure/song.ts';
@@ -63,7 +64,7 @@ export function songSummary(r: RenderedSong, p: OpenProject, instruments: Record
     ...(r.excerpt ? { excerpt: r.excerpt } : { lint: lintSong(r.song, f, p.project, instruments) }),
     // name@hash per track: when a render changes without a song edit, this says which instrument moved.
     instruments: Object.fromEntries(Object.entries(instruments).map(([t, x]) => [t, `${x.name}@${sha256(canonicalJson(x)).slice(0, 8)}`])),
-    ...noticeField([...shadowNotices(p, r.song), ...songTrimNotices(r)]),
+    ...noticeField([...shadowNotices(p, r.song), ...songTrimNotices(r), ...songNotices(r.song)]),
   };
 }
 
@@ -96,6 +97,7 @@ export function songOutline(song: Song, instruments: Record<string, Patch>) {
       const sounds = v.lo === null || v.hi === null || !span ? null : `${midiName(at(v.lo) + span.low)}-${midiName(at(v.hi) + span.high)}`;
       return [k, { notes: v.notes, range: notes, ...(sounds && sounds !== notes ? { sounds } : {}), ...(v.notes === 0 ? { silent: true } : {}) }];
     })),
+    ...noticeField(songNotices(song)),
   };
 }
 
@@ -228,6 +230,7 @@ export function registerSongCommands(program: Command, io: Io) {
       const instruments = resolveInstruments(p, s);
       const [mix] = await renderMany(p, [s], 1);
       const tracks = Object.keys(s.tracks).filter(t => Object.values(s.sections).some(sec => sec.play[t] != null));
+      const omittedTracks = Object.keys(s.tracks).filter(t => !tracks.includes(t));
       // Stems are the full song with one track's notes playing: they line up sample for sample
       // with the mix and draw the same chance hits, arp orders and noise.
       const stems = await mapPool(tracks, opts.jobs, (t, _i, host) => renderSong(host, s, instruments, songRenderOptions(p, { trimDb: mix.trimDb, only: [t] })), hostScope());
@@ -239,21 +242,27 @@ export function registerSongCommands(program: Command, io: Io) {
           const f = stems[i].features;
           const dest = opts.out ? join(resolve(opts.out), `${s.name}-${t}.wav`) : undefined;
           if (dest) copyFileSync(stems[i].wavPath, dest);
+          // A stem with no sound has no integrated level (-Infinity, which JSON writes as null): say it is silent instead of printing a bare null.
+          const lufs = f.delivered?.integratedLufs;
+          const silent = lufs === undefined || !Number.isFinite(lufs);
           return {
-            track: t, loudnessLufs: f.delivered?.integratedLufs, vsMixLu: Math.round(((f.delivered?.integratedLufs ?? -99) - mixLufs) * 10) / 10,
+            track: t, loudnessLufs: silent ? null : lufs, ...(silent ? { silent: true } : {}), vsMixLu: silent ? null : Math.round((lufs - mixLufs) * 10) / 10,
             // A short percussive part (a hat) sits far under the mix by integrated level and is still heard: its peak says so.
             peakVsMixDb: Math.round((f.samplePeakDb - mix.features.samplePeakDb) * 10) / 10, crestDb: f.crestDb,
             centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth,
             sections: f.sections.map(x => ({ name: x.name, lufs: x.lufs })), wav: dest ?? stems[i].wavPath, look: stems[i].lookPath,
           };
-        }).sort((a, b) => (b.loudnessLufs ?? -99) - (a.loudnessLufs ?? -99)),
+        }).sort((a, b) => (b.loudnessLufs ?? -Infinity) - (a.loudnessLufs ?? -Infinity)),
+        // Tracks no section plays are not rendered: list them so a missing stem is not mistaken for a skipped one.
+        ...(omittedTracks.length ? { omitted: omittedTracks.map(track => ({ track, reason: 'no section plays it' })) } : {}),
       };
       // A part far under the mix is felt, not heard; one within a few LU of it is carrying the song.
       // Integrated level undersells a sparse, peaky part, so a stem is only flagged when its peak is also well under the mix's peak.
-      const quiet = report.stems.filter(x => x.vsMixLu < -18);
+      const quiet = report.stems.filter((x): x is typeof x & { vsMixLu: number } => x.vsMixLu !== null && x.vsMixLu < -18);
+      const silentStems = report.stems.filter(x => x.silent).map(x => `${x.track} rendered silent: none of its notes made a sound, so check its instrument and the patterns the sections play for it`);
       const buried = quiet.filter(x => x.peakVsMixDb < -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} sits ${-x.vsMixLu} LU under the mix and its peak ${-x.peakVsMixDb} dB under: likely inaudible; raise its gainDb or drop it`);
       const accents = quiet.filter(x => x.peakVsMixDb >= -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} is ${-x.vsMixLu} LU under the mix by integrated level but its peak is within ${Math.max(0, -x.peakVsMixDb)} dB of the mix's (crest ${x.crestDb} dB): short and peaky, so it is heard as an accent; do not chase it with gain`);
-      io.emit({ ...report, ...(buried.length ? { warnings: buried } : {}), ...(accents.length ? { notes: accents } : {}) });
+      io.emit({ ...report, ...(buried.length || silentStems.length ? { warnings: [...silentStems, ...buried] } : {}), ...(accents.length ? { notes: accents } : {}) });
     });
 
   song.command('states <ref>')
@@ -281,7 +290,8 @@ export function registerSongCommands(program: Command, io: Io) {
         const tracks = names.flatMap(n => s.adaptive!.layers[n]);
         const lint = lintSong(stateSong(s, tracks), f, p.project, instruments);
         return {
-          state, layers: names, tracks, rawLufs: t.lufs, trimDb: t.trimDb, playsAtLufs: f.delivered.integratedLufs,
+          state, layers: names, tracks, rawLufs: t.lufs, trimDb: t.trimDb, playsAtLufs: t.silent ? null : f.delivered.integratedLufs,
+          ...(t.silent ? { silent: true } : {}), ...(t.clamped ? { trimClamped: t.clamped } : {}),
           loudnessRangeLu: f.loudnessRangeLu, centroidHz: f.centroidHz, lowShare: f.lowShare, stereoWidth: f.stereoWidth, truePeakDb: f.delivered.truePeakDb,
           ...(f.seamDb !== undefined ? { seamDb: f.seamDb } : {}),
           sections: f.sections.map(x => ({ name: x.name, lufs: Math.round((x.lufs + t.trimDb) * 10) / 10, centroidHz: x.centroidHz })),
@@ -368,9 +378,10 @@ export function registerSongCommands(program: Command, io: Io) {
         progress({ index: t.index, status: 'failed', error });
       }
       const done = readAlbum(p, a.id);
-      const failed = done.tracks.filter(t => t.status === 'failed').length;
-      progress({ status: 'complete', ready: done.tracks.length - failed, failed });
-      if (failed) process.exitCode = 1;
+      const failures = done.tracks.filter(t => t.status === 'failed').map(t => ({ index: t.index, name: t.name, error: t.error }));
+      // The first JSON (the links) is long printed; this last line is where a failed track is named, with why.
+      progress({ status: 'complete', ready: done.tracks.length - failures.length, failed: failures.length, ...(failures.length ? { failures } : {}) });
+      if (failures.length) process.exitCode = 1;
     });
 
   album.command('feedback <id>')
@@ -384,5 +395,5 @@ export function registerSongCommands(program: Command, io: Io) {
 
   album.command('list')
     .description('albums in this project')
-    .action(() => io.emit({ albums: listAlbums(openProject(io.projectDir())).map(a => ({ id: a.id, title: a.title, tracks: a.tracks.length, createdAt: a.createdAt })) }));
+    .action(() => io.emit({ albums: listAlbums(openProject(io.projectDir())).map(a => ({ id: a.id, title: a.title, tracks: a.tracks.length, ready: a.tracks.filter(t => t.status === 'ready').length, failed: a.tracks.filter(t => t.status === 'failed').length, createdAt: a.createdAt })) }));
 }

@@ -59,9 +59,14 @@ export const layerWavPath = (wav: string, layer: string): string => `${wav.repla
 export const readChannels = (wavPath: string): Float32Array[] => readWav(readFileSync(wavPath)).channels;
 
 /** The gain that brings a state (the sum of its layers) to the music loudness, kept under -1.5 dBFS sample peak and within +-12 dB. */
-export function stateTrim(sum: Float32Array[], sampleRate: number, targetLufs: number): { lufs: number; peakDb: number; trimDb: number; clamped?: { requestedDb: number; appliedDb: number } } {
+export type StateTrim =
+  | { silent?: false; lufs: number; peakDb: number; trimDb: number; clamped?: { requestedDb: number; appliedDb: number } }
+  /** A state whose layers make no sound has no level to trim: it is reported silent, not as a -99 LUFS that reads like a measurement. */
+  | { silent: true; lufs: null; peakDb: null; trimDb: 0; clamped?: undefined };
+
+export function stateTrim(sum: Float32Array[], sampleRate: number, targetLufs: number): StateTrim {
   const lufs = integrated(sum, sampleRate).lufs, peakDb = samplePeakDb(sum);
-  if (!Number.isFinite(lufs)) return { lufs: -99, peakDb: -99, trimDb: 0 };
+  if (!Number.isFinite(lufs)) return { silent: true, lufs: null, peakDb: null, trimDb: 0 };
   const requested = Math.round(Math.min(targetLufs - lufs, -1.5 - peakDb) * 10) / 10;
   const trimDb = Math.round(Math.max(-12, Math.min(12, requested)) * 10) / 10;
   return { lufs: Math.round(lufs * 10) / 10, peakDb: Math.round(peakDb * 10) / 10, trimDb, ...(trimDb !== requested ? { clamped: { requestedDb: requested, appliedDb: trimDb } } : {}) };

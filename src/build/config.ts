@@ -64,6 +64,8 @@ export interface Recipe {
   channels?: 1 | 2;
   /** Baked patches only: trim the delivered tail below this dBFS threshold (-120 <= value < 0). */
   trimTailDb?: number;
+  /** Fields the recipe sets that this kind of asset does not read (variants and seed on a song): reported by the build, never used. */
+  ignored?: string[];
 }
 
 const TailDb = z.number().min(-120).lt(0);
@@ -102,7 +104,8 @@ export function loadRecipes(cfg: BuildConfig): Recipe[] {
     if ((r.data.channels !== undefined || trimTailDb !== undefined) && (kind !== 'patch' || r.data.delivery === 'runtime')) {
       throw new BeepsError('E_SCHEMA', `recipe "${id}": channels and tail trimming are for baked patch files, not ${kind !== 'patch' ? 'songs or layers' : 'runtime-only delivery'}`, { pointer: `/${id}/${postField}` });
     }
-    out.set(id, { id, role: r.data.role, kind, source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(r.data.variants ? { variants: r.data.variants } : {}), ...(r.data.delivery ? { delivery: r.data.delivery } : {}), ...(r.data.channels !== undefined ? { channels: r.data.channels } : {}), ...(trimTailDb !== undefined ? { trimTailDb } : {}) });
+    const ignored = kind === 'song' ? (['variants', 'seed'] as const).filter(k => r.data[k] !== undefined) : [];
+    out.set(id, { id, role: r.data.role, kind, source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(ignored.length ? { ignored } : {}), ...(r.data.variants ? { variants: r.data.variants } : {}), ...(r.data.delivery ? { delivery: r.data.delivery } : {}), ...(r.data.channels !== undefined ? { channels: r.data.channels } : {}), ...(trimTailDb !== undefined ? { trimTailDb } : {}) });
   }
   return [...out.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
 }

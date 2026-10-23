@@ -19,6 +19,9 @@ import { songRenderOptions, renderOptions } from './render/options.ts';
 
 /** Opt-in export post-processing (beeps export --channels 1, --trim-tail <dBFS>); absent, the WAV is the render's own file. */
 export interface ExportPost { channels?: 1 | 2; trimTailDb?: number }
+/** Said whenever --channels 1 had to average channels that differ: the sound is not what the stereo measurement describes. */
+export const CHANNELS_DIFFER = 'the rendered channels differ (the stereo reverb, or a panned layer): --channels 1 averaged them, so the reverb sits about 3 dB lower and the sidecar loudness is the stereo measurement';
+
 export interface PostResult { channels: number; identicalChannels?: boolean; trimmedTailSec?: number }
 
 /** Copy a rendered WAV to `dest`, applying the opt-in post-processing. */
@@ -82,7 +85,7 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
   const dest = o.dest;
   mkdirSync(dirname(dest), { recursive: true });
   const post = deliver(r.wavPath, dest, o.trimTailDb !== undefined ? { trimTailDb: o.trimTailDb } : undefined);
-  let layerFiles: Record<string, string> | undefined, residual: number | undefined, stateTrimDb: Record<string, number> | undefined, stateLufs: Record<string, number> | undefined;
+  let layerFiles: Record<string, string> | undefined, residual: number | undefined, stateTrimDb: Record<string, number> | undefined, stateLufs: Record<string, number | null> | undefined;
   const warnings: string[] = [];
   if (layers) {
     layerFiles = Object.fromEntries(Object.entries(layers).map(([name, lr]) => { const f = layerWavPath(dest, name); copyFileSync(lr.wavPath, f); return [name, f]; }));
@@ -100,9 +103,10 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
       for (const [state, names] of Object.entries(s.adaptive.states)) {
         let sum: Float32Array[] | undefined;
         for (const n of names) sum = addChannels(sum, readChannels(layerFiles[n]));
-        const t = sum ? stateTrim(sum, sr, p.project.musicLoudness) : { lufs: -99, trimDb: 0 };
+        const t = stateTrim(sum ?? [], sr, p.project.musicLoudness);
         stateTrimDb[state] = t.trimDb; stateLufs[state] = t.lufs;
-        if ('clamped' in t && t.clamped) warnings.push(`state "${state}" needs ${t.clamped.requestedDb} dB to reach the music loudness; the limit is +-12 dB, so it plays at ${t.clamped.appliedDb} dB and sits ${Math.abs(Math.round((t.clamped.requestedDb - t.clamped.appliedDb) * 10) / 10)} dB ${t.clamped.requestedDb < t.clamped.appliedDb ? 'louder' : 'quieter'} than its target`);
+        if (t.silent) warnings.push(`state "${state}" is silent: none of its layers makes a sound, so it has no level (stateLufs is null) and no trim`);
+        if (t.clamped) warnings.push(`state "${state}" needs ${t.clamped.requestedDb} dB to reach the music loudness; the limit is +-12 dB, so it plays at ${t.clamped.appliedDb} dB and sits ${Math.abs(Math.round((t.clamped.requestedDb - t.clamped.appliedDb) * 10) / 10)} dB ${t.clamped.requestedDb < t.clamped.appliedDb ? 'louder' : 'quieter'} than its target`);
       }
     }
     const sounding = new Set(compileSong(s).events.map(e => e.track));
