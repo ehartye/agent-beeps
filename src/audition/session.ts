@@ -140,13 +140,18 @@ export function readSession(p: OpenProject, id: string): Session {
   return SessionSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
 }
 
-export function readEvents(p: OpenProject, id: string): StoredEvent[] {
+/** The session's events, and how many lines of the log could not be read (a half-written line from a killed process, a hand edit). */
+export function readEventsChecked(p: OpenProject, id: string): { events: StoredEvent[]; malformed: number } {
   const file = join(sessionDir(p, id), 'events.jsonl');
-  if (!existsSync(file)) return [];
-  return readFileSync(file, 'utf8').split('\n').filter(Boolean).flatMap(line => {
-    try { return [JSON.parse(line) as StoredEvent]; } catch { return []; }
+  if (!existsSync(file)) return { events: [], malformed: 0 };
+  let malformed = 0;
+  const events = readFileSync(file, 'utf8').split('\n').filter(Boolean).flatMap(line => {
+    try { return [JSON.parse(line) as StoredEvent]; } catch { malformed++; return []; }
   });
+  return { events, malformed };
 }
+
+export const readEvents = (p: OpenProject, id: string): StoredEvent[] => readEventsChecked(p, id).events;
 
 export interface SessionState {
   stage: 'lineup' | 'duel' | 'refine' | 'waiting' | 'shipped' | 'abandoned';

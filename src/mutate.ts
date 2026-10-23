@@ -106,7 +106,7 @@ export function crossover(a: Patch, b: Patch, t: number): Patch {
 }
 
 
-export type Mutated = CandidateSet & { report: SetReport; notices: Notice[] };
+export type Mutated = CandidateSet & { seed: number; report: SetReport; notices: Notice[] };
 
 export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: Patch; toward?: string[]; like?: Patch; count?: number; seed?: number; parentSet?: string | null; prompt?: string | null; ignoreExpect?: boolean }): Promise<Mutated> {
   const count = opts.count ?? 4;
@@ -152,7 +152,7 @@ export async function mutate(host: RenderHost, p: OpenProject, opts: { parent: P
     archetype: opts.parent.archetype ?? null, family: opts.parent.family, prompt: opts.prompt ?? null,
     parent: opts.parentSet ?? null, idPrefix: `${base}-mut`, weak,
   });
-  return { ...set, report, notices: setNotices(report) };
+  return { ...set, seed, report, notices: setNotices(report) };
 }
 
 /** Hand-off mode: the server breeds the next round itself when the owner asks to refine. */

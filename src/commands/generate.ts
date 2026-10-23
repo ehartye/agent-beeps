@@ -19,7 +19,7 @@ import { summarize } from '../taste/summary.ts';
 import { predictionStats } from '../audition/session.ts';
 import { candidateFromRendered, newId, setDir, writeSet, type CandidateSet } from '../sets.ts';
 import { DeliveryResultsHead, deliveryPrefsFile, foldResults, globalDeliveryPrefsFile, importPreferences, preferencesFromResults, readDelivery, readDeliveryEvents, readDeliveryPrefs, summarizePreferences } from '../audition/delivery.ts';
-import { int, withHost } from './shared.ts';
+import { int, pitchOf, withHost } from './shared.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { reportJson } from '../set-report.ts';
@@ -32,23 +32,23 @@ export const setJson = (s: CandidateSet) => ({
   candidates: s.candidates.map(c => {
     const f = c.features as any;
     return { index: c.index, name: c.name, trimDb: c.trimDb, look: c.look, ...(c.weak ? { weak: true } : {}),
-      features: { energyLengthSec: f.energyLengthSec, attackSec: f.attackSec, centroidHz: f.centroidHz, sharpness: f.sharpness, roughness: f.roughness, flatness: f.flatness, pitchHz: f.pitchStrength >= 0.7 ? f.pitchHz : null, pitchDirection: f.pitchDirection } };
+      features: { energyLengthSec: f.energyLengthSec, attackSec: f.attackSec, centroidHz: f.centroidHz, sharpness: f.sharpness, roughness: f.roughness, flatness: f.flatness, ...pitchOf(f), pitchDirection: f.pitchDirection } };
   }),
   next: `look at ${s.sheet}, then: beeps predict --set ${s.id} --pick <n> --shortlist <a,b> --why "..." and beeps audition open --set ${s.id}`,
 });
 
-/** The project's own valid patches (an invalid file is skipped: it is nobody's sibling or family member). */
-function projectPatches(p: OpenProject): Patch[] {
-  if (!existsSync(p.paths.patches)) return [];
-  const out: Patch[] = [];
+/** The project's own valid patches. An invalid file is nobody's sibling or family member, so it is left out, and listed (with why) so that is not silent. */
+function projectPatches(p: OpenProject): { patches: Patch[]; skipped: { file: string; error: string }[] } {
+  const patches: Patch[] = [], skipped: { file: string; error: string }[] = [];
+  if (!existsSync(p.paths.patches)) return { patches, skipped };
   for (const f of readdirSync(p.paths.patches).filter(f => f.endsWith('.json'))) {
-    try { out.push(parseOrThrow(readJsonFile(join(p.paths.patches, f)), f)); } catch { /* skipped */ }
+    try { patches.push(parseOrThrow(readJsonFile(join(p.paths.patches, f)), f)); } catch (e) { skipped.push({ file: f, error: (e as Error).message }); }
   }
-  return out;
+  return { patches, skipped };
 }
 
 /** Sibling variants of each patch among the project's own patches and the ones being checked (these win on a name clash). */
-function siblingsOf(p: OpenProject, checked: Patch[], own = projectPatches(p)): Map<string, string[]> {
+function siblingsOf(p: OpenProject, checked: Patch[], own = projectPatches(p).patches): Map<string, string[]> {
   const byName = new Map<string, Patch>();
   for (const x of [...own, ...checked]) byName.set(x.name, x);
   return variantSiblings([...byName.values()]);
@@ -77,11 +77,12 @@ export async function createSet(p: OpenProject, patches: Patch[], opts: { prompt
 
 /** Lint patches (names, files or in-memory): the JSON lint prints, and whether any patch has errors. */
 export async function lintPatches(p: OpenProject, patches: Patch[], brief: boolean, { derive = false } = {}): Promise<{ payload: Record<string, unknown>; failed: boolean }> {
-  const own = projectPatches(p);
+  const { patches: own, skipped } = projectPatches(p);
   const siblings = siblingsOf(p, patches, own);
   // Informational lines (never errors or warnings, never the exit code): what lint cannot check on its own.
   const kit = readKit(p.paths.root);
   const notes = kitRuleNotes(patches, own, kit.sounds.map(s => s.name));
+  for (const s of skipped) notes.push({ rule: 'invalid-project-patch', name: s.file, message: `${s.file} is not a valid patch, so lint left it out of the sibling and kit checks: ${s.error}` });
   // A kit sound is judged at the seed it ships with (the one the owner auditioned), like render and export; any other patch at seed 1.
   const { outcomes: out, expectations } = await withHost(host => renderWithExpectations(host, patches.map(patch => ({ patch, seed: kitSeed(kit, patch.name) })), renderOptions(p)));
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
@@ -113,7 +114,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       if (opts.count < 2 || opts.count > 8) throw new BeepsError('E_USAGE', '--count must be 2 to 8 (auditions stay small to avoid fatigue)');
       const p = openProject(io.projectDir());
       const set = await withHost(host => generate(host, p, { archetype, count: opts.count, seed: opts.seed, prompt: opts.prompt }));
-      io.emit({ ...setJson(set), steering: set.steering, ...reportJson(set) });
+      io.emit({ ...setJson(set), seed: set.seed, steering: set.steering, ...reportJson(set) });
     });
 
   program.command('mutate <ref>')
@@ -130,7 +131,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const bad = toward.filter(d => !(d in DIRECTIONS) && d !== 'surprise');
       if (bad.length) throw new BeepsError('E_USAGE', `unknown direction ${bad.join(', ')}`, { hint: `one of ${Object.keys(DIRECTIONS).join(', ')}` });
       const set = await withHost(host => mutate(host, p, { parent: loadPatch(p, ref), like: opts.like ? loadPatch(p, opts.like) : undefined, toward, count: opts.count, seed: opts.seed, ignoreExpect: !!opts.ignoreExpect }));
-      io.emit({ ...setJson(set), ...reportJson(set) });
+      io.emit({ ...setJson(set), seed: set.seed, ...reportJson(set) });
     });
 
   program.command('crossover <a> <b>')

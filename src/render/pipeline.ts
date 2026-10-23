@@ -11,6 +11,7 @@ import type { Patch } from '../schema/patch.ts';
 import type { Project } from '../schema/project.ts';
 import type { RenderHost } from './host.ts';
 import { chooseTrim, commit, lookup } from './cache.ts';
+import { countNonFinite, nonFiniteMessage } from '../audio/finite.ts';
 import { createSampleWavSnapshot, type EncodedSampleWavs } from '../samples/transport.ts';
 
 /** Loudness offsets (LU re project target) by family: quiet UI, fuller impacts. */
@@ -105,6 +106,8 @@ export async function renderAndMeasure(host: RenderHost, items: PipelineItem[], 
   pass1.forEach((r, j) => {
     const i = misses[j];
     if (!r.ok) { out[i] = { ok: false, patchName: keyed[i].patch.name, error: r.error }; return; }
+    const broken = countNonFinite(r.authored);
+    if (broken) { out[i] = { ok: false, patchName: keyed[i].patch.name, error: nonFiniteMessage('patch', broken) }; return; }
     const f = measure(r);
     // Below BS.1770's -70 LUFS absolute gate there is nothing to level-match.
     if (!(f.momentaryMaxLufs > -70)) { out[i] = { ok: false, patchName: keyed[i].patch.name, error: `patch rendered near-silence (${f.momentaryMaxLufs} LUFS)` }; return; }

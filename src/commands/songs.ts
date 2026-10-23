@@ -19,11 +19,11 @@ import { lintSong, soundingPitch } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
 import { instrumentSpan } from '../../runtime/engine/song.js';
 import { parseChord, voiceLead } from '../../runtime/engine/chords.js';
-import { int, withHost } from './shared.ts';
+import { int, positiveInt, withHost } from './shared.ts';
 import { canonicalJson, sha256 } from '../hash.ts';
 import type { Song } from '../schema/song.ts';
 import type { Patch } from '../schema/patch.ts';
-import { foldAlbum, listAlbums, readAlbum, updateAlbumTrack, writeAlbum } from '../album.ts';
+import { foldAlbum, readAlbum, scanAlbums, updateAlbumTrack, writeAlbum } from '../album.ts';
 import { albumIpUrls, albumUrl, registerProject } from '../audition/server.ts';
 import { ensureServer } from './audition.ts';
 import { planScore } from '../compat.ts';
@@ -139,7 +139,7 @@ export function registerSongCommands(program: Command, io: Io) {
       const shift = opts.by ?? Math.round(hzToMidi(noteToHz(opts.to!)) - root);
       const r = rebaseInstrument(patch, shift, { filters: opts.filters as FilterMode });
       io.emit({
-        instrument: name, root: r.root, rebuiltRoot: r.rebuiltRoot, shiftSemitones: shift, filters: opts.filters, movedLayers: r.layers, scaledCutoffs: r.filters,
+        instrument: name, root: r.root, rebuiltRoot: r.rebuiltRoot, shiftSemitones: shift, filters: opts.filters, movedLayers: r.layers, scaledCutoffs: r.filters, ...(r.clamped ? { clampedCutoffs: r.clamped } : {}),
         override: { base: name, set: r.set },
         hint: `add it to the song's "instruments" block under a new name and point the track at that name; then write the part near ${r.rebuiltRoot}. Layers without a pitch keep their own filters.`,
       });
@@ -180,13 +180,14 @@ export function registerSongCommands(program: Command, io: Io) {
     .action((refs: string[], opts: { worst?: number }) => {
       const p = openProject(io.projectDir());
       const plan = planScore(refs.map(r => loadSong(p, r)));
+      if (opts.worst !== undefined && opts.worst < 1) throw new BeepsError('E_USAGE', '--worst takes a count of 1 or more', { received: String(opts.worst) });
       if (opts.worst) plan.pairs = plan.pairs.sort((a, b) => a.harmony - b.harmony).slice(0, opts.worst);
       io.emit(plan);
     });
 
   song.command('render <refs...>')
     .description('render, loudness-trim, measure and lint songs; writes a WAV and a look image per song')
-    .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', int, 3)
+    .option('--jobs <n>', 'songs rendered in parallel (one headless browser each)', positiveInt, 3)
     .option('--only <tracks>', 'comma-separated tracks to keep (solo); the rest are muted')
     .option('--sections <names>', 'excerpt these sections from the full render, preserving mix context and level')
     .option('--verify-determinism', 'render each song twice and fail (E_NONDETERMINISTIC) when the two differ in any sample; doubles the render time')
@@ -222,7 +223,7 @@ export function registerSongCommands(program: Command, io: Io) {
 
   song.command('stems <ref>')
     .description("render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, plus stem WAVs")
-    .option('--jobs <n>', 'stems rendered in parallel', int, 3)
+    .option('--jobs <n>', 'stems rendered in parallel', positiveInt, 3)
     .option('--out <dir>', 'also copy the stem WAVs here')
     .action(async (ref: string, opts: { jobs: number; out?: string }) => {
       const p = openProject(io.projectDir());
@@ -340,7 +341,7 @@ export function registerSongCommands(program: Command, io: Io) {
   album.command('open <refs...>')
     .description('print album links immediately, then add each song as its render finishes')
     .option('--title <text>', 'album title', 'New music')
-    .option('--jobs <n>', 'songs rendered in parallel', int, 3)
+    .option('--jobs <n>', 'songs rendered in parallel', positiveInt, 3)
     .action(async (refs: string[], opts: { title: string; jobs: number }) => {
       const p = openProject(io.projectDir());
       const songs = refs.map(r => loadSong(p, r));
@@ -395,5 +396,8 @@ export function registerSongCommands(program: Command, io: Io) {
 
   album.command('list')
     .description('albums in this project')
-    .action(() => io.emit({ albums: listAlbums(openProject(io.projectDir())).map(a => ({ id: a.id, title: a.title, tracks: a.tracks.length, ready: a.tracks.filter(t => t.status === 'ready').length, failed: a.tracks.filter(t => t.status === 'failed').length, createdAt: a.createdAt })) }));
+    .action(() => {
+      const { albums, unreadable } = scanAlbums(openProject(io.projectDir()));
+      io.emit({ albums: albums.map(a => ({ id: a.id, title: a.title, tracks: a.tracks.length, ready: a.tracks.filter(t => t.status === 'ready').length, failed: a.tracks.filter(t => t.status === 'failed').length, createdAt: a.createdAt })), ...(unreadable.length ? { unreadable } : {}) });
+    });
 }

@@ -7,7 +7,7 @@ import { BeepsError } from '../errors.ts';
 import { openProject, type OpenProject } from '../project.ts';
 import { readSet } from '../sets.ts';
 import {
-  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readReveal, readSession,
+  appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readEvents, readEventsChecked, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
 import { AuditionServer, DEFAULT_PORT, SERVER_API, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
@@ -51,8 +51,11 @@ export async function ensureServer(opts: { host?: string; port?: number } = {}):
 
 const brief = (p: OpenProject, id: string) => {
   const session = readSession(p, id);
-  const state = foldSession(session, readEvents(p, id));
+  const { events, malformed } = readEventsChecked(p, id);
+  const state = foldSession(session, events);
   return {
+    // Lines the log could not read are lost events: the stage below is folded from the rest, so say so.
+    ...(malformed ? { malformedEvents: malformed } : {}),
     id, stage: session.flow === 'explore' && state.stage !== 'abandoned' ? 'explore' : state.stage, flow: session.flow, round: state.round, prompt: session.prompt, mode: session.mode,
     champion: state.champion, shortlist: state.shortlist, loved: state.loved, duds: state.duds,
     duels: state.duels.length, pendingRefine: state.pendingRefine, shipped: state.shipped,
@@ -179,15 +182,18 @@ export function registerAuditionCommands(program: Command, io: Io) {
     .action(async (opts: { id: string; timeout: number }) => {
       const p = openProject(io.projectDir());
       const cursorFile = join(sessionDir(p, opts.id), 'agent-cursor');
-      const cursor = existsSync(cursorFile) ? Number(readFileSync(cursorFile, 'utf8')) : 0;
+      // A cursor that is not a number would make every event look old and the wait run out its timeout: start from the beginning and say so.
+      const stored = existsSync(cursorFile) ? Number(readFileSync(cursorFile, 'utf8')) : 0;
+      const cursor = Number.isFinite(stored) ? stored : 0;
+      const cursorReset = !Number.isFinite(stored);
       const found = await waitFor<StoredEvent>(async () => readEvents(p, opts.id).find(e => e.seq > cursor && ACTIONABLE.has(e.type)), opts.timeout * 1000);
-      if (!found) { io.emit({ timeout: true, session: brief(p, opts.id) }); return; }
+      if (!found) { io.emit({ timeout: true, session: brief(p, opts.id), ...(cursorReset ? { cursorReset: true } : {}) }); return; }
       writeFileSync(cursorFile, String(found.seq));
       const s = brief(p, opts.id);
       const todo = found.type === 'refine'
         ? `breed candidates from #${found.champion} toward ${found.directions.join(', ') || 'surprise'}: beeps mutate <champion-name> --toward ... then beeps audition round --id ${opts.id} --set <new set>`
         : found.type === 'ship' ? 'read the reveal (beeps audition status), wire the shipped patch into the app' : 'the owner abandoned this audition';
-      io.emit({ event: found, session: s, todo });
+      io.emit({ event: found, session: s, todo, ...(cursorReset ? { cursorReset: true } : {}) });
     });
 
   audition.command('round')

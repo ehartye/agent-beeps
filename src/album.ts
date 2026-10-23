@@ -84,11 +84,17 @@ export function readAlbum(p: OpenProject, id: string): Album {
   return AlbumSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
 }
 
-export function listAlbums(p: OpenProject): Album[] {
-  if (!existsSync(p.paths.albums)) return [];
-  return readdirSync(p.paths.albums).flatMap(id => { try { return [readAlbum(p, id)]; } catch { return []; } })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+/** Every album folder: the ones that read, newest first, and the ones that did not with why (a half-written or hand-edited album.json). */
+export function scanAlbums(p: OpenProject): { albums: Album[]; unreadable: { id: string; error: string }[] } {
+  if (!existsSync(p.paths.albums)) return { albums: [], unreadable: [] };
+  const albums: Album[] = [], unreadable: { id: string; error: string }[] = [];
+  for (const id of readdirSync(p.paths.albums)) {
+    try { albums.push(readAlbum(p, id)); } catch (e) { unreadable.push({ id, error: (e as Error).message }); }
+  }
+  return { albums: albums.sort((a, b) => b.createdAt.localeCompare(a.createdAt)), unreadable };
 }
+
+export const listAlbums = (p: OpenProject): Album[] => scanAlbums(p).albums;
 
 export function appendAlbumEvent(p: OpenProject, id: string, raw: unknown): AlbumEvent & { at: string; section?: string | null } {
   const album = readAlbum(p, id);

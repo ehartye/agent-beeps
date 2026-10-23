@@ -17,6 +17,8 @@ export interface Rebase {
   /** Pitched layers that moved, and how many filter cutoffs were scaled with them. */
   layers: number[];
   filters: number;
+  /** Cutoffs that would have left the audible range (20 to 24000 Hz) and were held at its edge instead. */
+  clamped: number;
 }
 
 const MIN_CUTOFF = 20, MAX_CUTOFF = 24000;
@@ -38,7 +40,7 @@ export function rebaseInstrument(patch: Patch, semitones: number, { filters = 'f
   if (!Number.isInteger(semitones)) throw new BeepsError('E_USAGE', 'the shift must be a whole number of semitones');
   const set: Record<string, string | number> = {};
   const layers: number[] = [];
-  let scaled = 0;
+  let scaled = 0, clamped = 0;
   const ratio = 2 ** (semitones / 12);
   patch.layers.forEach((layer, i) => {
     const src = layer.source as { pitch?: string | number };
@@ -49,9 +51,13 @@ export function rebaseInstrument(patch: Patch, semitones: number, { filters = 'f
     if (filters !== 'follow') return;
     const filter = layer.filter;
     if (!filter) return;
-    const scale = (hz: number) => Math.min(MAX_CUTOFF, Math.max(MIN_CUTOFF, Math.round(hz * ratio)));
+    const scale = (hz: number) => {
+      const moved = Math.round(hz * ratio), held = Math.min(MAX_CUTOFF, Math.max(MIN_CUTOFF, moved));
+      if (held !== moved) clamped++;
+      return held;
+    };
     set[`/layers/${i}/filter/cutoff`] = scale(filter.cutoff); scaled++;
     if (filter.env) { set[`/layers/${i}/filter/env/to`] = scale(filter.env.to); scaled++; }
   });
-  return { root: midiName(root), rebuiltRoot: midiName(root + semitones), set, layers, filters: scaled };
+  return { root: midiName(root), rebuiltRoot: midiName(root + semitones), set, layers, filters: scaled, clamped };
 }
