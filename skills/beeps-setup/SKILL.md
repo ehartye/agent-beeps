@@ -33,6 +33,13 @@ absolute path. Commands below write `beeps` for `node "<plugin-root>/scripts/run
 - `<project>/.agent-beeps/`: that project's patches, kit, candidate sets, audition sessions,
   project taste layer, and a git-ignored render cache. Create it with `beeps init`.
 
+## Optional: notification sounds
+
+Only if the owner asks for sounds on agent events. The plugin ships no hooks, so nothing plays until the owner adds them: `beeps hook prepare` renders four
+quiet sounds once (done, success, failure, attention); `beeps hook settings` prints the `settings.json` fragment to paste (Stop, Notification, Bash results);
+`beeps hook enable` turns them on (`BEEPS_HOOKS=0` still silences them) and `beeps hook status` shows what is prepared and which audio player was found.
+A success sound plays only on an explicit exit status of 0, never on silence. `beeps hook play <name>` and `beeps hook event` never fail a turn.
+
 ## Done bar
 
 `setup.js --check --json` reports `ok: true` and `beeps capabilities` answers. If the owner's other

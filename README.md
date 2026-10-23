@@ -209,6 +209,13 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.30.0
+
+Opt-in notification sounds for an agent session. Nothing plays unless you turn it on. No sound or music changes to existing sounds; no render key moves.
+
+- **`beeps hook`:** `prepare` renders four short, quiet sounds (done, success, failure, attention) from library archetypes into the beeps home folder, once, with Chromium; `settings` prints the `settings.json` fragment that runs `beeps hook event` on Stop, Notification and Bash results (the plugin ships no `hooks.json`, because a plugin hook runs for everyone who installs it); `enable` and `disable` write `hooks.json` in the beeps home folder, and `BEEPS_HOOKS=1` or `0` overrides it; `play <name>` and `status` do what they say.
+- **Evidence, not hope:** `hook event` maps Stop to done and Notification to attention. A Bash result plays success only for an explicit exit status of 0 and failure only for an explicit non-zero one, and only for build, test and lint commands; a result with no exit status, or any other command, is silent with the reason in the JSON. It always exits 0, plays detached (no waiting) and skips a sound that follows another within 400 ms.
+- **Players:** PowerShell's `SoundPlayer` on Windows, `afplay` on macOS, `paplay`, `aplay` or `play` on Linux; with none found it says so and does nothing.
 ## What changed in 0.29.0
 
 Five archetypes the target use cases were missing. No change to any existing sound; no render key moves.
