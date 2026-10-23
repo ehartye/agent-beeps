@@ -41,7 +41,8 @@ export const PEAK_CEILING_DB = -1.7;
 /** Bump when trimming or measurement changes, so cached renders are redone. */
 export const PIPELINE_VERSION = 2;
 
-const withoutRuntime = (patch: Patch): Patch => { if (!patch.xRuntime) return patch; const { xRuntime: _, ...rest } = patch; return rest; };
+/** The patch as the render sees it: `xRuntime` (runtime inputs) and `xExpect` (expectations) describe the patch and never change a baked render. */
+const withoutDescriptive = (patch: Patch): Patch => { if (!patch.xRuntime && !patch.xExpect) return patch; const { xRuntime: _r, xExpect: _e, ...rest } = patch; return rest; };
 
 /**
  * True when the render applies the variant's pitch detune after the scale snapped the pitch. Engine versions before that fix applied
@@ -53,8 +54,8 @@ export const detunesAfterSnap = (patch: Patch, project: Project, variant: number
 
 /** The cache key of one patch render, computable without a browser (`beeps build` hashes it). */
 export const patchRenderKey = (patch: Patch, project: Project, seed: number, variant: number): string =>
-  // `xRuntime` (runtime inputs) never changes the baked render, so it is not part of its key: editing a binding must not re-bake.
-  renderKey(withoutRuntime(patch), {
+  // `xRuntime` and `xExpect` never change the baked render, so they are not part of its key: editing a binding or an expectation must not re-bake.
+  renderKey(withoutDescriptive(patch), {
     seed, variant, scale: project.scale, target: targetFor(patch, project), pipeline: PIPELINE_VERSION,
     ...(detunesAfterSnap(patch, project, variant) ? { detune: 'after-snap' } : {}),
   });

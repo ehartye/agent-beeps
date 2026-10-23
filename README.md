@@ -209,6 +209,16 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.23.0
+
+Patch expectations: a patch can say how the sound must measure, and the tools that already render it check the claim. No sound or music changes; no render, hash or cache key moves, and no library patch gains an expectation.
+
+- **`xExpect`:** an optional block of strict checks on a patch (`duration`, `attack`, `energy-length`, `tail`, `centroid`, `flatness`, `crest`, `pitch`, `pitch-direction`, `true-peak`, `no-clipping`, `peak-limited`), each reading a feature `beeps measure` already prints, in fixed units. An unknown kind or field, `min` above `max`, or a pitch with no target is an `E_SCHEMA` error with a pointer. Kinds, fields and units: [`docs/expectations.md`](docs/expectations.md), generated from the check registry. Like `xRuntime`, it is not part of a render key and a runtime cue leaves it out, so editing an expectation never re-bakes a sound.
+- **The verdict:** `beeps lint` and `beeps kit check` add an `expectations` object per patch that has a block: `passed`, and one check per entry with `outcome` (`pass`, `fail`, or `unmeasurable`, which fails because a contract that cannot be checked is not met), `expected`, `actual`, `unit`, the `pointer` of the entry and a `hint` on which parameters move the measurement. Every declared variant is checked and a failure names the first one that fails. A failed expectation exits 1; it is not a lint error or warning, because lint rules cite sources and an author's brief has none.
+- **`build`:** a recipe whose patch fails its expectations is not shipped (`E_VERIFY`, with the verdict in `details`) when the build renders that asset.
+- **`capabilities`** lists the kinds (`expectKinds`). **Skills:** `beeps-compose` has a short "Say what the sound must be" section, `patch-format.md` documents the field, and `beeps-craft` says how an expectation differs from a rule.
+- **Fix:** `kit check` reported the wrong seed for a sound that came after one that failed to render (0.21.0); each result now carries its own.
+
 ## What changed in 0.22.0
 
 Honest feedback, fourth step: unknown keys and the places a song loses something are reported. No sound or music changes; no render, hash or cache key moves.

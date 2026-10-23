@@ -174,6 +174,38 @@ const RuntimeBlockSchema = z.strictObject({
   bind: z.array(RuntimeBind).max(32),
 });
 
+/**
+ * `xExpect`, a stable extension of beeps/patch@1: statements about how this sound should measure ("a confirm chime under 350 ms, bright,
+ * rising"), checked by `lint`, `kit check` and `beeps build` against the same measurements `measure` prints (docs/expectations.md). Like
+ * `xRuntime` it describes the patch without changing its graph: the engine ignores it and it is not part of a render key, so editing an
+ * expectation never re-bakes a sound. Units are fixed per kind (seconds, Hz, dB, cents) and echoed in every verdict.
+ */
+export const EXPECT_KINDS = ['duration', 'attack', 'energy-length', 'tail', 'centroid', 'flatness', 'crest', 'pitch', 'pitch-direction', 'true-peak', 'no-clipping', 'peak-limited'] as const;
+export type ExpectKind = (typeof EXPECT_KINDS)[number];
+
+const Bounds = { min: z.number().optional(), max: z.number().optional() };
+const ExpectationSchema = z.discriminatedUnion('check', [
+  z.strictObject({ check: z.literal('duration'), ...Bounds }),
+  z.strictObject({ check: z.literal('attack'), ...Bounds }),
+  z.strictObject({ check: z.literal('energy-length'), ...Bounds }),
+  z.strictObject({ check: z.literal('tail'), max: z.number() }),
+  z.strictObject({ check: z.literal('centroid'), ...Bounds }),
+  z.strictObject({ check: z.literal('flatness'), ...Bounds }),
+  z.strictObject({ check: z.literal('crest'), ...Bounds }),
+  z.strictObject({
+    check: z.literal('pitch'),
+    note: z.string().regex(NOTE, 'note names look like E6, F#5 or Bb3').optional(),
+    hz: z.number().positive().max(24000).optional(),
+    toleranceCents: z.number().positive().max(1200).default(50),
+    minStrength: z.number().min(0).max(1).default(0.7),
+  }),
+  z.strictObject({ check: z.literal('pitch-direction'), is: z.enum(['rising', 'falling', 'steady']) }),
+  z.strictObject({ check: z.literal('true-peak'), max: z.number().max(6).optional() }),
+  z.strictObject({ check: z.literal('no-clipping') }),
+  z.strictObject({ check: z.literal('peak-limited'), is: z.boolean() }),
+]);
+export type Expectation = z.output<typeof ExpectationSchema>;
+
 export const PatchSchema = z.strictObject({
   schema: z.literal('beeps/patch@1'),
   name: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'lowercase letters, digits and dashes'),
@@ -198,6 +230,8 @@ export const PatchSchema = z.strictObject({
   }).optional(),
   /** Runtime inputs and how they move the patch (see RuntimeBlockSchema). */
   xRuntime: RuntimeBlockSchema.optional(),
+  /** What this sound should measure like, checked by lint, kit check and build (see ExpectationSchema). */
+  xExpect: z.array(ExpectationSchema).min(1).max(24).optional(),
   meta: z.strictObject({
     priority: z.number().int().min(1).max(5).default(3),
     intent: z.enum(['click', 'oneshot', 'bed']).default('oneshot'),
@@ -232,6 +266,7 @@ function hintFor(issue: ZIssue): string | undefined {
     return 'patches never carry a loudness literal: use gainDb for relative balance; the renderer trims every sound to the project loudness target';
   }
   const last = issue.path[issue.path.length - 1];
+  if (issue.path[0] === 'xExpect' && (issue.code === 'invalid_union' || last === 'check')) return `check is one of ${EXPECT_KINDS.join(', ')}`;
   if (last === 'type' && issue.path.includes('source')) return `source.type is one of ${SOURCE_TYPES.join(', ')}`;
   if (last === 'pitch' || last === 'to') return 'pitch is a note name like E6 or a number in Hz';
   return undefined;
@@ -246,6 +281,23 @@ function deepest(issue: ZIssue): ZIssue {
     if (!best || d.code === 'unrecognized_keys' || (best.code !== 'unrecognized_keys' && d.path.length > best.path.length)) best = d;
   }
   return best ? ({ ...best, path: [...issue.path, ...best.path] } as ZIssue) : issue;
+}
+
+const BOUNDED = new Set<string>(['duration', 'attack', 'energy-length', 'centroid', 'flatness', 'crest']);
+
+/** Cross-checks of an `xExpect` block the shape alone cannot express: a bound to check, bounds in order, one pitch to aim at. */
+export function expectIssues(patch: Patch): Issue[] {
+  const issues: Issue[] = [];
+  (patch.xExpect ?? []).forEach((e, n) => {
+    const at = (path: string, message: string, hint?: string) => issues.push({ pointer: `/xExpect/${n}${path}`, message, ...(hint ? { hint } : {}) });
+    if (BOUNDED.has(e.check)) {
+      const { min, max } = e as { min?: number; max?: number };
+      if (min === undefined && max === undefined) at('', `${e.check} needs a min, a max or both`, 'write the bound the sound must stay inside, for example { "check": "duration", "max": 0.35 }');
+      else if (min !== undefined && max !== undefined && min > max) at('/min', 'min must not be above max');
+    }
+    if (e.check === 'pitch' && (e.note === undefined) === (e.hz === undefined)) at('', 'pitch needs exactly one of note or hz', 'for example { "check": "pitch", "note": "A5", "toleranceCents": 50 }');
+  });
+  return issues;
 }
 
 /** Cross-checks of an `xRuntime` block the shape alone cannot express. */
@@ -297,7 +349,7 @@ export function runtimeIssues(patch: Patch): Issue[] {
 export function parsePatch(input: unknown): ParseResult {
   const r = PatchSchema.safeParse(input);
   if (r.success) {
-    const issues = runtimeIssues(r.data);
+    const issues = [...runtimeIssues(r.data), ...expectIssues(r.data)];
     return issues.length ? { ok: false, issues } : { ok: true, patch: r.data };
   }
   const issues = r.error.issues.map(raw => {

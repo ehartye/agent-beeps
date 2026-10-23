@@ -23,6 +23,7 @@ import { int, withHost } from './shared.ts';
 import { renderOptions } from '../render/options.ts';
 import { notice, noticeField } from '../notices.ts';
 import { reportJson } from '../set-report.ts';
+import { renderWithExpectations } from '../expect-run.ts';
 import { renderNotices, variantNotices } from '../patch-notices.ts';
 
 export const setJson = (s: CandidateSet) => ({
@@ -81,15 +82,16 @@ export async function lintPatches(p: OpenProject, patches: Patch[], brief: boole
   const kit = readKit(p.paths.root);
   const notes = kitRuleNotes(patches, own, kit.sounds.map(s => s.name));
   // A kit sound is judged at the seed it ships with (the one the owner auditioned), like render and export; any other patch at seed 1.
-  const out = await withHost(host => renderAndMeasure(host, patches.map(patch => ({ patch, seed: kitSeed(kit, patch.name) })), renderOptions(p)));
+  const { outcomes: out, expectations } = await withHost(host => renderWithExpectations(host, patches.map(patch => ({ patch, seed: kitSeed(kit, patch.name) })), renderOptions(p)));
   for (const o of out) if (o.ok) notes.push(...effectTailNotes(o.patch, o.features));
   const text = new Map(loadRules().map(r => [r.id, r.statement]));
   const withText = (ids: string[]) => ids.map(rule => ({ rule, apply: text.get(rule) ?? '' }));
-  const reports = out.map(o => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...renderNotices(o.patch, o.features, p.project.scale), ...variantNotices(o.patch)]) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
-  const failed = reports.some(r => r.errors.length);
+  const reports = out.map((o, i) => (o.ok ? (r => ({ name: o.patch.name, ...r, judgement: withText(r.judgement), ...noticeField([...renderNotices(o.patch, o.features, p.project.scale), ...variantNotices(o.patch)]), ...(expectations[i] ? { expectations: expectations[i] } : {}) }))(lintPatch(o.patch, o.features, p.project, undefined, { siblings: siblings.get(o.patch.name) })) : { name: o.patchName, errors: [{ rule: 'render', message: o.error }], warnings: [], judgement: [] }));
+  // A failed expectation fails the command like an error does, but it is not an error: it is the author's own contract, with no cited source.
+  const failed = reports.some((r, i) => r.errors.length || expectations[i]?.passed === false);
   if (brief) {
     // A patch with a notice is not "clean": a notice is something the render did that the patch did not say.
-    const quiet = (r: (typeof reports)[number]) => !r.errors.length && !r.warnings.length && !('notices' in r);
+    const quiet = (r: (typeof reports)[number]) => !r.errors.length && !r.warnings.length && !('notices' in r) && !('expectations' in r && r.expectations?.passed === false);
     const rules = [...new Set(reports.flatMap(r => r.judgement.map(j => j.rule)))].map(rule => ({ rule, apply: text.get(rule) ?? '' }));
     return { failed, payload: { reports: reports.filter(r => !quiet(r)).map(({ judgement: _j, ...r }) => r), clean: reports.filter(quiet).map(r => r.name), judgement: rules, ...(notes.length ? { notes } : {}) } };
   }
@@ -198,14 +200,15 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const p = openProject(io.projectDir());
       const k = readKit(p.paths.root);
       const patches = k.sounds.map(s => loadPatch(p, s.name));
-      const out = await withHost(host => renderAndMeasure(host, patches.map((patch, i) => ({ patch, seed: k.sounds[i].seed })), renderOptions(p)));
-      const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority, seed: k.sounds[i].seed ?? 1 }] : []));
+      const { outcomes: out, expectations } = await withHost(host => renderWithExpectations(host, patches.map((patch, i) => ({ patch, seed: k.sounds[i].seed })), renderOptions(p)));
+      const members = out.flatMap((o, i) => (o.ok ? [{ patch: o.patch, features: o.features, priority: k.sounds[i].priority, seed: k.sounds[i].seed ?? 1, expectations: expectations[i] }] : []));
       const siblings = siblingsOf(p, patches);
-      const checked = new Map(members.map(m => [m.patch.name, { name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }), seed: k.sounds[members.indexOf(m)]?.seed ?? 1, ...noticeField(renderNotices(m.patch, m.features, p.project.scale)) }]));
+      const checked = new Map(members.map(m => [m.patch.name, { name: m.patch.name, ...lintPatch(m.patch, m.features, p.project, undefined, { siblings: siblings.get(m.patch.name) }), seed: m.seed, ...noticeField(renderNotices(m.patch, m.features, p.project.scale)), ...(m.expectations ? { expectations: m.expectations } : {}) }]));
       // A sound that failed to render stays in the list, in kit order, as a failure: the kit rules ran without it and the exit code says so.
       const sounds = out.map((o, i) => (o.ok ? checked.get(o.patch.name)! : { name: o.patchName ?? k.sounds[i].name, ok: false, error: o.error }));
       io.emit({ kit: lintKit(members, p.project), sounds });
-      if (out.some(o => !o.ok)) process.exitCode = 1;
+      // A failed expectation exits 1 like a sound that would not render: the kit does not meet the contract its sounds declare.
+      if (out.some(o => !o.ok) || expectations.some(e => e?.passed === false)) process.exitCode = 1;
     });
 
   const taste = program.command('taste').description('the learned taste profile: show, fit, stats');

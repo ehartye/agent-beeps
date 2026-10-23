@@ -9,6 +9,7 @@ import { bundleDir, catalogText } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { CHANNELS_DIFFER, exportPatchVariants, exportSongAssets } from '../export-assets.ts';
 import { notice, noticeField, type Notice } from '../notices.ts';
+import { evaluateExpectations, type ExpectationReport } from '../expect.ts';
 import { ExportManifestSchema } from '../export-manifest.ts';
 import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.ts';
 import { loadSong } from '../music.ts';
@@ -350,6 +351,15 @@ function catalogDriftOf(out: string, allUnchanged: boolean): string[] {
   } catch (e) { return [`index.json: ${(e as Error).message}`]; }
 }
 
+/** A patch whose declared expectations fail does not ship: the build is the regression test for its contract. */
+function requireExpectations(id: string, report: ExpectationReport): void {
+  if (report.passed) return;
+  const failing = report.checks.filter(c => c.outcome !== 'pass');
+  throw new BeepsError('E_VERIFY', `${id}: ${failing.length} expectation${failing.length === 1 ? '' : 's'} not met (${failing.map(c => `${c.kind}${c.variant !== undefined ? ` on variant ${c.variant}` : ''} ${c.outcome === 'unmeasurable' ? 'unmeasurable' : `${c.actual}${c.unit ? ` ${c.unit}` : ''} vs ${JSON.stringify(c.expected)}`}`).join('; ')})`, {
+    pointer: failing[0].pointer, hint: failing[0].hint ?? 'run beeps lint on the patch for the full verdict', details: { expectations: report },
+  });
+}
+
 /** Exports, compresses and verifies one asset into a staging directory, installs it, and returns its lock entry. */
 async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: Planned, delivery: ReturnType<typeof deliveryFor>, stage: string, prior: LockAsset | undefined, o: BuildOptions, log: (s: string) => void, warn: (s: string) => void): Promise<LockAsset> {
   const r = pl.recipe;
@@ -362,8 +372,10 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
   if (baked) {
     const wav = join(wavDir, `${r.id}.wav`);
     if (r.kind === 'patch') {
-      const ex = await exportPatchVariants(host, p, loadPatch(p, r.source), { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true, manifestId: r.id, post: { channels: r.channels, trimTailDb: r.trimTailDb } });
+      const authored = loadPatch(p, r.source);
+      const ex = await exportPatchVariants(host, p, authored, { dest: wav, seed: r.seed, n: pl.variants, role: r.role, manifest: true, manifestId: r.id, post: { channels: r.channels, trimTailDb: r.trimTailDb } });
       trimDb = ex.first.trimDb;
+      requireExpectations(r.id, evaluateExpectations(authored, ex.rendered.map(x => x.features)));
       if (ex.posts.some(post => post?.identicalChannels === false)) warn(`${r.id}: ${CHANNELS_DIFFER}`);
     } else {
       const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, manifestId: r.id, layers: pl.layers });
@@ -385,6 +397,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
     const [m] = await renderAndMeasure(host, [{ patch, seed: r.seed, variant: 0 }], renderOptions(p));
     if (!m.ok) throw new BeepsError('E_RENDER', m.error);
     trimDb = m.trimDb;
+    requireExpectations(r.id, evaluateExpectations(patch, [m.features]));
   }
   if (wantsRuntime(pl.ships)) {
     const patch = loadPatch(p, r.source);

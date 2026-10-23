@@ -26,7 +26,9 @@ export const wantsBaked = (d: Delivery) => d !== 'runtime';
 export const cueFile = (id: string) => `${id}.runtime.json`;
 
 export function makeCue(patch: Patch, project: Project, seed: number, trimDb: number, assets?: SampleAssetManifest): Cue {
-  return { schema: CUE_SCHEMA, id: patch.name, engine: ENGINE_VERSION, seed, trimDb, scale: project.scale, patch, ...(assets && Object.keys(assets).length ? { assets } : {}) };
+  // `xExpect` is for the authoring tools: a game never needs it, and editing one must not change the cue it ships.
+  const { xExpect: _, ...played } = patch;
+  return { schema: CUE_SCHEMA, id: patch.name, engine: ENGINE_VERSION, seed, trimDb, scale: project.scale, patch: played, ...(assets && Object.keys(assets).length ? { assets } : {}) };
 }
 
 /** The cue as written: canonical JSON (sorted keys), one line, LF, so equal cues are equal bytes. */
@@ -35,7 +37,7 @@ export function cueText(cue: Cue): string {
 }
 
 /** The part of an asset's input hash the runtime artefact adds: everything in the cue that the baked render key ignores (the xRuntime block). */
-export const runtimePart = (patch: Patch): string => sha256(canonicalJson({ schema: CUE_SCHEMA, patch }));
+export const runtimePart = (patch: Patch): string => { const { xExpect: _, ...played } = patch; return sha256(canonicalJson({ schema: CUE_SCHEMA, patch: played })); };
 
 /** Measure the baked pipeline's loudness trim for each patch at its seed (variant 0, input defaults) and make its cue. */
 export async function cuesFor(host: RenderHost, patches: Patch[], project: Project, { seeds = {}, rendersDir = join(mkdtempSync(join(tmpdir(), 'beeps-renders-')), 'renders'), sampleObjectsDir }: { seeds?: Record<string, number>; rendersDir?: string; sampleObjectsDir?: string } = {}): Promise<Cue[]> {

@@ -2,7 +2,8 @@ import type { Command } from 'commander';
 import type { Io } from '../cli.ts';
 import { ERROR_CATEGORIES, ERROR_CODES } from '../errors.ts';
 import { NOTICE_CODES, NOTICE_REGISTRY } from '../notices.ts';
-import { patchJsonSchema, SOURCE_TYPES } from '../schema/patch.ts';
+import { EXPECT_KINDS, patchJsonSchema, SOURCE_TYPES } from '../schema/patch.ts';
+import { EXPECT_REGISTRY } from '../expect.ts';
 import { leafCommands } from './inventory.ts';
 import { MAX_SAMPLE_FRAMES, SAMPLE_RATE_HZ } from '../../runtime/engine/limits.js';
 import { ENGINE_VERSION } from '../../runtime/engine/version.js';
@@ -50,6 +51,7 @@ export function registerCapabilities(program: Command, io: Io) {
         tasteFeatures: FEATURE_NAMES,
         errorCodes: ERROR_CODES,
         errorCategories: ERROR_CATEGORIES,
+        expectKinds: EXPECT_KINDS.map(kind => ({ kind, reads: EXPECT_REGISTRY[kind].reads, unit: EXPECT_REGISTRY[kind].unit })),
         noticeCodes: NOTICE_CODES.map(code => ({ code, severity: NOTICE_REGISTRY[code].severity, summary: NOTICE_REGISTRY[code].summary })),
         samples: {
           commands: commands.filter(c => c.name.startsWith('sample ')).map(c => c.name),
