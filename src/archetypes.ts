@@ -8,7 +8,8 @@ import { BeepsError } from './errors.ts';
 import { replacePointer, tryGetPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 import { mulberry32 } from '../runtime/engine/rng.js';
-import { noteToHz } from '../runtime/engine/notes.js';
+import { noteToHz, snapToScale } from '../runtime/engine/notes.js';
+import type { Scale } from './schema/project.ts';
 
 export const ARCHETYPES_DIR = join(import.meta.dirname, '..', 'library', 'archetypes');
 
@@ -146,7 +147,19 @@ function applyRanges(a: Archetype, rand: () => number): Patch {
  * `count` patches sampled from the archetype's ranges, deterministic per seed. Each is a deep clone
  * of the template with every range applied in key order, named `<archetype>-<seed>-<i>`.
  */
-export function sampleArchetype(a: Archetype, seed: number, count: number, opts: { namePrefix?: string } = {}): Patch[] {
+/**
+ * Move every numeric source pitch and pitch-envelope target to the nearest note of `scale`. The renderer snaps pitches to the project scale, so a
+ * candidate that says 793 Hz and renders at 784 Hz is describing a sound it does not play; snapping what is written makes the patch say what renders.
+ */
+function snapPitches(p: any, scale: Scale): void {
+  const snap = (hz: number) => Math.round(snapToScale(hz, scale) * 100) / 100;
+  for (const layer of p.layers ?? []) {
+    if (typeof layer.source?.pitch === 'number') layer.source.pitch = snap(layer.source.pitch);
+    for (const point of layer.pitchEnv ?? []) if (typeof point.to === 'number') point.to = snap(point.to);
+  }
+}
+
+export function sampleArchetype(a: Archetype, seed: number, count: number, opts: { namePrefix?: string; scale?: Scale } = {}): Patch[] {
   if (!Number.isInteger(seed)) throw new BeepsError('E_USAGE', `seed must be an integer, got ${seed}`);
   const rand = mulberry32(seed);
   const prefix = (opts.namePrefix ?? a.name).toLowerCase();
@@ -158,6 +171,7 @@ export function sampleArchetype(a: Archetype, seed: number, count: number, opts:
       const p = applyRanges(a, rand);
       p.name = `${prefix}-${seed}-${i}`.toLowerCase();
       p.archetype = a.name;
+      if (opts.scale?.snap) snapPitches(p, opts.scale);
       const r = parsePatch(p);
       if (r.ok) ok = r.patch;
       else last = `${r.issues[0].pointer}: ${r.issues[0].message}`;
