@@ -61,7 +61,7 @@ export async function exportPatchVariants(host: RenderHost, p: OpenProject, patc
   const manifest = o.manifest
     ? writeExportManifest(wavs[0], ok[0], o.role, { variants: wavs.map((f, i) => ({ file: basename(f), weight: weights?.[i] ?? 1 })), noRepeat: patch.variation?.noRepeat ?? true, ...offsetExtra(patch, p), ...identity }, `${o.dest}.json`)
     : undefined;
-  return { first: ok[0], wavs, manifest, posts };
+  return { first: ok[0], rendered: ok, wavs, manifest, posts };
 }
 
 /** One variant of a patch as `dest`. */
