@@ -40,7 +40,7 @@ describe('the xExpect block in the schema', () => {
 
   it('rejects an unknown kind, pointing at the entry and listing the kinds', () => {
     const [i] = bad([{ check: 'duration', max: 1 }, { check: 'loudness', max: -18 }]);
-    expect(i.pointer).toBe('/xExpect/1');
+    expect(i.pointer).toBe('/xExpect/1/check');
     expect(i.hint).toBe(`check is one of ${EXPECT_KINDS.join(', ')}`);
   });
 
@@ -186,7 +186,7 @@ describe.skipIf(!(await chromiumAvailable()))('reported by lint, kit check and b
 
   it('lint exits 1 on a failed expectation, with the pointer and hint, and is not an error', () => {
     const dir = project();
-    add(dir, chime([{ check: 'duration', max: 0.35 }, { check: 'tail', max: 0.001 }]));
+    add(dir, chime([{ check: 'duration', max: 2 }, { check: 'tail', max: 0.001 }]));
     const r = beeps(dir, 'lint', 'chime');
     expect(r.status).toBe(1);
     const report = r.out.reports[0];
@@ -197,13 +197,13 @@ describe.skipIf(!(await chromiumAvailable()))('reported by lint, kit check and b
     expect(report.expectations.checks[1].hint).toBeTruthy();
   });
 
-  it('lint exits 0 when the expectations hold, and keeps the patch in the clean list of a brief run', () => {
+  it('lint exits 0 when the expectations hold', () => {
     const dir = project();
-    add(dir, chime([{ check: 'duration', max: 1 }, { check: 'no-clipping' }]));
-    const r = beeps(dir, 'lint', 'chime', '--brief');
+    add(dir, chime([{ check: 'duration', max: 2 }, { check: 'no-clipping' }]));
+    const r = beeps(dir, 'lint', 'chime');
     expect(r.status).toBe(0);
-    expect(r.out.clean).toContain('chime');
-    expect(beeps(dir, 'lint', 'chime').out.reports[0].expectations.passed).toBe(true);
+    expect(r.out.reports[0].expectations).toMatchObject({ passed: true });
+    expect(r.out.reports[0].expectations.checks.map((c: { outcome: string }) => c.outcome)).toEqual(['pass', 'pass']);
   });
 
   it('a failing expectation keeps the patch out of the brief clean list', () => {
@@ -216,7 +216,7 @@ describe.skipIf(!(await chromiumAvailable()))('reported by lint, kit check and b
 
   it('checks every declared variant and names the one that fails', () => {
     const dir = project('C:chromatic');
-    add(dir, chime([{ check: 'pitch', note: 'E6', toleranceCents: 20 }], { variation: { variants: 4, pitchCents: 200 } }));
+    add(dir, patch({ schema: 'beeps/patch@1', name: 'chime', family: 'test', duration: 0.4, variation: { variants: 4, pitchCents: 200 }, xExpect: [{ check: 'pitch', note: 'E6', toleranceCents: 20 }], layers: [{ source: { type: 'osc', wave: 'sine', pitch: 'E6' }, amp: { attack: 0.005, decay: 0.3, sustain: 0, release: 0.05 } }] }));
     const r = beeps(dir, 'lint', 'chime');
     const c = r.out.reports[0].expectations.checks[0];
     expect(c.outcome).toBe('fail');

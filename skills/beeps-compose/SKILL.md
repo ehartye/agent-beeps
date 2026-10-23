@@ -66,6 +66,13 @@ whole recording and proposes crop windows with a ready `prepare` line each
   counts siblings it finds in the project or on the same command line for `variation-on-repeating`,
   and the game picks among them.
 
+## Say what the sound must be
+
+Wrote a brief ("a 200 ms confirm chime, bright, rising, short tail")? Put it in the patch as `xExpect` so a tool checks it: `lint`, `kit check` and
+`build` return an `expectations` verdict (pass, fail or unmeasurable, with the measured value, a pointer to the entry and a hint) and exit 1 on a miss.
+Use it for a regenerated or refined sound (`mutate` can drift out of the brief) and for a regression gate. It is not a craft rule: rules are
+general and cited, an expectation is this sound's own contract. Kinds and units: `docs/expectations.md`.
+
 ## Render, measure, look
 
 - `beeps render <name...> [--variants]` - loudness-trimmed renders with key features.

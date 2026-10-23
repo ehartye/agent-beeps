@@ -91,4 +91,5 @@ features, not samples (1 LU, 30 Hz of centroid); sweeps and noise differ more th
   step is the analysis window straddling the change, not a click; a click is a smear at a sound
   edge with a jump in the waveform. `beeps lint` lists judgement rules with the text to apply.
 
-Measurements are indicators, not verdicts. The owner's choices decide (beeps-audition).
+Measurements are indicators, not verdicts. The owner's choices decide (beeps-audition). A patch's `xExpect` block is the author's own brief checked by a tool
+(`docs/expectations.md`); passing it does not satisfy a rule above, and a rule you accept as a judgement does not excuse a failed expectation.

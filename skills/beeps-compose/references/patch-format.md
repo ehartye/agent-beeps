@@ -27,6 +27,8 @@
 - `variation`: `pitchCents`, `gainDb`, `variants` (1-16), `noRepeat`, `weights` (relative play odds per variant).
 - `xRuntime`: optional named runtime inputs (`inputs`, `bind`, `delivery`, `hold`) for a game that plays the patch live; ignored by every
   baked command. Format, units, macros and validation: `docs/runtime.md`; how to design inputs: `runtime-inputs.md` here.
+- `xExpect`: optional checkable statements about how the sound should measure (`{ "check": "duration", "max": 0.35 }`, `centroid`, `pitch`, `tail`...).
+  Never changes a render and is not part of a render key. `lint`, `kit check` and `build` check it; kinds, fields and units: `docs/expectations.md`.
 - `meta`: `priority` 1 (most important) to 5, `intent` click|oneshot|bed, `description`,
   `loudnessOffsetDb` (-30..12 LU added to the family's offset for this patch alone; absent: none), and `variantOf`
   (hand-made variants authored as separate patches share it; `<stem>-<n>` names in one family group
