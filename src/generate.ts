@@ -84,7 +84,7 @@ export async function generate(host: RenderHost, p: OpenProject, opts: { archety
   const a = getArchetype(opts.archetype);
   const members = familyMembers(a);
   const per = Math.ceil((count * 4) / members.length);
-  const samples = members.flatMap((m, k) => sampleArchetype(m, seed + k * 1009, per));
+  const samples = members.flatMap((m, k) => sampleArchetype(m, seed + k * 1009, per, { scale: p.project.scale }));
   const { usable: pool, dropped } = screen(await renderAndMeasure(host, samples.map(patch => ({ patch, seed })), renderOptions(p)), p);
   const prompt = readPrompt(opts.prompt);
   const chosen = selectDiverse(p, pool, count, prompt.directions);

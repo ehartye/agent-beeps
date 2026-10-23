@@ -22,7 +22,7 @@ beeps lint <pick> --brief
 ```
 
 `errors` fail the command; `warnings` need a reason; a `notices` entry such as `N_SCALE_SNAP` says the render differs from the number in the patch (a
-generated pitch the project scale moved). Then hold the sound still while the owner decides:
+pitch you wrote that the project scale moved; generated candidates are already snapped to the scale). Then hold the sound still while the owner decides:
 
 ```text
 beeps lint <pick> --derive-expect      # prints derived.xExpect; paste it into the patch, tighten duration to 0.4

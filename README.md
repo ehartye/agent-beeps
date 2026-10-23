@@ -209,6 +209,12 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.31.0
+
+`generate` candidates say what they render. No sound changes for a candidate that was already in the scale; no render key or golden hash moves.
+
+- **Scale-snapped sampling:** the archetype sampler draws free frequencies, and the project scale then moved them at render time, so every pitched candidate arrived with `N_SCALE_SNAP` notices (793.33 Hz written, G5 rendered). `sampleArchetype` now takes the project scale (`generate` passes it) and snaps each numeric source pitch and pitch-envelope target to the nearest note of it, so the patch says what it plays. Only the pitches move: every other sampled parameter is exactly what the same seed drew before, and with `scale.snap` off, or with no scale given (the engine graph goldens, `hook prepare`), the output is unchanged. A seeded `generate` set therefore differs from 0.30.0 in its pitches, by at most half a scale step, and is otherwise the same.
+
 ## What changed in 0.30.0
 
 Opt-in notification sounds for an agent session. Nothing plays unless you turn it on. No sound or music changes to existing sounds; no render key moves.
