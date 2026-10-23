@@ -68,11 +68,6 @@ export const NOTICE_REGISTRY = {
     summary: 'A project patch or song has the same name as a library one, so the library entry is hidden and the project one is used.',
     hint: 'rename the project entry if you meant the library one, or call the library entry by a name it does not share',
   },
-  N_UNKNOWN_KEY: {
-    severity: 'warn',
-    summary: 'A document had a key that its schema does not know, so the key was ignored and whatever it was meant to set kept its default. A misspelled key looks exactly like this.',
-    hint: 'check the spelling against the format reference; from 0.25.0 an unknown key is an E_SCHEMA error instead of a notice',
-  },
   N_PATTERN_TRUNCATED: {
     severity: 'warn',
     summary: 'A pattern is longer than the section that plays it, so the notes past the end of the section were cut off and never sound.',
@@ -122,16 +117,6 @@ export function notice(code: NoticeCode, d: NoticeDetails): Notice {
     hint: d.hint ?? entry.hint,
   };
 }
-
-/**
- * Notices raised deep inside a parse (a project file read for any command, an override in a song) where no result is being built.
- * `queueNotice` collects them for the process; the CLI merges them into the one JSON it prints. Duplicates are dropped.
- */
-const ambient: Notice[] = [];
-export function queueNotice(n: Notice): void {
-  if (!ambient.some(a => a.code === n.code && a.pointer === n.pointer && a.message === n.message)) ambient.push(n);
-}
-export const drainNotices = (): Notice[] => ambient.splice(0);
 
 /** `{ notices }` for spreading into a command's JSON, and nothing at all when there is nothing to say. */
 export const noticeField = (list: Notice[]): { notices?: Notice[] } => (list.length ? { notices: list } : {});

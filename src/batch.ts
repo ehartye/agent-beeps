@@ -3,8 +3,6 @@ import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { BeepsError } from './errors.ts';
-import { noticeField, type Notice } from './notices.ts';
-import { parseTolerant, unknownKeyNotices } from './strict-parse.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 import { listPatches, savePatch, type OpenProject } from './project.ts';
 import { removePointer, setPointer } from './pointer.ts';
@@ -19,14 +17,15 @@ export const OpsSchema = z.array(Op).min(1);
 export type BatchOp = z.infer<typeof Op>;
 
 /** `noops` lists the operations that changed nothing (a remove of a key the patch does not have), by index, so "applied" is not read as "changed". */
-export interface BatchResult { applied: number; dryRun: boolean; changed: string[]; deleted: string[]; notices?: Notice[]; noops?: { operationIndex: number; op: string; name: string; pointer: string }[] }
+export interface BatchResult { applied: number; dryRun: boolean; changed: string[]; deleted: string[]; noops?: { operationIndex: number; op: string; name: string; pointer: string }[] }
 
 export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } = {}): BatchResult {
-  // A stray key on an operation ("valu" for "value") is stripped and reported, not silently dropped.
-  const parsed = parseTolerant(OpsSchema, rawOps);
-  if (!parsed.ok) {
+  const parsed = OpsSchema.safeParse(rawOps);
+  if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    throw new BeepsError('E_SCHEMA', `invalid operations: ${issue.message}`, { pointer: '/' + issue.path.join('/'), hint: 'ops are {op:"create",patch} | {op:"set",name,pointer,value} | {op:"remove",name,pointer} | {op:"delete",name}' });
+    // A stray key ("valu" for "value") is named in the pointer, not just the operation it sits on.
+    const stray = issue.code === 'unrecognized_keys' ? issue.keys.slice(0, 1) : [];
+    throw new BeepsError('E_SCHEMA', `invalid operations: ${issue.message}`, { pointer: '/' + [...issue.path, ...stray].join('/'), ...(stray.length ? { received: stray[0] } : {}), hint: 'ops are {op:"create",patch} | {op:"set",name,pointer,value} | {op:"remove",name,pointer} | {op:"delete",name}' });
   }
   const state = new Map<string, Patch>(listPatches(p).map(x => [x.name, x]));
   const changed = new Set<string>();
@@ -68,5 +67,5 @@ export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } =
       if (existsSync(f)) rmSync(f);
     }
   }
-  return { applied: parsed.data.length, dryRun, changed: [...changed], deleted: [...deleted], ...(noops.length ? { noops } : {}), ...noticeField(unknownKeyNotices(parsed.unknown, 'a batch operation')) };
+  return { applied: parsed.data.length, dryRun, changed: [...changed], deleted: [...deleted], ...(noops.length ? { noops } : {}) };
 }

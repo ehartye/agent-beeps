@@ -7,7 +7,6 @@ import { parseOrThrow, readJsonFile, type OpenProject } from './project.ts';
 import { inlinePatchInput, isOverride, parseSong, type Song } from './schema/song.ts';
 import { parsePatch } from './schema/patch.ts';
 import { escapePointer, setPointer } from './pointer.ts';
-import { notice, queueNotice } from './notices.ts';
 import type { Patch } from './schema/patch.ts';
 import { instrumentSpan } from '../runtime/engine/song.js';
 import { hzToMidi, noteToHz } from '../runtime/engine/notes.js';
@@ -126,8 +125,11 @@ export function resolveInstruments(p: OpenProject, song: Song): Record<string, P
     const raw = isOverride(spec)
       ? (() => {
         // An override is {base, set} and nothing else: any other key would be ignored, which is how a misspelled "set" leaves the base unchanged.
-        for (const key of Object.keys(spec).filter(k => k !== 'base' && k !== 'set')) {
-          queueNotice(notice('N_UNKNOWN_KEY', { message: `"${key}" is not a key of an instrument override ({base, set}), so it was ignored`, pointer: `${at}/${escapePointer(key)}`, requested: key }));
+        const stray = Object.keys(spec).find(k => k !== 'base' && k !== 'set');
+        if (stray !== undefined) {
+          throw new BeepsError('E_SCHEMA', `"${stray}" is not a key of an instrument override: it takes base and set`, {
+            pointer: `${at}/${escapePointer(stray)}`, hint: 'write { "base": "<instrument>", "set": { "/json/pointer": value } }', received: stray,
+          });
         }
         const base = structuredClone(byName(spec.base, `${at}/base`)) as unknown as Record<string, unknown>;
         for (const [ptr, value] of Object.entries(spec.set ?? {})) {

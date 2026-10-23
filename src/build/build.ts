@@ -8,7 +8,6 @@ import { canonicalJson } from '../hash.ts';
 import { bundleDir, catalogText } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { CHANNELS_DIFFER, exportPatchVariants, exportSongAssets } from '../export-assets.ts';
-import { notice, noticeField, type Notice } from '../notices.ts';
 import { evaluateExpectations, type ExpectationReport } from '../expect.ts';
 import { ExportManifestSchema } from '../export-manifest.ts';
 import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.ts';
@@ -69,8 +68,6 @@ export interface BuildReport {
   seconds: number;
   /** What an export or a post-processing step said while building (a song layer that does not sum, channels that differ). Also logged as they happen. */
   warnings?: string[];
-  /** Recipe fields that were set but not used. */
-  notices?: Notice[];
 }
 
 const prefer = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -167,8 +164,6 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   const all = loadRecipes(cfg);
   if (o.only) for (const id of o.only) if (!all.some(r => r.id === id)) throw new BeepsError('E_USAGE', `--only: no recipe "${id}"`, { hint: `recipes: ${all.slice(0, 8).map(r => r.id).join(', ')}${all.length > 8 ? ', ...' : ''}` });
   const recipes = o.only ? all.filter(r => o.only!.includes(r.id)) : all;
-  // A song has no variants or seed to set: say so instead of hashing and ignoring them.
-  const recipeNotices = recipes.flatMap(r => (r.ignored ?? []).map(field => notice('N_OPTION_IGNORED', { message: `recipe "${r.id}": ${field} is for patches, so it was ignored for this song`, pointer: `/${r.id}/${field}`, requested: field })));
   const warnings: string[] = [];
   const warn = (s: string) => { warnings.push(s); log(s); };
   const delivery = deliveryFor(cfg.target, cfg.kbps);
@@ -226,7 +221,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   const report = (over: Partial<BuildReport>): BuildReport => ({
     ok: true, config: cfg.file, target: cfg.target, lock: cfg.lock, out: cfg.out, total: plans.length,
     unchanged, built: [], pulled: [], adopted, removed: [], pushed: [], stale: [], drift: driftLines, catalogWritten: false, estimate,
-    seconds: Math.round((Date.now() - t0) / 100) / 10, ...(warnings.length ? { warnings } : {}), ...noticeField(recipeNotices), ...over,
+    seconds: Math.round((Date.now() - t0) / 100) / 10, ...(warnings.length ? { warnings } : {}), ...over,
   });
 
   if (o.check) {

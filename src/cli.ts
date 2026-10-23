@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command, CommanderError } from 'commander';
 import { BeepsError, toErrorJson } from './errors.ts';
-import { drainNotices } from './notices.ts';
 import { registerPatchCommands } from './commands/patches.ts';
 import { registerCapabilities } from './commands/capabilities.ts';
 import { registerAuditionCommands } from './commands/audition.ts';
@@ -20,14 +19,6 @@ const root = join(import.meta.dirname, '..');
 export const VERSION: string = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
 
 export interface Io { emit(value: unknown): void; projectDir(): string }
-
-/** Notices raised while reading inputs (a project file with a stray key) join the command's own `notices` in the one JSON it prints. */
-function withAmbientNotices(value: unknown): unknown {
-  const extra = drainNotices();
-  if (!extra.length || value === null || typeof value !== 'object' || Array.isArray(value)) return value;
-  const own = (value as { notices?: unknown[] }).notices ?? [];
-  return { ...value, notices: [...own, ...extra] };
-}
 
 export function buildProgram(io: Io): Command {
   const program = new Command('beeps')
@@ -55,7 +46,7 @@ export async function main(argv: string[]): Promise<void> {
   let pretty = argv.includes('--pretty');
   let program: Command | undefined;
   const io: Io = {
-    emit: value => console.log(JSON.stringify(withAmbientNotices(value), null, pretty ? 2 : undefined)),
+    emit: value => console.log(JSON.stringify(value, null, pretty ? 2 : undefined)),
     projectDir: () => (program?.opts().project as string | undefined) ?? process.cwd(),
   };
   program = buildProgram(io);

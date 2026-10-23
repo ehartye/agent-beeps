@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { queueNotice } from '../notices.ts';
-import { parseTolerant, unknownKeyNotices } from '../strict-parse.ts';
 
 const MODES = ['chromatic', 'major', 'minor', 'dorian', 'majorPentatonic', 'minorPentatonic', 'blues'] as const;
 
@@ -22,14 +20,6 @@ export const ProjectSchema = z.strictObject({
 
 export type Project = z.output<typeof ProjectSchema>;
 export type Scale = Project['scale'];
-/**
- * Parses a project file. A key the schema does not know is stripped and queued as N_UNKNOWN_KEY (see strict-parse.ts), so a typo is
- * reported instead of silently leaving the default; anything else wrong throws as before.
- */
-export function parseProject(input: unknown): Project {
-  const r = parseTolerant(ProjectSchema, input);
-  if (!r.ok) throw r.error;
-  for (const n of unknownKeyNotices(r.unknown, 'project.json')) queueNotice(n);
-  return r.data;
-}
+/** Parses a project file. A key the schema does not know is an error, not a default left in place: a misspelled "scale" must not pass. */
+export const parseProject = (input: unknown): Project => ProjectSchema.parse(input);
 export const defaultProject = (): Project => parseProject({ schema: 'beeps/project@1' });

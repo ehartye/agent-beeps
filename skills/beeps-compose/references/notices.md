@@ -28,9 +28,9 @@ an error with `category` and `retryable`. Do not describe a result as "as writte
 
 ## Files and documents
 
-- `N_UNKNOWN_KEY`: a key the schema does not know was ignored (in `project.json`, an instrument override, a batch operation). It is almost always a typo; whatever it was meant to set kept its default. From 0.25.0 it is an `E_SCHEMA` error.
-- `N_OPTION_IGNORED`: an option or recipe field was accepted and had no effect (`init` on an existing project; `variants` or `seed` on a song recipe).
-- `build` returns `warnings` for what an export said while building (layers that do not sum, channels that differ) and `notices` for ignored recipe fields.
+- A key a document does not know is an `E_SCHEMA` error with a `pointer` and `received` (in `project.json`, an instrument override, a batch operation, a build recipe). It is almost always a typo: fix the spelling, do not look for the setting it was meant to reach.
+- `N_OPTION_IGNORED`: an option was accepted and had no effect (`init --scale` on an existing project).
+- `build` returns `warnings` for what an export said while building (layers that do not sum, channels that differ).
 
 ## Songs
 
