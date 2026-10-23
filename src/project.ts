@@ -2,9 +2,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { BeepsError } from './errors.ts';
-import { tryGetPointer } from './pointer.ts';
+import { escapePointer, tryGetPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
-import { defaultProject, parseProject, type Project } from './schema/project.ts';
+import { defaultProject, parseProject, ProjectSchema, type Project } from './schema/project.ts';
 
 export const DIR = '.agent-beeps';
 
@@ -45,9 +45,14 @@ export function openProject(start: string): OpenProject {
   try { raw = JSON.parse(readFileSync(paths.projectFile, 'utf8')); } catch (e) {
     throw new BeepsError('E_PROJECT', `cannot read ${paths.projectFile}: ${(e as Error).message}`);
   }
-  try { return { paths, project: parseProject(raw) }; } catch (e) {
-    throw new BeepsError('E_SCHEMA', `invalid ${paths.projectFile}: ${(e as Error).message}`);
-  }
+  const parsed = ProjectSchema.safeParse(raw);
+  if (parsed.success) return { paths, project: parsed.data };
+  const issue = parsed.error.issues[0];
+  const stray = issue.code === 'unrecognized_keys' ? issue.keys : [];
+  throw new BeepsError('E_SCHEMA', `invalid ${paths.projectFile}: ${issue.message}`, {
+    pointer: '/' + [...issue.path, ...stray.slice(0, 1)].map(s => escapePointer(String(s))).join('/'),
+    ...(stray.length ? { hint: 'check the spelling against docs: a project has schema, scale, targetLoudness, familyOffsets, musicLoudness and sampleRate', received: stray.join(', ') } : {}),
+  });
 }
 
 export function initProject(root: string, overrides: Partial<Pick<Project, 'targetLoudness'>> & { scale?: Partial<Project['scale']> } = {}): OpenProject {
