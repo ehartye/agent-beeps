@@ -14,6 +14,7 @@ import { registerBuildCommands } from './commands/build.ts';
 import { registerRuntimeCommands } from './commands/runtime.ts';
 import { registerAnalyzeCommands } from './commands/analyze.ts';
 import { registerSampleCommands } from './commands/samples.ts';
+import { registerHookCommands } from './commands/hook.ts';
 
 const root = join(import.meta.dirname, '..');
 export const VERSION: string = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
@@ -39,6 +40,7 @@ export function buildProgram(io: Io): Command {
   registerRuntimeCommands(program, io);
   registerAnalyzeCommands(program, io);
   registerSampleCommands(program, io);
+  registerHookCommands(program, io);
   return program;
 }
 
