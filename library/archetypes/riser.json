@@ -1,0 +1,44 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "riser",
+  "family": "riser",
+  "description": "A tension build: noise and a tone that climb together and cut off at the top",
+  "recipe": "A white-noise layer through a bandpass that sweeps from low to high while its level swells, over a sawtooth whose pitch climbs about an octave and a half, both ending in a short release.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "riser",
+    "family": "riser",
+    "archetype": "riser",
+    "tags": ["build"],
+    "duration": 2,
+    "layers": [
+      {
+        "source": { "type": "noise", "color": "white" },
+        "gainDb": -4,
+        "amp": { "attack": 1.8, "decay": 0.1, "sustain": 0.8, "release": 0.04 },
+        "filter": { "type": "bandpass", "cutoff": 300, "q": 1.2, "env": { "to": 6000, "time": 1.9 } }
+      },
+      {
+        "source": { "type": "osc", "wave": "sawtooth", "pitch": 196 },
+        "gainDb": -14,
+        "amp": { "attack": 1.7, "decay": 0.1, "sustain": 0.8, "release": 0.04 },
+        "pitchEnv": [{ "at": 1.9, "to": 560, "curve": "exp" }],
+        "filter": { "type": "lowpass", "cutoff": 1500, "resonanceDb": 0 }
+      }
+    ],
+    "meta": { "priority": 3, "intent": "oneshot" }
+  },
+  "ranges": {
+    "/duration": { "min": 1.5, "max": 3, "scale": "lin" },
+    "/layers/0/amp/attack": { "ratioOf": "/duration", "min": 0.85, "max": 0.95, "scale": "lin" },
+    "/layers/0/filter/env/time": { "ratioOf": "/duration", "min": 0.9, "max": 0.98, "scale": "lin" },
+    "/layers/0/filter/cutoff": { "min": 200, "max": 600, "scale": "log" },
+    "/layers/0/filter/env/to": { "min": 3500, "max": 9000, "scale": "log" },
+    "/layers/0/filter/q": { "min": 0.7, "max": 2.2, "scale": "log" },
+    "/layers/1/source/pitch": { "min": 130, "max": 330, "scale": "log" },
+    "/layers/1/amp/attack": { "ratioOf": "/duration", "min": 0.8, "max": 0.92, "scale": "lin" },
+    "/layers/1/pitchEnv/0/at": { "ratioOf": "/duration", "min": 0.9, "max": 0.98, "scale": "lin" },
+    "/layers/1/pitchEnv/0/to": { "ratioOf": "/layers/1/source/pitch", "min": 2, "max": 3.2, "scale": "lin" },
+    "/layers/1/gainDb": { "min": -18, "max": -10, "scale": "lin" }
+  }
+}
