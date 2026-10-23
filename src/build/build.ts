@@ -9,6 +9,7 @@ import { bundleDir, catalogText } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { CHANNELS_DIFFER, exportPatchVariants, exportSongAssets } from '../export-assets.ts';
 import { evaluateExpectations, type ExpectationReport } from '../expect.ts';
+import { renderWithExpectations } from '../expect-run.ts';
 import { ExportManifestSchema } from '../export-manifest.ts';
 import { loadPatch, openProject, pathsFor, type OpenProject } from '../project.ts';
 import { loadSong } from '../music.ts';
@@ -293,6 +294,23 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       }
     }, hostScope({ verifyDeterminism: o.verifyDeterminism }));
   }
+  // 2b. Expectations are not part of an asset's input hash (editing one must not re-bake it), so an asset that was not rebuilt is judged here,
+  // from its cached render when there is one. Without this, tightening a brief on a built sound would pass the build until the sound next changed.
+  const rebuilt = new Set(toBuild.map(pl => pl.recipe.id));
+  const unbuilt = plans.filter(pl => pl.recipe.kind === 'patch' && !rebuilt.has(pl.recipe.id) && !removed.includes(pl.recipe.id))
+    .map(pl => ({ pl, patch: loadPatch(p, pl.recipe.source) })).filter(x => x.patch.xExpect);
+  const unmet: BeepsError[] = [];
+  if (unbuilt.length) {
+    await mapPool(unbuilt, o.jobs ?? cfg.jobs, async ({ pl, patch }, _i, host) => {
+      const { expectations } = await renderWithExpectations(host, [{ patch, seed: pl.recipe.seed }], renderOptions(p));
+      if (expectations[0] && !expectations[0].passed) unmet.push(expectationFailure(pl.recipe.id, expectations[0]));
+    }, hostScope({ verifyDeterminism: false }));
+    if (unmet.length) {
+      throw new BeepsError('E_VERIFY', `${unmet.length} asset${unmet.length === 1 ? '' : 's'} that did not need rebuilding no longer meet their expectations: ${unmet.map(e => e.message).join(' | ')}`, {
+        hint: unmet[0].hint, details: { assets: unmet.map(e => ({ message: e.message, ...e.details })) },
+      });
+    }
+  }
   rmSync(stage, { recursive: true, force: true });
 
   // 3. Assets removed from the recipes.
@@ -348,10 +366,15 @@ function catalogDriftOf(out: string, allUnchanged: boolean): string[] {
 
 /** A patch whose declared expectations fail does not ship: the build is the regression test for its contract. */
 function requireExpectations(id: string, report: ExpectationReport): void {
-  if (report.passed) return;
+  if (!report.passed) throw expectationFailure(id, report);
+}
+
+/** The E_VERIFY for one asset whose expectations are not met: what failed, by how much, and which entry to edit. */
+function expectationFailure(id: string, report: ExpectationReport): BeepsError {
   const failing = report.checks.filter(c => c.outcome !== 'pass');
-  throw new BeepsError('E_VERIFY', `${id}: ${failing.length} expectation${failing.length === 1 ? '' : 's'} not met (${failing.map(c => `${c.kind}${c.variant !== undefined ? ` on variant ${c.variant}` : ''} ${c.outcome === 'unmeasurable' ? 'unmeasurable' : `${c.actual}${c.unit ? ` ${c.unit}` : ''} vs ${JSON.stringify(c.expected)}`}`).join('; ')})`, {
-    pointer: failing[0].pointer, hint: failing[0].hint ?? 'run beeps lint on the patch for the full verdict', details: { expectations: report },
+  const unrendered = report.unrendered?.length ? `; variant${report.unrendered.length === 1 ? '' : 's'} ${report.unrendered.join(', ')} did not render` : '';
+  return new BeepsError('E_VERIFY', `${id}: ${failing.length} expectation${failing.length === 1 ? '' : 's'} not met (${failing.map(c => `${c.kind}${c.variant !== undefined ? ` on variant ${c.variant}` : ''} ${c.outcome === 'unmeasurable' ? 'unmeasurable' : `${c.actual}${c.unit ? ` ${c.unit}` : ''} vs ${JSON.stringify(c.expected)}`}`).join('; ')}${unrendered})`, {
+    ...(failing[0] ? { pointer: failing[0].pointer } : {}), hint: failing[0]?.hint ?? 'run beeps lint on the patch for the full verdict', details: { expectations: report },
   });
 }
 

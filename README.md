@@ -209,6 +209,13 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.32.0
+
+`beeps build` judges expectations for assets it did not rebuild. No sound changes; no render key or hash moves.
+
+- **The gap:** an `xExpect` block is deliberately not part of an asset's input hash (editing one must not re-bake the sound), so a built asset was "unchanged" and was never re-judged: tightening a brief on a built sound passed the build until the sound next changed. The build now renders (from the cache when it is warm, so usually without starting a browser) each unchanged patch that has a block and fails with `E_VERIFY` naming each asset, check and measured value. `build --check` stays render-free and does not judge.
+- **Environment:** the dev dependencies this repo declares (`@noble/hashes`) and the optional `ffmpeg-static` were missing from the maintainer's checkout, which hid seven tests behind "known failures" for eleven releases; with `npm install` they pass, and the full suite is green.
+
 ## What changed in 0.31.0
 
 `generate` candidates say what they render. No sound changes for a candidate that was already in the scale; no render key or golden hash moves.
