@@ -10,4 +10,4 @@ export function countNonFinite(channels: readonly Float32Array[]): number {
 
 /** The message for a render with `n` such samples: names the likely cause so the author knows where to look. */
 export const nonFiniteMessage = (what: string, n: number): string =>
-  `${what} rendered ${n} sample${n === 1 ? '' : 's'} that are not finite numbers (NaN or infinity), so the WAV would carry silence or clicks there: a filter, feedback or drive stage is unstable`;
+  `${what} rendered ${n} ${n === 1 ? 'sample that is not a finite number' : 'samples that are not finite numbers'} (NaN or infinity), so the WAV would carry silence or clicks there: a filter, feedback or drive stage is unstable`;
