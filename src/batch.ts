@@ -23,7 +23,9 @@ export function applyBatch(p: OpenProject, rawOps: unknown, { dryRun = false } =
   const parsed = OpsSchema.safeParse(rawOps);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    throw new BeepsError('E_SCHEMA', `invalid operations: ${issue.message}`, { pointer: '/' + issue.path.join('/'), hint: 'ops are {op:"create",patch} | {op:"set",name,pointer,value} | {op:"remove",name,pointer} | {op:"delete",name}' });
+    // A stray key ("valu" for "value") is named in the pointer, not just the operation it sits on.
+    const stray = issue.code === 'unrecognized_keys' ? issue.keys.slice(0, 1) : [];
+    throw new BeepsError('E_SCHEMA', `invalid operations: ${issue.message}`, { pointer: '/' + [...issue.path, ...stray].join('/'), ...(stray.length ? { received: stray[0] } : {}), hint: 'ops are {op:"create",patch} | {op:"set",name,pointer,value} | {op:"remove",name,pointer} | {op:"delete",name}' });
   }
   const state = new Map<string, Patch>(listPatches(p).map(x => [x.name, x]));
   const changed = new Set<string>();

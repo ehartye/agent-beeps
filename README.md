@@ -209,6 +209,14 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.26.0
+
+Strict schemas: the step after the warning. **Breaking for a file that carries a key the format does not know.** No sound or music changes; no render, hash or cache key moves.
+
+- **Unknown keys are errors.** For four releases (0.22.0 to 0.25.0) a stray key in `project.json`, an instrument override (`{base, set}`) or a batch operation was stripped and reported as `N_UNKNOWN_KEY`. Now each is `E_SCHEMA`, with the `pointer` of the key and the key as `received`, and every command that reads the project stops on it. A misspelled `scale`, `snap` or `value` can no longer leave a default in silence. Fix: correct or remove the key; the error names it.
+- **Song recipes:** `variants` or `seed` on a song recipe in the build config is `E_SCHEMA` (`/<id>/seed`), where it was hashed and never read. Remove it from the recipe; patch recipes are unchanged. A song recipe that carried a non-default `seed` rebuilds once without it, because the seed was part of its hash.
+- **Code:** the `N_UNKNOWN_KEY` notice, the tolerant parse that backed it and the queue that carried project-file notices into a command's JSON are gone. `N_OPTION_IGNORED` stays for `init`.
+
 ## What changed in 0.25.0
 
 Honest feedback, Phase 3: the small places a command told the caller less than it did. No sound or music changes; no render, hash or cache key moves.
