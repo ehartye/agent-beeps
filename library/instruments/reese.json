@@ -1,0 +1,58 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "reese",
+  "family": "music",
+  "tags": [
+    "bass",
+    "sustain",
+    "dark"
+  ],
+  "duration": 1.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C2",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 22
+        }
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 700,
+        "resonanceDb": 3
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 0.35,
+        "depth": 280
+      },
+      "drive": 0.35,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.3,
+        "sustain": 0.9,
+        "release": 0.15
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.3,
+        "sustain": 0.9,
+        "release": 0.15
+      }
+    }
+  ],
+  "meta": {
+    "description": "Three detuned saws and a sine under a slowly moving lowpass: the drum-and-bass and dubstep reese. Hold notes; octave 1 to 2."
+  }
+}

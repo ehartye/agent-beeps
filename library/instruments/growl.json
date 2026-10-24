@@ -1,0 +1,78 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "growl",
+  "family": "music",
+  "tags": [
+    "bass",
+    "growl",
+    "wobble",
+    "gritty"
+  ],
+  "duration": 0.8,
+  "layers": [
+    {
+      "source": {
+        "type": "fm",
+        "pitch": "C2",
+        "operators": [
+          {
+            "ratio": 1
+          },
+          {
+            "ratio": 1,
+            "index": 5,
+            "indexEnv": [
+              [
+                0,
+                1
+              ],
+              [
+                0.4,
+                0.4
+              ],
+              [
+                1,
+                0.8
+              ]
+            ]
+          },
+          {
+            "ratio": 2,
+            "index": 3
+          }
+        ],
+        "algorithm": [
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            1
+          ]
+        ]
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2600,
+        "resonanceDb": 6
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 3.5,
+        "depth": 1400,
+        "sync": 3
+      },
+      "drive": 0.6,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.25,
+        "sustain": 0.9,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Three-operator FM bass through a driven, wobbling lowpass: brostep growl (lfo.sync 3 follows the song tempo in triplet eighths; override /layers/0/lfo/sync). Heard alone it wobbles at 3.5 Hz. Octave 1 to 2."
+  }
+}

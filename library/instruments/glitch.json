@@ -1,0 +1,32 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "glitch",
+  "family": "music",
+  "tags": [
+    "texture",
+    "noise",
+    "glitch"
+  ],
+  "duration": 0.1,
+  "layers": [
+    {
+      "source": {
+        "type": "grains",
+        "rate": 70,
+        "grainDecay": 0.006,
+        "center": 3200,
+        "q": 6,
+        "stereo": true
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.05,
+        "sustain": 0,
+        "release": 0.02
+      }
+    }
+  ],
+  "meta": {
+    "description": "Seventy 6 ms grains a second around 3.2 kHz: glitch bursts. Use `?` steps so they scatter."
+  }
+}

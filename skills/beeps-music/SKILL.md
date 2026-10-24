@@ -30,8 +30,8 @@ over 30 s. It is still trimmed to `project.musicLoudness`; tag it `jingle`.
 
 ## 2. Pick instruments
 
-`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums)
-with each one's root, where its layers sound relative to a written note (`osc -12` is an octave
+`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums, and a dance-music synth set: supersaw, trance and rave leads, reese,
+wobble, growl and bounce basses, vowel voices, kicks, snares, risers and impacts) with each one's root, where its layers sound relative to a written note (`osc -12` is an octave
 below), and whether it holds for the note length or rings as a one-shot. A track's `instrument` is
 a library name, a project patch name, or an inline patch. To make a new timbre, compose it as a
 patch (beeps-compose skill), save it with `beeps new`, and name it.

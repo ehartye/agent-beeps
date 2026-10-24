@@ -1,0 +1,54 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "sub-boom",
+  "family": "music",
+  "tags": [
+    "fx",
+    "impact",
+    "dark"
+  ],
+  "duration": 1.4,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 55
+      },
+      "pitchEnv": [
+        {
+          "at": 0.6,
+          "to": 34,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.003,
+        "decay": 1.2,
+        "sustain": 0,
+        "release": 0.2
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "brown"
+      },
+      "gainDb": -10,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 600,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "A 55 Hz sine boom sinking to 34 Hz over a brown-noise thump: an impact for the start of a drop. Write one long note."
+  }
+}

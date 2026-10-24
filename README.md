@@ -28,7 +28,7 @@ through chord progressions (voice-led from chord symbols), arps, bass lines, ste
 Euclidean rhythms such as `x(3,8)`), melodies, sections and mix moves, from loops to one-shot jingles.
 Songs render to loopable, loudness-matched WAVs, are linted against cited
 music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
-holds a 13-track example library; `library/instruments/` holds 25 instrument patches.
+holds a 13-track example library; `library/instruments/` holds 54 instrument patches.
 
 For expressive phrasing, notes can carry pitch bends and brightness curves, and tracks can map
 velocity to an instrument's tone and envelopes as well as volume.
@@ -210,6 +210,14 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.33.0
+
+A dance-music synth set in the library, and LFOs that keep time with a song. No existing sound changes; no render key or hash moves.
+
+- **26 new instruments** in `library/instruments` (54 in all), the synths written for the tribute album: `supersaw`, `trance-lead`, `prog-pluck`, `rave-stab`, `prog-pad`, `hoover`, `screech`; the basses `acid-bass`, `reese`, `bounce-bass`, `wonk-bass`, `wobble` and `growl`; the chopped vowels `vox-ah`, `vox-oo` and `vox-ee`; and the drums and effects `deep-kick`, `punch-kick`, `snare-dub`, `snare-dnb`, `clap`, `open-hat`, `crash`, `riser`, `sub-boom` and `glitch`. A song names them like any other instrument; `beeps instruments` lists each with its root and what it is for.
+- **`lfo.sync`:** an optional field on a layer's LFO, in cycles per beat. A song plays the LFO at `bpm / 60 x sync` Hz (`sync: 2` is eighth notes), so a wobble stays in time at any tempo; `rate` stays as the fallback for a patch played on its own. `wobble` is `sync: 2` and `growl` `sync: 3`; a `{ base, set }` override of `/layers/0/lfo/sync` picks another division. Patches that do not use it are unchanged, and `ENGINE_VERSION` stays 4.
+- **Tribute album:** the twelve tribute tracks on the playlists page now use the library instruments instead of carrying their own copies, and were re-rendered with the synced wobbles.
 
 ## What changed in 0.32.0
 

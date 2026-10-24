@@ -1,0 +1,59 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "wobble",
+  "family": "music",
+  "tags": [
+    "bass",
+    "wobble",
+    "sustain"
+  ],
+  "duration": 0.8,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C2",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 10
+        }
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1000,
+        "resonanceDb": 9
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 3.5,
+        "depth": 900,
+        "sync": 2
+      },
+      "drive": 0.5,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.3,
+        "sustain": 0.9,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -4,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.3,
+        "sustain": 0.9,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Detuned saw bass with a resonant lowpass wobbling in time with the song (lfo.sync 2: eighth notes; change it with a { base, set } override of /layers/0/lfo/sync, 1 for quarters, 3 for triplets). Heard alone it wobbles at 3.5 Hz. Octave 1 to 2."
+  }
+}

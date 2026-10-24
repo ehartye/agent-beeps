@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "vox-oo",
+  "family": "music",
+  "tags": [
+    "vocal",
+    "voice"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "voice",
+        "pitch": "C3",
+        "formants": [
+          [
+            350,
+            8,
+            0
+          ],
+          [
+            700,
+            10,
+            -6
+          ],
+          [
+            2300,
+            12,
+            -16
+          ]
+        ],
+        "tilt": 1.2,
+        "jitterCents": 8,
+        "vibrato": {
+          "rate": 5.5,
+          "cents": 18
+        },
+        "breath": 0.05
+      },
+      "amp": {
+        "attack": 0.02,
+        "decay": 0.2,
+        "sustain": 0.8,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Chopped vowel \"oo\": a rounder, darker formant voice for chops and pads of voices. Octave 3 to 5."
+  }
+}

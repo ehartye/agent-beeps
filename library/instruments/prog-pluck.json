@@ -1,0 +1,65 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "prog-pluck",
+  "family": "music",
+  "tags": [
+    "pluck",
+    "arp",
+    "bright"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "square",
+        "pitch": "C4"
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3600,
+        "resonanceDb": 5,
+        "env": {
+          "to": 600,
+          "time": 0.16
+        }
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.12
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 2,
+          "detuneCents": 9
+        }
+      },
+      "gainDb": -4,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3000,
+        "resonanceDb": 2,
+        "env": {
+          "to": 500,
+          "time": 0.14
+        }
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.18,
+        "sustain": 0,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Square and saw pluck whose filter snaps shut: progressive-house arpeggios and short hooks, octave 4 to 5."
+  }
+}

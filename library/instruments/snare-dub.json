@@ -1,0 +1,52 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "snare-dub",
+  "family": "music",
+  "tags": [
+    "drum",
+    "snare"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 200
+      },
+      "pitchEnv": [
+        {
+          "at": 0.06,
+          "to": 150
+        }
+      ],
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.12,
+        "sustain": 0,
+        "release": 0.05
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2400,
+        "q": 0.8
+      },
+      "drive": 0.4,
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Triangle body and bandpassed, driven noise: a heavy half-time snare."
+  }
+}

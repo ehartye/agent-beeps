@@ -1,0 +1,49 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "deep-kick",
+  "family": "music",
+  "tags": [
+    "drum",
+    "kick"
+  ],
+  "duration": 0.6,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 130
+      },
+      "pitchEnv": [
+        {
+          "at": 0.09,
+          "to": 40,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.1
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -16,
+      "highpass": 1500,
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.01,
+        "sustain": 0,
+        "release": 0.01
+      }
+    }
+  ],
+  "meta": {
+    "description": "Sine kick falling from 130 to 40 Hz with a short click: a deep half-time or house kick."
+  }
+}

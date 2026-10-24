@@ -334,7 +334,7 @@ export function buildSong(ctx, song, instruments, opts = {}) {
     let end = at;
     const layerOuts = p.layers.map((layer, li) => {
       const lo = ctx.createGain();
-      const voice = buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo });
+      const voice = buildLayer(ctx, layer, { when: at, duration: p.duration, seed: seed + li * 7919, out: lo, tempo: song.bpm });
       if (e.expression) scheduleNoteExpression(voice.nodes, e.expression, at);
       end = Math.max(end, voice.end);
       return lo;

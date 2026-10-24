@@ -1,0 +1,33 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "crash",
+  "family": "music",
+  "tags": [
+    "drum",
+    "cymbal",
+    "fx"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 5000,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.002,
+        "decay": 1.6,
+        "sustain": 0,
+        "release": 0.4
+      }
+    }
+  ],
+  "meta": {
+    "description": "Highpassed white noise with a 1.6 s decay: a crash for section starts."
+  }
+}

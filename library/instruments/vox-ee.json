@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "vox-ee",
+  "family": "music",
+  "tags": [
+    "vocal",
+    "voice"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "voice",
+        "pitch": "C3",
+        "formants": [
+          [
+            300,
+            8,
+            0
+          ],
+          [
+            2300,
+            10,
+            -4
+          ],
+          [
+            3000,
+            12,
+            -12
+          ]
+        ],
+        "tilt": 0.9,
+        "jitterCents": 8,
+        "vibrato": {
+          "rate": 5.5,
+          "cents": 18
+        },
+        "breath": 0.05
+      },
+      "amp": {
+        "attack": 0.02,
+        "decay": 0.2,
+        "sustain": 0.8,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Chopped vowel \"ee\": a bright, thin formant voice for high stabs. Octave 3 to 5."
+  }
+}

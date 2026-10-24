@@ -1,0 +1,70 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "bounce-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "pluck"
+  ],
+  "duration": 0.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C3",
+        "unison": {
+          "voices": 2,
+          "detuneCents": 6
+        }
+      },
+      "pitchEnv": [
+        {
+          "at": 0.08,
+          "to": "C2",
+          "curve": "exp"
+        }
+      ],
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1500,
+        "resonanceDb": 6,
+        "env": {
+          "to": 300,
+          "time": 0.2
+        }
+      },
+      "drive": 0.3,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.35,
+        "sustain": 0.5,
+        "release": 0.1
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C3"
+      },
+      "pitchEnv": [
+        {
+          "at": 0.08,
+          "to": "C2",
+          "curve": "exp"
+        }
+      ],
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.35,
+        "sustain": 0.6,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Saw and sine bass that falls an octave in its first 80 ms: bouncy melodic-dubstep bass, octave 2 to 3."
+  }
+}

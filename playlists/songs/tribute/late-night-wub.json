@@ -12,412 +12,6 @@
   "swing": 0.1,
   "loop": false,
   "seed": 440111,
-  "instruments": {
-    "deep-kick": {
-      "duration": 0.6,
-      "layers": [
-        {
-          "source": {
-            "type": "osc",
-            "wave": "sine",
-            "pitch": 130
-          },
-          "pitchEnv": [
-            {
-              "at": 0.09,
-              "to": 40,
-              "curve": "exp"
-            }
-          ],
-          "amp": {
-            "attack": 0.002,
-            "decay": 0.5,
-            "sustain": 0,
-            "release": 0.1
-          }
-        },
-        {
-          "source": {
-            "type": "noise",
-            "color": "white"
-          },
-          "gainDb": -16,
-          "highpass": 1500,
-          "amp": {
-            "attack": 0.001,
-            "decay": 0.01,
-            "sustain": 0,
-            "release": 0.01
-          }
-        }
-      ]
-    },
-    "snare-dub": {
-      "duration": 0.3,
-      "layers": [
-        {
-          "source": {
-            "type": "osc",
-            "wave": "triangle",
-            "pitch": 200
-          },
-          "pitchEnv": [
-            {
-              "at": 0.06,
-              "to": 150
-            }
-          ],
-          "amp": {
-            "attack": 0.001,
-            "decay": 0.12,
-            "sustain": 0,
-            "release": 0.05
-          }
-        },
-        {
-          "source": {
-            "type": "noise",
-            "color": "white"
-          },
-          "filter": {
-            "type": "bandpass",
-            "cutoff": 2400,
-            "q": 0.8
-          },
-          "drive": 0.4,
-          "amp": {
-            "attack": 0.001,
-            "decay": 0.2,
-            "sustain": 0,
-            "release": 0.08
-          }
-        }
-      ]
-    },
-    "clap": {
-      "duration": 0.25,
-      "layers": [
-        {
-          "source": {
-            "type": "noise",
-            "color": "white"
-          },
-          "amp": {
-            "attack": 0.001,
-            "decay": 0.13,
-            "sustain": 0,
-            "release": 0.08
-          },
-          "filter": {
-            "type": "bandpass",
-            "cutoff": 1500,
-            "q": 1.2
-          }
-        },
-        {
-          "source": {
-            "type": "noise",
-            "color": "pink"
-          },
-          "gainDb": -6,
-          "amp": {
-            "attack": 0.012,
-            "decay": 0.09,
-            "sustain": 0,
-            "release": 0.06
-          },
-          "filter": {
-            "type": "bandpass",
-            "cutoff": 1100,
-            "q": 0.9
-          }
-        }
-      ]
-    },
-    "wonk-bass": {
-      "duration": 0.5,
-      "layers": [
-        {
-          "source": {
-            "type": "osc",
-            "wave": "sawtooth",
-            "pitch": "F2"
-          },
-          "filter": {
-            "type": "lowpass",
-            "cutoff": 934,
-            "resonanceDb": 10,
-            "env": {
-              "to": 3204,
-              "time": 0.12
-            }
-          },
-          "lfo": {
-            "target": "pitch",
-            "rate": 5.5,
-            "depth": 35
-          },
-          "drive": 0.35,
-          "amp": {
-            "attack": 0.003,
-            "decay": 0.2,
-            "sustain": 0.6,
-            "release": 0.08
-          }
-        },
-        {
-          "source": {
-            "type": "osc",
-            "wave": "sine",
-            "pitch": "F2"
-          },
-          "gainDb": -3,
-          "amp": {
-            "attack": 0.003,
-            "decay": 0.25,
-            "sustain": 0.7,
-            "release": 0.08
-          }
-        }
-      ]
-    },
-    "vox-ah": {
-      "duration": 0.4,
-      "layers": [
-        {
-          "source": {
-            "type": "voice",
-            "pitch": "Bb4",
-            "formants": [
-              [
-                700,
-                8,
-                0
-              ],
-              [
-                1200,
-                10,
-                -4
-              ],
-              [
-                2600,
-                12,
-                -14
-              ]
-            ],
-            "tilt": 1,
-            "jitterCents": 8,
-            "vibrato": {
-              "rate": 5.5,
-              "cents": 18
-            },
-            "breath": 0.05
-          },
-          "amp": {
-            "attack": 0.02,
-            "decay": 0.2,
-            "sustain": 0.8,
-            "release": 0.1
-          }
-        }
-      ]
-    },
-    "vox-oo": {
-      "duration": 0.4,
-      "layers": [
-        {
-          "source": {
-            "type": "voice",
-            "pitch": "D5",
-            "formants": [
-              [
-                350,
-                8,
-                0
-              ],
-              [
-                700,
-                10,
-                -6
-              ],
-              [
-                2300,
-                12,
-                -16
-              ]
-            ],
-            "tilt": 1.2,
-            "jitterCents": 8,
-            "vibrato": {
-              "rate": 5.5,
-              "cents": 18
-            },
-            "breath": 0.05
-          },
-          "amp": {
-            "attack": 0.02,
-            "decay": 0.2,
-            "sustain": 0.8,
-            "release": 0.1
-          }
-        }
-      ]
-    },
-    "vox-ee": {
-      "duration": 0.4,
-      "layers": [
-        {
-          "source": {
-            "type": "voice",
-            "pitch": "A5",
-            "formants": [
-              [
-                300,
-                8,
-                0
-              ],
-              [
-                2300,
-                10,
-                -4
-              ],
-              [
-                3000,
-                12,
-                -12
-              ]
-            ],
-            "tilt": 0.9,
-            "jitterCents": 8,
-            "vibrato": {
-              "rate": 5.5,
-              "cents": 18
-            },
-            "breath": 0.05
-          },
-          "amp": {
-            "attack": 0.02,
-            "decay": 0.2,
-            "sustain": 0.8,
-            "release": 0.1
-          }
-        }
-      ]
-    },
-    "glitch": {
-      "duration": 0.1,
-      "layers": [
-        {
-          "source": {
-            "type": "grains",
-            "rate": 70,
-            "grainDecay": 0.006,
-            "center": 3200,
-            "q": 6,
-            "stereo": true
-          },
-          "amp": {
-            "attack": 0.001,
-            "decay": 0.05,
-            "sustain": 0,
-            "release": 0.02
-          }
-        }
-      ]
-    },
-    "sub-boom": {
-      "duration": 1.4,
-      "layers": [
-        {
-          "source": {
-            "type": "osc",
-            "wave": "sine",
-            "pitch": 55
-          },
-          "pitchEnv": [
-            {
-              "at": 0.6,
-              "to": 34,
-              "curve": "exp"
-            }
-          ],
-          "amp": {
-            "attack": 0.003,
-            "decay": 1.2,
-            "sustain": 0,
-            "release": 0.2
-          }
-        },
-        {
-          "source": {
-            "type": "noise",
-            "color": "brown"
-          },
-          "gainDb": -10,
-          "filter": {
-            "type": "lowpass",
-            "cutoff": 600,
-            "resonanceDb": 0
-          },
-          "amp": {
-            "attack": 0.002,
-            "decay": 0.5,
-            "sustain": 0,
-            "release": 0.1
-          }
-        }
-      ]
-    },
-    "crash": {
-      "duration": 2,
-      "layers": [
-        {
-          "source": {
-            "type": "noise",
-            "color": "white"
-          },
-          "filter": {
-            "type": "highpass",
-            "cutoff": 5000,
-            "resonanceDb": 0
-          },
-          "amp": {
-            "attack": 0.002,
-            "decay": 1.6,
-            "sustain": 0,
-            "release": 0.4
-          }
-        }
-      ]
-    },
-    "riser": {
-      "duration": 8,
-      "layers": [
-        {
-          "source": {
-            "type": "noise",
-            "color": "white",
-            "stereo": true
-          },
-          "filter": {
-            "type": "bandpass",
-            "cutoff": 400,
-            "q": 1.2,
-            "env": {
-              "to": 9000,
-              "time": 7
-            }
-          },
-          "amp": {
-            "attack": 1.5,
-            "decay": 1,
-            "sustain": 1,
-            "release": 0.3
-          }
-        }
-      ]
-    }
-  },
   "progressions": {
     "a": [
       [
@@ -457,7 +51,15 @@
       "pan": 0.2
     },
     "wonk": {
-      "instrument": "wonk-bass",
+      "instrument": {
+        "base": "wonk-bass",
+        "set": {
+          "/layers/0/source/pitch": "F2",
+          "/layers/0/filter/cutoff": 934,
+          "/layers/0/filter/env/to": 3204,
+          "/layers/1/source/pitch": "F2"
+        }
+      },
       "gainDb": -18
     },
     "sub": {
@@ -474,7 +76,12 @@
       }
     },
     "ah": {
-      "instrument": "vox-ah",
+      "instrument": {
+        "base": "vox-ah",
+        "set": {
+          "/layers/0/source/pitch": "Bb4"
+        }
+      },
       "gainDb": -16,
       "pan": -0.25,
       "sends": {
@@ -483,7 +90,12 @@
       }
     },
     "oo": {
-      "instrument": "vox-oo",
+      "instrument": {
+        "base": "vox-oo",
+        "set": {
+          "/layers/0/source/pitch": "D5"
+        }
+      },
       "gainDb": -17,
       "pan": 0.25,
       "sends": {
@@ -492,7 +104,12 @@
       }
     },
     "ee": {
-      "instrument": "vox-ee",
+      "instrument": {
+        "base": "vox-ee",
+        "set": {
+          "/layers/0/source/pitch": "A5"
+        }
+      },
       "gainDb": -19,
       "sends": {
         "reverb": -12,

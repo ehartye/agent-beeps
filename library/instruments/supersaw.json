@@ -1,0 +1,62 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "supersaw",
+  "family": "music",
+  "tags": [
+    "lead",
+    "pad",
+    "sustain",
+    "bright"
+  ],
+  "duration": 1.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 7,
+          "detuneCents": 24
+        }
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 7000,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.4,
+        "sustain": 0.8,
+        "release": 0.3
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C5",
+        "unison": {
+          "voices": 3,
+          "detuneCents": 12
+        }
+      },
+      "gainDb": -9,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 9000,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.008,
+        "decay": 0.4,
+        "sustain": 0.8,
+        "release": 0.3
+      }
+    }
+  ],
+  "meta": {
+    "description": "Seven-voice detuned saw plus an airy octave above: trance and house chords and big leads. Held for the note length; octave 3 to 4."
+  }
+}

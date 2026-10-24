@@ -115,34 +115,60 @@ Patches songs play by name (`beeps instruments`). Root is the note the layers so
 
 | Instrument | Root | Plays | Description |
 | --- | --- | --- | --- |
+| `acid-bass` | C3 | held (lasts the note length) | Resonant saw bass whose filter snaps shut on every note: rolling acid lines, octave 2 to 3. |
 | `arp-blip` | C5 | one-shot (rings ~0.2 s) | Short square blip, chiptune-clean: fast arps and sequences. |
 | `bell` | C5 | one-shot (rings ~3.6 s) | FM bell rooted at C5 with an inharmonic ratio: long ring, bright strike. Octave 5-6. |
+| `bounce-bass` | C3 | held (lasts the note length) | Saw and sine bass that falls an octave in its first 80 ms: bouncy melodic-dubstep bass, octave 2 to 3. |
 | `choir-pad` | C4 | held (lasts the note length) | Vowel-like aah pad: sawtooth through two formant peaks with a breath of pink noise. |
+| `clap` | unpitched | one-shot (rings ~0.2 s) | Two layers of bandpassed noise with a soft second burst: a hand clap. |
+| `crash` | unpitched | one-shot (rings ~2 s) | Highpassed white noise with a 1.6 s decay: a crash for section starts. |
+| `deep-kick` | C3 | one-shot (rings ~0.6 s) | Sine kick falling from 130 to 40 Hz with a short click: a deep half-time or house kick. |
 | `drone` | C2 | held (lasts the note length) | Dark evolving drone: low saw cluster with a sine body under a slowly sweeping filter. Hold one note per section: octave 2 when it is the only bass, octave 3 under a moving bass line. |
 | `e-piano` | C4 | held (lasts the note length) | Tine electric piano (FM): warm bell-edged attack that mellows as it decays. Chords and gentle melodies, octave 3-4. |
 | `felt-piano` | C4 | held (lasts the note length) | Felted upright piano: soft hammer thump, rounded partials that decay on their own clocks. Intimate melodies and chords, octave 3-5. |
 | `glass-bell` | C5 | one-shot (rings ~4 s) | Additive glass/celesta: clean partials that each decay on their own clock. |
 | `glass-pad` | C4 | held (lasts the note length) | Wide detuned saw pad with a slowly breathing lowpass and an airy octave; slow swell. Chords. |
+| `glitch` | unpitched | one-shot (rings ~0.1 s) | Seventy 6 ms grains a second around 3.2 kHz: glitch bursts. Use `?` steps so they scatter. |
+| `growl` | C2 | held (lasts the note length) | Three-operator FM bass through a driven, wobbling lowpass: brostep growl (lfo.sync 3 follows the song tempo in triplet eighths; override /layers/0/lfo/sync). Heard alone it wobbles at 3.5 Hz. Octave 1 to 2. |
 | `hand-drum` | G3 | one-shot (rings ~0.5 s) | Hand drum (djembe/tabla-like membrane, modal): a pitched slap with a skin rustle. Steps with `note` tune it (G3 open tone, C4-D4 higher slaps); vary x/o accents for a played feel. |
 | `hat` | unpitched | one-shot (rings ~0.1 s) | Closed hat: 808 metal voice through a highpass, very short. |
+| `hoover` | G4 | held (lasts the note length) | Five-voice saw that glides down a fifth into each note: rave hooks and stab leads, octave 4. |
 | `kick` | D3 | one-shot (rings ~0.4 s) | Soft round kick: sine with a fast pitch drop and a tiny click. |
 | `mallet` | C4 | one-shot (rings ~0.9 s) | Marimba-like struck bar (modal): woody, short, warm. |
 | `nebula` | unpitched | held (lasts the note length) | Filtered pink-noise wind with a slowly drifting band: space air under a section. |
+| `open-hat` | unpitched | one-shot (rings ~0.4 s) | 808 metal voice highpassed, ringing 280 ms: an open hi-hat for offbeats. |
 | `pluck` | C4 | one-shot (rings ~0.6 s) | Bright saw pluck whose filter snaps shut: arps and ostinatos. |
+| `prog-pad` | C4 | held (lasts the note length) | Five-voice saw pad with a slowly breathing lowpass and a long swell: wide, moving chords, octave 3. |
+| `prog-pluck` | C4 | one-shot (rings ~0.3 s) | Square and saw pluck whose filter snaps shut: progressive-house arpeggios and short hooks, octave 4 to 5. |
 | `pulse-bass` | C2 | held (lasts the note length) | Analog-style saw bass with a plucky filter envelope; set track keytrack ~0.5. |
+| `punch-kick` | F3 | one-shot (rings ~0.4 s) | Sine kick falling from 170 to 46 Hz with a bright click: a punchy four-on-the-floor kick. |
+| `rave-stab` | C4 | held (lasts the note length) | Six-voice saw and square stab with a closing filter: offbeat chord hits, octave 3 to 4. |
+| `reese` | C2 | held (lasts the note length) | Three detuned saws and a sine under a slowly moving lowpass: the drum-and-bass and dubstep reese. Hold notes; octave 1 to 2. |
 | `rim` | Ab6 | one-shot (rings ~0.1 s) | Woody rim click (modal): quiet ticking percussion. |
+| `riser` | unpitched | held (lasts the note length) | Stereo noise through a bandpass sweeping from 400 Hz up to 9 kHz over seven seconds: a build. Hold one note for the length of the build and fade it in with a section mix ramp. |
+| `screech` | C5 | held (lasts the note length) | FM tone with a pitch bend up, drive and a highpass: dubstep screeches and sirens, octave 5 to 6. Short notes with rests. |
 | `shaker` | unpitched | one-shot (rings ~0.1 s) | Soft grainy shaker: a short burst of Poisson grains. |
 | `shimmer` | C6 | one-shot (rings ~2.8 s) | High glassy sparkle: sine partials at the note, an octave and an octave-plus-fifth above; written pitch is where it sounds (use octave 6). Sparse high notes. |
+| `snare-dnb` | C4 | one-shot (rings ~0.2 s) | Tight triangle body and highpassed noise: a crisp snare for fast tempos. |
+| `snare-dub` | G3 | one-shot (rings ~0.3 s) | Triangle body and bandpassed, driven noise: a heavy half-time snare. |
 | `snare` | F#3 | one-shot (rings ~0.3 s) | Soft electronic snare: tone body plus bandpassed noise. |
 | `soft-lead` | C5 | held (lasts the note length) | Mellow triangle/square lead with light vibrato: understated melodies. |
 | `soft-pluck` | C4 | one-shot (rings ~1 s) | Rounded triangle pluck, harp-like: gentle arps. |
 | `sonar` | C5 | one-shot (rings ~2.8 s) | Sonar ping: pure sine rooted at C5, slow decay. Space it far apart; pair with a delay send. |
 | `string-pad` | C4 | held (lasts the note length) | Ensemble strings: many detuned saws, soft attack, gentle vibrato. Chords and long melody notes. |
 | `sub-bass` | C2 | held (lasts the note length) | Round sine sub with a little triangle for small speakers. |
+| `sub-boom` | A1 | one-shot (rings ~1.4 s) | A 55 Hz sine boom sinking to 34 Hz over a brown-noise thump: an impact for the start of a drop. Write one long note. |
+| `supersaw` | C4 | held (lasts the note length) | Seven-voice detuned saw plus an airy octave above: trance and house chords and big leads. Held for the note length; octave 3 to 4. |
 | `synth-brass` | C4 | held (lasts the note length) | Saw brass that swells open: horn calls and big chords. |
 | `theremin` | C5 | held (lasts the note length) | Sine lead with slow vibrato and a soft onset: the classic sci-fi voice. |
 | `tom` | A2 | one-shot (rings ~0.6 s) | Deep tom: a fixed-pitch sine (about 110 Hz falling to 70 Hz) for fills and hand-drum pulses. Use in steps patterns without a note; a note transposes it. |
+| `trance-lead` | C4 | held (lasts the note length) | Five-voice saw lead over a square body an octave down, its filter closing as it sounds: gated riffs and sixteenth-note leads, octave 4 to 5. |
+| `vox-ah` | C3 | held (lasts the note length) | Chopped vowel "ah": a formant voice for syncopated vocal stabs and chants. Written pitch is the note; octave 3 to 5. The formants do not move with pitch. |
+| `vox-ee` | C3 | held (lasts the note length) | Chopped vowel "ee": a bright, thin formant voice for high stabs. Octave 3 to 5. |
+| `vox-oo` | C3 | held (lasts the note length) | Chopped vowel "oo": a rounder, darker formant voice for chops and pads of voices. Octave 3 to 5. |
 | `warm-pad` | C4 | held (lasts the note length) | Soft triangle-and-sine pad, no edge, slow attack: sits under everything. Sounds at the written octave. |
+| `wobble` | C2 | held (lasts the note length) | Detuned saw bass with a resonant lowpass wobbling in time with the song (lfo.sync 2: eighth notes; change it with a { base, set } override of /layers/0/lfo/sync, 1 for quarters, 3 for triplets). Heard alone it wobbles at 3.5 Hz. Octave 1 to 2. |
+| `wonk-bass` | C2 | held (lasts the note length) | Resonant saw bass whose filter opens on each note, with a slow pitch wobble: wonky half-time bass, octave 1 to 2. |
 
 ## Craft rules
 
