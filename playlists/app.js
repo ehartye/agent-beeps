@@ -119,7 +119,7 @@ function paintPosition() {
 function selectSet(id) {
   state.setId = id; renderTabs(); renderIntro(); renderTracks();
   if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
-  document.title = `${setById(id).title} · Three Playlists · agent-beeps`;
+  document.title = `${setById(id).title} · Playlists · agent-beeps`;
 }
 
 function play(setId, i) {

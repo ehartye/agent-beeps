@@ -896,6 +896,342 @@
           }
         }
       ]
+    },
+    {
+      "id": "tribute",
+      "title": "Tribute Album",
+      "tagline": "Twelve original tracks in the spirit of six electronic artists, each on a new synth palette.",
+      "brief": [
+        "A tribute, not a copy: two tracks for each of deadmau5, Bassnectar, Darude, Skrillex, Flux Pavilion and Zeds Dead, taking the tempo, sound palette and song structure each is known for. No melody, sample or recording from any of them is used, and nothing here is affiliated with or endorsed by them.",
+        "Deadmau5: progressive and electro house at 126 to 128 bpm, with plucked arpeggios and long builds. Bassnectar: swung glitch hop at 105 and half-time bass music at 140, with wobbles, hand drums, strings and a choir. Darude: trance at 136 to 138, with gated saw riffs, supersaw chords and snare-roll builds. Skrillex: brostep at 140 and electro house at 110, with FM growls, screeches, vowel chops and a bouncing bass. Flux Pavilion: melodic dubstep at 140, with a rubbery bounce bass and big brass and supersaw tunes. Zeds Dead: wonky half-time at 90 and drum and bass at 174, with a wonking bass, trap hats and a rolling reese.",
+        "The first three playlists leaned on the same few instruments, so this one has its own synth lab: about twenty instruments written for it, from supersaws, trance leads and plucks to a hoover, an FM growl, tempo-synced wobbles, reese, bounce and wonk basses, vowel voices, risers and heavier drums. The style descriptions are my own characterisation from a few thin sources, not measurements of anyone's records, and the tracks are measured, not yet heard."
+      ],
+      "sources": [
+        {
+          "label": "What is progressive house? (tempo and structure overview)",
+          "url": "https://www.edmprod.com/what-is-progressive-house/"
+        },
+        {
+          "label": "Darude, \"Sandstorm\": listed at 136 bpm (tempo only; nothing else of the record is used)",
+          "url": "https://www.mixgraph.io/tracks/darude-sandstorm"
+        },
+        {
+          "label": "Glitch hop overview (typically 80 to 130 bpm)",
+          "url": "https://www.soundbridge.io/glitch-hop"
+        }
+      ],
+      "tracks": [
+        {
+          "id": "cathedral-of-flickers",
+          "title": "Cathedral of Flickers",
+          "description": "Progressive house after deadmau5: a four-on-the-floor at 128 in D minor, a bright plucked arpeggio over a wide, slowly breathing pad, rolling offbeat bass and a long build that opens into a patient, singing lead.",
+          "tags": [
+            "tribute",
+            "progressive-house",
+            "deadmau5"
+          ],
+          "bpm": 128,
+          "durationSec": 160.6,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -2.5,
+          "loop": false,
+          "mp3": "./media/cathedral-of-flickers.mp3",
+          "look": "./media/cathedral-of-flickers.png",
+          "recipe": "./songs/tribute/cathedral-of-flickers.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "rack-ghosts",
+          "title": "Rack Ghosts",
+          "description": "Electro-house after deadmau5: 126 bpm in A minor, a rolling acid bass, offbeat chord stabs and a short, syncopated pluck hook that circles back on itself.",
+          "tags": [
+            "tribute",
+            "electro-house",
+            "deadmau5"
+          ],
+          "bpm": 126,
+          "durationSec": 163,
+          "loudnessLufs": -19.5,
+          "targetLufs": -17,
+          "truePeakDb": -1.6,
+          "loop": false,
+          "mp3": "./media/rack-ghosts.mp3",
+          "look": "./media/rack-ghosts.png",
+          "recipe": "./songs/tribute/rack-ghosts.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-target",
+                "message": "plays at -19.5 LUFS, 2.5 LU under target: transients cap the level (crest 20.4 dB). Soften drum accents or lower the peakiest track"
+              },
+              {
+                "rule": "song-low-end",
+                "message": "41% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "bass-congregation",
+          "title": "Bass Congregation",
+          "description": "Glitch hop after Bassnectar: a swung 105 in D minor, a wobbling eighth-note bass, hand drums and toms, chopped vowel stabs and a grainy glitch layer over a slow string pad.",
+          "tags": [
+            "tribute",
+            "glitch-hop",
+            "bassnectar"
+          ],
+          "bpm": 105,
+          "durationSec": 175.5,
+          "loudnessLufs": -19.6,
+          "targetLufs": -17,
+          "truePeakDb": -1.7,
+          "loop": false,
+          "mp3": "./media/bass-congregation.mp3",
+          "look": "./media/bass-congregation.png",
+          "recipe": "./songs/tribute/bass-congregation.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-target",
+                "message": "plays at -19.6 LUFS, 2.6 LU under target: transients cap the level (crest 20 dB). Soften drum accents or lower the peakiest track"
+              },
+              {
+                "rule": "song-low-end",
+                "message": "65% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cinematic-bloom",
+          "title": "Cinematic Bloom",
+          "description": "Cinematic bass music after Bassnectar: a piano and string opening in E minor, a choir pad and a brass call that swell into a half-time drop of FM growl bass, timpani toms and impact booms.",
+          "tags": [
+            "tribute",
+            "bass-music",
+            "bassnectar"
+          ],
+          "bpm": 140,
+          "durationSec": 147.8,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -2.7,
+          "loop": false,
+          "mp3": "./media/cinematic-bloom.mp3",
+          "look": "./media/cinematic-bloom.png",
+          "recipe": "./songs/tribute/cinematic-bloom.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "dust-devil",
+          "title": "Dust Devil",
+          "description": "Trance after Darude: 136 bpm in E minor, a gated saw riff in sixteenths, offbeat open hats, a rolling bass and a snare-roll build into a big, bright breakdown.",
+          "tags": [
+            "tribute",
+            "trance",
+            "darude"
+          ],
+          "bpm": 136,
+          "durationSec": 151.8,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -2.1,
+          "loop": false,
+          "mp3": "./media/dust-devil.mp3",
+          "look": "./media/dust-devil.png",
+          "recipe": "./songs/tribute/dust-devil.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "55% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "night-drive-euphoria",
+          "title": "Night Drive Euphoria",
+          "description": "Uplifting trance after Darude: 138 bpm in A minor, supersaw chords, a plucked sixteenth arpeggio, a rolling bass and a soaring lead that comes back for the last big chorus.",
+          "tags": [
+            "tribute",
+            "trance",
+            "darude"
+          ],
+          "bpm": 138,
+          "durationSec": 149.8,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -1.8,
+          "loop": false,
+          "mp3": "./media/night-drive-euphoria.mp3",
+          "look": "./media/night-drive-euphoria.png",
+          "recipe": "./songs/tribute/night-drive-euphoria.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "grin-and-growl",
+          "title": "Grin and Growl",
+          "description": "Brostep after Skrillex: 140 bpm in F minor, a tempo-synced FM growl with stuttering rhythms, a screeching lead that dives and climbs, chopped vowel stabs and a half-time snare, after a quiet piano and string opening.",
+          "tags": [
+            "tribute",
+            "brostep",
+            "skrillex"
+          ],
+          "bpm": 140,
+          "durationSec": 147.5,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -3.5,
+          "loop": false,
+          "mp3": "./media/grin-and-growl.mp3",
+          "look": "./media/grin-and-growl.png",
+          "recipe": "./songs/tribute/grin-and-growl.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "bounce-house-riot",
+          "title": "Bounce House Riot",
+          "description": "Electro house after Skrillex: a bouncy 110 in G minor, a pitch-dropping bounce bass, rave stabs on the offbeat and a hoover hook that answers itself, with screeches thrown in between phrases.",
+          "tags": [
+            "tribute",
+            "electro-house",
+            "skrillex"
+          ],
+          "bpm": 110,
+          "durationSec": 185.2,
+          "loudnessLufs": -18.3,
+          "targetLufs": -17,
+          "truePeakDb": -1.9,
+          "loop": false,
+          "mp3": "./media/bounce-house-riot.mp3",
+          "look": "./media/bounce-house-riot.png",
+          "recipe": "./songs/tribute/bounce-house-riot.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "rubber-bass-parade",
+          "title": "Rubber Bass Parade",
+          "description": "Melodic dubstep after Flux Pavilion: 140 bpm in bright D major, a rubbery bounce bass that drops an octave on every hit, a wobbling fill and a big brass tune you can sing, with supersaw chord stabs on the offbeat.",
+          "tags": [
+            "tribute",
+            "melodic-dubstep",
+            "flux-pavilion"
+          ],
+          "bpm": 140,
+          "durationSec": 147.8,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -1.6,
+          "loop": false,
+          "mp3": "./media/rubber-bass-parade.mp3",
+          "look": "./media/rubber-bass-parade.png",
+          "recipe": "./songs/tribute/rubber-bass-parade.json",
+          "lint": {
+            "warnings": []
+          }
+        },
+        {
+          "id": "emotional-static",
+          "title": "Emotional Static",
+          "description": "Melodic dubstep after Flux Pavilion: a sung vowel line over piano and strings in A minor, then a 140 bpm drop of wobbling sub and half-time snare under a supersaw lead that lifts into C major.",
+          "tags": [
+            "tribute",
+            "melodic-dubstep",
+            "flux-pavilion"
+          ],
+          "bpm": 140,
+          "durationSec": 147.8,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -3.2,
+          "loop": false,
+          "mp3": "./media/emotional-static.mp3",
+          "look": "./media/emotional-static.png",
+          "recipe": "./songs/tribute/emotional-static.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-range",
+                "message": "loudness range 2.8 LU over 148 s: sections do not rise and fall; thin or drop parts in some sections"
+              },
+              {
+                "rule": "song-low-end",
+                "message": "41% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "late-night-wub",
+          "title": "Late Night Wub",
+          "description": "Wonky dubstep after Zeds Dead: a head-nodding 90 bpm in C minor, a wonking bass that opens its filter on every hit, moody electric piano, trap hi-hat rolls and three chopped vowels trading phrases.",
+          "tags": [
+            "tribute",
+            "wonky-dubstep",
+            "zeds-dead"
+          ],
+          "bpm": 90,
+          "durationSec": 203.4,
+          "loudnessLufs": -19.4,
+          "targetLufs": -17,
+          "truePeakDb": -1.5,
+          "loop": false,
+          "mp3": "./media/late-night-wub.mp3",
+          "look": "./media/late-night-wub.png",
+          "recipe": "./songs/tribute/late-night-wub.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-loudness-target",
+                "message": "plays at -19.5 LUFS, 2.5 LU under target: transients cap the level (crest 19 dB). Soften drum accents or lower the peakiest track"
+              },
+              {
+                "rule": "song-low-end",
+                "message": "42% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        },
+        {
+          "id": "fire-escape-rewind",
+          "title": "Fire Escape Rewind",
+          "description": "Drum and bass after Zeds Dead: 174 bpm in E minor, a rolling reese bass that slowly opens and closes, a two-step kick and snare, sixteenth hats, string pad air and vowel stabs that answer the bass.",
+          "tags": [
+            "tribute",
+            "drum-and-bass",
+            "zeds-dead"
+          ],
+          "bpm": 174,
+          "durationSec": 121,
+          "loudnessLufs": -17,
+          "targetLufs": -17,
+          "truePeakDb": -2.4,
+          "loop": false,
+          "mp3": "./media/fire-escape-rewind.mp3",
+          "look": "./media/fire-escape-rewind.png",
+          "recipe": "./songs/tribute/fire-escape-rewind.json",
+          "lint": {
+            "warnings": [
+              {
+                "rule": "song-low-end",
+                "message": "59% of energy is below 120 Hz: bass or kick masks the mix"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
