@@ -4,14 +4,31 @@
     "title": "Dinner Party",
     "tagline": "Hosting guests and cooking for them, from chopping to the last cup of coffee.",
     "musicLoudness": -22,
-    "order": ["chopping-board", "simmer", "doors-open", "wine-pour", "first-course", "table-talk", "second-helping", "dessert-plates", "candlelight", "last-guests-linger"],
+    "order": [
+      "chopping-board",
+      "simmer",
+      "doors-open",
+      "wine-pour",
+      "first-course",
+      "table-talk",
+      "second-helping",
+      "dessert-plates",
+      "candlelight",
+      "last-guests-linger"
+    ],
     "brief": [
       "The brief is that people have to be able to talk. Every track stays between 60 and 108 bpm, keeps its melody understated and soft, and leaves the middle of the spectrum free for voices. Nothing has a hook that asks to be sung along to.",
       "The set follows the evening: two prep tracks with a little lift for the kitchen, then arrival, the first glass, the starter, the main course, seconds, dessert and a slow, nearly empty close. Styles shift between bossa nova, ballad, soft soul, light funk and a waltz so a long evening does not feel looped."
     ],
     "sources": [
-      { "label": "Dinner-party tempo and volume guidance (commercial blogs; consistent on conversation-first volume and 60 to 110 bpm, not rigorous)", "url": "https://djwillgill.com/how-different-playlists-uplift-small-and-large-events/" },
-      { "label": "Restaurant music strategy by concept (tempo bands)", "url": "https://activaire.com/blog/restaurant-music-strategy" }
+      {
+        "label": "Dinner-party tempo and volume guidance (commercial blogs; consistent on conversation-first volume and 60 to 110 bpm, not rigorous)",
+        "url": "https://djwillgill.com/how-different-playlists-uplift-small-and-large-events/"
+      },
+      {
+        "label": "Restaurant music strategy by concept (tempo bands)",
+        "url": "https://activaire.com/blog/restaurant-music-strategy"
+      }
     ]
   },
   {
@@ -19,13 +36,27 @@
     "title": "Deep Focus",
     "tagline": "Studying and working: steady, quiet and slow to change.",
     "musicLoudness": -24,
-    "order": ["blank-page", "library-hours", "deep-work", "flow-state", "margin-notes", "quiet-desk", "index-cards", "slow-rain-reading", "checkpoint", "long-division"],
+    "order": [
+      "blank-page",
+      "library-hours",
+      "deep-work",
+      "flow-state",
+      "margin-notes",
+      "quiet-desk",
+      "index-cards",
+      "slow-rain-reading",
+      "checkpoint",
+      "long-division"
+    ],
     "brief": [
       "The brief is that nothing should pull the eye off the page. No lyrics, no melodic hook, no sudden entrances: each section changes by one layer at a time, tempos sit between 56 and 84 bpm, and the level barely moves from the first bar to the last.",
       "The evidence behind focus music is thin. The one tempo comparison found, a small experiment of unconfirmed origin, had slow instrumental music (60 to 70 bpm) do as well as or slightly better than silence for word recall, and fast music (120 to 130 bpm) do worst. Claims that a particular tempo entrains brain waves are not supported by anything found. Treat this as a sensible default rather than a prescription; the music that works is the music you stop noticing."
     ],
     "sources": [
-      { "label": "Background music while studying (qualitative study; says empirical work on slide-based learning is scarce)", "url": "https://public-pages-files-2025.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2025.1637073/pdf" }
+      {
+        "label": "Background music while studying (qualitative study; says empirical work on slide-based learning is scarce)",
+        "url": "https://public-pages-files-2025.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2025.1637073/pdf"
+      }
     ]
   },
   {
@@ -33,14 +64,70 @@
     "title": "Get Pumped",
     "tagline": "A warm-up, a climb through the tempos and a victory lap.",
     "musicLoudness": -16,
-    "order": ["warm-up-lap", "crowd-noise", "rise-up", "ignition", "breakthrough", "pressure", "final-set", "iron-will", "sprint-finish", "victory-lap"],
+    "order": [
+      "warm-up-lap",
+      "crowd-noise",
+      "rise-up",
+      "ignition",
+      "breakthrough",
+      "pressure",
+      "final-set",
+      "iron-will",
+      "sprint-finish",
+      "victory-lap"
+    ],
     "brief": [
       "The brief is drive. Hard kicks, bass on the offbeat, brass hooks and a build and drop in every track, in the 118 to 150 bpm range. Exercise-music research recommends roughly 120 to 140 bpm for most work, a slower start for warm-ups and little extra benefit above about 145, and advises against heavy syncopation, which is why the grooves here lean on the beat.",
       "The set climbs on purpose: it opens at 118 bpm, rises through the 120s and 130s, peaks at 150 and ends on a 120 bpm cool-down. Much of the reported benefit figures come from secondary coverage rather than the papers, so take the numbers as a guide."
     ],
     "sources": [
-      { "label": "Karageorghis et al. 2011, Research Quarterly for Exercise and Sport: tempo preference across exercise intensity", "url": "https://shura.shu.ac.uk/18185/" },
-      { "label": "Les Mills on workout music tempo ranges", "url": "https://www.lesmills.com/articles/workout-music" }
+      {
+        "label": "Karageorghis et al. 2011, Research Quarterly for Exercise and Sport: tempo preference across exercise intensity",
+        "url": "https://shura.shu.ac.uk/18185/"
+      },
+      {
+        "label": "Les Mills on workout music tempo ranges",
+        "url": "https://www.lesmills.com/articles/workout-music"
+      }
+    ]
+  },
+  {
+    "id": "tribute",
+    "title": "Tribute Album",
+    "tagline": "Twelve original tracks in the spirit of six electronic artists, each on a new synth palette.",
+    "musicLoudness": -17,
+    "order": [
+      "cathedral-of-flickers",
+      "rack-ghosts",
+      "bass-congregation",
+      "cinematic-bloom",
+      "dust-devil",
+      "night-drive-euphoria",
+      "grin-and-growl",
+      "bounce-house-riot",
+      "rubber-bass-parade",
+      "emotional-static",
+      "late-night-wub",
+      "fire-escape-rewind"
+    ],
+    "brief": [
+      "A tribute, not a copy: two tracks for each of deadmau5, Bassnectar, Darude, Skrillex, Flux Pavilion and Zeds Dead, taking the tempo, sound palette and song structure each is known for. No melody, sample or recording from any of them is used, and nothing here is affiliated with or endorsed by them.",
+      "Deadmau5: progressive and electro house at 126 to 128 bpm, with plucked arpeggios and long builds. Bassnectar: swung glitch hop at 105 and half-time bass music at 140, with wobbles, hand drums, strings and a choir. Darude: trance at 136 to 138, with gated saw riffs, supersaw chords and snare-roll builds. Skrillex: brostep at 140 and electro house at 110, with FM growls, screeches, vowel chops and a bouncing bass. Flux Pavilion: melodic dubstep at 140, with a rubbery bounce bass and big brass and supersaw tunes. Zeds Dead: wonky half-time at 90 and drum and bass at 174, with a wonking bass, trap hats and a rolling reese.",
+      "The first three playlists leaned on the same few instruments, so this one has its own synth lab: about twenty instruments written for it, from supersaws, trance leads and plucks to a hoover, an FM growl, tempo-synced wobbles, reese, bounce and wonk basses, vowel voices, risers and heavier drums. The style descriptions are my own characterisation from a few thin sources, not measurements of anyone's records, and the tracks are measured, not yet heard."
+    ],
+    "sources": [
+      {
+        "label": "What is progressive house? (tempo and structure overview)",
+        "url": "https://www.edmprod.com/what-is-progressive-house/"
+      },
+      {
+        "label": "Darude, \"Sandstorm\": listed at 136 bpm (tempo only; nothing else of the record is used)",
+        "url": "https://www.mixgraph.io/tracks/darude-sandstorm"
+      },
+      {
+        "label": "Glitch hop overview (typically 80 to 130 bpm)",
+        "url": "https://www.soundbridge.io/glitch-hop"
+      }
     ]
   }
 ]

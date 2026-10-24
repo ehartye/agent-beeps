@@ -1,0 +1,1006 @@
+{
+  "schema": "beeps/song@1",
+  "name": "bounce-house-riot",
+  "title": "Bounce House Riot",
+  "description": "Electro house after Skrillex: a bouncy 110 in G minor, a pitch-dropping bounce bass, rave stabs on the offbeat and a hoover hook that answers itself, with screeches thrown in between phrases.",
+  "tags": [
+    "tribute",
+    "electro-house",
+    "skrillex"
+  ],
+  "bpm": 110,
+  "swing": 0.06,
+  "loop": false,
+  "seed": 440108,
+  "instruments": {
+    "punch-kick": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 170
+          },
+          "pitchEnv": [
+            {
+              "at": 0.07,
+              "to": 46,
+              "curve": "exp"
+            }
+          ],
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.32,
+            "sustain": 0,
+            "release": 0.06
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "gainDb": -14,
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.012,
+            "sustain": 0,
+            "release": 0.01
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 2500
+          }
+        }
+      ]
+    },
+    "clap": {
+      "duration": 0.25,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.13,
+            "sustain": 0,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 1500,
+            "q": 1.2
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "pink"
+          },
+          "gainDb": -6,
+          "amp": {
+            "attack": 0.012,
+            "decay": 0.09,
+            "sustain": 0,
+            "release": 0.06
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 1100,
+            "q": 0.9
+          }
+        }
+      ]
+    },
+    "open-hat": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "metal",
+            "base": 40,
+            "bands": [
+              7000,
+              10000
+            ]
+          },
+          "gainDb": -4,
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.28,
+            "sustain": 0,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 6500
+          }
+        }
+      ]
+    },
+    "bounce-bass": {
+      "duration": 0.5,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "C3",
+            "unison": {
+              "voices": 2,
+              "detuneCents": 6
+            }
+          },
+          "pitchEnv": [
+            {
+              "at": 0.08,
+              "to": "C2",
+              "curve": "exp"
+            }
+          ],
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 1500,
+            "resonanceDb": 6,
+            "env": {
+              "to": 300,
+              "time": 0.2
+            }
+          },
+          "drive": 0.3,
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.35,
+            "sustain": 0.5,
+            "release": 0.1
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": "C3"
+          },
+          "pitchEnv": [
+            {
+              "at": 0.08,
+              "to": "C2",
+              "curve": "exp"
+            }
+          ],
+          "gainDb": -3,
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.35,
+            "sustain": 0.6,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "rave-stab": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "Bb4",
+            "unison": {
+              "voices": 6,
+              "detuneCents": 36
+            }
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 11582,
+            "resonanceDb": 2,
+            "env": {
+              "to": 2673,
+              "time": 0.22
+            }
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.28,
+            "sustain": 0.15,
+            "release": 0.1
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "square",
+            "pitch": "Bb4"
+          },
+          "gainDb": -6,
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 5345,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.2,
+            "sustain": 0.1,
+            "release": 0.08
+          }
+        }
+      ]
+    },
+    "hoover": {
+      "duration": 0.6,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "G4",
+            "unison": {
+              "voices": 5,
+              "detuneCents": 44
+            }
+          },
+          "pitchEnv": [
+            {
+              "at": 0.12,
+              "to": "C4",
+              "curve": "exp"
+            }
+          ],
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 3800,
+            "resonanceDb": 4
+          },
+          "drive": 0.4,
+          "amp": {
+            "attack": 0.01,
+            "decay": 0.3,
+            "sustain": 0.8,
+            "release": 0.15
+          }
+        }
+      ]
+    },
+    "screech": {
+      "duration": 0.6,
+      "layers": [
+        {
+          "source": {
+            "type": "fm",
+            "pitch": "Db6",
+            "operators": [
+              {
+                "ratio": 1
+              },
+              {
+                "ratio": 1.5,
+                "index": 9,
+                "indexEnv": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    0.2,
+                    0.55,
+                    "linear"
+                  ],
+                  [
+                    0.6,
+                    0.8
+                  ]
+                ]
+              }
+            ],
+            "algorithm": [
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          "pitchEnv": [
+            {
+              "at": 0.18,
+              "to": "E6",
+              "curve": "exp"
+            }
+          ],
+          "filter": {
+            "type": "highpass",
+            "cutoff": 1483,
+            "resonanceDb": 0
+          },
+          "drive": 0.7,
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.2,
+            "sustain": 0.7,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "vox-ah": {
+      "duration": 0.4,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "B4",
+            "formants": [
+              [
+                700,
+                8,
+                0
+              ],
+              [
+                1200,
+                10,
+                -4
+              ],
+              [
+                2600,
+                12,
+                -14
+              ]
+            ],
+            "tilt": 1,
+            "jitterCents": 8,
+            "vibrato": {
+              "rate": 5.5,
+              "cents": 18
+            },
+            "breath": 0.05
+          },
+          "amp": {
+            "attack": 0.02,
+            "decay": 0.2,
+            "sustain": 0.8,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "riser": {
+      "duration": 8,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white",
+            "stereo": true
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 400,
+            "q": 1.2,
+            "env": {
+              "to": 9000,
+              "time": 7
+            }
+          },
+          "amp": {
+            "attack": 1.5,
+            "decay": 1,
+            "sustain": 1,
+            "release": 0.3
+          }
+        }
+      ]
+    },
+    "crash": {
+      "duration": 2,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 5000,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.002,
+            "decay": 1.6,
+            "sustain": 0,
+            "release": 0.4
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "Gm",
+        8
+      ],
+      [
+        "Eb",
+        8
+      ],
+      [
+        "Bb",
+        8
+      ],
+      [
+        "F",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "kick": {
+      "instrument": "punch-kick",
+      "gainDb": -17
+    },
+    "clap": {
+      "instrument": "clap",
+      "gainDb": -19
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -23,
+      "pan": 0.2
+    },
+    "ohat": {
+      "instrument": "open-hat",
+      "gainDb": -24,
+      "pan": -0.2
+    },
+    "bounce": {
+      "instrument": "bounce-bass",
+      "gainDb": -19
+    },
+    "stab": {
+      "instrument": "rave-stab",
+      "gainDb": -17,
+      "pan": -0.2,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -16
+      }
+    },
+    "hoo": {
+      "instrument": "hoover",
+      "gainDb": -14,
+      "pan": 0.1,
+      "sends": {
+        "reverb": -14,
+        "delay": -16
+      }
+    },
+    "screech": {
+      "instrument": "screech",
+      "gainDb": -20,
+      "pan": -0.15,
+      "sends": {
+        "reverb": -14,
+        "delay": -14
+      }
+    },
+    "vox": {
+      "instrument": "vox-ah",
+      "gainDb": -18,
+      "sends": {
+        "reverb": -12,
+        "delay": -12
+      }
+    },
+    "riser": {
+      "instrument": "riser",
+      "gainDb": -24
+    },
+    "crash": {
+      "instrument": "crash",
+      "gainDb": -20
+    }
+  },
+  "patterns": {
+    "kick": {
+      "bars": 1,
+      "steps": "x... x... x... x..."
+    },
+    "clap": {
+      "bars": 1,
+      "steps": ".... x... .... x..."
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "ohat": {
+      "bars": 1,
+      "steps": "..x. ..x. ..x. ..x."
+    },
+    "bounce-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x..x ..x. x... ..x.",
+        "tones": [
+          0,
+          0,
+          0,
+          2
+        ]
+      }
+    },
+    "stab-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 4,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "..x. ..x. ..x. ..x."
+      }
+    },
+    "hoo-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "G4",
+          1,
+          0.85
+        ],
+        [
+          1.5,
+          "G4",
+          0.5,
+          0.85
+        ],
+        [
+          2,
+          "Bb4",
+          1,
+          0.85
+        ],
+        [
+          4,
+          "D5",
+          1,
+          0.85
+        ],
+        [
+          5.5,
+          "D5",
+          0.5,
+          0.85
+        ],
+        [
+          6,
+          "C5",
+          1,
+          0.85
+        ],
+        [
+          7,
+          "Bb4",
+          1,
+          0.85
+        ],
+        [
+          8,
+          "Eb5",
+          1,
+          0.85
+        ],
+        [
+          9.5,
+          "Eb5",
+          0.5,
+          0.85
+        ],
+        [
+          10,
+          "G5",
+          1,
+          0.85
+        ],
+        [
+          12,
+          "F5",
+          1,
+          0.85
+        ],
+        [
+          14,
+          "Eb5",
+          1,
+          0.85
+        ],
+        [
+          15,
+          "D5",
+          1,
+          0.85
+        ],
+        [
+          16,
+          "Bb4",
+          1,
+          0.85
+        ],
+        [
+          17.5,
+          "Bb4",
+          0.5,
+          0.85
+        ],
+        [
+          18,
+          "D5",
+          1,
+          0.85
+        ],
+        [
+          20,
+          "F5",
+          1,
+          0.85
+        ],
+        [
+          21.5,
+          "F5",
+          0.5,
+          0.85
+        ],
+        [
+          22,
+          "D5",
+          1,
+          0.85
+        ],
+        [
+          23,
+          "Bb4",
+          1,
+          0.85
+        ],
+        [
+          24,
+          "C5",
+          1,
+          0.85
+        ],
+        [
+          25.5,
+          "C5",
+          0.5,
+          0.85
+        ],
+        [
+          26,
+          "F5",
+          1,
+          0.85
+        ],
+        [
+          28,
+          "A4",
+          2,
+          0.85
+        ],
+        [
+          30,
+          "C5",
+          2,
+          0.85
+        ]
+      ]
+    },
+    "screech-a": {
+      "bars": 8,
+      "notes": [
+        [
+          14,
+          "D6",
+          1,
+          0.85
+        ],
+        [
+          15,
+          "C6",
+          1,
+          0.85
+        ],
+        [
+          28,
+          "F6",
+          2,
+          0.85
+        ],
+        [
+          30,
+          "A5",
+          2,
+          0.85
+        ]
+      ]
+    },
+    "vox-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "G4",
+          0.5,
+          0.8
+        ],
+        [
+          2,
+          "Bb4",
+          0.5,
+          0.8
+        ],
+        [
+          4,
+          "D5",
+          0.5,
+          0.8
+        ],
+        [
+          6,
+          "C5",
+          0.5,
+          0.8
+        ],
+        [
+          8,
+          "Eb5",
+          0.5,
+          0.8
+        ],
+        [
+          10,
+          "G4",
+          0.5,
+          0.8
+        ],
+        [
+          12,
+          "F4",
+          0.5,
+          0.8
+        ],
+        [
+          13,
+          "A4",
+          0.5,
+          0.8
+        ],
+        [
+          16,
+          "G4",
+          0.5,
+          0.8
+        ],
+        [
+          18,
+          "Bb4",
+          0.5,
+          0.8
+        ],
+        [
+          20,
+          "D5",
+          0.5,
+          0.8
+        ],
+        [
+          22,
+          "F5",
+          0.5,
+          0.8
+        ],
+        [
+          24,
+          "C5",
+          0.5,
+          0.8
+        ],
+        [
+          26,
+          "F4",
+          0.5,
+          0.8
+        ],
+        [
+          28,
+          "A4",
+          4,
+          0.8
+        ]
+      ]
+    },
+    "riser-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "C4",
+          32,
+          0.8
+        ]
+      ]
+    },
+    "crash-a": {
+      "bars": 1,
+      "notes": [
+        [
+          0,
+          "C4",
+          4,
+          0.9
+        ]
+      ]
+    },
+    "roll-a": {
+      "bars": 4,
+      "steps": ".... .... x... ...."
+    },
+    "roll-b": {
+      "bars": 2,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "roll-c": {
+      "bars": 1,
+      "steps": "xxxx xxxx xxxx xxxx"
+    },
+    "roll-d": {
+      "bars": 1,
+      "steps": "x... .... .... ...."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "stab": "stab-a",
+        "vox": "vox-a"
+      },
+      "mix": {
+        "stab": {
+          "gainDb": -24
+        },
+        "vox": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    },
+    "build": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "clap": [
+          "roll-a",
+          "roll-b",
+          "roll-c",
+          "roll-d"
+        ],
+        "stab": "stab-a",
+        "vox": "vox-a",
+        "riser": "riser-a"
+      },
+      "mix": {
+        "stab": {
+          "gainDb": -17
+        },
+        "vox": {
+          "gainDb": -18
+        },
+        "riser": {
+          "gainDb": -17
+        }
+      },
+      "ramp": true,
+      "bars": 8
+    },
+    "drop": {
+      "play": {
+        "kick": "kick",
+        "clap": "clap",
+        "hat": "hat",
+        "ohat": "ohat",
+        "bounce": "bounce-a",
+        "stab": "stab-a",
+        "crash": "crash-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -60
+        }
+      },
+      "bars": 8
+    },
+    "hook": {
+      "play": {
+        "kick": "kick",
+        "clap": "clap",
+        "hat": "hat",
+        "ohat": "ohat",
+        "bounce": "bounce-a",
+        "stab": "stab-a",
+        "hoo": "hoo-a",
+        "screech": "screech-a"
+      },
+      "bars": 8
+    },
+    "break": {
+      "play": {
+        "hat": "hat",
+        "stab": "stab-a",
+        "vox": "vox-a",
+        "hoo": "hoo-a"
+      },
+      "mix": {
+        "stab": {
+          "gainDb": -22
+        },
+        "hoo": {
+          "gainDb": -18
+        },
+        "vox": {
+          "gainDb": -16
+        }
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "kick": "kick",
+        "hat": "hat",
+        "bounce": "bounce-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "kick": {
+          "gainDb": -24
+        },
+        "bounce": {
+          "gainDb": -26
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "build",
+    "drop",
+    "hook",
+    "break",
+    "build",
+    "drop",
+    "hook",
+    "hook",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -11
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.35,
+      "returnDb": -20
+    }
+  }
+}

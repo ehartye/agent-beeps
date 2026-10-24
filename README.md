@@ -15,7 +15,7 @@ buffers. Import and preparation are local; portable bundles share only the sourc
 reel in the existing listening booth, with nine scenes and eight effects synthesized live in your
 browser. [Score, patches, measurements and build instructions](showcase/README.md).
 
-**[Three playlists →](https://ehartye.github.io/agent-beeps/playlists/)** — thirty original instrumental tracks for hosting and dinner prep, study and focus, and getting pumped, each a JSON score you can read ([playlists/](playlists/)).
+**[Playlists →](https://ehartye.github.io/agent-beeps/playlists/)** — forty-two original instrumental tracks: hosting and dinner prep, study and focus, getting pumped, and a tribute album in the spirit of six electronic artists, each a JSON score you can read ([playlists/](playlists/)).
 
 [Hear Fuse: recording, procedural body, hybrid](https://ehartye.github.io/agent-beeps/#fuse) ·
 [Metal example](library/examples/fuse/README.md) · [Tommy five-burst example](library/examples/fuse-tommy/README.md) ·

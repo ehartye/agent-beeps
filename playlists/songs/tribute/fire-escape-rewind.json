@@ -1,0 +1,900 @@
+{
+  "schema": "beeps/song@1",
+  "name": "fire-escape-rewind",
+  "title": "Fire Escape Rewind",
+  "description": "Drum and bass after Zeds Dead: 174 bpm in E minor, a rolling reese bass that slowly opens and closes, a two-step kick and snare, sixteenth hats, string pad air and vowel stabs that answer the bass.",
+  "tags": [
+    "tribute",
+    "drum-and-bass",
+    "zeds-dead"
+  ],
+  "bpm": 174,
+  "loop": false,
+  "seed": 440112,
+  "instruments": {
+    "deep-kick": {
+      "duration": 0.6,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 130
+          },
+          "pitchEnv": [
+            {
+              "at": 0.09,
+              "to": 40,
+              "curve": "exp"
+            }
+          ],
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.5,
+            "sustain": 0,
+            "release": 0.1
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "gainDb": -16,
+          "highpass": 1500,
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.01,
+            "sustain": 0,
+            "release": 0.01
+          }
+        }
+      ]
+    },
+    "snare-dnb": {
+      "duration": 0.2,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "triangle",
+            "pitch": 260
+          },
+          "pitchEnv": [
+            {
+              "at": 0.04,
+              "to": 190
+            }
+          ],
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.07,
+            "sustain": 0,
+            "release": 0.03
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 1800,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.13,
+            "sustain": 0,
+            "release": 0.05
+          }
+        }
+      ]
+    },
+    "open-hat": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "metal",
+            "base": 40,
+            "bands": [
+              7000,
+              10000
+            ]
+          },
+          "gainDb": -4,
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.28,
+            "sustain": 0,
+            "release": 0.08
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 6500
+          }
+        }
+      ]
+    },
+    "reese": {
+      "duration": 1.5,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "G2",
+            "unison": {
+              "voices": 3,
+              "detuneCents": 22
+            }
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 1049,
+            "resonanceDb": 3
+          },
+          "lfo": {
+            "target": "cutoff",
+            "rate": 0.35,
+            "depth": 280
+          },
+          "drive": 0.35,
+          "amp": {
+            "attack": 0.01,
+            "decay": 0.3,
+            "sustain": 0.9,
+            "release": 0.15
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": "G2"
+          },
+          "gainDb": -3,
+          "amp": {
+            "attack": 0.01,
+            "decay": 0.3,
+            "sustain": 0.9,
+            "release": 0.15
+          }
+        }
+      ]
+    },
+    "rave-stab": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "G4",
+            "unison": {
+              "voices": 6,
+              "detuneCents": 36
+            }
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 9739,
+            "resonanceDb": 2,
+            "env": {
+              "to": 2247,
+              "time": 0.22
+            }
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.28,
+            "sustain": 0.15,
+            "release": 0.1
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "square",
+            "pitch": "G4"
+          },
+          "gainDb": -6,
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 4495,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.2,
+            "sustain": 0.1,
+            "release": 0.08
+          }
+        }
+      ]
+    },
+    "vox-ee": {
+      "duration": 0.4,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "Eb5",
+            "formants": [
+              [
+                300,
+                8,
+                0
+              ],
+              [
+                2300,
+                10,
+                -4
+              ],
+              [
+                3000,
+                12,
+                -12
+              ]
+            ],
+            "tilt": 0.9,
+            "jitterCents": 8,
+            "vibrato": {
+              "rate": 5.5,
+              "cents": 18
+            },
+            "breath": 0.05
+          },
+          "amp": {
+            "attack": 0.02,
+            "decay": 0.2,
+            "sustain": 0.8,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "vox-ah": {
+      "duration": 0.4,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "A4",
+            "formants": [
+              [
+                700,
+                8,
+                0
+              ],
+              [
+                1200,
+                10,
+                -4
+              ],
+              [
+                2600,
+                12,
+                -14
+              ]
+            ],
+            "tilt": 1,
+            "jitterCents": 8,
+            "vibrato": {
+              "rate": 5.5,
+              "cents": 18
+            },
+            "breath": 0.05
+          },
+          "amp": {
+            "attack": 0.02,
+            "decay": 0.2,
+            "sustain": 0.8,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "riser": {
+      "duration": 8,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white",
+            "stereo": true
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 400,
+            "q": 1.2,
+            "env": {
+              "to": 9000,
+              "time": 7
+            }
+          },
+          "amp": {
+            "attack": 1.5,
+            "decay": 1,
+            "sustain": 1,
+            "release": 0.3
+          }
+        }
+      ]
+    },
+    "crash": {
+      "duration": 2,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 5000,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.002,
+            "decay": 1.6,
+            "sustain": 0,
+            "release": 0.4
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "Em",
+        8
+      ],
+      [
+        "G",
+        8
+      ],
+      [
+        "D",
+        8
+      ],
+      [
+        "C",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "kick": {
+      "instrument": "deep-kick",
+      "gainDb": -14
+    },
+    "snare": {
+      "instrument": "snare-dnb",
+      "gainDb": -10
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -23,
+      "pan": 0.2
+    },
+    "ohat": {
+      "instrument": "open-hat",
+      "gainDb": -26,
+      "pan": -0.2
+    },
+    "reese": {
+      "instrument": "reese",
+      "gainDb": -15
+    },
+    "stab": {
+      "instrument": "rave-stab",
+      "gainDb": -20,
+      "pan": -0.2,
+      "spread": 0.5,
+      "sends": {
+        "reverb": -15,
+        "delay": -16
+      }
+    },
+    "ee": {
+      "instrument": "vox-ee",
+      "gainDb": -17,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -12,
+        "delay": -12
+      }
+    },
+    "ah": {
+      "instrument": "vox-ah",
+      "gainDb": -18,
+      "pan": -0.2,
+      "sends": {
+        "reverb": -12,
+        "delay": -13
+      }
+    },
+    "pad": {
+      "instrument": "string-pad",
+      "gainDb": -22,
+      "spread": 0.7,
+      "sends": {
+        "reverb": -10
+      }
+    },
+    "riser": {
+      "instrument": "riser",
+      "gainDb": -24
+    },
+    "crash": {
+      "instrument": "crash",
+      "gainDb": -21
+    }
+  },
+  "patterns": {
+    "kick": {
+      "bars": 1,
+      "steps": "x... .... ..x. ...."
+    },
+    "snare": {
+      "bars": 1,
+      "steps": ".... x... .... x..."
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.x. x.x. x.x. x.xx"
+    },
+    "ohat": {
+      "bars": 1,
+      "steps": "..x. .... ..x. ...."
+    },
+    "reese-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "E2",
+          2,
+          1
+        ],
+        [
+          2,
+          "E2",
+          1,
+          1
+        ],
+        [
+          3,
+          "G2",
+          1,
+          1
+        ],
+        [
+          4,
+          "E2",
+          2,
+          1
+        ],
+        [
+          6,
+          "B2",
+          1,
+          1
+        ],
+        [
+          7,
+          "A2",
+          1,
+          1
+        ],
+        [
+          8,
+          "G2",
+          2,
+          1
+        ],
+        [
+          10,
+          "G2",
+          1,
+          1
+        ],
+        [
+          11,
+          "B2",
+          1,
+          1
+        ],
+        [
+          12,
+          "G2",
+          2,
+          1
+        ],
+        [
+          14,
+          "D3",
+          1,
+          1
+        ],
+        [
+          15,
+          "C3",
+          1,
+          1
+        ],
+        [
+          16,
+          "D2",
+          2,
+          1
+        ],
+        [
+          18,
+          "D2",
+          1,
+          1
+        ],
+        [
+          19,
+          "F#2",
+          1,
+          1
+        ],
+        [
+          20,
+          "D2",
+          2,
+          1
+        ],
+        [
+          22,
+          "A2",
+          1,
+          1
+        ],
+        [
+          23,
+          "F#2",
+          1,
+          1
+        ],
+        [
+          24,
+          "C2",
+          2,
+          1
+        ],
+        [
+          26,
+          "C2",
+          1,
+          1
+        ],
+        [
+          27,
+          "E2",
+          1,
+          1
+        ],
+        [
+          28,
+          "C2",
+          2,
+          1
+        ],
+        [
+          30,
+          "G2",
+          1,
+          1
+        ],
+        [
+          31,
+          "E2",
+          1,
+          1
+        ]
+      ]
+    },
+    "stab-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 4,
+        "voicing": "close",
+        "slash": false,
+        "rhythm": "..x_ .... ..x_ ...."
+      }
+    },
+    "pad-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "ee-a": {
+      "bars": 8,
+      "notes": [
+        [
+          2,
+          "B4",
+          0.5,
+          0.85
+        ],
+        [
+          3,
+          "E5",
+          0.5,
+          0.85
+        ],
+        [
+          4,
+          "G5",
+          1,
+          0.85
+        ],
+        [
+          10,
+          "D5",
+          0.5,
+          0.85
+        ],
+        [
+          11,
+          "G5",
+          0.5,
+          0.85
+        ],
+        [
+          12,
+          "B5",
+          1,
+          0.85
+        ],
+        [
+          18,
+          "A4",
+          0.5,
+          0.85
+        ],
+        [
+          19,
+          "D5",
+          0.5,
+          0.85
+        ],
+        [
+          20,
+          "F#5",
+          1,
+          0.85
+        ],
+        [
+          26,
+          "G4",
+          0.5,
+          0.85
+        ],
+        [
+          27,
+          "C5",
+          0.5,
+          0.85
+        ],
+        [
+          28,
+          "E5",
+          1,
+          0.85
+        ]
+      ]
+    },
+    "ah-a": {
+      "bars": 8,
+      "notes": [
+        [
+          12,
+          "B4",
+          1,
+          0.7
+        ],
+        [
+          28,
+          "G4",
+          1,
+          0.7
+        ]
+      ]
+    },
+    "riser-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "C4",
+          32,
+          0.8
+        ]
+      ]
+    },
+    "crash-a": {
+      "bars": 1,
+      "notes": [
+        [
+          0,
+          "C4",
+          4,
+          0.9
+        ]
+      ]
+    },
+    "roll-a": {
+      "bars": 4,
+      "steps": ".... .... x... ...."
+    },
+    "roll-b": {
+      "bars": 2,
+      "steps": "x.x. x.x. x.x. x.x."
+    },
+    "roll-c": {
+      "bars": 1,
+      "steps": "xxxx xxxx xxxx xxxx"
+    },
+    "roll-d": {
+      "bars": 1,
+      "steps": "x... .... .... ...."
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "pad": "pad-a",
+        "ee": "ee-a",
+        "hat": "hat"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -26
+        },
+        "hat": {
+          "gainDb": -32
+        }
+      },
+      "bars": 8
+    },
+    "build": {
+      "play": {
+        "pad": "pad-a",
+        "kick": "kick",
+        "hat": "hat",
+        "snare": [
+          "roll-a",
+          "roll-b",
+          "roll-c",
+          "roll-d"
+        ],
+        "ee": "ee-a",
+        "riser": "riser-a"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -20
+        },
+        "hat": {
+          "gainDb": -23
+        },
+        "riser": {
+          "gainDb": -17
+        }
+      },
+      "ramp": true,
+      "bars": 8
+    },
+    "drop": {
+      "play": {
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat",
+        "ohat": "ohat",
+        "reese": "reese-a",
+        "pad": "pad-a",
+        "crash": "crash-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -60
+        },
+        "pad": {
+          "gainDb": -26
+        }
+      },
+      "bars": 8
+    },
+    "stabs": {
+      "play": {
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat",
+        "ohat": "ohat",
+        "reese": "reese-a",
+        "stab": "stab-a",
+        "ee": "ee-a",
+        "ah": "ah-a"
+      },
+      "bars": 8
+    },
+    "break": {
+      "play": {
+        "pad": "pad-a",
+        "ee": "ee-a",
+        "ah": "ah-a",
+        "stab": "stab-a",
+        "hat": "hat"
+      },
+      "mix": {
+        "pad": {
+          "gainDb": -18
+        },
+        "stab": {
+          "gainDb": -22
+        }
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat",
+        "reese": "reese-a"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "kick": {
+          "gainDb": -26
+        },
+        "snare": {
+          "gainDb": -28
+        },
+        "reese": {
+          "gainDb": -28
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "build",
+    "drop",
+    "stabs",
+    "break",
+    "build",
+    "drop",
+    "stabs",
+    "stabs",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "hall",
+      "returnDb": -11
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.35,
+      "returnDb": -20
+    }
+  }
+}
