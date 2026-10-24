@@ -1,50 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Three Playlists</title>
-<meta name="description" content="Thirty original instrumental tracks in three sets: dinner and hosting, study and focus, and getting pumped. Composed and rendered with agent-beeps.">
-<link rel="stylesheet" href="./style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Thirty original instrumental tracks in three playlists: dinner and hosting, study and focus, and getting pumped. Composed and rendered with agent-beeps.">
+  <meta name="theme-color" content="#d7dad3">
+  <title>Three Playlists · agent-beeps</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232346ff'/%3E%3Cpath d='M6 16h4l3-8 5 16 3-8h5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../booth/style.css">
+  <link rel="stylesheet" href="../booth/album.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body data-set="hosting">
-<a class="skip" href="#tracks">Skip to the track list</a>
-<header class="top">
-  <p class="eyebrow">Thirty original tracks, composed with <a href="https://github.com/ehartye/agent-beeps">agent-beeps</a></p>
-  <h1>Three Playlists</h1>
-  <nav class="tabs" role="tablist" aria-label="Playlists" id="tabs"></nav>
-</header>
+<body>
+<main class="deck">
+  <header class="plate">
+    <div><div class="brand">agent-beeps · listening booth · playlists</div><h1 class="prompt">Three Playlists<span class="period">.</span></h1></div>
+    <div class="meta">THIRTY ORIGINAL TRACKS<br><a href="../">The sound bench ↗</a><br><a href="https://github.com/ehartye/agent-beeps">Explore the repository ↗</a></div>
+  </header>
 
-<main>
-  <section class="intro" id="intro" aria-live="polite"></section>
-  <ol class="tracks" id="tracks"></ol>
-  <section class="notes" aria-labelledby="notes-h">
-    <h2 id="notes-h">How these were made</h2>
-    <p>Every track is a plain JSON score (chords, patterns, sections, mix moves) played by synthesized instruments and rendered offline in a browser. Nothing is sampled or recorded. Open a track's <em>score</em> link to read exactly what plays, bar by bar. Each set is levelled to its own loudness target so a dinner party, a study session and a workout each sit at a sensible volume.</p>
-    <p class="fine">The tempo and level choices follow what could be found about each situation, and the evidence is uneven; each set's notes say which parts are well supported and which are convention.</p>
+  <nav class="context sets" id="tabs" aria-label="Playlists"></nav>
+
+  <section class="transport" aria-label="Playlist transport">
+    <div class="np"><div class="np-label"><span class="led" id="led"></span> <span id="transport-state">Ready when you are</span></div><div class="np-title" id="np-title">Pick a track</div><div class="np-desc" id="np-desc">Press play on any track below.</div></div>
+    <div class="controls">
+      <button class="deckkey" id="prev" aria-label="Previous track">⏮</button>
+      <button class="deckkey big" id="play" aria-label="Play">▶</button>
+      <button class="deckkey" id="next" aria-label="Next track">⏭</button>
+    </div>
+    <div class="group modes"><button class="toggle" id="stop" aria-label="Stop playback">Stop</button><button class="toggle" id="repeat" aria-label="Repeat: off">Repeat off</button><label class="volume">Volume <input id="volume" type="range" min="0" max="100" value="80" aria-label="Volume"></label></div>
+    <div class="monitor"><div class="monitor-label"><span>OUTPUT / FREQUENCY</span><span id="meter-label">AWAITING SIGNAL</span></div><canvas id="scope" width="1200" height="180" aria-label="Live output spectrum"></canvas><div class="monitor-scale"><span>40 Hz</span><span>250 Hz</span><span>1 kHz</span><span>4 kHz</span><span>16 kHz</span></div></div>
+    <div class="scrub"><div class="strip" id="strip" role="slider" tabindex="0" aria-label="Seek in track" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><img id="strip-look" alt="" hidden><div class="played" id="strip-played"></div><div class="head" id="strip-head"></div></div><div class="clock"><span id="pos">0:00</span><span id="sec"></span><span id="dur">0:00</span></div></div>
+    <div id="status" role="status" aria-live="polite"></div>
   </section>
-</main>
 
-<footer class="dock" id="dock" hidden>
-  <div class="now">
-    <img id="dock-look" alt="" width="96" height="40">
-    <div class="now-text"><strong id="dock-title">Nothing playing</strong><span id="dock-sub"></span></div>
-  </div>
-  <div class="controls">
-    <button id="prev" type="button" aria-label="Previous track">&#9198;</button>
-    <button id="play" type="button" aria-label="Play">&#9654;</button>
-    <button id="next" type="button" aria-label="Next track">&#9197;</button>
-  </div>
-  <div class="seek">
-    <span id="cur">0:00</span>
-    <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
-    <span id="dur">0:00</span>
-  </div>
-  <div class="extras">
-    <button id="repeat" type="button" aria-label="Repeat: off" title="Repeat: off">Repeat off</button>
-    <label class="vol"><span class="sr">Volume</span><input id="vol" type="range" min="0" max="100" value="80"></label>
-  </div>
-</footer>
+  <section class="intro" id="intro" aria-live="polite"></section>
+
+  <ol class="tracks" id="tracks"></ol>
+
+  <details class="liner look" id="liner"><summary>How these were made</summary>
+    <div class="liner-grid">
+      <div><h2>Scores, not recordings.</h2><p>Every track is a plain JSON score (chords, patterns, sections, mix moves) played by synthesized instruments and rendered offline in a browser. Nothing is sampled. Open a track's <em>score</em> link to read exactly what plays, bar by bar.</p></div>
+      <div><h2>Levelled per set.</h2><p>Each set is rendered to its own loudness target so a dinner party, a study session and a workout each sit at a sensible volume. The tempo and level choices follow what could be found about each situation; the evidence is uneven, and each set's notes say which parts are well supported and which are convention.</p></div>
+    </div>
+  </details>
+  <footer><span>agent-beeps · original music, procedural instruments</span><a href="https://github.com/ehartye/agent-beeps/tree/main/playlists">Scores and build instructions ↗</a></footer>
+</main>
 <audio id="audio" preload="none"></audio>
 <script src="./app.js" type="module"></script>
 </body>
