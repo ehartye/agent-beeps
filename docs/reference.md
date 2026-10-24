@@ -116,13 +116,17 @@ Patches songs play by name (`beeps instruments`). Root is the note the layers so
 | Instrument | Root | Plays | Description |
 | --- | --- | --- | --- |
 | `acid-bass` | C3 | held (lasts the note length) | Resonant saw bass whose filter snaps shut on every note: rolling acid lines, octave 2 to 3. |
+| `acoustic-guitar` | C3 | one-shot (rings ~1.7 s) | Steel-string guitar: eight partials that each die sooner than the one below, with a short pick click. Strummed or picked chords and lines, octave 2 to 4. |
 | `arp-blip` | C5 | one-shot (rings ~0.2 s) | Short square blip, chiptune-clean: fast arps and sequences. |
 | `bell` | C5 | one-shot (rings ~3.6 s) | FM bell rooted at C5 with an inharmonic ratio: long ring, bright strike. Octave 5-6. |
 | `bounce-bass` | C3 | held (lasts the note length) | Saw and sine bass that falls an octave in its first 80 ms: bouncy melodic-dubstep bass, octave 2 to 3. |
+| `brush-snare` | F#3 | one-shot (rings ~0.2 s) | Brushed snare: a soft swish of highpassed noise with a faint skin tone under it. Ballads and bossa backbeats. |
 | `choir-pad` | C4 | held (lasts the note length) | Vowel-like aah pad: sawtooth through two formant peaks with a breath of pink noise. |
 | `clap` | unpitched | one-shot (rings ~0.2 s) | Two layers of bandpassed noise with a soft second burst: a hand clap. |
+| `clean-guitar` | C3 | one-shot (rings ~1.5 s) | Clean electric guitar: a darker string tone doubled a few cents apart and panned, for a chorused shimmer. Chords and arpeggios, octave 2 to 4. |
 | `crash` | unpitched | one-shot (rings ~2 s) | Highpassed white noise with a 1.6 s decay: a crash for section starts. |
 | `deep-kick` | C3 | one-shot (rings ~0.6 s) | Sine kick falling from 130 to 40 Hz with a short click: a deep half-time or house kick. |
+| `dist-bass` | C2 | held (lasts the note length) | Distorted bass guitar: five partials and a sine with a pick click, highpassed at 36 Hz. Rock and metal lines at or above E1; octave 1 to 2. |
 | `drone` | C2 | held (lasts the note length) | Dark evolving drone: low saw cluster with a sine body under a slowly sweeping filter. Hold one note per section: octave 2 when it is the only bass, octave 3 under a moving bass line. |
 | `e-piano` | C4 | held (lasts the note length) | Tine electric piano (FM): warm bell-edged attack that mellows as it decays. Chords and gentle melodies, octave 3-4. |
 | `felt-piano` | C4 | held (lasts the note length) | Felted upright piano: soft hammer thump, rounded partials that decay on their own clocks. Intimate melodies and chords, octave 3-5. |
@@ -134,16 +138,22 @@ Patches songs play by name (`beeps instruments`). Root is the note the layers so
 | `hat` | unpitched | one-shot (rings ~0.1 s) | Closed hat: 808 metal voice through a highpass, very short. |
 | `hoover` | G4 | held (lasts the note length) | Five-voice saw that glides down a fifth into each note: rave hooks and stab leads, octave 4. |
 | `kick` | D3 | one-shot (rings ~0.4 s) | Soft round kick: sine with a fast pitch drop and a tiny click. |
+| `lead-guitar` | C4 | held (lasts the note length) | Distorted lead guitar: six driven partials through a darker cabinet with a slow vibrato. Held melody notes, octave 4 to 5; keep the line at or below E5 for a rock feel. |
 | `mallet` | C4 | one-shot (rings ~0.9 s) | Marimba-like struck bar (modal): woody, short, warm. |
+| `metal-snare` | F3 | one-shot (rings ~0.3 s) | Metal snare: a modal shell near 175 Hz, a bandpassed noise body and a highpassed sizzle. Tight, loud backbeats. |
 | `nebula` | unpitched | held (lasts the note length) | Filtered pink-noise wind with a slowly drifting band: space air under a section. |
 | `open-hat` | unpitched | one-shot (rings ~0.4 s) | 808 metal voice highpassed, ringing 280 ms: an open hi-hat for offbeats. |
+| `organ` | C3 | held (lasts the note length) | Drawbar organ: nine partials held at a steady level with a gentle rotary tremolo. Chords and pads, octave 2 to 4. |
 | `pluck` | C4 | one-shot (rings ~0.6 s) | Bright saw pluck whose filter snaps shut: arps and ostinatos. |
+| `power-chord-muted` | C3 | held (lasts the note length) | Palm-muted distorted power chord in one note: the root, fifth and octave are one driven layer, so write the root only. Chugging riffs, octave 2 to 3. |
+| `power-chord-open` | C3 | held (lasts the note length) | Open distorted power chord in one note: root, fifth and octave in one driven layer that rings and closes slowly. Held chords under a riff, octave 2 to 3. |
 | `prog-pad` | C4 | held (lasts the note length) | Five-voice saw pad with a slowly breathing lowpass and a long swell: wide, moving chords, octave 3. |
 | `prog-pluck` | C4 | one-shot (rings ~0.3 s) | Square and saw pluck whose filter snaps shut: progressive-house arpeggios and short hooks, octave 4 to 5. |
 | `pulse-bass` | C2 | held (lasts the note length) | Analog-style saw bass with a plucky filter envelope; set track keytrack ~0.5. |
 | `punch-kick` | F3 | one-shot (rings ~0.4 s) | Sine kick falling from 170 to 46 Hz with a bright click: a punchy four-on-the-floor kick. |
 | `rave-stab` | C4 | held (lasts the note length) | Six-voice saw and square stab with a closing filter: offbeat chord hits, octave 3 to 4. |
 | `reese` | C2 | held (lasts the note length) | Three detuned saws and a sine under a slowly moving lowpass: the drum-and-bass and dubstep reese. Hold notes; octave 1 to 2. |
+| `ride` | unpitched | one-shot (rings ~1.2 s) | Ride cymbal: an 808 metal voice and a little noise with a long, quiet decay. Jazz and half-time time-keeping. |
 | `rim` | Ab6 | one-shot (rings ~0.1 s) | Woody rim click (modal): quiet ticking percussion. |
 | `riser` | unpitched | held (lasts the note length) | Stereo noise through a bandpass sweeping from 400 Hz up to 9 kHz over seven seconds: a build. Hold one note for the length of the build and fade it in with a section mix ramp. |
 | `screech` | C5 | held (lasts the note length) | FM tone with a pitch bend up, drive and a highpass: dubstep screeches and sirens, octave 5 to 6. Short notes with rests. |
@@ -163,6 +173,8 @@ Patches songs play by name (`beeps instruments`). Root is the note the layers so
 | `theremin` | C5 | held (lasts the note length) | Sine lead with slow vibrato and a soft onset: the classic sci-fi voice. |
 | `tom` | A2 | one-shot (rings ~0.6 s) | Deep tom: a fixed-pitch sine (about 110 Hz falling to 70 Hz) for fills and hand-drum pulses. Use in steps patterns without a note; a note transposes it. |
 | `trance-lead` | C4 | held (lasts the note length) | Five-voice saw lead over a square body an octave down, its filter closing as it sounds: gated riffs and sixteenth-note leads, octave 4 to 5. |
+| `upright-bass` | C2 | held (lasts the note length) | Plucked upright bass: a triangle and a sine under a quick, lowpassed pluck envelope. Jazz, bossa and ballad lines; octave 1 to 2. |
+| `vibraphone` | C4 | one-shot (rings ~2.7 s) | Vibraphone: a struck bar with its first overtones and a slow motor tremolo. Chords and lines, octave 3 to 5; it rings, so leave rests. |
 | `vox-ah` | C3 | held (lasts the note length) | Chopped vowel "ah": a formant voice for syncopated vocal stabs and chants. Written pitch is the note; octave 3 to 5. The formants do not move with pitch. |
 | `vox-ee` | C3 | held (lasts the note length) | Chopped vowel "ee": a bright, thin formant voice for high stabs. Octave 3 to 5. |
 | `vox-oo` | C3 | held (lasts the note length) | Chopped vowel "oo": a rounder, darker formant voice for chops and pads of voices. Octave 3 to 5. |

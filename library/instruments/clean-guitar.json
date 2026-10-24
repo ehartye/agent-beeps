@@ -1,0 +1,135 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "clean-guitar",
+  "family": "music",
+  "tags": [
+    "guitar",
+    "pluck",
+    "clean"
+  ],
+  "duration": 1.2,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C3",
+        "partials": [
+          [
+            1,
+            0,
+            1.6
+          ],
+          [
+            2,
+            -5,
+            1.429
+          ],
+          [
+            3,
+            -9,
+            1.29
+          ],
+          [
+            4,
+            -13,
+            1.176
+          ],
+          [
+            5,
+            -17,
+            1.081
+          ],
+          [
+            6,
+            -21,
+            1
+          ]
+        ]
+      },
+      "pan": -0.3,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 4200,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 1.2,
+        "sustain": 0,
+        "release": 0.25
+      }
+    },
+    {
+      "source": {
+        "type": "additive",
+        "pitch": 131.3,
+        "partials": [
+          [
+            1,
+            0,
+            1.6
+          ],
+          [
+            2,
+            -5,
+            1.429
+          ],
+          [
+            3,
+            -9,
+            1.29
+          ],
+          [
+            4,
+            -13,
+            1.176
+          ],
+          [
+            5,
+            -17,
+            1.081
+          ],
+          [
+            6,
+            -21,
+            1
+          ]
+        ]
+      },
+      "gainDb": -3,
+      "pan": 0.3,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 4200,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 1.2,
+        "sustain": 0,
+        "release": 0.25
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -26,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2500,
+        "q": 0.8
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.01,
+        "sustain": 0,
+        "release": 0.01
+      }
+    }
+  ],
+  "meta": {
+    "description": "Clean electric guitar: a darker string tone doubled a few cents apart and panned, for a chorused shimmer. Chords and arpeggios, octave 2 to 4."
+  }
+}

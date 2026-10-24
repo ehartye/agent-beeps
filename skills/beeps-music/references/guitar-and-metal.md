@@ -5,8 +5,10 @@ A worked example: how a gritty action-game metal score can be built with beeps, 
 
 ## 1. Build the instruments first, and measure them alone
 
-There is no guitar, metal kit or distorted bass in `beeps instruments`; every bundled drum is soft. Define them in the song's
-`instruments` block (or as project patches) and check each with `beeps measure` or a one-note song before writing music.
+Since 0.34.0 `beeps instruments` has a first version of each: `power-chord-muted` and `power-chord-open` (root, fifth and octave in one driven layer, so write the
+root only), `lead-guitar`, `dist-bass`, `metal-snare`, and kicks, `tom` and `crash` from the dance-music set. They follow the recipe below and have been measured, not heard, so
+treat them as a starting point: copy one into the song's `instruments` block (`{ "base", "set" }`) to tune it, and check it with `beeps measure` or a one-note song.
+Before 0.34.0 you had to define all of them yourself, which is what the rest of this section describes.
 
 - **The amp is the chain, not a knob.** A layer runs `source -> drive -> filter -> tremolo -> amp envelope`. `drive` is
   `tanh(kx)` with `k = 1 + 20 * drive`, so above about 0.3 more drive barely changes the sound: the input spectrum and the

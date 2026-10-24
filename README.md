@@ -28,7 +28,7 @@ through chord progressions (voice-led from chord symbols), arps, bass lines, ste
 Euclidean rhythms such as `x(3,8)`), melodies, sections and mix moves, from loops to one-shot jingles.
 Songs render to loopable, loudness-matched WAVs, are linted against cited
 music craft rules, and go to the owner on a LAN album page. `library/songs/sci-fi-exploration/`
-holds a 13-track example library; `library/instruments/` holds 54 instrument patches.
+holds a 13-track example library; `library/instruments/` holds 66 instrument patches.
 
 For expressive phrasing, notes can carry pitch bends and brightness curves, and tracks can map
 velocity to an instrument's tone and envelopes as well as volume.
@@ -210,6 +210,14 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.34.0
+
+Acoustic-style and guitar instruments in the library, and `song stems` says which track limits the mix's loudness. No existing sound changes; no render key moves.
+
+- **12 new instruments** (66 in all): `upright-bass`, `brush-snare`, `ride`, `vibraphone`, `organ`, `acoustic-guitar`, `clean-guitar`, `power-chord-muted` and `power-chord-open` (root, fifth and octave in one driven layer: write the root), `lead-guitar`, `dist-bass` and `metal-snare`. They follow the recipe in the guitar and metal reference, render with no lint errors in a song, and were measured, not heard.
+- **`song stems` peaks:** the report now has `peaks`: the loudest moments of the mix and, for the ones within 1 dB of the loudest, which track's own stem is on top at each. When the loudness trim stopped at the true-peak ceiling (`peakLimited`), a note names the part to lower first. Before this the report ranked stems by overall level, which says nothing about which part makes the peaks: lowering the loudest stem moved a peak-limited tribute track by under 1 LU.
+- **Library instead of copies:** the dinner and pump playlists now name library instruments (`upright-bass`, `punch-kick`, `clap`, `open-hat`) instead of carrying inline copies; the audio-relevant content is identical, and the sealed manifest was refreshed.
 
 ## What changed in 0.33.0
 

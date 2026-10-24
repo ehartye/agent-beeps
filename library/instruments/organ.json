@@ -1,0 +1,85 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "organ",
+  "family": "music",
+  "tags": [
+    "keys",
+    "sustain",
+    "organ"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C3",
+        "partials": [
+          [
+            0.5,
+            -6,
+            10
+          ],
+          [
+            1,
+            0,
+            10
+          ],
+          [
+            1.5,
+            -9,
+            10
+          ],
+          [
+            2,
+            -4,
+            10
+          ],
+          [
+            3,
+            -10,
+            10
+          ],
+          [
+            4,
+            -8,
+            10
+          ],
+          [
+            5,
+            -14,
+            10
+          ],
+          [
+            6,
+            -16,
+            10
+          ],
+          [
+            8,
+            -18,
+            10
+          ]
+        ]
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 6500,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 6.5,
+        "depth": 0.2
+      },
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.1,
+        "sustain": 1,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Drawbar organ: nine partials held at a steady level with a gentle rotary tremolo. Chords and pads, octave 2 to 4."
+  }
+}

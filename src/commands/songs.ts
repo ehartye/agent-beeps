@@ -16,6 +16,7 @@ import { integrated, truePeakDb } from '../measure/loudness.ts';
 import { clippedSamples } from '../measure/envelope.ts';
 import { renderSong, type RenderedSong } from '../render/song-pipeline.ts';
 import { renderSongExcerpt } from '../render/song-excerpt.ts';
+import { attributePeaks } from '../stem-peaks.ts';
 import { addChannels, layerWavPath, nullResidualDb, readChannels, renderLayers, reportedResidualDb, stateSong, stateTrim } from '../render/layers.ts';
 import { lintSong, soundingPitch } from '../song-lint.ts';
 import { compileSong } from '../../runtime/engine/sequence.js';
@@ -233,7 +234,7 @@ export function registerSongCommands(program: Command, io: Io) {
     });
 
   song.command('stems <ref>')
-    .description("render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, plus stem WAVs")
+    .description("render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, which track sets the mix's peaks, plus stem WAVs")
     .option('--jobs <n>', 'stems rendered in parallel', positiveInt, 3)
     .option('--out <dir>', 'also copy the stem WAVs here')
     .action(async (ref: string, opts: { jobs: number; out?: string }) => {
@@ -274,7 +275,18 @@ export function registerSongCommands(program: Command, io: Io) {
       const silentStems = report.stems.filter(x => x.silent).map(x => `${x.track} rendered silent: none of its notes made a sound, so check its instrument and the patterns the sections play for it`);
       const buried = quiet.filter(x => x.peakVsMixDb < -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} sits ${-x.vsMixLu} LU under the mix and its peak ${-x.peakVsMixDb} dB under: likely inaudible; raise its gainDb or drop it`);
       const accents = quiet.filter(x => x.peakVsMixDb >= -STEM_PEAK_AUDIBLE_DB).map(x => `${x.track} is ${-x.vsMixLu} LU under the mix by integrated level but its peak is within ${Math.max(0, -x.peakVsMixDb)} dB of the mix's (crest ${x.crestDb} dB): short and peaky, so it is heard as an accent; do not chase it with gain`);
-      io.emit({ ...report, ...(buried.length || silentStems.length ? { warnings: [...silentStems, ...buried] } : {}), ...(accents.length ? { notes: accents } : {}) });
+      // Which stem is on top at the mix's loudest moments. A mix whose trim stopped at the true-peak ceiling sits under its target; lowering the part that makes the peaks is what raises it.
+      const mixChannels = readChannels(mix.wavPath);
+      const attribution = attributePeaks(mixChannels, readWav(readFileSync(mix.wavPath)).sampleRate, tracks, t => readChannels(stems[tracks.indexOf(t)].wavPath));
+      const peakLimited = mix.features.delivered?.peakLimited === true;
+      const top = attribution.limiting[0];
+      const loudest = attribution.moments[0];
+      const peaks = { peakLimited, count: attribution.moments.length, limiting: attribution.limiting.slice(0, 4), setBy: attribution.setBy.slice(0, 4), ...(loudest ? { loudest: { at: loudest.at, track: loudest.track, mixDb: loudest.mixDb, stemDb: loudest.stemDb } } : {}) };
+      const peakNotes = peakLimited && top
+        ? [`the loudness trim stopped at the true-peak ceiling, so this mix sits under its target: the peaks within 1 dB of the loudest (${loudest.mixDb} dBFS at ${loudest.at} s) are mostly ${top.track}'s (${top.peaks} of the ${attribution.limiting.reduce((a, x) => a + x.peaks, 0)}; alone it reaches ${loudest.track === top.track ? loudest.stemDb : 'a similar level'} dBFS); lower ${top.track} first`]
+        : [];
+      const allNotes = [...accents, ...peakNotes];
+      io.emit({ ...report, peaks, ...(buried.length || silentStems.length ? { warnings: [...silentStems, ...buried] } : {}), ...(allNotes.length ? { notes: allNotes } : {}) });
     });
 
   song.command('states <ref>')

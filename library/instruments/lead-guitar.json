@@ -1,0 +1,71 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "lead-guitar",
+  "family": "music",
+  "tags": [
+    "guitar",
+    "lead",
+    "distorted"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C4",
+        "partials": [
+          [
+            1,
+            0,
+            3
+          ],
+          [
+            2,
+            -3,
+            2.679
+          ],
+          [
+            3,
+            -6,
+            2.419
+          ],
+          [
+            4,
+            -9,
+            2.206
+          ],
+          [
+            5,
+            -12,
+            2.027
+          ],
+          [
+            6,
+            -15,
+            1.875
+          ]
+        ]
+      },
+      "drive": 1,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3700,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 5,
+        "depth": 10
+      },
+      "amp": {
+        "attack": 0.02,
+        "decay": 0.3,
+        "sustain": 0.85,
+        "release": 0.2
+      }
+    }
+  ],
+  "meta": {
+    "description": "Distorted lead guitar: six driven partials through a darker cabinet with a slow vibrato. Held melody notes, octave 4 to 5; keep the line at or below E5 for a rock feel."
+  }
+}

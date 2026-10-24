@@ -1184,24 +1184,15 @@
           ],
           "bpm": 90,
           "durationSec": 203.4,
-          "loudnessLufs": -19.4,
+          "loudnessLufs": -19,
           "targetLufs": -17,
-          "truePeakDb": -1.5,
+          "truePeakDb": -1.8,
           "loop": false,
           "mp3": "./media/late-night-wub.mp3",
           "look": "./media/late-night-wub.png",
           "recipe": "./songs/tribute/late-night-wub.json",
           "lint": {
-            "warnings": [
-              {
-                "rule": "song-loudness-target",
-                "message": "plays at -19.5 LUFS, 2.5 LU under target: transients cap the level (crest 19 dB). Soften drum accents or lower the peakiest track"
-              },
-              {
-                "rule": "song-low-end",
-                "message": "42% of energy is below 120 Hz: bass or kick masks the mix"
-              }
-            ]
+            "warnings": []
           }
         },
         {

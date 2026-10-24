@@ -1,0 +1,82 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "metal-snare",
+  "family": "music",
+  "tags": [
+    "drum",
+    "snare",
+    "metal"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "modal",
+        "pitch": 175,
+        "modes": [
+          [
+            1,
+            20,
+            0
+          ],
+          [
+            1.6,
+            18,
+            -4
+          ],
+          [
+            2.3,
+            16,
+            -8
+          ]
+        ],
+        "exciter": "impulse"
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.14,
+        "sustain": 0,
+        "release": 0.05
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -3,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1900,
+        "q": 0.9
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.13,
+        "sustain": 0,
+        "release": 0.05
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -9,
+      "filter": {
+        "type": "highpass",
+        "cutoff": 5000,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Metal snare: a modal shell near 175 Hz, a bandpassed noise body and a highpassed sizzle. Tight, loud backbeats."
+  }
+}

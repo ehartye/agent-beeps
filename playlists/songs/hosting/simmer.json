@@ -11,45 +11,6 @@
   "bpm": 84,
   "loop": false,
   "seed": 410103,
-  "instruments": {
-    "upright": {
-      "duration": 1.2,
-      "layers": [
-        {
-          "source": {
-            "type": "osc",
-            "wave": "triangle",
-            "pitch": "Bb2"
-          },
-          "amp": {
-            "attack": 0.012,
-            "decay": 0.55,
-            "sustain": 0.18,
-            "release": 0.2
-          },
-          "filter": {
-            "type": "lowpass",
-            "cutoff": 927,
-            "resonanceDb": 0
-          }
-        },
-        {
-          "source": {
-            "type": "osc",
-            "wave": "sine",
-            "pitch": "Bb2"
-          },
-          "gainDb": -3,
-          "amp": {
-            "attack": 0.01,
-            "decay": 0.4,
-            "sustain": 0.3,
-            "release": 0.18
-          }
-        }
-      ]
-    }
-  },
   "progressions": {
     "a": [
       [
@@ -120,7 +81,14 @@
       }
     },
     "bass": {
-      "instrument": "upright",
+      "instrument": {
+        "base": "upright-bass",
+        "set": {
+          "/layers/0/source/pitch": "Bb2",
+          "/layers/0/filter/cutoff": 927,
+          "/layers/1/source/pitch": "Bb2"
+        }
+      },
       "gainDb": -15
     },
     "answer": {
