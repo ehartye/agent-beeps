@@ -95,7 +95,7 @@
     "id": "tribute",
     "title": "Tribute Album",
     "tagline": "Twelve original tracks in the spirit of six electronic artists, each on a new synth palette.",
-    "musicLoudness": -15,
+    "musicLoudness": -17,
     "order": [
       "cathedral-of-flickers",
       "rack-ghosts",
