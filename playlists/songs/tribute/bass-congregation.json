@@ -373,7 +373,7 @@
     },
     "wob": {
       "instrument": "wob",
-      "gainDb": -15
+      "gainDb": -19
     },
     "sub": {
       "instrument": "sub-bass",
@@ -859,7 +859,7 @@
       },
       "mix": {
         "riser": {
-          "gainDb": -14
+          "gainDb": -17
         }
       },
       "ramp": true,

@@ -458,7 +458,7 @@
     },
     "wonk": {
       "instrument": "wonk-bass",
-      "gainDb": -14
+      "gainDb": -18
     },
     "sub": {
       "instrument": "sub-bass",
@@ -466,7 +466,7 @@
     },
     "keys": {
       "instrument": "e-piano",
-      "gainDb": -16,
+      "gainDb": -19,
       "pan": -0.15,
       "spread": 0.4,
       "sends": {

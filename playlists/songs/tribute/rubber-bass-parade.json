@@ -377,7 +377,7 @@
     },
     "bounce": {
       "instrument": "bounce-bass",
-      "gainDb": -15
+      "gainDb": -19
     },
     "wob": {
       "instrument": "wob",
@@ -787,7 +787,7 @@
           "gainDb": -20
         },
         "riser": {
-          "gainDb": -14
+          "gainDb": -17
         }
       },
       "ramp": true,

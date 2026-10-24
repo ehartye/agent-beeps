@@ -761,7 +761,7 @@
       },
       "mix": {
         "riser": {
-          "gainDb": -14
+          "gainDb": -17
         },
         "saws": {
           "gainDb": -18
