@@ -1,0 +1,46 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "hoover",
+  "family": "music",
+  "tags": [
+    "lead",
+    "retro",
+    "gritty"
+  ],
+  "duration": 0.6,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "G4",
+        "unison": {
+          "voices": 5,
+          "detuneCents": 44
+        }
+      },
+      "pitchEnv": [
+        {
+          "at": 0.12,
+          "to": "C4",
+          "curve": "exp"
+        }
+      ],
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 3800,
+        "resonanceDb": 4
+      },
+      "drive": 0.4,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.3,
+        "sustain": 0.8,
+        "release": 0.15
+      }
+    }
+  ],
+  "meta": {
+    "description": "Five-voice saw that glides down a fifth into each note: rave hooks and stab leads, octave 4."
+  }
+}

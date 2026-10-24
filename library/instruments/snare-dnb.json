@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "snare-dnb",
+  "family": "music",
+  "tags": [
+    "drum",
+    "snare"
+  ],
+  "duration": 0.2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 260
+      },
+      "pitchEnv": [
+        {
+          "at": 0.04,
+          "to": 190
+        }
+      ],
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.07,
+        "sustain": 0,
+        "release": 0.03
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.13,
+        "sustain": 0,
+        "release": 0.05
+      }
+    }
+  ],
+  "meta": {
+    "description": "Tight triangle body and highpassed noise: a crisp snare for fast tempos."
+  }
+}

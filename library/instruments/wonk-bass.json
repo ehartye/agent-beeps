@@ -1,0 +1,57 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "wonk-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "wobble"
+  ],
+  "duration": 0.5,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C2"
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 700,
+        "resonanceDb": 10,
+        "env": {
+          "to": 2400,
+          "time": 0.12
+        }
+      },
+      "lfo": {
+        "target": "pitch",
+        "rate": 5.5,
+        "depth": 35
+      },
+      "drive": 0.35,
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.2,
+        "sustain": 0.6,
+        "release": 0.08
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.25,
+        "sustain": 0.7,
+        "release": 0.08
+      }
+    }
+  ],
+  "meta": {
+    "description": "Resonant saw bass whose filter opens on each note, with a slow pitch wobble: wonky half-time bass, octave 1 to 2."
+  }
+}

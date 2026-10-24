@@ -125,7 +125,9 @@ Songs pitch-shift it; the formants do not move. New type: existing patches rende
 - `highpass` (Hz, 10-2000): an optional second filter after the amp envelope (resonance 0), so a
   lowpassed layer can also lose its sub-audible content (`filter` is one filter per layer). It is
   the `no-dc` fix for a short low sine or lowpassed noise burst; absent, the graph is unchanged.
-- `lfo {target: pitch|gain|cutoff, rate, depth}` (pitch depth in cents, cutoff in Hz, gain 0-1).
+- `lfo {target: pitch|gain|cutoff, rate, depth, sync?}` (pitch depth in cents, cutoff in Hz, gain 0-1). `rate` is Hz. `sync` is cycles per beat: when a song plays
+  the instrument the LFO runs at bpm / 60 x sync Hz (`sync: 2` is eighth notes, 1 quarters, 3 eighth-note triplets) and `rate` is the fallback for
+  any other use. A wobble that stays in time at every tempo is `"lfo": { "target": "cutoff", "rate": 3.5, "sync": 2, "depth": 900 }`.
 - `drive` 0-1 soft saturation; `pan` -1..1.
 
 ## Errors

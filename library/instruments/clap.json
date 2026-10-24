@@ -1,0 +1,50 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "clap",
+  "family": "music",
+  "tags": [
+    "drum",
+    "clap"
+  ],
+  "duration": 0.25,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.13,
+        "sustain": 0,
+        "release": 0.08
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1500,
+        "q": 1.2
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "gainDb": -6,
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.09,
+        "sustain": 0,
+        "release": 0.06
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1100,
+        "q": 0.9
+      }
+    }
+  ],
+  "meta": {
+    "description": "Two layers of bandpassed noise with a soft second burst: a hand clap."
+  }
+}

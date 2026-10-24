@@ -1,0 +1,52 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "punch-kick",
+  "family": "music",
+  "tags": [
+    "drum",
+    "kick"
+  ],
+  "duration": 0.35,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": 170
+      },
+      "pitchEnv": [
+        {
+          "at": 0.07,
+          "to": 46,
+          "curve": "exp"
+        }
+      ],
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.32,
+        "sustain": 0,
+        "release": 0.06
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -14,
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.012,
+        "sustain": 0,
+        "release": 0.01
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 2500
+      }
+    }
+  ],
+  "meta": {
+    "description": "Sine kick falling from 170 to 46 Hz with a bright click: a punchy four-on-the-floor kick."
+  }
+}

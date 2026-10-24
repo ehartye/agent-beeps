@@ -1,0 +1,42 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "prog-pad",
+  "family": "music",
+  "tags": [
+    "pad",
+    "sustain"
+  ],
+  "duration": 4,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C4",
+        "unison": {
+          "voices": 5,
+          "detuneCents": 18
+        }
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 1800,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "cutoff",
+        "rate": 0.15,
+        "depth": 600
+      },
+      "amp": {
+        "attack": 0.8,
+        "decay": 1,
+        "sustain": 0.85,
+        "release": 1.2
+      }
+    }
+  ],
+  "meta": {
+    "description": "Five-voice saw pad with a slowly breathing lowpass and a long swell: wide, moving chords, octave 3."
+  }
+}

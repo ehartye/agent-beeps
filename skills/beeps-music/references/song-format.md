@@ -81,6 +81,12 @@ scales those layers' filter cutoffs by the same ratio (`--filters keep` leaves t
 song's `instruments` block under a new name, point the track at it, then write the part near the new
 root. Noise, grain and metal layers keep their own filters.
 
+### Tempo-synced wobbles
+
+An LFO with `sync` (cycles per beat) runs at the song's `bpm` / 60 x `sync` Hz, so a wobble stays in time at any tempo. The bundled `wobble` is `sync: 2` (eighth
+notes) and `growl` is `sync: 3` (eighth-note triplets); change the division with a `{ "base": "wobble", "set": { "/layers/0/lfo/sync": 1 } }` override (1 is quarter
+notes). Played anywhere but in a song, an instrument uses its fixed `rate`.
+
 ## Tracks
 
 | field | meaning |

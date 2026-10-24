@@ -135,7 +135,7 @@ const Layer = z.strictObject({
   filter: Filter.optional(),
   /** Opt-in highpass (Hz, resonance 0) after the amp envelope, so a lowpassed layer can also lose its sub-audible content (one `filter` per layer). Absent: the graph is unchanged. */
   highpass: z.number().min(10).max(2000).optional(),
-  lfo: z.strictObject({ target: z.enum(['pitch', 'gain', 'cutoff']), rate: z.number().positive().max(200), depth: z.number().min(0) }).optional(),
+  lfo: z.strictObject({ target: z.enum(['pitch', 'gain', 'cutoff']), rate: z.number().positive().max(200), depth: z.number().min(0), sync: z.number().positive().max(32).optional().describe('cycles per beat when a song plays the instrument: the LFO then runs at bpm / 60 x sync Hz and rate is the fallback for any other use') }).optional(),
   drive: z.number().min(0).max(1).optional(),
   pan: z.number().min(-1).max(1).optional(),
 }).superRefine((layer, ctx) => {

@@ -1,0 +1,51 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "vox-ah",
+  "family": "music",
+  "tags": [
+    "vocal",
+    "voice"
+  ],
+  "duration": 0.4,
+  "layers": [
+    {
+      "source": {
+        "type": "voice",
+        "pitch": "C3",
+        "formants": [
+          [
+            700,
+            8,
+            0
+          ],
+          [
+            1200,
+            10,
+            -4
+          ],
+          [
+            2600,
+            12,
+            -14
+          ]
+        ],
+        "tilt": 1,
+        "jitterCents": 8,
+        "vibrato": {
+          "rate": 5.5,
+          "cents": 18
+        },
+        "breath": 0.05
+      },
+      "amp": {
+        "attack": 0.02,
+        "decay": 0.2,
+        "sustain": 0.8,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Chopped vowel \"ah\": a formant voice for syncopated vocal stabs and chants. Written pitch is the note; octave 3 to 5. The formants do not move with pitch."
+  }
+}

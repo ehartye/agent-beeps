@@ -1,0 +1,39 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "acid-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "pluck",
+    "gritty"
+  ],
+  "duration": 0.3,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sawtooth",
+        "pitch": "C3"
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2600,
+        "resonanceDb": 14,
+        "env": {
+          "to": 260,
+          "time": 0.14
+        }
+      },
+      "drive": 0.3,
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.2,
+        "sustain": 0.35,
+        "release": 0.06
+      }
+    }
+  ],
+  "meta": {
+    "description": "Resonant saw bass whose filter snaps shut on every note: rolling acid lines, octave 2 to 3."
+  }
+}

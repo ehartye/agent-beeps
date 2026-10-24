@@ -1,0 +1,39 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "riser",
+  "family": "music",
+  "tags": [
+    "fx",
+    "noise",
+    "sustain",
+    "riser"
+  ],
+  "duration": 8,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white",
+        "stereo": true
+      },
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 400,
+        "q": 1.2,
+        "env": {
+          "to": 9000,
+          "time": 7
+        }
+      },
+      "amp": {
+        "attack": 1.5,
+        "decay": 1,
+        "sustain": 1,
+        "release": 0.3
+      }
+    }
+  ],
+  "meta": {
+    "description": "Stereo noise through a bandpass sweeping from 400 Hz up to 9 kHz over seven seconds: a build. Hold one note for the length of the build and fade it in with a section mix ramp."
+  }
+}
