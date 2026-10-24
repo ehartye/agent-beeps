@@ -1,0 +1,960 @@
+{
+  "schema": "beeps/song@1",
+  "name": "bass-congregation",
+  "title": "Bass Congregation",
+  "description": "Glitch hop after Bassnectar: a swung 105 in D minor, a wobbling eighth-note bass, hand drums and toms, chopped vowel stabs and a grainy glitch layer over a slow string pad.",
+  "tags": [
+    "tribute",
+    "glitch-hop",
+    "bassnectar"
+  ],
+  "bpm": 105,
+  "swing": 0.18,
+  "loop": false,
+  "seed": 440103,
+  "instruments": {
+    "punch-kick": {
+      "duration": 0.35,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 170
+          },
+          "pitchEnv": [
+            {
+              "at": 0.07,
+              "to": 46,
+              "curve": "exp"
+            }
+          ],
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.32,
+            "sustain": 0,
+            "release": 0.06
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "gainDb": -14,
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.012,
+            "sustain": 0,
+            "release": 0.01
+          },
+          "filter": {
+            "type": "highpass",
+            "cutoff": 2500
+          }
+        }
+      ]
+    },
+    "snare-dub": {
+      "duration": 0.3,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "triangle",
+            "pitch": 200
+          },
+          "pitchEnv": [
+            {
+              "at": 0.06,
+              "to": 150
+            }
+          ],
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.12,
+            "sustain": 0,
+            "release": 0.05
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "white"
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 2400,
+            "q": 0.8
+          },
+          "drive": 0.4,
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.2,
+            "sustain": 0,
+            "release": 0.08
+          }
+        }
+      ]
+    },
+    "glitch": {
+      "duration": 0.1,
+      "layers": [
+        {
+          "source": {
+            "type": "grains",
+            "rate": 70,
+            "grainDecay": 0.006,
+            "center": 3200,
+            "q": 6,
+            "stereo": true
+          },
+          "amp": {
+            "attack": 0.001,
+            "decay": 0.05,
+            "sustain": 0,
+            "release": 0.02
+          }
+        }
+      ]
+    },
+    "vox-oo": {
+      "duration": 0.4,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "G4",
+            "formants": [
+              [
+                350,
+                8,
+                0
+              ],
+              [
+                700,
+                10,
+                -6
+              ],
+              [
+                2300,
+                12,
+                -16
+              ]
+            ],
+            "tilt": 1.2,
+            "jitterCents": 8,
+            "vibrato": {
+              "rate": 5.5,
+              "cents": 18
+            },
+            "breath": 0.05
+          },
+          "amp": {
+            "attack": 0.02,
+            "decay": 0.2,
+            "sustain": 0.8,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "vox-ah": {
+      "duration": 0.4,
+      "layers": [
+        {
+          "source": {
+            "type": "voice",
+            "pitch": "Bb4",
+            "formants": [
+              [
+                700,
+                8,
+                0
+              ],
+              [
+                1200,
+                10,
+                -4
+              ],
+              [
+                2600,
+                12,
+                -14
+              ]
+            ],
+            "tilt": 1,
+            "jitterCents": 8,
+            "vibrato": {
+              "rate": 5.5,
+              "cents": 18
+            },
+            "breath": 0.05
+          },
+          "amp": {
+            "attack": 0.02,
+            "decay": 0.2,
+            "sustain": 0.8,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "riser": {
+      "duration": 8,
+      "layers": [
+        {
+          "source": {
+            "type": "noise",
+            "color": "white",
+            "stereo": true
+          },
+          "filter": {
+            "type": "bandpass",
+            "cutoff": 400,
+            "q": 1.2,
+            "env": {
+              "to": 9000,
+              "time": 7
+            }
+          },
+          "amp": {
+            "attack": 1.5,
+            "decay": 1,
+            "sustain": 1,
+            "release": 0.3
+          }
+        }
+      ]
+    },
+    "sub-boom": {
+      "duration": 1.4,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": 55
+          },
+          "pitchEnv": [
+            {
+              "at": 0.6,
+              "to": 34,
+              "curve": "exp"
+            }
+          ],
+          "amp": {
+            "attack": 0.003,
+            "decay": 1.2,
+            "sustain": 0,
+            "release": 0.2
+          }
+        },
+        {
+          "source": {
+            "type": "noise",
+            "color": "brown"
+          },
+          "gainDb": -10,
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 600,
+            "resonanceDb": 0
+          },
+          "amp": {
+            "attack": 0.002,
+            "decay": 0.5,
+            "sustain": 0,
+            "release": 0.1
+          }
+        }
+      ]
+    },
+    "wob": {
+      "duration": 0.8,
+      "layers": [
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sawtooth",
+            "pitch": "F#2",
+            "unison": {
+              "voices": 3,
+              "detuneCents": 10
+            }
+          },
+          "filter": {
+            "type": "lowpass",
+            "cutoff": 1414,
+            "resonanceDb": 9
+          },
+          "lfo": {
+            "target": "cutoff",
+            "rate": 3.5,
+            "depth": 900
+          },
+          "drive": 0.5,
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.3,
+            "sustain": 0.9,
+            "release": 0.08
+          }
+        },
+        {
+          "source": {
+            "type": "osc",
+            "wave": "sine",
+            "pitch": "F#2"
+          },
+          "gainDb": -4,
+          "amp": {
+            "attack": 0.004,
+            "decay": 0.3,
+            "sustain": 0.9,
+            "release": 0.08
+          }
+        }
+      ]
+    }
+  },
+  "progressions": {
+    "a": [
+      [
+        "Dm",
+        8
+      ],
+      [
+        "Bb",
+        8
+      ],
+      [
+        "Gm",
+        8
+      ],
+      [
+        "A",
+        8
+      ]
+    ]
+  },
+  "tracks": {
+    "kick": {
+      "instrument": "punch-kick",
+      "gainDb": -13
+    },
+    "snare": {
+      "instrument": "snare-dub",
+      "gainDb": -12
+    },
+    "hat": {
+      "instrument": "hat",
+      "gainDb": -24,
+      "pan": 0.2
+    },
+    "conga": {
+      "instrument": "hand-drum",
+      "gainDb": -16,
+      "pan": -0.3
+    },
+    "tom": {
+      "instrument": "tom",
+      "gainDb": -17,
+      "pan": 0.2
+    },
+    "glitch": {
+      "instrument": "glitch",
+      "gainDb": -22,
+      "pan": 0.3,
+      "sends": {
+        "reverb": -16,
+        "delay": -14
+      }
+    },
+    "wob": {
+      "instrument": "wob",
+      "gainDb": -15
+    },
+    "sub": {
+      "instrument": "sub-bass",
+      "gainDb": -19
+    },
+    "vox": {
+      "instrument": "vox-oo",
+      "gainDb": -17,
+      "pan": -0.15,
+      "sends": {
+        "reverb": -12,
+        "delay": -12
+      }
+    },
+    "vox2": {
+      "instrument": "vox-ah",
+      "gainDb": -19,
+      "pan": 0.2,
+      "sends": {
+        "reverb": -12,
+        "delay": -14
+      }
+    },
+    "strings": {
+      "instrument": "string-pad",
+      "gainDb": -21,
+      "spread": 0.6,
+      "sends": {
+        "reverb": -11
+      }
+    },
+    "riser": {
+      "instrument": "riser",
+      "gainDb": -24
+    },
+    "boom": {
+      "instrument": "sub-boom",
+      "gainDb": -14
+    }
+  },
+  "patterns": {
+    "kick": {
+      "bars": 1,
+      "steps": "x... ..x. .x.. ...."
+    },
+    "snare": {
+      "bars": 1,
+      "steps": ".... x... .... x..."
+    },
+    "hat": {
+      "bars": 1,
+      "steps": "x.xx x.x. x.xx x.xx"
+    },
+    "conga": {
+      "bars": 1,
+      "steps": "o.x. .x.o ..x. x..."
+    },
+    "tom": {
+      "bars": 1,
+      "steps": ".... .... .... ..x."
+    },
+    "glitch": {
+      "bars": 1,
+      "steps": "x?x? ..?x ?.x? x..."
+    },
+    "wob-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "D2",
+          1.5,
+          1
+        ],
+        [
+          1.5,
+          "D2",
+          0.5,
+          1
+        ],
+        [
+          2,
+          "F2",
+          1,
+          1
+        ],
+        [
+          3,
+          "D2",
+          1,
+          1
+        ],
+        [
+          4,
+          "D2",
+          1.5,
+          1
+        ],
+        [
+          5.5,
+          "D2",
+          0.5,
+          1
+        ],
+        [
+          6,
+          "A2",
+          1,
+          1
+        ],
+        [
+          7,
+          "C3",
+          1,
+          1
+        ],
+        [
+          8,
+          "Bb1",
+          1.5,
+          1
+        ],
+        [
+          9.5,
+          "Bb1",
+          0.5,
+          1
+        ],
+        [
+          10,
+          "D2",
+          1,
+          1
+        ],
+        [
+          11,
+          "Bb1",
+          1,
+          1
+        ],
+        [
+          12,
+          "Bb1",
+          1.5,
+          1
+        ],
+        [
+          13.5,
+          "Bb1",
+          0.5,
+          1
+        ],
+        [
+          14,
+          "F2",
+          1,
+          1
+        ],
+        [
+          15,
+          "D2",
+          1,
+          1
+        ],
+        [
+          16,
+          "G2",
+          1.5,
+          1
+        ],
+        [
+          17.5,
+          "G2",
+          0.5,
+          1
+        ],
+        [
+          18,
+          "Bb2",
+          1,
+          1
+        ],
+        [
+          19,
+          "G2",
+          1,
+          1
+        ],
+        [
+          20,
+          "G2",
+          1.5,
+          1
+        ],
+        [
+          21.5,
+          "G2",
+          0.5,
+          1
+        ],
+        [
+          22,
+          "D3",
+          1,
+          1
+        ],
+        [
+          23,
+          "C3",
+          1,
+          1
+        ],
+        [
+          24,
+          "A2",
+          1.5,
+          1
+        ],
+        [
+          25.5,
+          "A2",
+          0.5,
+          1
+        ],
+        [
+          26,
+          "C#3",
+          1,
+          1
+        ],
+        [
+          27,
+          "A2",
+          1,
+          1
+        ],
+        [
+          28,
+          "A2",
+          2,
+          1
+        ],
+        [
+          30,
+          "E2",
+          1,
+          1
+        ],
+        [
+          31,
+          "A2",
+          1,
+          1
+        ]
+      ]
+    },
+    "sub-a": {
+      "bars": 8,
+      "bass": {
+        "progression": "a",
+        "octave": 2,
+        "rhythm": "x___ ____ ____ ____",
+        "tones": [
+          0
+        ]
+      }
+    },
+    "strings-a": {
+      "bars": 8,
+      "chords": {
+        "progression": "a",
+        "octave": 3,
+        "voicing": "close",
+        "slash": false
+      }
+    },
+    "vox-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "D4",
+          0.5,
+          0.8
+        ],
+        [
+          1,
+          "F4",
+          1,
+          0.8
+        ],
+        [
+          2,
+          "A4",
+          0.5,
+          0.8
+        ],
+        [
+          3,
+          "G4",
+          1,
+          0.8
+        ],
+        [
+          6,
+          "F4",
+          1,
+          0.8
+        ],
+        [
+          7,
+          "D4",
+          1,
+          0.8
+        ],
+        [
+          8,
+          "Bb3",
+          0.5,
+          0.8
+        ],
+        [
+          9,
+          "D4",
+          1,
+          0.8
+        ],
+        [
+          10,
+          "F4",
+          0.5,
+          0.8
+        ],
+        [
+          11,
+          "E4",
+          1,
+          0.8
+        ],
+        [
+          14,
+          "D4",
+          2,
+          0.8
+        ],
+        [
+          16,
+          "G4",
+          0.5,
+          0.8
+        ],
+        [
+          17,
+          "Bb4",
+          1,
+          0.8
+        ],
+        [
+          18,
+          "D5",
+          0.5,
+          0.8
+        ],
+        [
+          19,
+          "C5",
+          1,
+          0.8
+        ],
+        [
+          22,
+          "Bb4",
+          1,
+          0.8
+        ],
+        [
+          23,
+          "G4",
+          1,
+          0.8
+        ],
+        [
+          24,
+          "A4",
+          0.5,
+          0.8
+        ],
+        [
+          25,
+          "C#5",
+          1,
+          0.8
+        ],
+        [
+          26,
+          "E5",
+          0.5,
+          0.8
+        ],
+        [
+          27,
+          "D5",
+          1,
+          0.8
+        ]
+      ]
+    },
+    "vox2-a": {
+      "bars": 8,
+      "notes": [
+        [
+          7,
+          "A4",
+          1,
+          0.7
+        ],
+        [
+          15,
+          "F4",
+          1,
+          0.7
+        ],
+        [
+          23,
+          "D5",
+          1,
+          0.7
+        ],
+        [
+          28,
+          "A4",
+          1,
+          0.7
+        ]
+      ]
+    },
+    "riser-a": {
+      "bars": 8,
+      "notes": [
+        [
+          0,
+          "C4",
+          32,
+          0.8
+        ]
+      ]
+    },
+    "boom-a": {
+      "bars": 1,
+      "notes": [
+        [
+          0,
+          "C2",
+          4,
+          1
+        ]
+      ]
+    }
+  },
+  "sections": {
+    "intro": {
+      "play": {
+        "strings": "strings-a",
+        "glitch": "glitch",
+        "conga": "conga",
+        "hat": "hat"
+      },
+      "mix": {
+        "glitch": {
+          "gainDb": -20
+        }
+      },
+      "bars": 8
+    },
+    "build": {
+      "play": {
+        "strings": "strings-a",
+        "conga": "conga",
+        "hat": "hat",
+        "kick": "kick",
+        "riser": "riser-a",
+        "vox": "vox-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -14
+        }
+      },
+      "ramp": true,
+      "bars": 8
+    },
+    "drop": {
+      "play": {
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat",
+        "conga": "conga",
+        "tom": "tom",
+        "glitch": "glitch",
+        "wob": "wob-a",
+        "sub": "sub-a",
+        "strings": "strings-a",
+        "boom": "boom-a"
+      },
+      "mix": {
+        "riser": {
+          "gainDb": -60
+        }
+      },
+      "bars": 8
+    },
+    "drop2": {
+      "play": {
+        "kick": "kick",
+        "snare": "snare",
+        "hat": "hat",
+        "conga": "conga",
+        "tom": "tom",
+        "glitch": "glitch",
+        "wob": "wob-a",
+        "sub": "sub-a",
+        "vox": "vox-a",
+        "vox2": "vox2-a"
+      },
+      "bars": 8
+    },
+    "break": {
+      "play": {
+        "strings": "strings-a",
+        "vox": "vox-a",
+        "vox2": "vox2-a",
+        "conga": "conga"
+      },
+      "mix": {
+        "vox": {
+          "gainDb": -15
+        }
+      },
+      "bars": 8
+    },
+    "out": {
+      "play": {
+        "strings": "strings-a",
+        "glitch": "glitch",
+        "conga": "conga"
+      },
+      "ramp": {
+        "bars": 4,
+        "at": "end"
+      },
+      "mix": {
+        "strings": {
+          "gainDb": -28
+        },
+        "conga": {
+          "gainDb": -28
+        }
+      },
+      "bars": 8
+    }
+  },
+  "form": [
+    "intro",
+    "build",
+    "drop",
+    "drop2",
+    "break",
+    "build",
+    "drop",
+    "drop2",
+    "out"
+  ],
+  "master": {
+    "reverb": {
+      "preset": "room",
+      "returnDb": -11
+    },
+    "delay": {
+      "beats": 0.75,
+      "feedback": 0.4,
+      "returnDb": -18
+    }
+  }
+}
