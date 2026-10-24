@@ -1,0 +1,94 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "dist-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "distorted",
+    "guitar"
+  ],
+  "duration": 0.8,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C2",
+        "partials": [
+          [
+            1,
+            0,
+            1.2
+          ],
+          [
+            2,
+            -4,
+            1.071
+          ],
+          [
+            3,
+            -8,
+            0.968
+          ],
+          [
+            4,
+            -12,
+            0.882
+          ],
+          [
+            5,
+            -16,
+            0.811
+          ]
+        ]
+      },
+      "drive": 0.6,
+      "highpass": 36,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 2600,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.5,
+        "sustain": 0.7,
+        "release": 0.1
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -2,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.5,
+        "sustain": 0.8,
+        "release": 0.1
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -22,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 1500,
+        "q": 1
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.006,
+        "sustain": 0,
+        "release": 0.01
+      }
+    }
+  ],
+  "meta": {
+    "description": "Distorted bass guitar: five partials and a sine with a pick click, highpassed at 36 Hz. Rock and metal lines at or above E1; octave 1 to 2."
+  }
+}

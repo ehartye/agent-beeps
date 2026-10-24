@@ -1,0 +1,55 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "vibraphone",
+  "family": "music",
+  "tags": [
+    "mallet",
+    "bell",
+    "sustain"
+  ],
+  "duration": 2,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C4",
+        "partials": [
+          [
+            1,
+            0,
+            2.6
+          ],
+          [
+            4,
+            -10,
+            1.2
+          ],
+          [
+            10,
+            -20,
+            0.5
+          ]
+        ]
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 7000,
+        "resonanceDb": 0
+      },
+      "lfo": {
+        "target": "gain",
+        "rate": 5.5,
+        "depth": 0.4
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 2.2,
+        "sustain": 0,
+        "release": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "description": "Vibraphone: a struck bar with its first overtones and a slow motor tremolo. Chords and lines, octave 3 to 5; it rings, so leave rests."
+  }
+}

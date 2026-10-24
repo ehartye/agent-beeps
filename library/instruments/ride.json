@@ -1,0 +1,56 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "ride",
+  "family": "music",
+  "tags": [
+    "drum",
+    "cymbal",
+    "ride"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "metal",
+        "base": 52,
+        "bands": [
+          5200,
+          8800
+        ]
+      },
+      "gainDb": -6,
+      "filter": {
+        "type": "highpass",
+        "cutoff": 3500,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.9,
+        "sustain": 0,
+        "release": 0.3
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -22,
+      "filter": {
+        "type": "highpass",
+        "cutoff": 6000,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.5,
+        "sustain": 0,
+        "release": 0.2
+      }
+    }
+  ],
+  "meta": {
+    "description": "Ride cymbal: an 808 metal voice and a little noise with a long, quiet decay. Jazz and half-time time-keeping."
+  }
+}

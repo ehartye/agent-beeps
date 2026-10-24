@@ -1,0 +1,47 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "brush-snare",
+  "family": "music",
+  "tags": [
+    "drum",
+    "snare",
+    "brush"
+  ],
+  "duration": 0.25,
+  "layers": [
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "filter": {
+        "type": "highpass",
+        "cutoff": 2600,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.13,
+        "sustain": 0,
+        "release": 0.06
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": 190
+      },
+      "gainDb": -12,
+      "amp": {
+        "attack": 0.002,
+        "decay": 0.06,
+        "sustain": 0,
+        "release": 0.03
+      }
+    }
+  ],
+  "meta": {
+    "description": "Brushed snare: a soft swish of highpassed noise with a faint skin tone under it. Ballads and bossa backbeats."
+  }
+}

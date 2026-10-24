@@ -30,8 +30,9 @@ over 30 s. It is still trimmed to `project.musicLoudness`; tag it `jingle`.
 
 ## 2. Pick instruments
 
-`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums, and a dance-music synth set: supersaw, trance and rave leads, reese,
-wobble, growl and bounce basses, vowel voices, kicks, snares, risers and impacts) with each one's root, where its layers sound relative to a written note (`osc -12` is an octave
+`beeps instruments` lists the bundled patches (pads, bass, plucks, bells, leads, textures, drums, a dance-music synth set: supersaw, trance and rave leads, reese,
+wobble, growl and bounce basses, vowel voices, kicks, snares, risers and impacts, and acoustic-style instruments: upright and distorted bass, vibraphone, organ, acoustic, clean, power-chord and lead
+guitars, brush and metal snares, a ride) with each one's root, where its layers sound relative to a written note (`osc -12` is an octave
 below), and whether it holds for the note length or rings as a one-shot. A track's `instrument` is
 a library name, a project patch name, or an inline patch. To make a new timbre, compose it as a
 patch (beeps-compose skill), save it with `beeps new`, and name it.
@@ -72,7 +73,8 @@ and brightness, and the lint. **Open every look.png.** Check that:
   actual masking.
 - Loop songs: the end looks like the start (seam under 3 dB).
 
-Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down. Every part you
+Then run `beeps song stems <name>`: the mix hides a part that is 17 LU down, and when the loudness trim stopped at the true-peak ceiling its `peaks` and `notes` name the
+track whose peaks are within a dB of the loudest, which is the part to lower first. Every part you
 wrote should be within about 15 LU of the mix. Fix every lint error, justify or fix every warning (`beeps song lint <name>` re-checks a song on its own),
 and work through each `judgementChecks` item. Levels are automatic (songs are trimmed to
 `project.musicLoudness`, -20 LUFS by default): balance tracks with `gainDb`, never chase loudness.

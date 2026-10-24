@@ -1,0 +1,48 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "upright-bass",
+  "family": "music",
+  "tags": [
+    "bass",
+    "pluck",
+    "acoustic"
+  ],
+  "duration": 1.2,
+  "layers": [
+    {
+      "source": {
+        "type": "osc",
+        "wave": "triangle",
+        "pitch": "C2"
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 520,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.012,
+        "decay": 0.55,
+        "sustain": 0.18,
+        "release": 0.2
+      }
+    },
+    {
+      "source": {
+        "type": "osc",
+        "wave": "sine",
+        "pitch": "C2"
+      },
+      "gainDb": -3,
+      "amp": {
+        "attack": 0.01,
+        "decay": 0.4,
+        "sustain": 0.3,
+        "release": 0.18
+      }
+    }
+  ],
+  "meta": {
+    "description": "Plucked upright bass: a triangle and a sine under a quick, lowpassed pluck envelope. Jazz, bossa and ballad lines; octave 1 to 2."
+  }
+}

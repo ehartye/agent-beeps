@@ -20,9 +20,12 @@ const read = (f: string) => JSON.parse(readFileSync(join(DIR, f), 'utf8'));
 const SYNTH_LAB = ['supersaw', 'trance-lead', 'prog-pluck', 'rave-stab', 'prog-pad', 'hoover', 'screech', 'acid-bass', 'reese', 'bounce-bass', 'wonk-bass',
   'wobble', 'growl', 'vox-ah', 'vox-oo', 'vox-ee', 'deep-kick', 'punch-kick', 'sub-boom', 'snare-dub', 'snare-dnb', 'clap', 'open-hat', 'crash', 'riser', 'glitch'];
 
+/** Added in 0.34.0: acoustic-style and guitar instruments. */
+const ACOUSTIC = ['upright-bass', 'brush-snare', 'ride', 'vibraphone', 'organ', 'acoustic-guitar', 'clean-guitar', 'power-chord-muted', 'power-chord-open', 'lead-guitar', 'dist-bass', 'metal-snare'];
+
 describe('library instruments', () => {
-  it('has every synth-lab instrument', () => {
-    for (const name of SYNTH_LAB) expect(files, name).toContain(`${name}.json`);
+  it('has every synth-lab and acoustic instrument', () => {
+    for (const name of [...SYNTH_LAB, ...ACOUSTIC]) expect(files, name).toContain(`${name}.json`);
   });
 
   it.each(files)('%s parses, is named for its file and says what it is for', f => {
@@ -44,11 +47,11 @@ describe('library instruments', () => {
   });
 
   it('gives each pitched synth-lab instrument a root a song can retune from', () => {
-    for (const name of SYNTH_LAB) {
+    for (const name of [...SYNTH_LAB, ...ACOUSTIC]) {
       const r = parsePatch(read(`${name}.json`));
       if (!r.ok) throw new Error(name);
       // drums, impacts, the riser and the glitch bed are not played at written pitches
-      const notMelodic = ['deep-kick', 'punch-kick', 'sub-boom', 'snare-dub', 'snare-dnb', 'clap', 'open-hat', 'crash', 'riser', 'glitch'];
+      const notMelodic = ['deep-kick', 'punch-kick', 'sub-boom', 'snare-dub', 'snare-dnb', 'clap', 'open-hat', 'crash', 'riser', 'glitch', 'brush-snare', 'ride', 'metal-snare'];
       if (!notMelodic.includes(name)) expect(instrumentRoot(r.patch), name).not.toBeNull();
     }
   });

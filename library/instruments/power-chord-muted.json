@@ -1,0 +1,128 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "power-chord-muted",
+  "family": "music",
+  "tags": [
+    "guitar",
+    "distorted",
+    "palm-mute"
+  ],
+  "duration": 0.2,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C3",
+        "partials": [
+          [
+            1,
+            0,
+            0.7
+          ],
+          [
+            1.5,
+            -2,
+            0.625
+          ],
+          [
+            2,
+            -3,
+            0.565
+          ],
+          [
+            3,
+            -6,
+            0.515
+          ],
+          [
+            4,
+            -8,
+            0.473
+          ],
+          [
+            4.5,
+            -10,
+            0.437
+          ],
+          [
+            5,
+            -11,
+            0.407
+          ],
+          [
+            6,
+            -13,
+            0.38
+          ],
+          [
+            7.5,
+            -16,
+            0.357
+          ],
+          [
+            8,
+            -17,
+            0.337
+          ]
+        ]
+      },
+      "drive": 0.9,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 5400,
+        "resonanceDb": 0,
+        "env": {
+          "to": 2200,
+          "time": 0.09
+        }
+      },
+      "highpass": 90,
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.1,
+        "sustain": 0.07,
+        "release": 0.06
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -14,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2200,
+        "q": 1
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.009,
+        "sustain": 0,
+        "release": 0.01
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "gainDb": -26,
+      "drive": 0.8,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 3200,
+        "q": 1.2
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.08,
+        "sustain": 0,
+        "release": 0.04
+      }
+    }
+  ],
+  "meta": {
+    "description": "Palm-muted distorted power chord in one note: the root, fifth and octave are one driven layer, so write the root only. Chugging riffs, octave 2 to 3."
+  }
+}

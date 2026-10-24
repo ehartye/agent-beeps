@@ -1,0 +1,93 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "acoustic-guitar",
+  "family": "music",
+  "tags": [
+    "guitar",
+    "pluck",
+    "acoustic"
+  ],
+  "duration": 1.4,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C3",
+        "partials": [
+          [
+            1,
+            0,
+            1.8
+          ],
+          [
+            2,
+            -4,
+            1.607
+          ],
+          [
+            3,
+            -7,
+            1.452
+          ],
+          [
+            4,
+            -10,
+            1.324
+          ],
+          [
+            5,
+            -13,
+            1.216
+          ],
+          [
+            6,
+            -16,
+            1.125
+          ],
+          [
+            7,
+            -19,
+            1.047
+          ],
+          [
+            8,
+            -22,
+            0.978
+          ]
+        ]
+      },
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 6500,
+        "resonanceDb": 0
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 1.4,
+        "sustain": 0,
+        "release": 0.3
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -24,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 3000,
+        "q": 0.8
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.012,
+        "sustain": 0,
+        "release": 0.01
+      }
+    }
+  ],
+  "meta": {
+    "description": "Steel-string guitar: eight partials that each die sooner than the one below, with a short pick click. Strummed or picked chords and lines, octave 2 to 4."
+  }
+}

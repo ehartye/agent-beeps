@@ -92,7 +92,7 @@
 | `beeps song roll` | a song as text, one window of bars: a step grid for rhythm parts and a piano roll for pitched ones, built from the notes the renderer will play (the text twin of the look image) |
 | `beeps song compat` | plan crossfades between songs without rendering: tempo, loop length, estimated key, and per pair the tempo relation, phase-lock and harmony agreement |
 | `beeps song render` | render, loudness-trim, measure and lint songs; writes a WAV and a look image per song |
-| `beeps song stems` | render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, plus stem WAVs |
+| `beeps song stems` | render each track alone at the full mix's trim: per-track level, brightness, low end and section presence, which track sets the mix's peaks, plus stem WAVs |
 | `beeps song states` | adaptive songs: render the layers and judge every state as its own piece (level, trim, range, seam, brightness, register overlaps among only its tracks, lint) |
 | `beeps song lint` | render (or reuse) a song and check it against craft/music-rules.json |
 | `beeps song export` | write the loudness-trimmed WAV of a song |

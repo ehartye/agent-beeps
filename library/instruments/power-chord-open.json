@@ -1,0 +1,128 @@
+{
+  "schema": "beeps/patch@1",
+  "name": "power-chord-open",
+  "family": "music",
+  "tags": [
+    "guitar",
+    "distorted",
+    "sustain"
+  ],
+  "duration": 1,
+  "layers": [
+    {
+      "source": {
+        "type": "additive",
+        "pitch": "C3",
+        "partials": [
+          [
+            1,
+            0,
+            2
+          ],
+          [
+            1.5,
+            -2,
+            1.786
+          ],
+          [
+            2,
+            -3,
+            1.613
+          ],
+          [
+            3,
+            -6,
+            1.471
+          ],
+          [
+            4,
+            -8,
+            1.351
+          ],
+          [
+            4.5,
+            -10,
+            1.25
+          ],
+          [
+            5,
+            -11,
+            1.163
+          ],
+          [
+            6,
+            -13,
+            1.087
+          ],
+          [
+            7.5,
+            -16,
+            1.02
+          ],
+          [
+            8,
+            -17,
+            0.962
+          ]
+        ]
+      },
+      "drive": 0.85,
+      "filter": {
+        "type": "lowpass",
+        "cutoff": 5000,
+        "resonanceDb": 0,
+        "env": {
+          "to": 2600,
+          "time": 0.6
+        }
+      },
+      "highpass": 90,
+      "amp": {
+        "attack": 0.004,
+        "decay": 0.5,
+        "sustain": 0.8,
+        "release": 0.2
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "white"
+      },
+      "gainDb": -16,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 2200,
+        "q": 1
+      },
+      "amp": {
+        "attack": 0.001,
+        "decay": 0.009,
+        "sustain": 0,
+        "release": 0.01
+      }
+    },
+    {
+      "source": {
+        "type": "noise",
+        "color": "pink"
+      },
+      "gainDb": -27,
+      "drive": 0.8,
+      "filter": {
+        "type": "bandpass",
+        "cutoff": 3200,
+        "q": 1.2
+      },
+      "amp": {
+        "attack": 0.003,
+        "decay": 0.2,
+        "sustain": 0.2,
+        "release": 0.1
+      }
+    }
+  ],
+  "meta": {
+    "description": "Open distorted power chord in one note: root, fifth and octave in one driven layer that rings and closes slowly. Held chords under a riff, octave 2 to 3."
+  }
+}
