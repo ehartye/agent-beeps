@@ -341,11 +341,11 @@
   "tracks": {
     "kick": {
       "instrument": "punch-kick",
-      "gainDb": -13
+      "gainDb": -17
     },
     "snare": {
       "instrument": "snare-dub",
-      "gainDb": -12
+      "gainDb": -16
     },
     "hat": {
       "instrument": "hat",
@@ -399,7 +399,7 @@
     },
     "strings": {
       "instrument": "string-pad",
-      "gainDb": -21,
+      "gainDb": -18,
       "spread": 0.6,
       "sends": {
         "reverb": -11

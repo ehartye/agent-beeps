@@ -441,15 +441,15 @@
   "tracks": {
     "kick": {
       "instrument": "deep-kick",
-      "gainDb": -13
+      "gainDb": -17
     },
     "snare": {
       "instrument": "snare-dub",
-      "gainDb": -12
+      "gainDb": -16
     },
     "clap": {
       "instrument": "clap",
-      "gainDb": -17
+      "gainDb": -21
     },
     "hat": {
       "instrument": "hat",

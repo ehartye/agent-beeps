@@ -440,11 +440,11 @@
   "tracks": {
     "kick": {
       "instrument": "punch-kick",
-      "gainDb": -13
+      "gainDb": -17
     },
     "clap": {
       "instrument": "clap",
-      "gainDb": -15
+      "gainDb": -19
     },
     "hat": {
       "instrument": "hat",

@@ -364,11 +364,11 @@
   "tracks": {
     "kick": {
       "instrument": "deep-kick",
-      "gainDb": -13
+      "gainDb": -17
     },
     "snare": {
       "instrument": "snare-dub",
-      "gainDb": -11
+      "gainDb": -15
     },
     "hat": {
       "instrument": "hat",
@@ -401,7 +401,7 @@
     },
     "saws": {
       "instrument": "supersaw",
-      "gainDb": -19,
+      "gainDb": -16,
       "pan": -0.2,
       "spread": 0.7,
       "sends": {
@@ -425,7 +425,7 @@
           "/layers/1/source/pitch": "Bb4"
         }
       },
-      "gainDb": -24,
+      "gainDb": -21,
       "sends": {
         "reverb": -10
       }

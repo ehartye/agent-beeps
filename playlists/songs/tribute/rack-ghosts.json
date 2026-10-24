@@ -391,11 +391,11 @@
   "tracks": {
     "kick": {
       "instrument": "punch-kick",
-      "gainDb": -13
+      "gainDb": -17
     },
     "clap": {
       "instrument": "clap",
-      "gainDb": -17
+      "gainDb": -21
     },
     "hat": {
       "instrument": "hat",
@@ -437,7 +437,7 @@
     },
     "pad": {
       "instrument": "supersaw",
-      "gainDb": -26,
+      "gainDb": -23,
       "spread": 0.7,
       "sends": {
         "reverb": -12
