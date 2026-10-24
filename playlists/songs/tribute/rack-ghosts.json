@@ -86,7 +86,7 @@
           "/layers/1/filter/cutoff": 4762
         }
       },
-      "gainDb": -19,
+      "gainDb": -25,
       "pan": -0.2,
       "spread": 0.5,
       "sends": {
