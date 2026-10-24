@@ -87,10 +87,11 @@ export function envelopeAt(amp, t) {
  * @param {Layer} layer
  * `pitchRatio` is a pitch offset applied after the scale has chosen the note (a variant's detune): the scale decides which
  * note a sound is, the offset moves it from there. Unpitched sources, including samples, are not moved by it.
- * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode, hold?: boolean, pitchRatio?: number, samples?: Readonly<Record<string, AudioBuffer>> }} opts
+ * `tempo` (beats per minute) is given by a song: an LFO with `sync` then runs at tempo / 60 x sync Hz instead of at `rate`. Without a tempo, `rate` is used.
+ * @param {{ when: number, duration: number, seed: number, scale?: Scale, out: AudioNode, hold?: boolean, pitchRatio?: number, samples?: Readonly<Record<string, AudioBuffer>>, tempo?: number }} opts
  * @returns {{ end: number, release: (at: number) => number, stop: (t: number) => void, nodes: LayerNodes }}
  */
-export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1, samples }) {
+export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold = false, pitchRatio = 1, samples, tempo }) {
   const { when: t0, pitchHz: base } = resolveLayerSource(layer, { when, scale, pitchRatio });
   const { attack, decay, sustain, release } = layer.amp;
   const off = Math.max(t0 + Math.min(attack, RELEASE_FLOOR_S), when + duration);
@@ -174,7 +175,7 @@ export function buildLayer(ctx, layer, { when, duration, seed, scale, out, hold 
   let lfoNode;
   if (layer.lfo) {
     const lfo = ctx.createOscillator();
-    lfo.frequency.value = layer.lfo.rate;
+    lfo.frequency.value = layer.lfo.sync !== undefined && tempo ? tempo / 60 * layer.lfo.sync : layer.lfo.rate;
     const depth = ctx.createGain();
     depth.gain.value = layer.lfo.depth;
     lfo.connect(depth);
