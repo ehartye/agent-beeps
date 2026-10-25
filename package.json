@@ -1,6 +1,6 @@
 {
   "name": "agent-beeps-runtime",
-  "version": "0.34.0",
+  "version": "0.34.1",
   "description": "Browser-safe agent-beeps runtime: procedural and prepared-sample cues, explicit verified asset loading, fresh voices and named inputs. Generated; do not edit.",
   "license": "MIT",
   "type": "module",
