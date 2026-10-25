@@ -128,9 +128,14 @@ export function wrapReport(channels: Float32Array[], sampleRate: number) {
   return { seamExcessDb: db(Math.sqrt(seam)) - db(Math.sqrt(reference)), jump, levelStepDb: db(startRms / channels.length) - db(endRms / channels.length) };
 }
 
-/** Pearson correlation of the 20 ms RMS envelopes: noise beds are re-synthesised by the codec, so only their shape in time lines up. */
+/**
+ * Pearson correlation of mean-square energy envelopes: noise beds are re-synthesised by the codec, so only their shape in time lines up.
+ * Use 20 ms windows normally. Below two complete windows, use about eight shorter aligned windows: one bin has no variance,
+ * even when comparing a short transient with itself. A flat envelope still returns zero rather than an automatic match.
+ */
 export function envelopeCorrelation(want: Float32Array[], got: Float32Array[], sampleRate: number): number {
-  const win = Math.round(sampleRate * 0.02), n = Math.min(want[0].length, got[0].length), bins = Math.floor(n / win);
+  const n = Math.min(want[0].length, got[0].length), usualWin = Math.round(sampleRate * 0.02);
+  const win = n < usualWin * 2 ? Math.max(1, Math.floor(n / 8)) : usualWin, bins = Math.floor(n / win);
   const env = (ch: Float32Array[]) => Array.from({ length: bins }, (_, b) => { let s = 0; for (const c of ch) for (let i = b * win; i < (b + 1) * win; i++) s += c[i] * c[i]; return s / (win * ch.length); });
   const a = env(want), b = env(got);
   const ma = a.reduce((x, y) => x + y, 0) / bins, mb = b.reduce((x, y) => x + y, 0) / bins;
