@@ -211,6 +211,11 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.34.1
+
+- Short SFX now use smaller envelope-analysis windows when a 20 ms window would yield fewer than two observations. This fixes false decode-verification failures for clips shorter than 40 ms.
+- Frame-count, loop and signal-quality checks remain in force. Engine and render-pipeline versions are unchanged, so existing locked audio remains reusable.
+
 ## What changed in 0.34.0
 
 Acoustic-style and guitar instruments in the library, and `song stems` says which track limits the mix's loudness. No existing sound changes; no render key moves.
