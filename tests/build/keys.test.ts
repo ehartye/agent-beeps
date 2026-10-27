@@ -49,6 +49,22 @@ describe('input hash', () => {
     });
   });
 
+  it("keys a song recipe's sections option only in export, only when true, and refuses it on a patch", () => {
+    const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg), tc = currentToolchain();
+    const plans = () => Object.fromEntries(loadRecipes(cfg).map(r => [r.id, planAsset(p, r, deliveryFor('wav-master'), tc, undefined)]));
+    const base = plans(), recipes = fx.read('recipes.json');
+    fx.write('recipes.json', { ...recipes, theme: { ...recipes.theme, sections: true } });
+    const on = plans();
+    expect(on.theme.inputHash).not.toBe(base.theme.inputHash);
+    expect(on.theme.parts.renders).toBe(base.theme.parts.renders);
+    expect(on.theme.parts.export).not.toBe(base.theme.parts.export);
+    for (const id of Object.keys(base).filter(k => k !== 'theme')) expect(on[id].inputHash).toBe(base[id].inputHash);
+    fx.write('recipes.json', { ...recipes, theme: { ...recipes.theme, sections: false } });
+    expect(plans().theme.inputHash).toBe(base.theme.inputHash);
+    fx.write('recipes.json', { ...recipes, coin: { ...recipes.coin, sections: true } });
+    expect(() => plans()).toThrow(/sections is for songs/);
+  });
+
   it('keys patch post options only in export, leaving renders and unrelated assets unchanged', () => {
     const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg), tc = currentToolchain();
     const plans = () => Object.fromEntries(loadRecipes(cfg).map(r => [r.id, planAsset(p, r, deliveryFor('wav-master'), tc, undefined)]));

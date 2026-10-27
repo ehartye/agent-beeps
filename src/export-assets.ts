@@ -83,7 +83,7 @@ export async function exportPatchOne(host: RenderHost, p: OpenProject, patch: Pa
 }
 
 /** A song (and, with `layers`, each adaptive layer and per-state trim) as `dest` plus its sidecar. */
-export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song, o: { dest: string; role: ExportRole; manifest: boolean; manifestId?: string; layers: boolean; trimTailDb?: number }) {
+export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song, o: { dest: string; role: ExportRole; manifest: boolean; manifestId?: string; layers: boolean; sections?: boolean; trimTailDb?: number }) {
   const identity = manifestIdentity(o, s.name);
   // A loop's tail is folded onto its start and layers must stay sample-aligned with the mix: trimming either would break the wrap or the sum.
   if (o.trimTailDb !== undefined && (s.loop || o.layers)) throw new BeepsError('E_USAGE', `--trim-tail is for a non-loop song exported without --layers (${s.loop ? `"${s.name}" loops: its tail wraps onto the start` : 'layers must line up with the mix'})`);
@@ -122,9 +122,13 @@ export async function exportSongAssets(host: RenderHost, p: OpenProject, s: Song
       if (!tracks.some(t => sounding.has(t))) warnings.push(`layer "${name}" is silent in every section`);
     }
   }
-  const extra = layerFiles && s.adaptive
-    ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial, ...(stateTrimDb ? { stateTrimDb } : {}) }
-    : {};
+  const extra = {
+    ...(layerFiles && s.adaptive
+      ? { layers: Object.entries(layerFiles).map(([name, f]) => ({ name, file: basename(f) })), states: s.adaptive.states, initialState: s.adaptive.initial, ...(stateTrimDb ? { stateTrimDb } : {}) }
+      : {}),
+    // The sections are already measured with the render; the sidecar gets them only when asked, so no existing sidecar changes.
+    ...(o.sections ? { sectionTimes: r.features.sections.map(({ name, start, end }) => ({ name, start, end })) } : {}),
+  };
   const manifest = o.manifest ? writeExportManifest(dest, r, o.role, { ...extra, ...identity }) : undefined;
   return { rendered: r, layerFiles, residual, stateTrimDb, stateLufs, manifest, warnings, post };
 }

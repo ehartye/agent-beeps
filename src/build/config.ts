@@ -64,6 +64,8 @@ export interface Recipe {
   channels?: 1 | 2;
   /** Baked patches only: trim the delivered tail below this dBFS threshold (-120 <= value < 0). */
   trimTailDb?: number;
+  /** Songs only: list every played section of the form (seconds and frames) in the sidecar and the catalog. Changes the export hash only when true. */
+  sections?: boolean;
 }
 
 const TailDb = z.number().min(-120).lt(0);
@@ -74,6 +76,7 @@ const RecipeSchema = z.strictObject({
   channels: z.union([z.literal(1), z.literal(2)]).optional(), trimTailDb: TailDb.optional(),
   /** Legacy Space spelling, normalized to trimTailDb after validation. */
   trimTail: TailDb.optional(),
+  sections: z.boolean().optional(),
 }).superRefine((r, ctx) => {
   if (r.trimTail !== undefined && r.trimTailDb !== undefined && r.trimTail !== r.trimTailDb) {
     ctx.addIssue({ code: 'custom', path: ['trimTailDb'], message: 'trimTail and trimTailDb must match when both are specified' });
@@ -102,10 +105,11 @@ export function loadRecipes(cfg: BuildConfig): Recipe[] {
     if ((r.data.channels !== undefined || trimTailDb !== undefined) && (kind !== 'patch' || r.data.delivery === 'runtime')) {
       throw new BeepsError('E_SCHEMA', `recipe "${id}": channels and tail trimming are for baked patch files, not ${kind !== 'patch' ? 'songs or layers' : 'runtime-only delivery'}`, { pointer: `/${id}/${postField}` });
     }
+    if (r.data.sections && kind !== 'song') throw new BeepsError('E_SCHEMA', `recipe "${id}": sections is for songs, not patches`, { pointer: `/${id}/sections` });
     // A song has no variants or seed to set: a recipe that sets one asks for something the build cannot do.
     const unread = kind === 'song' ? (['variants', 'seed'] as const).find(k => r.data[k] !== undefined) : undefined;
     if (unread) throw new BeepsError('E_SCHEMA', `recipe "${id}": ${unread} is for patches, not songs`, { pointer: `/${id}/${unread}`, hint: `remove ${unread} from the song recipe`, received: String(r.data[unread]) });
-    out.set(id, { id, role: r.data.role, kind, source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(r.data.variants ? { variants: r.data.variants } : {}), ...(r.data.delivery ? { delivery: r.data.delivery } : {}), ...(r.data.channels !== undefined ? { channels: r.data.channels } : {}), ...(trimTailDb !== undefined ? { trimTailDb } : {}) });
+    out.set(id, { id, role: r.data.role, kind, source, sourceRel: r.data.source.replaceAll('\\', '/'), seed: r.data.seed ?? 1, ...(r.data.variants ? { variants: r.data.variants } : {}), ...(r.data.delivery ? { delivery: r.data.delivery } : {}), ...(r.data.sections ? { sections: true } : {}), ...(r.data.channels !== undefined ? { channels: r.data.channels } : {}), ...(trimTailDb !== undefined ? { trimTailDb } : {}) });
   }
   return [...out.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
 }
