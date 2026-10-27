@@ -396,7 +396,7 @@ async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: 
       requireExpectations(r.id, evaluateExpectations(authored, ex.rendered.map(x => x.features)));
       if (ex.posts.some(post => post?.identicalChannels === false)) warn(`${r.id}: ${CHANNELS_DIFFER}`);
     } else {
-      const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, manifestId: r.id, layers: pl.layers });
+      const out = await exportSongAssets(host, p, loadSong(p, r.source), { dest: wav, role: r.role, manifest: true, manifestId: r.id, layers: pl.layers, sections: !!r.sections });
       for (const w of out.warnings) warn(`${r.id}: ${w}`);
     }
     const side = ExportManifestSchema.parse(JSON.parse(readFileSync(`${wav}.json`, 'utf8')));

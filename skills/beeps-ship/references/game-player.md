@@ -165,6 +165,10 @@ passes signal through unchanged below its -1.5 dBFS knee and only gently rounds 
 is a safety net for stacked voices, never a loudness effect, so levels are never suddenly clamped or
 pumped by ordinary play.
 
+## Section times
+
+A song exported with `--sections` (or a build recipe with `"sections": true`) carries `sections: [{ name, start, end, startFrame, endFrame }]` in its sidecar and in `index.json`: the played sections of the form in order, in seconds and in sample frames of the delivered file. Use them to start, loop or cut to one region of a song through an engine's marker or loop-point API. Names repeat when the form plays a section twice, so key by index when a name matters. A looped song's last `endFrame` equals its `frames`; a song that does not loop keeps its tail after the last section. The player itself does not read the field; it is for engines that play the file natively.
+
 ## Shipping small: `beeps compress`
 
 Exports are WAV (10-15 MB per music loop). For a hosted web build run `beeps compress <wavDir> <outDir>`: every file becomes

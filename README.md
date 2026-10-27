@@ -137,6 +137,14 @@ song export <song> --layers --manifest` also writes each adaptive layer (`<stem>
 loop-folded at the mix's trim) and reports `nullResidualDb`, how closely the layers sum back to the
 mix.
 
+`beeps song export <song> --manifest --sections` (or `"sections": true` in a `beeps build` song recipe) adds `sections` to the
+sidecar: every played section of the form, in order, as `{ name, start, end, startFrame, endFrame }` in seconds and in sample
+frames of the delivered file, so a game can play or loop one region of the song (an engine's markers or loop points). A name repeats
+when the form plays that section twice. A song that loops fills the file (the last `endFrame` equals `frames`); a song that does not
+loop keeps its reverb tail after the last section, so the file is longer than the form. It is opt-in: without the flag the sidecar and the
+build hash are exactly as before, and with it the recipe's export hash changes. `beeps bundle` copies the field into `index.json`,
+and `beeps compress` keeps it (it checks the frame count is unchanged).
+
 ## Game player
 
 Export SFX and music sidecars into one folder (e.g. `public/audio/`), then `beeps bundle
@@ -210,6 +218,10 @@ by default).
 WAV, preserving inherited mix settings, effects and level. The first request renders the whole
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
+
+## What changed in 0.35.0
+
+- **Section times in song sidecars (opt-in):** `song export --manifest --sections`, and `"sections": true` on a song recipe in `beeps.build.json`, list every played section of the form with its start and end in seconds and in frames. Existing sidecars, lock files and build hashes are unchanged unless a recipe asks for it. `sections` on a patch recipe is a schema error.
 
 ## What changed in 0.34.1
 

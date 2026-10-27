@@ -84,7 +84,7 @@ export function planAsset(p: OpenProject, recipe: Recipe, delivery: Delivery, to
   const parts = {
     delivery: sha256(canonicalJson(deliveryPart)),
     // `delivery` joins the export step only when the asset ships a cue, so every baked asset keeps the hash it always had.
-    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers, ...(ships !== 'baked' ? { delivery: ships } : {}), ...(recipe.channels !== undefined ? { channels: recipe.channels } : {}), ...(recipe.trimTailDb !== undefined ? { trimTailDb: recipe.trimTailDb } : {}) })),
+    export: sha256(canonicalJson({ id: recipe.id, role: recipe.role, kind: recipe.kind, seed: recipe.seed, variants, layers, ...(recipe.sections ? { sections: true } : {}), ...(ships !== 'baked' ? { delivery: ships } : {}), ...(recipe.channels !== undefined ? { channels: recipe.channels } : {}), ...(recipe.trimTailDb !== undefined ? { trimTailDb: recipe.trimTailDb } : {}) })),
     renders: sha256(canonicalJson(renders)),
     toolchain: sha256(canonicalJson(recipe.kind === 'patch' ? withoutSongPipeline(toolchain) : toolchain)),
     ...(runtime ? { runtime } : {}),

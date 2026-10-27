@@ -7,6 +7,7 @@ import { initProject, savePatch } from '../src/project.ts';
 import { chromiumAvailable } from '../src/render/host.ts';
 import { coin } from './helpers/patches.ts';
 import { songInput } from './helpers/songs.ts';
+import { ExportManifestSchema } from '../src/export-manifest.ts';
 
 const bin = join(import.meta.dirname, '..', 'scripts/beeps.mjs');
 const hasChromium = await chromiumAvailable();
@@ -94,5 +95,60 @@ describe('export manifests', () => {
     expect(Object.keys(plain.data).sort()).toEqual(['durationSec', 'loop', 'name', 'renderedWav', 'wav']);
     expect(existsSync(`${plain.data.wav}.json`)).toBe(false);
     expect(readFileSync(plain.data.wav)).toEqual(readFileSync(ex.data.wav));
+  });
+
+  describe('section times', () => {
+    const base = { schema: 'beeps/audio-asset@1', id: 's', label: 'S', description: '', role: 'music', file: 's.wav', loop: true, durationSec: 10, frames: 480000, sampleRate: 48000, channels: 2,
+      renderKey: 'k', loudness: { metric: 'integrated', lufs: -20 }, truePeakDb: -3, normalizationAlreadyApplied: true, bpm: 120, meter: 4 };
+    const sections = [{ name: 'a', start: 0, end: 4, startFrame: 0, endFrame: 192000 }, { name: 'b', start: 4, end: 10, startFrame: 192000, endFrame: 480000 }];
+
+    it('accepts a sidecar with and without sections and rejects a malformed section', () => {
+      expect(ExportManifestSchema.safeParse(base).success).toBe(true);
+      expect(ExportManifestSchema.safeParse({ ...base, sections }).success).toBe(true);
+      expect(ExportManifestSchema.safeParse({ ...base, sections: [] }).success).toBe(false);
+      expect(ExportManifestSchema.safeParse({ ...base, sections: [{ ...sections[0], extra: 1 }] }).success).toBe(false);
+      expect(ExportManifestSchema.safeParse({ ...base, sections: [{ name: 'a', start: 0, end: 4 }] }).success).toBe(false);
+    });
+
+    it('--sections needs --manifest', () => {
+      const p = project();
+      const r = run(p.paths.root, 'song', 'export', 'missing', '--wav', join(p.paths.root, 'x.wav'), '--sections');
+      expect(r.status).not.toBe(0);
+      expect(JSON.parse(r.stderr).error).toMatchObject({ code: 'E_USAGE', message: expect.stringMatching(/--sections requires --manifest/) });
+    });
+
+    it.skipIf(!hasChromium)('lists every played section in order, with frames, only when asked', () => {
+      const p = project();
+      const form = songInput({
+        sections: { a: { bars: 2, play: { pad: 'pad-a', hat: 'hat-a' } }, b: { bars: 1, play: { hat: 'hat-a' } } },
+        form: ['a', 'b', 'a'],
+      });
+      writeFileSync(join(p.paths.root, 'form.json'), JSON.stringify(form));
+      const on = run(p.paths.root, 'song', 'export', 'form.json', '--wav', 'audio/on.wav', '--manifest', '--sections');
+      expect(on.status, on.stderr).toBe(0);
+      const manifest = JSON.parse(readFileSync(on.data.manifest, 'utf8'));
+      expect(ExportManifestSchema.safeParse(manifest).success).toBe(true);
+      expect(manifest.sections.map((s: { name: string }) => s.name)).toEqual(['a', 'b', 'a']);
+      const meta = JSON.parse(readFileSync(join(dirname(on.data.renderedWav), 'meta.json'), 'utf8'));
+      expect(manifest.sections.map((s: { name: string; start: number; end: number }) => ({ name: s.name, start: s.start, end: s.end })))
+        .toEqual(meta.features.sections.map((s: { name: string; start: number; end: number }) => ({ name: s.name, start: s.start, end: s.end })));
+      manifest.sections.forEach((s: { start: number; end: number; startFrame: number; endFrame: number }, i: number, all: typeof manifest.sections) => {
+        expect(s.startFrame).toBe(Math.min(manifest.frames - 1, Math.round(s.start * manifest.sampleRate)));
+        expect(s.endFrame).toBe(Math.min(manifest.frames, Math.round(s.end * manifest.sampleRate)));
+        if (i > 0) expect(s.start).toBeCloseTo(all[i - 1].end, 6);
+      });
+      expect(manifest.sections[0].start).toBe(0);
+      // A song that does not loop keeps its reverb tail after the last section, so the file is longer than the form.
+      expect(manifest.sections.at(-1).endFrame).toBeLessThan(manifest.frames);
+      writeFileSync(join(p.paths.root, 'loop.json'), JSON.stringify({ ...form, loop: true }));
+      const loop = run(p.paths.root, 'song', 'export', 'loop.json', '--wav', 'audio/loop.wav', '--manifest', '--sections', '--role', 'ambience');
+      expect(loop.status, loop.stderr).toBe(0);
+      const loopManifest = JSON.parse(readFileSync(loop.data.manifest, 'utf8'));
+      expect(loopManifest.sections.at(-1).endFrame).toBe(loopManifest.frames);                        // a loop folds the tail onto the start: the form fills the file
+      const off = run(p.paths.root, 'song', 'export', 'form.json', '--wav', 'audio/off.wav', '--manifest');
+      expect(off.status, off.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(off.data.manifest, 'utf8'))).not.toHaveProperty('sections');
+      expect(readFileSync(off.data.wav)).toEqual(readFileSync(on.data.wav));
+    });
   });
 });
