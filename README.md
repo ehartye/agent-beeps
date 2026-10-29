@@ -219,6 +219,10 @@ WAV, preserving inherited mix settings, effects and level. The first request ren
 song; later excerpts reuse its cache. `--only pad --sections return` previews the full-length solo's
 passage, labeled as a solo. Use `song stems` for parts at the full mix's trim.
 
+## What changed in 0.35.1
+
+- **Plugin listing icon:** the plugin now carries `.claude-plugin/icon.png`, shown in the plugin listing. No code, command or rendered output changes.
+
 ## What changed in 0.35.0
 
 - **Section times in song sidecars (opt-in):** `song export --manifest --sections`, and `"sections": true` on a song recipe in `beeps.build.json`, list every played section of the form with its start and end in seconds and in frames. Existing sidecars, lock files and build hashes are unchanged unless a recipe asks for it. `sections` on a patch recipe is a schema error.
