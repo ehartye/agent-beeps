@@ -114,7 +114,7 @@ Patch recipes may set `channels` (`1` folds the delivered WAV to mono; `2` keeps
 and `trimTailDb` (a dBFS threshold from -120 inclusive to 0 exclusive). Tail trimming runs before
 mono conversion, through the same post-processing as `beeps export`. The legacy spelling
 `trimTail` is accepted and normalized to `trimTailDb`; specifying both with different values fails.
-For example, Space's `{ "source": "sfx/step.json", "role": "sfx", "variants": 1,
+For example, `{ "source": "sfx/step.json", "role": "sfx", "variants": 1,
 "channels": 1, "trimTail": -60 }` exports one trimmed mono recording as `step.0.wav` for `wav-master`.
 Here the recipe id is `step`; the source may retain its authored name, and the build catalog records
 that numbered path.
@@ -130,6 +130,58 @@ The shared `exportPatchVariants` and `exportSongAssets` APIs accept optional `ma
 Omitting it preserves the authored id and existing export bytes; the direct CLI exports keep that
 default. The override changes neither authored labels/metadata nor raw render inputs, adaptive layers
 or loudness measurements. Build supplies its recipe id through these same exporters.
+
+### PCM sound sprites
+
+With `target: "wav-master"`, a recipe can pack ordered, already-rendered PCM WAVs:
+
+```json
+{
+  "ui-kit": {
+    "kind": "sprite",
+    "role": "sfx",
+    "entries": [
+      { "id": "confirm", "source": "rendered/confirm.wav" },
+      { "id": "cancel", "source": "rendered/cancel.wav", "loop": true }
+    ]
+  }
+}
+```
+
+Entry sources are relative to the recipes file; they are files, not references to other recipes.
+`loop` defaults to false. Entries retain authored order. Entry IDs begin with an ASCII letter and
+contain only letters, digits, `_` and `-`, up to 64 characters; duplicates, `constructor`, `prototype`
+and `__proto__` are rejected. A sprite accepts 1–128 entries and only role `sfx`. Patch/song fields
+`source`, `seed`, `variants`, `sections`, `delivery`, `channels`, `trimTailDb` and `trimTail` are refused.
+Other delivery presets are unsupported.
+
+Inputs must be canonical 44-byte-header little-endian PCM16 WAVs, mono or stereo, with the same
+positive integer sample rate (at most 192000 Hz) and channel count. Each input is nonempty and at
+most 16 MiB. Header format, sizes, byte rate, block alignment and whole frames are checked before
+packing. The resulting WAV is at most 64 MiB including its header and gaps. There is no resampling,
+normalization, trimming, fading or lossy codec support. Input sample bytes remain exact. Between
+entries the packer inserts `ceil(sampleRate / 10)` zero frames, with no leading or trailing gap.
+
+The recipe emits exactly `ui-kit.wav` and `ui-kit.sprite.json`. The map schema is
+`beeps/audio-sprite@1`: integer `sampleRate`, `channels`, `frames` and `gapFrames`; `audio` with a
+same-directory WAV basename, lowercase SHA-256 and `encoding: "pcm_s16le"`; and ordered `entries`
+with `id`, inclusive `startFrame`, exclusive `endFrame`, `loop`, `sourceSha256` and `sourceFrames`.
+Each range is exactly its source length, excludes gaps, and the final end is `frames`. Source hashes
+cover the original canonical WAV including its header. The map makes no loudness or normalization
+claim and no `.wav.json` is fabricated. Frame positions are authoritative; consumers convert them
+to time using `sampleRate`.
+
+Source bytes, entry order, IDs, loop flags and the packing policy participate in the build key.
+Both files are locked outputs, with `kind: "sprite"` on the lock asset. Build, verify, store and
+portable fetch require the pair and authenticate its hashes, format, source ranges and silent gaps.
+Malformed inputs fail before replacing a valid delivery. The portable fetch remains Node-builtins-only.
+
+The catalog stores the sprite variant under the recipe ID. As with other catalog resources,
+`audio.file` is relative to the bundle root; bundling a nested directory rebases that catalog path.
+The separate `.sprite.json` remains unchanged and is the strict engine-neutral map with a basename.
+A nested catalog entry is therefore not a substitute for the standalone map validator input.
+Sprite records require a sprite-capable producer (0.36.0 or later); old patch/song sidecars retain
+their existing normalization contract. Packing adds no playback runtime or engine-specific URLs.
 
 ### Delivery presets (`--target`)
 

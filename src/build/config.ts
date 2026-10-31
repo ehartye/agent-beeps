@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BeepsError } from '../errors.ts';
 import { encoderArgs, FORMATS, type CompressFormat } from '../compress.ts';
 import { admitAssetId } from '../export-manifest.ts';
+import { admitAudioSpriteEntryId, AUDIO_SPRITE_MAX_ENTRIES } from '../audio-sprite-map.ts';
 
 export const CONFIG_FILE = 'beeps.build.json';
 
@@ -51,7 +52,7 @@ export function loadConfig(startDir: string, file?: string): BuildConfig {
 
 // ---- recipes ----
 
-export interface Recipe {
+export interface RenderRecipe {
   id: string; role: z.infer<typeof Role>; kind: 'patch' | 'song';
   /** Absolute path of the patch or song JSON. */
   source: string; sourceRel: string;
@@ -68,13 +69,26 @@ export interface Recipe {
   sections?: boolean;
 }
 
+export interface SpriteRecipe {
+  id: string; role: 'sfx'; kind: 'sprite';
+  entries: { id: string; source: string; sourceRel: string; loop: boolean }[];
+  source?: never; sourceRel?: never; seed?: never; variants?: never; delivery?: never;
+  channels?: never; trimTailDb?: never; sections?: never;
+}
+export type Recipe = RenderRecipe | SpriteRecipe;
+
+const SpriteRecipeSchema = z.strictObject({
+  id: z.string().min(1).optional(), kind: z.literal('sprite'), role: z.literal('sfx'),
+  entries: z.array(z.strictObject({ id: z.string(), source: z.string().min(1), loop: z.boolean().default(false) })).min(1).max(AUDIO_SPRITE_MAX_ENTRIES),
+});
+
 const TailDb = z.number().min(-120).lt(0);
 const RecipeSchema = z.strictObject({
   id: z.string().min(1).optional(), source: z.string().min(1), role: Role,
   kind: z.enum(['patch', 'song']).optional(), seed: z.number().int().optional(),
   variants: z.number().int().min(1).max(16).optional(), delivery: z.enum(['baked', 'runtime', 'both']).optional(),
   channels: z.union([z.literal(1), z.literal(2)]).optional(), trimTailDb: TailDb.optional(),
-  /** Legacy Space spelling, normalized to trimTailDb after validation. */
+  /** Legacy spelling, normalized to trimTailDb after validation. */
   trimTail: TailDb.optional(),
   sections: z.boolean().optional(),
 }).superRefine((r, ctx) => {
@@ -90,6 +104,26 @@ export function loadRecipes(cfg: BuildConfig): Recipe[] {
   const out = new Map<string, Recipe>();
   const base = dirname(cfg.recipes);
   for (const [key, value] of entries) {
+    if (value && typeof value === 'object' && 'kind' in value && value.kind === 'sprite') {
+      const r = SpriteRecipeSchema.safeParse(value);
+      if (!r.success) throw new BeepsError('E_SCHEMA', `recipes ${key ?? ''}: ${r.error.issues[0].message}`, { pointer: `/${key ?? ''}/${r.error.issues[0].path.join('/')}` });
+      const id = key ?? r.data.id;
+      if (!id) throw new BeepsError('E_SCHEMA', 'a recipe needs an id (the object key, or "id" in an array entry)');
+      admitAssetId(id);
+      if (out.has(id)) throw new BeepsError('E_CONFLICT', `recipe "${id}" appears twice`);
+      if (cfg.target !== 'wav-master') throw new BeepsError('E_SCHEMA', `recipe "${id}": PCM sprites support only the wav-master target`);
+      const seen = new Set<string>();
+      const entries = r.data.entries.map(entry => {
+        admitAudioSpriteEntryId(entry.id);
+        if (seen.has(entry.id)) throw new BeepsError('E_SCHEMA', `recipe "${id}": duplicate sprite entry "${entry.id}"`);
+        seen.add(entry.id);
+        const source = resolve(base, entry.source);
+        if (!existsSync(source)) throw new BeepsError('E_NOT_FOUND', `recipe "${id}": source ${entry.source} does not exist`);
+        return { ...entry, source, sourceRel: entry.source.replaceAll('\\', '/') };
+      });
+      out.set(id, { id, role: 'sfx', kind: 'sprite', entries });
+      continue;
+    }
     const r = RecipeSchema.safeParse(value);
     if (!r.success) throw new BeepsError('E_SCHEMA', `recipes ${key ?? ''}: ${r.error.issues[0].message}`, { pointer: `/${key ?? ''}/${r.error.issues[0].path.join('/')}` });
     const id = key ?? r.data.id;

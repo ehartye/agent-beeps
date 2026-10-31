@@ -11,6 +11,47 @@ import { chromiumAvailable } from '../../src/render/host.ts';
 import { runBuild } from '../../src/build/build.ts';
 import { staticCheck, verifyOutputs } from '../../src/build/verify.ts';
 import { cloneFixture, makeFixture, type Fixture } from '../helpers/build-fixture.ts';
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
+import { readLock, writeLock } from '../../src/build/lock.ts';
+import { validateDeliveredAsset } from '../../src/runtime/inventory.ts';
+
+describe('PCM sprite delivered verification', () => {
+  it('checks both outputs, canonical source ranges, silence, and the catalog even when altered bytes are re-locked', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      await runBuild(cfg);
+      const lock = readLock(cfg.lock)!, asset = lock.assets['ui-kit'];
+      const original = new Map(asset.outputs.map(o => [o.file, readFileSync(join(cfg.out, o.file))]));
+      expect(verifyOutputs({ lock, out: cfg.out })).toMatchObject({ ok: true, files: 2, checkedStatic: 1, problems: [] });
+      const restore = () => { for (const [file, bytes] of original) writeFileSync(join(cfg.out, file), bytes); };
+      const rehash = () => { for (const o of asset.outputs) { const b = readFileSync(join(cfg.out, o.file)); o.bytes = b.length; o.sha256 = createHash('sha256').update(b).digest('hex'); } };
+      const mapPath = join(cfg.out, 'ui-kit.sprite.json'), wavPath = join(cfg.out, 'ui-kit.wav');
+      for (const change of ['range', 'source', 'gap', 'header'] as const) {
+        restore();
+        const map = JSON.parse(original.get('ui-kit.sprite.json')!.toString()), wav = Buffer.from(original.get('ui-kit.wav')!);
+        if (change === 'range') map.entries[1].startFrame++;
+        if (change === 'source') wav[44] ^= 1;
+        if (change === 'gap') wav[44 + 5 * 4] = 1;
+        if (change === 'header') wav[28] ^= 1;
+        map.audio.sha256 = createHash('sha256').update(wav).digest('hex');
+        writeFileSync(wavPath, wav); writeFileSync(mapPath, JSON.stringify(map)); rehash();
+        const report = verifyOutputs({ lock, out: cfg.out, catalog: false });
+        expect(report.ok, change).toBe(false);
+        expect(report.problems.map(p => p.problem).join(' '), change).toMatch(change === 'range' ? /boundaries/ : change === 'source' ? /sourceSha256/ : change === 'gap' ? /not silent/ : /canonical/);
+      }
+      restore(); rehash(); writeLock(cfg.lock, lock);
+      const incomplete = { ...asset, outputs: asset.outputs.filter(o => !o.file.endsWith('.sprite.json')) };
+      expect(() => validateDeliveredAsset('ui-kit', incomplete, file => original.get(file))).toThrow(/requires exactly/);
+      rmSync(mapPath);
+      expect(verifyOutputs({ lock, out: cfg.out, catalog: false }).problems).toEqual(expect.arrayContaining([expect.objectContaining({ file: 'ui-kit.sprite.json', problem: 'missing' })]));
+      restore();
+      const catalog = JSON.parse(readFileSync(join(cfg.out, 'index.json'), 'utf8'));
+      catalog.assets['ui-kit'].entries[1].loop = false;
+      writeFileSync(join(cfg.out, 'index.json'), JSON.stringify(catalog));
+      expect(verifyOutputs({ lock, out: cfg.out }).problems).toEqual(expect.arrayContaining([expect.objectContaining({ file: 'index.json', problem: 'sprite catalog differs from its delivered map' })]));
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+});
 
 const ffmpeg = (() => { try { return findFfmpeg(); } catch { return undefined; } })();
 const hasChromium = await chromiumAvailable();

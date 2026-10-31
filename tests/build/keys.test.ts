@@ -1,6 +1,8 @@
 // The input hash is the product: a missed input is stale audio, a spurious one is a wasted render. No browser, no ffmpeg.
+import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
 import { describe, expect, it } from 'vitest';
-import { loadRecipes, deliveryFor } from '../../src/build/config.ts';
+import { loadRecipes, deliveryFor, type RenderRecipe } from '../../src/build/config.ts';
 import { currentToolchain } from '../../src/build/lock.ts';
 import { planAsset } from '../../src/build/plan.ts';
 import { openBuildProject } from '../../src/build/build.ts';
@@ -21,7 +23,7 @@ const changed = (a: Record<string, string>, b: Record<string, string>) => Object
 describe('input hash', () => {
   it('keys baked delivery IDs only in export while seed differences retain distinct authored renders', () => {
     const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg), tc = currentToolchain();
-    const recipe = loadRecipes(cfg).find(r => r.id === 'coin')!;
+    const recipe = loadRecipes(cfg).find((r): r is RenderRecipe => r.kind === 'patch' && r.id === 'coin')!;
     const plan = (id: string, seed: number) => planAsset(p, { ...recipe, id, seed, variants: 1 }, deliveryFor('wav-master'), tc, undefined);
     const native = plan('coin', 11), first = plan('inspect-0', 11), second = plan('inspect-1', 18);
     expect(first.parts.renders).toBe(native.parts.renders);
@@ -90,7 +92,7 @@ describe('input hash', () => {
     expect(plans().coin.inputHash).toBe(canonical.inputHash);
   });
 
-  it('normalizes the Space spelling and rejects invalid, conflicting, or unsupported post options', () => {
+  it('normalizes the legacy spelling and rejects invalid, conflicting, or unsupported post options', () => {
     const fx = makeFixture(), recipe = { source: 'sfx/coin.json', role: 'sfx', variants: 1 };
     fx.write('recipes.json', { coin: { ...recipe, channels: 1, trimTail: -60 } });
     expect(loadRecipes(fx.cfg())[0]).toMatchObject({ channels: 1, trimTailDb: -60 });
@@ -109,7 +111,7 @@ describe('input hash', () => {
     const fx = makeFixture();
     fx.write('sfx/coin.json', { ...fx.read('sfx/coin.json'), xRuntime: { delivery: 'runtime', inputs: {}, bind: [] } });
     fx.write('recipes.json', { coin: { source: 'sfx/coin.json', role: 'sfx', channels: 1, trimTailDb: -60 } });
-    const cfg = fx.cfg(), p = openBuildProject(cfg), [recipe] = loadRecipes(cfg);
+    const cfg = fx.cfg(), p = openBuildProject(cfg), recipe = loadRecipes(cfg).find((r): r is RenderRecipe => r.kind === 'patch')!;
     expect(() => planAsset(p, recipe, deliveryFor('wav-master'), currentToolchain(), undefined)).toThrow(/runtime/);
     // A recipe can explicitly override the patch's default to ship a baked file.
     expect(planAsset(p, { ...recipe, delivery: 'baked' }, deliveryFor('wav-master'), currentToolchain(), undefined).ships).toBe('baked');
@@ -117,7 +119,7 @@ describe('input hash', () => {
 
   it('scopes post options to the baked files when delivery includes a runtime cue', () => {
     const fx = makeFixture(), cfg = fx.cfg(), p = openBuildProject(cfg), tc = currentToolchain();
-    const recipe = loadRecipes(cfg).find(r => r.id === 'coin')!;
+    const recipe = loadRecipes(cfg).find((r): r is RenderRecipe => r.kind === 'patch' && r.id === 'coin')!;
     const base = planAsset(p, { ...recipe, delivery: 'both' }, deliveryFor('wav-master'), tc, undefined);
     const post = planAsset(p, { ...recipe, delivery: 'both', channels: 1, trimTailDb: -60 }, deliveryFor('wav-master'), tc, undefined);
     expect(post.parts.export).not.toBe(base.parts.export);
@@ -186,5 +188,44 @@ describe('input hash', () => {
     fx.write('sfx/renamed.json', fx.read('sfx/coin.json'));
     fx.write('recipes.json', { ...fx.read('recipes.json'), coin: { source: 'sfx/renamed.json', role: 'sfx' } });
     expect(hashes(fx)).toEqual(base);
+  });
+});
+
+describe('PCM sprite recipe identity', () => {
+  it('keys exact source bytes, authored order, IDs and loops while ignoring source paths', () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg(), p = openBuildProject(cfg);
+    const plan = () => planAsset(p, loadRecipes(cfg)[0], deliveryFor('wav-master'), currentToolchain(), undefined);
+    const original = fx.read('recipes.json'), base = plan();
+    expect(plan().inputHash).toBe(base.inputHash);
+    expect(loadRecipes(cfg)[0]).toMatchObject({ kind: 'sprite', entries: [{ id: 'confirm', loop: false }, { id: 'cancel', loop: true }] });
+    const source = readFileSync(fx.path('rendered/confirm.wav')), changed = Buffer.from(source); changed[44] ^= 1;
+    writeFileSync(fx.path('rendered/confirm.wav'), changed);
+    expect(plan().inputHash).not.toBe(base.inputHash);
+    writeFileSync(fx.path('rendered/confirm.wav'), source);
+    for (const entries of [[...original['ui-kit'].entries].reverse(), original['ui-kit'].entries.map((e: any, i: number) => i ? e : { ...e, loop: true }), original['ui-kit'].entries.map((e: any, i: number) => i ? e : { ...e, id: 'renamed' })]) {
+      fx.write('recipes.json', { 'ui-kit': { ...original['ui-kit'], entries } });
+      expect(plan().inputHash).not.toBe(base.inputHash);
+    }
+    copyFileSync(fx.path('rendered/confirm.wav'), fx.path('rendered/renamed.wav'));
+    original['ui-kit'].entries[0].source = 'rendered/renamed.wav';
+    fx.write('recipes.json', original);
+    expect(plan().inputHash).toBe(base.inputHash);
+  });
+
+  it('refuses rendering fields, duplicate/reserved entry IDs, extra entry fields and non-WAV delivery', () => {
+    const fx = makeSpriteFixture(), original = fx.read('recipes.json')['ui-kit'];
+    for (const extra of [{ source: 'x' }, { seed: 1 }, { variants: 1 }, { sections: false }, { delivery: 'baked' }, { channels: 2 }, { trimTailDb: -60 }, { trimTail: -60 }, { role: 'music' }]) {
+      fx.write('recipes.json', { 'ui-kit': { ...original, ...extra } });
+      expect(() => loadRecipes(fx.cfg())).toThrow();
+    }
+    for (const id of ['constructor', 'prototype', '__proto__', 'confirm']) {
+      fx.write('recipes.json', { 'ui-kit': { ...original, entries: [original.entries[0], { ...original.entries[1], id }] } });
+      expect(() => loadRecipes(fx.cfg())).toThrow();
+    }
+    fx.write('recipes.json', { 'ui-kit': { ...original, entries: [{ ...original.entries[0], gain: 1 }] } });
+    expect(() => loadRecipes(fx.cfg())).toThrow();
+    fx.write('recipes.json', { 'ui-kit': original });
+    for (const target of ['web-universal', 'web-mp3']) expect(() => loadRecipes(fx.cfg({ target }))).toThrow(/wav-master/);
+    expect(() => planAsset(openBuildProject(fx.cfg()), loadRecipes(fx.cfg())[0], deliveryFor('web-mp3'), currentToolchain(), undefined)).toThrow(/wav-master/);
   });
 });

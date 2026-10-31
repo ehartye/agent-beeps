@@ -7,7 +7,21 @@ import { initProject, savePatch } from '../src/project.ts';
 import { chromiumAvailable } from '../src/render/host.ts';
 import { coin } from './helpers/patches.ts';
 import { songInput } from './helpers/songs.ts';
-import { ExportManifestSchema } from '../src/export-manifest.ts';
+import { ExportManifestSchema, parseExportSidecar } from '../src/export-manifest.ts';
+import { packAudioSprite } from '../src/audio/sprite.ts';
+import { writePcm16 } from '../src/audio/post.ts';
+
+describe('discriminated export sidecars', () => {
+  it('accepts the sprite frame contract without inventing normalized asset metadata', () => {
+    const packed = packAudioSprite([{ id: 'confirm', wav: writePcm16({ sampleRate: 48000, channels: [Int16Array.from([1, -2, 3])] }) }], 'ui-kit.wav');
+    const map = JSON.parse(packed.mapText);
+    expect(parseExportSidecar(map)).toEqual(map);
+    expect(ExportManifestSchema.safeParse(map).success).toBe(false);
+    expect(map).not.toHaveProperty('normalizationAlreadyApplied');
+    expect(() => parseExportSidecar({ ...map, normalizationAlreadyApplied: true })).toThrow(/unknown fields/);
+    expect(() => parseExportSidecar({ ...map, schema: 'beeps/audio-sprite@2' })).toThrow();
+  });
+});
 
 const bin = join(import.meta.dirname, '..', 'scripts/beeps.mjs');
 const hasChromium = await chromiumAvailable();

@@ -3,7 +3,11 @@
 import { existsSync, lstatSync, readFileSync, readdirSync, writeFileSync, type Stats } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import { BeepsError } from './errors.ts';
-import { ExportManifestSchema, type ExportManifest } from './export-manifest.ts';
+import { ExportManifestSchema, parseExportSidecar, type ExportManifest } from './export-manifest.ts';
+import type { AudioSpriteMap } from './audio-sprite-map.ts';
+import { validateAudioSpriteBytes } from './runtime/inventory.ts';
+
+export const isAssetSidecar = (file: string): boolean => /(?:\.(wav|ogg|mp3)|\.sprite)\.json$/.test(file);
 
 /**
  * Every `*.wav.json`, `*.ogg.json` or `*.mp3.json` sidecar under `dir`, as paths relative to it (posix separators), sorted.
@@ -16,7 +20,7 @@ function listSidecars(dir: string): { sidecars: string[]; skipped: string[] } {
   const out: string[] = [], skipped: string[] = [];
   const holdsSidecar = (current: string): boolean => {
     try {
-      return readdirSync(current, { withFileTypes: true }).some(e => !e.isSymbolicLink() && (e.isDirectory() ? e.name !== 'node_modules' && holdsSidecar(join(current, e.name)) : /\.(wav|ogg|mp3)\.json$/.test(e.name)));
+      return readdirSync(current, { withFileTypes: true }).some(e => !e.isSymbolicLink() && (e.isDirectory() ? e.name !== 'node_modules' && holdsSidecar(join(current, e.name)) : isAssetSidecar(e.name)));
     } catch { return false; }
   };
   const walk = (current: string) => {
@@ -33,7 +37,7 @@ function listSidecars(dir: string): { sidecars: string[]; skipped: string[] } {
         if (entry.name === 'node_modules') continue;
         if (entry.name.startsWith('.')) { if (entry.name !== '.git' && holdsSidecar(full)) skipped.push(`${relative(dir, full).split(sep).join('/')}/ (hidden directory, not searched)`); continue; }
         walk(full);
-      } else if (entry.isFile() && /\.(wav|ogg|mp3)\.json$/.test(entry.name)) {
+      } else if (entry.isFile() && isAssetSidecar(entry.name)) {
         out.push(relative(dir, full).split(sep).join('/'));
       }
     }
@@ -84,7 +88,7 @@ export function catalogText(dir: string): { index: string; text: string; assets:
   const { sidecars, skipped } = listSidecars(dir);
   // A Map, not a plain object: an asset id of "constructor" (or any other Object.prototype name)
   // must never be mistaken for an inherited property.
-  const assets = new Map<string, ExportManifest>();
+  const assets = new Map<string, ExportManifest | AudioSpriteMap>();
   const from = new Map<string, string>();
   for (const rel of sidecars) {
     let text: string;
@@ -100,6 +104,17 @@ export function catalogText(dir: string): { index: string; text: string; assets:
       raw = JSON.parse(text);
     } catch (e) {
       throw new BeepsError('E_SCHEMA', `${rel}: ${(e as Error).message}`);
+    }
+    if (rel.endsWith('.sprite.json')) {
+      const m = parseExportSidecar(raw), id = posix.basename(rel, '.sprite.json');
+      if (m.schema !== 'beeps/audio-sprite@1') throw new BeepsError('E_SCHEMA', `${rel}: not a beeps/audio-sprite@1 map`);
+      if (m.audio.file !== `${id}.wav`) throw new BeepsError('E_SCHEMA', `${rel}: sprite audio filename does not match its owner ${id}`);
+      if (assets.has(id)) throw new BeepsError('E_CONFLICT', `asset id "${id}" is in both ${from.get(id)} and ${rel}`);
+      const file = assetPath(dir, rel, 'audio/file', m.audio.file);
+      validateAudioSpriteBytes(m, readFileSync(join(dir, file)));
+      assets.set(id, { ...m, audio: { ...m.audio, file } });
+      from.set(id, rel);
+      continue;
     }
     const r = ExportManifestSchema.safeParse(raw);
     if (!r.success) throw new BeepsError('E_SCHEMA', `${rel}: not a beeps/audio-asset@1 sidecar (${r.error.issues[0].message})`, { pointer: '/' + r.error.issues[0].path.join('/') });

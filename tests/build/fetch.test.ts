@@ -14,6 +14,41 @@ import { DirStore, storeName } from '../../src/build/store.ts';
 import { ciExport } from '../../src/build/store-ops.ts';
 import { writeWav } from '../../src/audio/wav.ts';
 import { makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
+import { storePush } from '../../src/build/store-ops.ts';
+
+describe('portable PCM sprite fetch', () => {
+  it('fetches both locked files without external tools and refuses altered maps and missing map inventories without writes', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      await runBuild(cfg);
+      const original = snapshot(cfg.out), store = new DirStore(fx.path('store'));
+      expect((await storePush(cfg, store)).ok).toBe(true);
+      const fresh = { ...cfg, out: fx.path('fetched') };
+      const exported = ciExport(fresh, fx.path('fetch'), `dir:${fx.path('store')}`);
+      const run = (...args: string[]) => spawnSync(process.execPath, [exported.file, ...args], { cwd: fx.dir, encoding: 'utf8', windowsHide: true, timeout: 30000, env: { ...process.env, PATH: '' } });
+      const pulled = run();
+      expect(pulled.status, pulled.stderr).toBe(0);
+      expect(JSON.parse(pulled.stdout)).toMatchObject({ ok: true, fetched: 1 });
+      expect(snapshot(fresh.out)).toEqual(original);
+      expect(run('--check').status).toBe(0);
+      const mapPath = join(fresh.out, 'ui-kit.sprite.json');
+      const map = JSON.parse(readFileSync(mapPath, 'utf8')); map.entries[0].endFrame++;
+      writeFileSync(mapPath, JSON.stringify(map));
+      const damaged = snapshot(fresh.out), checked = run('--check');
+      expect(checked.status).toBe(1);
+      expect(checked.stderr).toMatch(/does not match the lock/);
+      expect(snapshot(fresh.out)).toEqual(damaged);
+      const lock = readLock(cfg.lock)!;
+      lock.assets['ui-kit'].outputs = lock.assets['ui-kit'].outputs.filter(o => !o.file.endsWith('.sprite.json'));
+      writeFileSync(cfg.lock, JSON.stringify(lock));
+      const refused = run();
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toMatch(/requires exactly/);
+      expect(snapshot(fresh.out)).toEqual(damaged);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+});
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const ok = (await chromiumAvailable()) && hasFfmpeg;
