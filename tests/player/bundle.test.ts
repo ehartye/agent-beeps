@@ -1,9 +1,34 @@
 // tests/player/bundle.test.ts
 import { describe, expect, it } from 'vitest';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bundleDir } from '../../src/bundle.ts';
+import { packAudioSprite } from '../../src/audio/sprite.ts';
+import { writePcm16 } from '../../src/audio/post.ts';
+
+describe('PCM sprite catalogs', () => {
+  it('keeps the authored map separate, rebases nested catalog resources, and refuses corrupt PCM before changing the catalog', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'beeps-sprite-bundle-'));
+    try {
+      const sub = join(dir, 'sfx'); mkdirSync(sub);
+      const packed = packAudioSprite([{ id: 'confirm', wav: writePcm16({ sampleRate: 44100, channels: [Int16Array.from([-32768, 0, 32767])] }) }], 'ui-kit.wav');
+      writeFileSync(join(sub, 'ui-kit.wav'), packed.wav);
+      writeFileSync(join(sub, 'ui-kit.sprite.json'), packed.mapText);
+      expect(bundleDir(dir).assets).toEqual(['ui-kit']);
+      const index = readFileSync(join(dir, 'index.json'));
+      expect(JSON.parse(index.toString()).assets['ui-kit']).toEqual({ ...packed.map, audio: { ...packed.map.audio, file: 'sfx/ui-kit.wav' } });
+      expect(readFileSync(join(sub, 'ui-kit.sprite.json'), 'utf8')).toBe(packed.mapText);
+      const bad = Buffer.from(packed.wav); bad[44] ^= 1;
+      writeFileSync(join(sub, 'ui-kit.wav'), bad);
+      expect(() => bundleDir(dir)).toThrow(/audio.sha256/);
+      expect(readFileSync(join(dir, 'index.json'))).toEqual(index);
+      rmSync(join(sub, 'ui-kit.wav'));
+      expect(() => bundleDir(dir)).toThrow(/does not exist/);
+      expect(readFileSync(join(dir, 'index.json'))).toEqual(index);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});
 
 const sidecar = (id: string, file: string, extra: Record<string, unknown> = {}) => ({
   schema: 'beeps/audio-asset@1', id, label: id, description: '', role: 'sfx', file, loop: false, durationSec: 0.3,

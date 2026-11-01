@@ -15,6 +15,9 @@ import { checkParity, type EngineName, type ParityCheck } from '../runtime/harne
 import type { Cue } from '../runtime/cue.ts';
 import { assertCueInventory, assertOutputNames, validateDeliveredDependencies } from '../runtime/dependencies.ts';
 import { readDeliveredFile } from '../runtime/delivery.ts';
+import { assertDeliveredInventory, validateDeliveredAsset } from '../runtime/inventory.ts';
+import { validateAudioSpriteMap } from '../audio-sprite-map.ts';
+import { canonicalJson } from '../hash.ts';
 
 export interface StaticInfo { format: 'opus' | 'mp3' | 'wav' | 'unknown'; frames?: number; channels?: number; sampleRate?: number; encoder?: string; delay?: number; padding?: number }
 export interface StaticResult { info: StaticInfo; problems: string[] }
@@ -96,7 +99,8 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
   try { for (const asset of Object.values(lock.assets)) assertOutputNames(asset.outputs); }
   catch (e) { return { ok: false, lock: typeof o.lock === 'string' ? o.lock : '(in memory)', out, assets: Object.keys(lock.assets).length, files, checkedStatic, problems: [{ problem: (e as Error).message }], warnings }; }
   for (const [id, asset] of Object.entries(lock.assets)) {
-    try { assertCueInventory(id, asset.outputs, { requiresCue: asset.delivery === 'runtime' || asset.delivery === 'both' }); }
+    const sprite = asset.kind === 'sprite' || asset.outputs.some(f => /\.sprite\.json$/i.test(f.file));
+    try { if (sprite) assertDeliveredInventory(id, asset); else assertCueInventory(id, asset.outputs, { requiresCue: asset.delivery === 'runtime' || asset.delivery === 'both' }); }
     catch (e) { problems.push({ asset: id, problem: (e as Error).message }); }
     const expects = new Map<string, Expect>();
     const intact = new Set<string>();
@@ -113,6 +117,13 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
       intact.add(f.file);
       delivered.set(f.file, buf);
       if (/\.runtime\.json$/.test(f.file)) { const cue = cueProblems(id, f.file, buf, problems); if (cue) cues.push({ file: f.file, cue }); continue; }
+      if (f.file.endsWith('.sprite.json')) {
+        try {
+          const m = validateAudioSpriteMap(safeJson(buf));
+          expects.set(m.audio.file, { frames: m.frames, sampleRate: m.sampleRate, channels: m.channels });
+        } catch (e) { problems.push({ asset: id, file: f.file, problem: (e as Error).message }); }
+        continue;
+      }
       if (/\.(wav|ogg|mp3)\.json$/.test(f.file)) {
         const m = ExportManifestSchema.safeParse(safeJson(buf));
         if (!m.success) { problems.push({ asset: id, file: f.file, problem: `not a beeps/audio-asset@1 sidecar (${m.error.issues[0].message})` }); continue; }
@@ -128,6 +139,10 @@ export function verifyOutputs(o: { lock: string | Lock; out: string; decode?: bo
     for (const { file, cue } of cues) {
       try { validateDeliveredDependencies(id, cue, asset.outputs, name => delivered.get(name)); }
       catch (e) { problems.push({ asset: id, file, problem: (e as Error).message }); }
+    }
+    if (sprite && intact.size === asset.outputs.length) {
+      try { validateDeliveredAsset(id, asset, name => delivered.get(name)); }
+      catch (e) { problems.push({ asset: id, problem: (e as Error).message }); }
     }
     for (const f of asset.outputs) {
       if (!/\.(ogg|mp3|wav)$/i.test(f.file) || !intact.has(f.file)) continue; // a file that fails its hash is reported once, not also as a bad header
@@ -216,13 +231,21 @@ function listFlat(dir: string, base = dir): string[] {
 function catalogProblems(out: string, lock: Lock, tracked: Set<string>, problems: VerifyProblem[], warnings: string[]): void {
   const index = join(out, 'index.json');
   if (!existsSync(index)) { problems.push({ file: 'index.json', problem: 'catalog missing (run beeps build, or beeps bundle)' }); return; }
-  let cat: { assets?: Record<string, { file: string; variants?: { file: string }[]; layers?: { file: string }[] }> };
+  let cat: { assets?: Record<string, { schema?: string; file: string; audio?: { file: string }; variants?: { file: string }[]; layers?: { file: string }[] }> };
   try { cat = JSON.parse(readFileSync(index, 'utf8')); } catch (e) { problems.push({ file: 'index.json', problem: (e as Error).message }); return; }
   const assets = cat.assets ?? {};
   const ids = new Set<string>();
   for (const [id, a] of Object.entries(assets)) {
     ids.add(id);
-    for (const f of [a.file, ...(a.variants ?? []).map(v => v.file), ...(a.layers ?? []).map(l => l.file)]) {
+    const locked = Object.hasOwn(lock.assets, id) ? lock.assets[id] : undefined;
+    const sprite = a.schema === 'beeps/audio-sprite@1' || locked?.kind === 'sprite' || locked?.outputs.some(f => f.file.endsWith('.sprite.json'));
+    if (sprite) {
+      try {
+        const map = validateAudioSpriteMap(JSON.parse(readFileSync(join(out, `${id}.sprite.json`), 'utf8')));
+        if (canonicalJson(a) !== canonicalJson(map)) problems.push({ asset: id, file: 'index.json', problem: 'sprite catalog differs from its delivered map' });
+      } catch (e) { problems.push({ asset: id, file: 'index.json', problem: (e as Error).message }); }
+    }
+    for (const f of sprite ? [a.audio?.file ?? ''] : [a.file, ...(a.variants ?? []).map(v => v.file), ...(a.layers ?? []).map(l => l.file)]) {
       try { assertOutputNames([{ file: f }]); } catch (e) { problems.push({ asset: id, file: f, problem: (e as Error).message }); continue; }
       if (!tracked.has(f) && !existsSync(join(out, f))) problems.push({ asset: id, file: f, problem: 'listed in index.json but missing' });
     }

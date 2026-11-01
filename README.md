@@ -42,6 +42,10 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 nine effects, four ambience beds and three songs, that you can hear on the
 [listening booth](https://ehartye.github.io/agent-beeps/#colony).
 
+## What changed in 0.36.0
+
+Build PCM sound sprites from ordered canonical PCM16 WAV files with `kind: "sprite"` recipes and the `wav-master` target. Packing preserves integer samples, inserts fixed 100 ms gaps, and delivers an authenticated `beeps/audio-sprite@1` frame map through build, lock, catalog, store and portable fetch. See [the build contract](docs/build-lock-and-store.md).
+
 ## Workflow
 
 1. **Compose**: `beeps generate coin --count 6 --prompt "coin pickup for a cozy platformer"`

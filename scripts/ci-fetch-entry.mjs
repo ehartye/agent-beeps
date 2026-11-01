@@ -16,6 +16,7 @@ import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertDeliveredInventory, validateDeliveredAsset } from '../src/runtime/inventory.ts';
+import { validateAudioSpriteMap } from '../src/audio-sprite-map.ts';
 
 const DEFAULTS = __BEEPS_DEFAULTS__;
 
@@ -176,13 +177,20 @@ if (!has('check') && need.length) {
 
 // ---- index.json, as beeps bundle writes it ----
 if (!missing.length && !bad.length && !only) {
-  const sidecars = ids.flatMap((id) => lock.assets[id].outputs.map((o) => o.file)).filter((f) => /\.(wav|ogg|mp3)\.json$/.test(f)).sort();
+  const sidecars = ids.flatMap((id) => lock.assets[id].outputs.map((o) => o.file)).filter((f) => /(?:\.(wav|ogg|mp3)|\.sprite)\.json$/.test(f)).sort();
   const assets = new Map();
   for (const rel of sidecars) {
     const m = JSON.parse(readFileSync(join(outDir, rel), 'utf8'));
     const at = (raw) => posix.join(posix.dirname(rel), raw);
+    if (rel.endsWith('.sprite.json')) {
+      const sprite = validateAudioSpriteMap(m), id = posix.basename(rel, '.sprite.json');
+      if (assets.has(id)) throw new Error(`duplicate catalog asset ${id}`);
+      assets.set(id, { ...sprite, audio: { ...sprite.audio, file: at(sprite.audio.file) } });
+      continue;
+    }
     const variants = m.variants?.map((v) => ({ ...v, file: at(v.file) }));
     const layers = m.layers?.map((l) => ({ ...l, file: at(l.file) }));
+    if (assets.has(m.id)) throw new Error(`duplicate catalog asset ${m.id}`);
     assets.set(m.id, { ...m, file: at(m.file), ...(variants ? { variants } : {}), ...(layers ? { layers } : {}) });
   }
   const text = JSON.stringify({ schema: 'beeps/audio-bundle@1', assets: Object.fromEntries(assets) }, null, 2) + '\n';

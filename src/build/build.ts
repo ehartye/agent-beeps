@@ -1,11 +1,12 @@
 // `beeps build`: render + export + compress + bundle only the assets whose input hash differs from the committed lock, or whose
 // outputs are missing or no longer match it. Everything else is left byte for byte alone.
 import { samplePaths } from '../samples/store.ts';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
+import { packAudioSprite } from '../audio/sprite.ts';
 import { canonicalJson } from '../hash.ts';
-import { bundleDir, catalogText } from '../bundle.ts';
+import { bundleDir, catalogText, isAssetSidecar } from '../bundle.ts';
 import { compressBundle, ffmpegFingerprint, findFfmpeg } from '../compress.ts';
 import { CHANNELS_DIFFER, exportPatchVariants, exportSongAssets } from '../export-assets.ts';
 import { evaluateExpectations, type ExpectationReport } from '../expect.ts';
@@ -23,7 +24,7 @@ import { validateDeliveredAsset } from '../runtime/inventory.ts';
 import { assertOutputNames, isDeliveredSampleFile, isDeliveredCueFile, sampleFile } from '../runtime/dependencies.ts';
 import { deliveryFor, loadRecipes, type BuildConfig, type Delivery } from './config.ts';
 import { atomicWrite, currentToolchain, deliveryRecord, emptyLock, KEY_SCHEME, readLock, writeLock, type Lock, type LockAsset } from './lock.ts';
-import { planAsset, type Encoder, type Planned } from './plan.ts';
+import { planAsset, readSpriteInputs, type Encoder, type Planned } from './plan.ts';
 import { packAsset, sha256Hex, storeName, unpackAsset, type OutputRef, type Store } from './store.ts';
 import { sidecarExpectations, staticCheck } from './verify.ts';
 import { renderOptions } from '../render/options.ts';
@@ -106,7 +107,7 @@ function staleReasons(plan: Planned, entry: LockAsset | undefined, out: string, 
     const changed = entry.parts ? (Object.keys(plan.parts) as (keyof Planned['parts'])[]).filter(k => entry.parts![k] !== plan.parts[k]) : [];
     reasons.push(`inputs changed${changed.length ? ` (${changed.join(', ')})` : ''}: ${entry.inputHash.slice(0, 19)} -> ${plan.inputHash.slice(0, 19)}`);
   }
-  try { validateDeliveredAsset(plan.recipe.id, { ...entry, delivery: plan.ships }, file => readDeliveredFile(out, file)); }
+  try { validateDeliveredAsset(plan.recipe.id, { ...entry, ...(plan.recipe.kind === 'sprite' ? { kind: 'sprite' } : {}), delivery: plan.ships }, file => readDeliveredFile(out, file)); }
   catch (e) {
     const message = (e as Error).message;
     const file = entry.outputs.find(o => message === `${o.file} is missing` || message === `${o.file} does not match the lock`)?.file;
@@ -251,15 +252,15 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
       const expectOutputs = prior && prior.inputHash === pl.inputHash ? prior.outputs : undefined;
       const { manifest, files } = unpackAsset(bytes, { inputHash: pl.inputHash, outputs: expectOutputs });
       if (manifest.id !== id) throw new BeepsError('E_STORE', `store entry owner ${manifest.id} does not match ${id}`);
-      validateDeliveredAsset(id, { outputs: manifest.outputs, delivery: pl.ships }, file => files.get(file));
-      if (expectOutputs) validateDeliveredAsset(id, { outputs: expectOutputs, delivery: pl.ships }, file => files.get(file));
+      validateDeliveredAsset(id, { outputs: manifest.outputs, ...(pl.recipe.kind === 'sprite' ? { kind: 'sprite' } : {}), delivery: pl.ships }, file => files.get(file));
+      if (expectOutputs) validateDeliveredAsset(id, { outputs: expectOutputs, ...(pl.recipe.kind === 'sprite' ? { kind: 'sprite' } : {}), delivery: pl.ships }, file => files.get(file));
       const sdir = join(stage, `${id}.pull`);
       rmSync(sdir, { recursive: true, force: true }); mkdirSync(sdir, { recursive: true });
       for (const [f, data] of files) atomicWrite(join(sdir, f), data);
       o.hooks?.beforeInstall?.(id);
       install(id, cfg.out, sdir, manifest.outputs, prior?.outputs);
       rmSync(sdir, { recursive: true, force: true });
-      commit(id, { role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) });
+      commit(id, { role: pl.recipe.role, ...(pl.recipe.kind === 'sprite' ? { kind: 'sprite' as const } : { source: pl.recipe.sourceRel }), inputHash: pl.inputHash, parts: pl.parts, outputs: manifest.outputs, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) });
       o.hooks?.afterInstall?.(id);
       todo.delete(id); pulled.push(id);
       log(`pulled ${id}`);
@@ -298,11 +299,11 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
   // from its cached render when there is one. Without this, tightening a brief on a built sound would pass the build until the sound next changed.
   const rebuilt = new Set(toBuild.map(pl => pl.recipe.id));
   const unbuilt = plans.filter(pl => pl.recipe.kind === 'patch' && !rebuilt.has(pl.recipe.id) && !removed.includes(pl.recipe.id))
-    .map(pl => ({ pl, patch: loadPatch(p, pl.recipe.source) })).filter(x => x.patch.xExpect);
+    .flatMap(pl => pl.recipe.kind === 'patch' ? [{ pl, recipe: pl.recipe, patch: loadPatch(p, pl.recipe.source) }] : []).filter(x => x.patch.xExpect);
   const unmet: BeepsError[] = [];
   if (unbuilt.length) {
-    await mapPool(unbuilt, o.jobs ?? cfg.jobs, async ({ pl, patch }, _i, host) => {
-      const { expectations } = await renderWithExpectations(host, [{ patch, seed: pl.recipe.seed }], renderOptions(p));
+    await mapPool(unbuilt, o.jobs ?? cfg.jobs, async ({ pl, recipe, patch }, _i, host) => {
+      const { expectations } = await renderWithExpectations(host, [{ patch, seed: recipe.seed }], renderOptions(p));
       if (expectations[0] && !expectations[0].passed) unmet.push(expectationFailure(pl.recipe.id, expectations[0]));
     }, hostScope({ verifyDeterminism: false }));
     if (unmet.length) {
@@ -324,7 +325,7 @@ export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<
 
   // 4. The catalog, regenerated deterministically, and only when it is not already what the sidecars say.
   let catalogWritten = false;
-  if (existsSync(cfg.out) && readdirSync(cfg.out).some(f => /\.(wav|ogg|mp3)\.json$/.test(f))) {
+  if (existsSync(cfg.out) && readdirSync(cfg.out).some(isAssetSidecar)) {
     catalogWritten = bundleDir(cfg.out, { skipUnchanged: true }).written;
   }
   // Push what the store lacks even when this run built nothing new? No: `beeps store push` does that.
@@ -356,7 +357,7 @@ function estimateBytes(plans: Planned[], lock: Lock | undefined, delivery: Deliv
 
 function catalogDriftOf(out: string, allUnchanged: boolean): string[] {
   if (!allUnchanged || !existsSync(out)) return [];
-  if (!readdirSync(out).some(f => /\.(wav|ogg|mp3)\.json$/.test(f))) return [];
+  if (!readdirSync(out).some(isAssetSidecar)) return [];
   try {
     const { index, text } = catalogText(out);
     if (!existsSync(index)) return ['index.json is missing'];
@@ -381,6 +382,27 @@ function expectationFailure(id: string, report: ExpectationReport): BeepsError {
 /** Exports, compresses and verifies one asset into a staging directory, installs it, and returns its lock entry. */
 async function buildOne(host: RenderHost, p: OpenProject, cfg: BuildConfig, pl: Planned, delivery: ReturnType<typeof deliveryFor>, stage: string, prior: LockAsset | undefined, o: BuildOptions, log: (s: string) => void, warn: (s: string) => void): Promise<LockAsset> {
   const r = pl.recipe;
+  if (r.kind === 'sprite') {
+    const sdir = join(stage, r.id);
+    try {
+      const packed = packAudioSprite(readSpriteInputs(r), `${r.id}.wav`);
+      if (canonicalJson(packed.map.entries.map(e => e.sourceSha256)) !== canonicalJson(pl.spriteSources)) throw new BeepsError('E_SCHEMA', 'sprite source changed after planning; rebuild from stable inputs');
+      rmSync(sdir, { recursive: true, force: true });
+      mkdirSync(sdir, { recursive: true });
+      atomicWrite(join(sdir, `${r.id}.wav`), packed.wav);
+      atomicWrite(join(sdir, `${r.id}.sprite.json`), packed.mapText);
+      const outputs = listOutputs(sdir);
+      validateDeliveredAsset(r.id, { kind: 'sprite', outputs }, file => readDeliveredFile(sdir, file));
+      o.hooks?.afterBuild?.(r.id);
+      o.hooks?.beforeInstall?.(r.id);
+      install(r.id, cfg.out, sdir, outputs, prior?.outputs);
+      return { role: r.role, kind: 'sprite', inputHash: pl.inputHash, parts: pl.parts, outputs };
+    } finally {
+      rmSync(sdir, { recursive: true, force: true });
+      // Retire only an empty shared parent; another worker may still own staged files.
+      try { rmdirSync(stage); } catch (e) { if (!['ENOENT', 'ENOTEMPTY'].includes((e as NodeJS.ErrnoException).code ?? '')) throw e; }
+    }
+  }
   const sdir = join(stage, r.id), wavDir = join(sdir, 'wav'), outDir = join(sdir, 'out');
   rmSync(sdir, { recursive: true, force: true });
   mkdirSync(wavDir, { recursive: true });
@@ -452,9 +474,9 @@ function adopt(cfg: BuildConfig, lock: Lock, plans: Planned[], toolchain: Return
   for (const pl of plans) {
     const a = lockedAsset(lock, pl.recipe.id);
     if (!a) continue;
-    try { validateDeliveredAsset(pl.recipe.id, { ...a, delivery: pl.ships }, file => readDeliveredFile(cfg.out, file)); }
+    try { validateDeliveredAsset(pl.recipe.id, { ...a, ...(pl.recipe.kind === 'sprite' ? { kind: 'sprite' } : {}), delivery: pl.ships }, file => readDeliveredFile(cfg.out, file)); }
     catch (e) { log(`adopt: ${pl.recipe.id}: ${(e as Error).message}; it will be rebuilt`); continue; }
-    assets[pl.recipe.id] = { ...a, role: pl.recipe.role, source: pl.recipe.sourceRel, inputHash: pl.inputHash, parts: pl.parts, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
+    assets[pl.recipe.id] = { ...a, role: pl.recipe.role, ...(pl.recipe.kind === 'sprite' ? { kind: 'sprite' as const } : { source: pl.recipe.sourceRel }), inputHash: pl.inputHash, parts: pl.parts, ...(pl.ships !== 'baked' ? { delivery: pl.ships } : {}) };
     adopted.push(pl.recipe.id);
   }
   // Assets not in this run's plan (--only) keep the foreign entry untouched.

@@ -4,13 +4,28 @@ import { BeepsError } from '../errors.ts';
 
 export interface Pcm16 { sampleRate: number; channels: Int16Array[] }
 
+export interface Pcm16Header { sampleRate: number; channels: number; frames: number; dataBytes: number }
+
+/** Inspect a canonical PCM16 header without allocating sample arrays. `fileBytes` permits a bounded header-only file read. */
+export function inspectPcm16(buf: Buffer, fileBytes = buf.length): Pcm16Header {
+  const invalid = () => new BeepsError('E_RENDER', 'expected a canonical 44-byte-header 16-bit PCM WAV with consistent sizes and format');
+  if (!Number.isSafeInteger(fileBytes) || fileBytes < 44 || buf.length < 44
+    || buf.toString('latin1', 0, 4) !== 'RIFF' || buf.toString('latin1', 8, 12) !== 'WAVE'
+    || buf.toString('latin1', 12, 16) !== 'fmt ' || buf.toString('latin1', 36, 40) !== 'data'
+    || buf.readUInt32LE(16) !== 16 || buf.readUInt16LE(20) !== 1 || buf.readUInt16LE(34) !== 16
+    || buf.readUInt32LE(4) !== fileBytes - 8 || buf.readUInt32LE(40) !== fileBytes - 44) {
+    throw invalid();
+  }
+  const channels = buf.readUInt16LE(22), sampleRate = buf.readUInt32LE(24), dataBytes = buf.readUInt32LE(40);
+  const blockAlign = channels * 2;
+  if (channels < 1 || sampleRate < 1 || buf.readUInt16LE(32) !== blockAlign
+    || buf.readUInt32LE(28) !== sampleRate * blockAlign || dataBytes % blockAlign !== 0) throw invalid();
+  return { sampleRate, channels, frames: dataBytes / blockAlign, dataBytes };
+}
+
 /** Reads the canonical 44-byte-header 16-bit PCM WAV that writeWav and the render pipeline write. */
 export function pcm16(buf: Buffer): Pcm16 {
-  if (buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE' || buf.toString('ascii', 36, 40) !== 'data'
-    || buf.readUInt16LE(20) !== 1 || buf.readUInt16LE(34) !== 16) {
-    throw new BeepsError('E_RENDER', 'export post-processing needs a delivered 16-bit PCM WAV');
-  }
-  const ch = buf.readUInt16LE(22), sampleRate = buf.readUInt32LE(24), n = Math.floor(buf.readUInt32LE(40) / (2 * ch));
+  const { channels: ch, sampleRate, frames: n } = inspectPcm16(buf);
   const channels = Array.from({ length: ch }, () => new Int16Array(n));
   for (let i = 0, o = 44; i < n; i++) for (let c = 0; c < ch; c++, o += 2) channels[c][i] = buf.readInt16LE(o);
   return { sampleRate, channels };

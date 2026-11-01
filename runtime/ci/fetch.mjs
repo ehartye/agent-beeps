@@ -110,7 +110,7 @@ function readSampleWav(bytes, { maxFrames = MAX_SAMPLE_FRAMES } = {}) {
 /** @typedef {Readonly<Record<string, AudioBuffer>>} SampleBuffers */
 const ID = /^sha256:[0-9a-f]{64}$/;
 const FILE = /^[A-Za-z0-9][A-Za-z0-9_.-]*\.wav$/;
-const object = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+const object$1 = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
 /** Distinct dependency IDs in deterministic order. @param {Patch} patch */
 function sampleIds(patch) {
 	if (!Array.isArray(patch?.layers)) throw new TypeError("sample assets require a patch with layers");
@@ -123,7 +123,7 @@ function sampleIds(patch) {
 }
 /** @param {string[]} required @param {object | undefined} supplied */
 function exactClosure(required, supplied) {
-	if (supplied !== void 0 && !object(supplied)) throw new TypeError("sample assets must be a record");
+	if (supplied !== void 0 && !object$1(supplied)) throw new TypeError("sample assets must be a record");
 	const keys = Object.keys(supplied ?? {}).sort();
 	for (const key of keys) if (!ID.test(key)) throw new TypeError(`invalid sample asset ID: ${key}`);
 	const missing = required.filter((id) => !keys.includes(id)), extra = keys.filter((id) => !required.includes(id));
@@ -137,7 +137,7 @@ function validateSampleManifest(patch, assets) {
 	exactClosure(sampleIds(patch), assets);
 	const files = /* @__PURE__ */ new Set();
 	for (const [id, a] of Object.entries(assets ?? {})) {
-		if (!object(a)) throw new TypeError(`sample ${id} requires metadata`);
+		if (!object$1(a)) throw new TypeError(`sample ${id} requires metadata`);
 		if (typeof a.file !== "string" || !FILE.test(a.file) || a.file.includes("..")) throw new TypeError(`sample ${id} file must be a safe flat relative .wav filename`);
 		if (files.has(a.file)) throw new TypeError(`duplicate sample file: ${a.file}; files must be unique`);
 		files.add(a.file);
@@ -240,12 +240,94 @@ function validateDeliveredDependencies(owner, cue, outputs, read) {
 	for (const { file } of outputs) if (isDeliveredSampleFile(file) && !requiredFiles.has(file)) throw new BeepsError("E_VERIFY", `orphan runtime sample output ${file} is not a cue dependency`);
 	return wavs;
 }
+const fail$1 = (message) => {
+	throw new BeepsError("E_SCHEMA", `audio sprite: ${message}`);
+};
+const hash = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+const integer = (value, min, max) => typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
+function object(value, keys, name) {
+	if (value === null || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length !== keys.length || !keys.every((key) => Object.hasOwn(value, key))) fail$1(`${name} has malformed or unknown fields`);
+	return value;
+}
+function admitAudioSpriteEntryId(id) {
+	if (typeof id !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(id) || id === "constructor" || id === "prototype" || id === "__proto__") fail$1("entry id must be an ASCII letter followed by letters, digits, underscore or hyphen (at most 64 characters), excluding reserved IDs");
+}
+function admitAudioSpriteFile(file) {
+	if (typeof file !== "string" || !/^[^\\/:*?"<>|\x00-\x1f]+\.wav$/i.test(file) || file.includes("..") || /[. ]$/.test(file) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])\./i.test(file)) fail$1("audio.file must be a portable same-directory WAV basename");
+}
+/** Strictly validates the entire frame map, including source and packed size limits. It does not authenticate file bytes. */
+function validateAudioSpriteMap(value) {
+	const map = object(value, [
+		"schema",
+		"sampleRate",
+		"channels",
+		"frames",
+		"gapFrames",
+		"audio",
+		"entries"
+	], "map");
+	if (map.schema !== "beeps/audio-sprite@1") fail$1("unsupported schema");
+	if (!integer(map.sampleRate, 1, 192e3)) fail$1("sampleRate is outside the supported integer range");
+	if (map.channels !== 1 && map.channels !== 2) fail$1("channels must be 1 or 2");
+	const sampleRate = map.sampleRate, channels = map.channels;
+	const maxFrames = Math.floor(67108820 / (2 * channels));
+	if (!integer(map.frames, 1, maxFrames)) fail$1("frames exceed the packed WAV size limit");
+	if (!integer(map.gapFrames, 1, Math.ceil(19200)) || map.gapFrames !== Math.ceil(sampleRate / 10)) fail$1("gapFrames must equal ceil(sampleRate / 10)");
+	const audio = object(map.audio, [
+		"file",
+		"sha256",
+		"encoding"
+	], "audio");
+	admitAudioSpriteFile(audio.file);
+	if (audio.encoding !== "pcm_s16le" || !hash(audio.sha256)) fail$1("audio requires pcm_s16le encoding and a lowercase SHA-256");
+	if (!Array.isArray(map.entries) || map.entries.length < 1 || map.entries.length > 128) fail$1("entries must contain 1–128 items");
+	const seen = /* @__PURE__ */ new Set();
+	let next = 0;
+	for (const value of map.entries) {
+		const entry = object(value, [
+			"id",
+			"startFrame",
+			"endFrame",
+			"loop",
+			"sourceSha256",
+			"sourceFrames"
+		], "entry");
+		admitAudioSpriteEntryId(entry.id);
+		if (seen.has(entry.id)) fail$1(`duplicate entry id "${entry.id}"`);
+		seen.add(entry.id);
+		if (!integer(entry.startFrame, 0, maxFrames) || !integer(entry.endFrame, 1, maxFrames) || !integer(entry.sourceFrames, 1, Math.floor(16777172 / (2 * channels))) || entry.startFrame !== next || entry.endFrame - entry.startFrame !== entry.sourceFrames) fail$1(`entry "${entry.id}" has invalid frame boundaries or source size`);
+		if (typeof entry.loop !== "boolean" || !hash(entry.sourceSha256)) fail$1(`entry "${entry.id}" requires a boolean loop and a lowercase source SHA-256`);
+		next = entry.endFrame + map.gapFrames;
+	}
+	if (next - map.gapFrames !== map.frames) fail$1("last entry end must equal frames");
+	return value;
+}
+//#endregion
+//#region src/audio/post.ts
+/** Inspect a canonical PCM16 header without allocating sample arrays. `fileBytes` permits a bounded header-only file read. */
+function inspectPcm16(buf, fileBytes = buf.length) {
+	const invalid = () => new BeepsError("E_RENDER", "expected a canonical 44-byte-header 16-bit PCM WAV with consistent sizes and format");
+	if (!Number.isSafeInteger(fileBytes) || fileBytes < 44 || buf.length < 44 || buf.toString("latin1", 0, 4) !== "RIFF" || buf.toString("latin1", 8, 12) !== "WAVE" || buf.toString("latin1", 12, 16) !== "fmt " || buf.toString("latin1", 36, 40) !== "data" || buf.readUInt32LE(16) !== 16 || buf.readUInt16LE(20) !== 1 || buf.readUInt16LE(34) !== 16 || buf.readUInt32LE(4) !== fileBytes - 8 || buf.readUInt32LE(40) !== fileBytes - 44) throw invalid();
+	const channels = buf.readUInt16LE(22), sampleRate = buf.readUInt32LE(24), dataBytes = buf.readUInt32LE(40);
+	const blockAlign = channels * 2;
+	if (channels < 1 || sampleRate < 1 || buf.readUInt16LE(32) !== blockAlign || buf.readUInt32LE(28) !== sampleRate * blockAlign || dataBytes % blockAlign !== 0) throw invalid();
+	return {
+		sampleRate,
+		channels,
+		frames: dataBytes / blockAlign,
+		dataBytes
+	};
+}
 //#endregion
 //#region src/runtime/inventory.ts
 /** Guard the complete output inventory before any read callback or installation write. */
 function assertDeliveredInventory(owner, asset) {
 	if (!Array.isArray(asset.outputs)) throw new BeepsError("E_VERIFY", "asset needs an output inventory");
 	assertCueInventory(owner, asset.outputs, { requiresCue: asset.delivery === "runtime" || asset.delivery === "both" });
+	const sprites = asset.outputs.filter((o) => /\.sprite\.json$/i.test(o.file));
+	if (asset.kind === "sprite" || sprites.length) {
+		if (asset.delivery === "runtime" || asset.delivery === "both" || asset.outputs.length !== 2 || sprites.length !== 1 || sprites[0].file !== `${owner}.sprite.json` || !asset.outputs.some((o) => o.file === `${owner}.wav`)) throw new BeepsError("E_VERIFY", `sprite ${owner} requires exactly ${owner}.wav and ${owner}.sprite.json`);
+	}
 	for (const o of asset.outputs) if (!Number.isSafeInteger(o.bytes) || o.bytes < 0 || !/^[0-9a-f]{64}$/.test(o.sha256)) throw new BeepsError("E_VERIFY", `invalid output metadata: ${o.file}`);
 }
 /** Verify full output hashes, runtime cue headers and the exact canonical source closure.
@@ -261,6 +343,29 @@ function validateDeliveredAsset(owner, asset, read) {
 		files.set(o.file, bytes);
 	}
 	for (const o of asset.outputs) if (o.file.endsWith(".runtime.json")) validateDeliveredDependencies(owner, parseCue(JSON.parse(new TextDecoder().decode(files.get(o.file)))), asset.outputs, (file) => files.get(file));
+	for (const o of asset.outputs) if (o.file.endsWith(".sprite.json")) {
+		const map = validateAudioSpriteMap(JSON.parse(new TextDecoder().decode(files.get(o.file))));
+		if (map.audio.file !== `${owner}.wav`) throw new BeepsError("E_VERIFY", `sprite ${owner} audio filename does not match its owner`);
+		validateAudioSpriteBytes(map, files.get(map.audio.file));
+	}
+}
+/** Authenticate the packed WAV, its canonical source ranges and silent gaps without decoding samples. */
+function validateAudioSpriteBytes(map, bytes) {
+	const wav = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+	const hash = (data) => createHash("sha256").update(data).digest("hex");
+	if (hash(wav) !== map.audio.sha256) throw new BeepsError("E_VERIFY", "sprite WAV does not match audio.sha256");
+	const header = inspectPcm16(wav);
+	if (header.sampleRate !== map.sampleRate || header.channels !== map.channels || header.frames !== map.frames) throw new BeepsError("E_VERIFY", "sprite map disagrees with canonical WAV format or frames");
+	const stride = map.channels * 2;
+	for (let i = 0; i < map.entries.length; i++) {
+		const entry = map.entries[i], start = 44 + entry.startFrame * stride, end = 44 + entry.endFrame * stride;
+		const sourceHeader = Buffer.from(wav.subarray(0, 44));
+		sourceHeader.writeUInt32LE(36 + entry.sourceFrames * stride, 4);
+		sourceHeader.writeUInt32LE(entry.sourceFrames * stride, 40);
+		if (createHash("sha256").update(sourceHeader).update(wav.subarray(start, end)).digest("hex") !== entry.sourceSha256) throw new BeepsError("E_VERIFY", `sprite entry ${entry.id} does not match sourceSha256`);
+		const next = map.entries[i + 1];
+		if (next && wav.subarray(end, 44 + next.startFrame * stride).some((value) => value !== 0)) throw new BeepsError("E_VERIFY", `sprite gap after ${entry.id} is not silent`);
+	}
 }
 //#endregion
 //#region scripts/ci-fetch-entry.mjs
@@ -450,11 +555,23 @@ if (!has("check") && need.length) {
 	await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, queue.length)) }, work));
 }
 if (!missing.length && !bad.length && !only) {
-	const sidecars = ids.flatMap((id) => lock.assets[id].outputs.map((o) => o.file)).filter((f) => /\.(wav|ogg|mp3)\.json$/.test(f)).sort();
+	const sidecars = ids.flatMap((id) => lock.assets[id].outputs.map((o) => o.file)).filter((f) => /(?:\.(wav|ogg|mp3)|\.sprite)\.json$/.test(f)).sort();
 	const assets = /* @__PURE__ */ new Map();
 	for (const rel of sidecars) {
 		const m = JSON.parse(readFileSync(join(outDir, rel), "utf8"));
 		const at = (raw) => posix.join(posix.dirname(rel), raw);
+		if (rel.endsWith(".sprite.json")) {
+			const sprite = validateAudioSpriteMap(m), id = posix.basename(rel, ".sprite.json");
+			if (assets.has(id)) throw new Error(`duplicate catalog asset ${id}`);
+			assets.set(id, {
+				...sprite,
+				audio: {
+					...sprite.audio,
+					file: at(sprite.audio.file)
+				}
+			});
+			continue;
+		}
 		const variants = m.variants?.map((v) => ({
 			...v,
 			file: at(v.file)
@@ -463,6 +580,7 @@ if (!missing.length && !bad.length && !only) {
 			...l,
 			file: at(l.file)
 		}));
+		if (assets.has(m.id)) throw new Error(`duplicate catalog asset ${m.id}`);
 		assets.set(m.id, {
 			...m,
 			file: at(m.file),

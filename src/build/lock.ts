@@ -21,6 +21,8 @@ export const LOCK_SCHEMA = 'beeps/build-lock@1';
 export const KEY_SCHEME = 'beeps-input@1';
 
 export interface LockAsset {
+  /** A PCM sprite requires both its WAV and versioned frame map. Omitted on older render assets. */
+  kind?: 'sprite';
   role: string;
   source?: string;
   inputHash: string;

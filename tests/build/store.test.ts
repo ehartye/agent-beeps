@@ -12,6 +12,34 @@ import { createTar, readTar } from '../../src/build/tar.ts';
 import { storePull, storePush, storeStatus } from '../../src/build/store-ops.ts';
 import { verifyOutputs } from '../../src/build/verify.ts';
 import { cloneFixture, makeFixture, snapshot, type Fixture } from '../helpers/build-fixture.ts';
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
+
+describe('PCM sprite store delivery', () => {
+  it('restores the exact WAV/map/catalog pair and refuses corrupt store bytes before replacing an existing delivery', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      await runBuild(cfg);
+      const original = snapshot(cfg.out), store = new DirStore(fx.path('store'));
+      expect(await storePush(cfg, store)).toMatchObject({ ok: true, pushed: ['ui-kit'] });
+      const fresh = { ...cfg, out: fx.path('restored') };
+      expect(await storePull(fresh, store)).toMatchObject({ ok: true, pulled: ['ui-kit'] });
+      expect(snapshot(fresh.out)).toEqual(original);
+      expect(verifyOutputs({ lock: cfg.lock, out: fresh.out }).ok).toBe(true);
+      const asset = readLock(cfg.lock)!.assets['ui-kit'], name = storeName(asset.inputHash);
+      const tar = readFileSync(fx.path(`store/${name}`));
+      const wav = readFileSync(join(cfg.out, 'ui-kit.wav'));
+      tar[tar.indexOf(wav) + 44] ^= 1;
+      writeFileSync(fx.path(`store/${name}`), tar);
+      writeFileSync(join(fresh.out, 'ui-kit.sprite.json'), 'retained invalid map');
+      const before = snapshot(fresh.out);
+      const refused = await storePull(fresh, store);
+      expect(refused.ok).toBe(false);
+      expect(refused.problems[0].problem).toMatch(/does not match/);
+      expect(snapshot(fresh.out)).toEqual(before);
+      expect((await storePush(fresh, store)).skipped).toEqual([expect.objectContaining({ id: 'ui-kit', problem: expect.stringMatching(/does not match the lock/) })]);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+});
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const ok = (await chromiumAvailable()) && hasFfmpeg;

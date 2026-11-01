@@ -1,25 +1,27 @@
 // The command line: build, build --check, verify, store, ci export, with real exit codes and the JSON error shape.
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromiumAvailable } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
+import { snapshot } from '../helpers/build-fixture.ts';
 import { makeFixture } from '../helpers/build-fixture.ts';
 
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const ok = (await chromiumAvailable()) && hasFfmpeg;
 const bin = join(import.meta.dirname, '..', '..', 'scripts', 'beeps.mjs');
 const beeps = (cwd: string, ...args: string[]) => {
-  const r = spawnSync(process.execPath, [bin, ...args], { cwd, encoding: 'utf8', windowsHide: true });
+  const r = spawnSync(process.execPath, [bin, ...args], { cwd, encoding: 'utf8', windowsHide: true, timeout: 60000 });
   const parse = (s: string) => { try { return JSON.parse(s.trim().split('\n').pop()!); } catch { return undefined; } };
   return { status: r.status, out: parse(r.stdout), err: parse(r.stderr)?.error, stderr: r.stderr };
 };
 
 describe('beeps build usage errors', () => {
-  it('accepts Space patch post options in a read-only WAV build check', () => {
+  it('accepts legacy patch post options in a read-only WAV build check', () => {
     const fx = makeFixture({ config: { target: 'wav-master', jobs: 1 } });
     fx.write('recipes.json', { coin: { source: 'sfx/coin.json', role: 'sfx', variants: 1, channels: 1, trimTail: -60 } });
     const r = beeps(fx.dir, 'build', '--check');
@@ -138,4 +140,46 @@ describe.skipIf(!ok)('beeps build over the CLI', () => {
     const fetched = spawnSync(process.execPath, [fx.path('tools/audio/fetch.mjs'), '--check'], { encoding: 'utf8' });
     expect(fetched.status).toBe(0);
   }, 180000);
+});
+
+describe('PCM sprite CLI delivery', () => {
+  it('builds, checks, bundles, verifies and restores both artifacts through store and portable fetch', () => {
+    const fx = makeSpriteFixture(), cfg = fx.path('beeps.build.json'), store = 'dir:' + fx.path('store');
+    try {
+      const run = (...args: string[]) => {
+        const result = beeps(fx.dir, ...args);
+        expect(result.status, result.stderr).toBe(0);
+        return result.out;
+      };
+      expect(beeps(fx.dir, 'build', '--config', cfg, '--target', 'wav-master', '--check').status).toBe(1);
+      expect(run('build', '--config', cfg, '--target', 'wav-master')).toMatchObject({ built: ['ui-kit'] });
+      run('build', '--config', cfg, '--target', 'wav-master', '--check');
+      run('bundle', fx.path('public/audio'));
+      run('verify', '--lock', fx.path('audio.lock.json'), '--out', fx.path('public/audio'));
+      const original = snapshot(fx.path('public/audio'));
+      expect(run('store', 'push', '--config', cfg, '--store', store)).toMatchObject({ ok: true, pushed: ['ui-kit'] });
+      fx.write('fresh-config.json', { ...fx.read('beeps.build.json'), out: 'restored/audio' });
+      expect(run('store', 'pull', '--config', fx.path('fresh-config.json'), '--store', store)).toMatchObject({ ok: true, pulled: ['ui-kit'] });
+      expect(snapshot(fx.path('restored/audio'))).toEqual(original);
+      run('ci', 'export', fx.path('fetch'), '--config', cfg, '--store', store);
+      copyFileSync(fx.path('audio.lock.json'), fx.path('fetch/copied-lock.json'));
+      const args = [fx.path('fetch/fetch.mjs'), '--lock', fx.path('fetch/copied-lock.json'), '--out', fx.path('fetched/audio'), '--store', store];
+      for (const extra of [[], ['--check']]) {
+        const result = spawnSync(process.execPath, [...args, ...extra], { cwd: fx.dir, encoding: 'utf8', windowsHide: true, timeout: 60000 });
+        expect(result.status, result.stderr).toBe(0);
+      }
+      expect(snapshot(fx.path('fetched/audio'))).toEqual(original);
+      for (const file of ['ui-kit.wav', 'ui-kit.sprite.json']) {
+        const path = fx.path('public/audio/' + file), originalBytes = readFileSync(path), bad = Buffer.from(originalBytes); bad[bad.length - 1] ^= 1;
+        writeFileSync(path, bad);
+        const verify = beeps(fx.dir, 'verify', '--lock', fx.path('audio.lock.json'), '--out', fx.path('public/audio'));
+        expect(verify.status).toBe(1);
+        expect(verify.out.problems.some((p: any) => p.file === file)).toBe(true);
+        writeFileSync(path, originalBytes);
+      }
+      const recipes = fx.read('recipes.json'); recipes['ui-kit'].entries[0].loop = true; fx.write('recipes.json', recipes);
+      expect(beeps(fx.dir, 'build', '--config', cfg, '--target', 'wav-master', '--check').status).toBe(1);
+      expect(snapshot(fx.path('public/audio'))).toEqual(original);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  }, 60000);
 });

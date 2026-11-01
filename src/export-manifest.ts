@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BeepsError } from './errors.ts';
 import type { Rendered } from './render/pipeline.ts';
 import type { RenderedSong } from './render/song-pipeline.ts';
+import { validateAudioSpriteMap, type AudioSpriteMap } from './audio-sprite-map.ts';
 
 const Role = z.enum(['sfx', 'music', 'ambience']);
 export type ExportRole = z.infer<typeof Role>;
@@ -43,6 +44,13 @@ export const ExportManifestSchema = z.strictObject({
   encoding: z.union([z.strictObject({ codec: z.literal('opus'), container: z.literal('ogg'), kbps: z.number().positive(), lead: z.number().int().min(0).optional() }), z.strictObject({ codec: z.literal('mp3'), container: z.literal('mp3'), kbps: z.number().positive(), lead: z.number().int().min(0).optional() })]).optional(),
 });
 export type ExportManifest = z.infer<typeof ExportManifestSchema>;
+
+/** Sprite maps carry exact PCM ranges, never synthesized loudness or normalization promises. */
+export type ExportSidecar = ExportManifest | AudioSpriteMap;
+export function parseExportSidecar(value: unknown): ExportSidecar {
+  return value && typeof value === 'object' && 'schema' in value && value.schema === 'beeps/audio-sprite@1'
+    ? validateAudioSpriteMap(value) : ExportManifestSchema.parse(value);
+}
 
 /**
  * Bump when the export step changes what lands in a deliverable for the same renders: the layer sum, the per-state trims, the

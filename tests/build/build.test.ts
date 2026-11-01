@@ -1,6 +1,7 @@
 // `beeps build` end to end on a tiny project: incremental, minimal-diff, atomic, check, adopt.
+import { makeSpriteFixture } from '../helpers/audio-sprite-fixture.ts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync, openSync, ftruncateSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromiumAvailable, openRenderHost, type RenderHost } from '../../src/render/host.ts';
 import { findFfmpeg } from '../../src/compress.ts';
@@ -616,6 +617,75 @@ describe.skipIf(!hasChromium)('baked delivery identities', () => {
       expect(snapshot(fx.dir)).toEqual(before);
       await expect(exportSongAssets(cacheOnlyHost, p, song, songOptions)).rejects.toMatchObject({ code: 'E_USAGE' });
       expect(snapshot(fx.dir)).toEqual(before);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+});
+
+describe('PCM sprite builds', () => {
+  it('delivers exactly WAV and map, retains integer samples and gaps, and leaves unchanged deliveries untouched', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      expect((await runBuild(cfg)).built).toEqual(['ui-kit']);
+      const map = fx.read('public/audio/ui-kit.sprite.json'), wav = readFileSync(fx.path('public/audio/ui-kit.wav'));
+      const lock = readLock(cfg.lock)!;
+      expect(lock.assets['ui-kit'].kind).toBe('sprite');
+      expect(lock.assets['ui-kit'].outputs.map(o => o.file)).toEqual(['ui-kit.sprite.json', 'ui-kit.wav']);
+      expect(map.entries.map((e: any) => [e.id, e.startFrame, e.endFrame, e.loop])).toEqual([['confirm', 0, 5, false], ['cancel', 4805, 4808, true]]);
+      for (const [index, file] of ['confirm', 'cancel'].entries()) {
+        const source = readFileSync(fx.path('rendered/' + file + '.wav'));
+        for (let offset = 44; offset < source.length; offset += 2) expect(wav.readInt16LE(44 + map.entries[index].startFrame * 4 + offset - 44)).toBe(source.readInt16LE(offset));
+      }
+      expect(wav.subarray(44 + 5 * 4, 44 + 4805 * 4).every(b => b === 0)).toBe(true);
+      expect(fx.read('public/audio/index.json').assets['ui-kit'].schema).toBe('beeps/audio-sprite@1');
+      expect(existsSync(fx.path('public/audio/ui-kit.wav.json'))).toBe(false);
+      expect(existsSync(fx.path('.work/renders'))).toBe(false);
+      expect(existsSync(fx.path('.work/stage'))).toBe(false);
+      const before = snapshot(cfg.out), locked = readFileSync(cfg.lock), mtime = statSync(fx.path('public/audio/ui-kit.wav')).mtimeMs;
+      expect((await runBuild(cfg, { check: true })).ok).toBe(true);
+      expect((await runBuild(cfg)).built).toEqual([]);
+      expect(snapshot(cfg.out)).toEqual(before);
+      expect(readFileSync(cfg.lock)).toEqual(locked);
+      expect(statSync(fx.path('public/audio/ui-kit.wav')).mtimeMs).toBe(mtime);
+      expect((await runBuild(cfg, { all: true })).built).toEqual(['ui-kit']);
+      expect(snapshot(cfg.out)).toEqual(before);
+      expect(verifyOutputs({ lock: cfg.lock, out: cfg.out })).toMatchObject({ ok: true, problems: [] });
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('refuses malformed sources and aggregate resource limits before replacing an existing delivery', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      await runBuild(cfg);
+      const before = snapshot(cfg.out), locked = readFileSync(cfg.lock), source = readFileSync(fx.path('rendered/confirm.wav'));
+      writeFileSync(fx.path('rendered/confirm.wav'), source.subarray(0, source.length - 1));
+      await expect(runBuild(cfg)).rejects.toThrow(/canonical/);
+      expect(snapshot(cfg.out)).toEqual(before); expect(readFileSync(cfg.lock)).toEqual(locked);
+      const altered = Buffer.from(source); altered.writeUInt32LE(44100, 24); altered.writeUInt32LE(44100 * 4, 28);
+      writeFileSync(fx.path('rendered/confirm.wav'), altered);
+      await expect(runBuild(cfg)).rejects.toThrow(/same sample rate/);
+      expect(snapshot(cfg.out)).toEqual(before); expect(readFileSync(cfg.lock)).toEqual(locked);
+      // A sparse, valid 16 MiB source repeated four times exceeds the packed limit once gaps are included.
+      const size = 16 * 1024 * 1024, header = Buffer.from(source.subarray(0, 44));
+      header.writeUInt32LE(size - 8, 4); header.writeUInt32LE(size - 44, 40);
+      writeFileSync(fx.path('rendered/large.wav'), header);
+      const fd = openSync(fx.path('rendered/large.wav'), 'r+');
+      try { ftruncateSync(fd, size); } finally { closeSync(fd); }
+      fx.write('recipes.json', { 'ui-kit': { kind: 'sprite', role: 'sfx', entries: Array.from({ length: 4 }, (_, i) => ({ id: 'entry' + i, source: 'rendered/large.wav' })) } });
+      await expect(runBuild(cfg)).rejects.toThrow(/64 MiB/);
+      expect(snapshot(cfg.out)).toEqual(before); expect(readFileSync(cfg.lock)).toEqual(locked);
+      expect(existsSync(fx.path('.work/stage'))).toBe(false);
+    } finally { rmSync(fx.dir, { recursive: true, force: true }); }
+  });
+
+  it('cleans owned staging after a pre-install failure while preserving the prior WAV, map, catalog and lock', async () => {
+    const fx = makeSpriteFixture(), cfg = fx.cfg();
+    try {
+      await runBuild(cfg);
+      const before = snapshot(cfg.out), locked = readFileSync(cfg.lock), source = readFileSync(fx.path('rendered/confirm.wav'));
+      source[44] ^= 1; writeFileSync(fx.path('rendered/confirm.wav'), source);
+      await expect(runBuild(cfg, { hooks: { beforeInstall() { throw new Error('injected sprite pre-install failure'); } } })).rejects.toThrow(/injected sprite/);
+      expect(snapshot(cfg.out)).toEqual(before); expect(readFileSync(cfg.lock)).toEqual(locked);
+      expect(existsSync(fx.path('.work/stage'))).toBe(false);
     } finally { rmSync(fx.dir, { recursive: true, force: true }); }
   });
 });
