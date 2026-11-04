@@ -1,3 +1,4 @@
+import { createPreview } from './preview.ts';
 import { spawn } from 'node:child_process';
 import { attachServerOwner, serverOwner } from '../audition/owner.ts';
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -150,10 +151,10 @@ export function registerAuditionCommands(program: Command, io: Io) {
       registerProject(p.paths.root);
       const notes: string[] = [];
       if (ctx.includes('kit') && readKit(p.paths.root).sounds.length === 0) notes.push('the kit is empty, so "play with kit" is unavailable until a sound ships');
-      io.emit({ url: sessionUrl(info, session.id), ipUrl: sessionIpUrl(info, session.id), session: session.id, mode: session.mode, flow: session.flow, candidates: session.candidates.length, notes,
-        next: session.flow === 'explore' ? 'give the owner the url to explore the labeled sounds; no winner or comparative feedback is requested' : session.mode === 'live'
-          ? `give the owner the url, then run beeps audition wait --id ${session.id} (in the background) and answer each event`
-          : `give the owner the url and end your turn. Later: beeps audition status --id ${session.id}; once shipped, the patch is in .agent-beeps/patches/ and the kit - export it (beeps export <name> --wav <path>) or play it with the engine` });
+      io.emit({ share: await createPreview(info, p.paths.root, 'session', session.id), url: sessionUrl(info, session.id), ipUrl: sessionIpUrl(info, session.id), session: session.id, mode: session.mode, flow: session.flow, candidates: session.candidates.length, notes,
+        next: session.flow === 'explore'
+          ? 'Copy share.url for read-only playback of the labeled sounds.'
+          : `Copy share.url for listening, or run beeps preview create --kind session --id ${session.id} --feedback for lineup/duel feedback. Shipping and refinement remain in the local owner UI. Read progress with beeps audition status --id ${session.id}.` });
     });
 
   audition.command('formats [sources...]')
@@ -186,9 +187,9 @@ export function registerAuditionCommands(program: Command, io: Io) {
       if (opts.serve) {
         const info = await ensureServer();
         registerProject(p.paths.root);
-        Object.assign(out, { url: deliveryUrl(info, d.id), ipUrls: deliveryIpUrls(info, d.id) });
+        Object.assign(out, { share: await createPreview(info, p.paths.root, 'delivery', d.id), url: deliveryUrl(info, d.id), ipUrls: deliveryIpUrls(info, d.id) });
       }
-      out.next = `give the owner the url (a phone uses an ipUrl); they rate each lettered version, then tap Reveal. Then: beeps audition formats-status --id ${d.id}, and beeps taste import ${join(dir, 'results.json')} to log the preference per role`;
+      out.next = `Copy share.url for listening, or run beeps preview create --kind delivery --id ${d.id} --feedback for ratings. Reveal remains in the local owner UI. Then: beeps audition formats-status --id ${d.id}, and beeps taste import ${join(dir, 'results.json')}.`;
       io.emit(out);
     });
 

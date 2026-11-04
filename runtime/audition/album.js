@@ -1,3 +1,4 @@
+import { token, api, access, canSend } from './access.js';
 // Album page: streams each rendered song, loops loop songs on request, and records the owner's
 // marks, tags and notes. Every track's strip is its measured loudness arc over its sections.
 
@@ -14,9 +15,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
-const token = new URLSearchParams(location.search).get('t') ?? '';
 const id = location.pathname.split('/').pop();
-const api = (path, init = {}) => fetch(`${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`, init);
 const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -25,6 +24,7 @@ const audio = $('#audio');
 const strips = new Map(); // track index -> [strip elements]
 
 async function send(event) {
+  if (!canSend(event.type)) return false;
   const r = await api(`/api/album/${id}/event`, { method: 'POST', body: JSON.stringify(event), headers: { 'content-type': 'application/json' } });
   if (!r.ok) throw new Error((await r.json()).error?.message ?? r.statusText);
   return r.json();
@@ -87,7 +87,7 @@ let npEl = null;
 function nowPlaying(t) {
   $('#np-title').textContent = t.title;
   $('#np-desc').textContent = t.description ?? '';
-  $('#note-here').disabled = !!captured;
+  $('#note-here').disabled = access === 'read-only' || !!captured;
   // The big strip mirrors whatever is playing: rebuild it and register it under this track.
   if (npEl) for (const [k, els] of strips) strips.set(k, els.filter(e => e !== npEl));
   const el = strip(t, true);
@@ -196,7 +196,7 @@ function closeMoment() {
   $('#moment-editor').hidden = true;
   $('#moment-text').value = '';
   $('#moment-saved').textContent = '';
-  $('#note-here').disabled = !current;
+  $('#note-here').disabled = access === 'read-only' || !current;
 }
 $('#cancel-moment').addEventListener('click', closeMoment);
 $('#save-moment').addEventListener('click', async () => {
@@ -246,6 +246,7 @@ async function load() {
     if (!current && ready.length) { current = ready[0].index; nowPlaying(ready[0]); }
     for (const sel of ['#play', '#prev', '#next', '#seam']) $(sel).disabled = !ready.length;
     if (!ready.length) $('#np-title').textContent = pending ? 'Preparing your songs' : 'No audio available';
+    if (access === 'read-only') document.querySelectorAll('.verdict button, .chips button, textarea, #note-here, #save-moment').forEach(el => { el.disabled = true; });
     retry = pending > 0;
   } catch (e) {
     $('#meta').textContent = `${e.message} Retrying…`;

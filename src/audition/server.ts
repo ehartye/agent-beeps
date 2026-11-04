@@ -2,6 +2,7 @@
 // through the same engine the CLI measured; the JSON API is token-guarded and never serves a
 // prediction before the owner ships.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { PreviewGrants, previewEvents, type PreviewGrant, type PreviewKind } from './preview.ts';
 import { atomicWrite } from '../atomic-write.ts';
 import { withStateGuard } from '../state-guard.ts';
 import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -23,7 +24,7 @@ import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readRev
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 6;
+export const SERVER_API = 7;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -93,6 +94,17 @@ export function lanAddress(): string | null {
   return rankAddresses()[0]?.address ?? null;
 }
 
+/** Advertise only an existing Tailscale adapter the current listener can serve. Never rebind. */
+export function previewLinks(info: Pick<ServerInfo, 'host' | 'port'>, suffix: string, ifaces = networkInterfaces()) {
+  const host = info.host === '0.0.0.0' || info.host === '::' ? '127.0.0.1' : info.host;
+  const localUrl = `http://${host.includes(':') ? `[${host}]` : host}:${info.port}${suffix}`;
+  // CGNAT alone is not proof of Tailscale: ISP and other VPN adapters also use that range.
+  const addresses = Object.entries(ifaces).filter(([name]) => /tailscale/i.test(name)).flatMap(([, addresses]) => addresses ?? []);
+  const tail = addresses.find(a => a.family === 'IPv4' && !a.internal && isTailscale(a.address) && (info.host === '0.0.0.0' || info.host === a.address));
+  const tailscaleUrl = tail ? `http://${tail.address}:${info.port}${suffix}` : null;
+  return { url: tailscaleUrl ?? localUrl, localUrl, tailscaleUrl, ...(tail ? {} : { note: 'No reachable Tailscale adapter advertised by this listener. Local link only; no network settings changed.' }) };
+}
+
 const sameToken = (a: string, b: string) => {
   const x = Buffer.from(a), y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
@@ -156,6 +168,7 @@ export interface ServerOptions {
 export class AuditionServer {
   server!: Server;
   info!: ServerInfo;
+  private previews = new PreviewGrants();
   private projects: string[];
   private opts: ServerOptions;
   constructor(opts: ServerOptions = {}) { this.opts = opts; this.projects = (opts.projects ?? []).map(p => resolve(p)); }
@@ -173,7 +186,7 @@ export class AuditionServer {
     throw new BeepsError('E_NOT_FOUND', `no session ${id} in registered projects`);
   }
 
-  sessionPayload(p: OpenProject, id: string, objects = new Map<string, ResolvedSample>()) {
+  sessionPayload(p: OpenProject, id: string, objects = new Map<string, ResolvedSample>(), scoped = false) {
     const session = readSession(p, id);
     const state = foldSession(session, readEvents(p, id));
     const model = loadModel(p);
@@ -203,7 +216,7 @@ export class AuditionServer {
     }) : [];
     return {
       session: { id: session.id, prompt: session.prompt, family: session.family, archetype: session.archetype, mode: session.mode, flow: session.flow, context: session.context, createdAt: session.createdAt },
-      state: { ...state, candidates: undefined },
+      state: { ...state, lastError: scoped && state.lastError ? "Refinement failed; ask the agent to check it." : state.lastError, candidates: undefined },
       candidates: state.candidates.map(c => ({
         index: c.index, name: c.name, seed: c.seed, trimDb: c.trimDb, round: c.round,
         words: distinctWords(c, state.candidates.filter(o => o.round === c.round)),
@@ -220,6 +233,56 @@ export class AuditionServer {
     try { path = decodeURIComponent(url.pathname); } catch { return json(res, 400, { error: { code: 'E_USAGE', message: 'malformed URL' } }); }
     const token = url.searchParams.get('t') ?? (req.headers['x-beeps-token'] as string | undefined) ?? '';
     const authed = sameToken(token, this.info.token);
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'no-store');
+    const sameOrigin = !req.headers.origin || req.headers.origin === `http://${req.headers.host}`;
+    const denied = () => json(res, 403, { error: { code: 'E_SERVER', message: 'preview access denied or expired; ask for a new link' } });
+    // Fragment tokens are exchanged for an HttpOnly, resource-path-scoped cookie. Media URLs
+    // then carry no credential, including native audio range requests.
+    if (path === '/api/preview/exchange' && req.method === 'POST') {
+      if (!sameOrigin) return denied();
+      const body = await readBody(req) as { token?: string; kind?: string; target?: string };
+      const secret = typeof body?.token === 'string' ? body.token : '';
+      const grant = this.previews.get(secret);
+      if (!grant || grant.kind !== body.kind || grant.target !== body.target) return denied();
+      res.setHeader('Set-Cookie', `beeps_preview=${secret}; Path=/api/${grant.kind}/${grant.target}; HttpOnly; SameSite=Strict; Max-Age=${Math.max(0, Math.floor((grant.expiresAt - Date.now()) / 1000))}`);
+      return json(res, 200, { feedback: grant.feedback, expiresAt: grant.expiresAt });
+    }
+    if (path === '/api/previews' && req.method === 'POST') {
+      if (!authed || !sameOrigin) return denied();
+      const body = await readBody(req) as { kind: PreviewKind; target: string; root: string; feedback?: boolean; seconds?: number };
+      if (!['session', 'album', 'delivery'].includes(body?.kind) || typeof body.target !== 'string' || !/^[a-z0-9-]+$/.test(body.target) || typeof body.root !== 'string' || (body.feedback !== undefined && typeof body.feedback !== 'boolean')) return denied();
+      const root = resolve(body.root);
+      if (!this.knownProjects().includes(root)) return denied();
+      const p = openProject(root);
+      if (body.kind === 'session') readSession(p, body.target);
+      else if (body.kind === 'album') readAlbum(p, body.target);
+      else readDelivery(p, body.target);
+      const { token: secret, grant } = this.previews.issue({ kind: body.kind, target: body.target, root, feedback: body.feedback ?? false }, body.seconds);
+      const page = { session: 's', album: 'a', delivery: 'd' }[grant.kind];
+      const suffix = `/${page}/${grant.target}#preview=${secret}`;
+      return json(res, 201, { id: grant.id, expiresAt: new Date(grant.expiresAt).toISOString(), access: grant.feedback ? 'feedback' : 'read-only', ...previewLinks(this.info, suffix) });
+    }
+    const revoke = /^\/api\/previews\/([a-f0-9]{32})$/.exec(path);
+    if (revoke && req.method === 'DELETE') {
+      if (!authed || !sameOrigin) return denied();
+      return json(res, 200, { revoked: this.previews.revoke(revoke[1]) });
+    }
+    const cookie = /(?:^|;\s*)beeps_preview=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie ?? '')?.[1];
+    const scopedToken = req.headers['x-beeps-preview'] ?? (authed ? undefined : cookie);
+    const grant = typeof scopedToken === 'string' ? this.previews.get(scopedToken) : undefined;
+    // An explicit scoped credential must never fall back to owner authority.
+    const scoped = scopedToken !== undefined;
+    if (scoped && path.startsWith('/api/')) {
+      if (!grant || !sameOrigin) return denied();
+      const prefix = `/api/${grant.kind}/${grant.target}`;
+      if (path !== prefix && !path.startsWith(prefix + '/')) return denied();
+      if (req.method !== 'GET' && !(req.method === 'POST' && path === prefix + '/event' && grant.feedback)) return denied();
+      if (grant.kind === 'session' && path === prefix + '/reveal') return denied();
+      if (path === prefix + '/access' && req.method === 'GET') return json(res, 200, { feedback: grant.feedback });
+    }
+    const allowedEvent = (body: unknown) => !scoped || (grant && this.previews.active(grant) && grant.feedback && previewEvents[grant.kind].has(String((body as { type?: unknown })?.type)));
 
     if (path === '/' || path === '/index.html') return this.file(res, join(RUNTIME_DIR, 'audition', 'queue.html'));
     if (/^\/s\/[a-z0-9-]+$/.test(path)) return this.file(res, join(RUNTIME_DIR, 'audition', 'index.html'));
@@ -232,7 +295,7 @@ export class AuditionServer {
     }
     if (!path.startsWith('/api/')) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not found' } });
     if (path === '/api/health') return json(res, 200, { ok: true, authed, pid: process.pid, api: SERVER_API });
-    if (!authed) return json(res, 401, { error: { code: 'E_SERVER', message: 'missing or wrong token (the link carries ?t=...)' } });
+    if (!authed && !grant) return json(res, 401, { error: { code: 'E_SERVER', message: 'missing or wrong token (the link carries ?t=...)' } });
 
     if (path === '/api/sessions' && req.method === 'GET') {
       const out = [];
@@ -261,12 +324,12 @@ export class AuditionServer {
       return json(res, 200, { albums: out });
     }
     const dm = /^\/api\/delivery\/([a-z0-9-]+)(?:\/(event|reveal|results|audio)(?:\/(i\d+)\/([A-Z]))?)?$/.exec(path);
-    if (dm) return this.deliveryRoute(req, res, dm[1], dm[2], dm[3], dm[4]);
+    if (dm) return this.deliveryRoute(req, res, dm[1], dm[2], dm[3], dm[4], grant);
     const am = /^\/api\/album\/([a-z0-9-]+)(?:\/(event|wav|look)(?:\/(\d+))?)?$/.exec(path);
-    if (am) return this.albumRoute(req, res, am[1], am[2], am[3]);
+    if (am) return this.albumRoute(req, res, am[1], am[2], am[3], grant);
     const asset = /^\/api\/session\/([a-z0-9-]+)\/assets\/([0-9a-f]{64})\.wav$/.exec(path);
     if (asset && req.method === 'GET') {
-      const p = this.findSession(asset[1]);
+      const p = grant ? openProject(grant.root) : this.findSession(asset[1]);
       const objects = new Map<string, ResolvedSample>();
       this.sessionPayload(p, asset[1], objects);
       const sample = objects.get(`sha256:${asset[2]}`);
@@ -277,8 +340,8 @@ export class AuditionServer {
     const m = /^\/api\/session\/([a-z0-9-]+)(?:\/(event|reveal|look)(?:\/(\d+))?)?$/.exec(path);
     if (!m) return json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'unknown endpoint' } });
     const [, id, action, arg] = m;
-    const p = this.findSession(id);
-    if (!action && req.method === 'GET') return json(res, 200, this.sessionPayload(p, id));
+    const p = grant ? openProject(grant.root) : this.findSession(id);
+    if (!action && req.method === 'GET') return json(res, 200, this.sessionPayload(p, id, new Map(), !!grant));
     if (action === 'look' && req.method === 'GET') {
       const state = foldSession(readSession(p, id), readEvents(p, id));
       const c = state.candidates.find(x => x.index === Number(arg));
@@ -293,6 +356,7 @@ export class AuditionServer {
     }
     if (action === 'event' && req.method === 'POST') {
       const body = await readBody(req) as { type?: unknown };
+      if (!allowedEvent(body)) return denied();
       if (!CLIENT_EVENTS.has(String(body?.type))) return json(res, 403, { error: { code: 'E_SERVER', message: 'the listening page may only send play, lineup, duel, refine, ship and abandon' } });
       const r = appendEvent(p, id, body);
       if (r.event.type === 'refine' && readSession(p, id).mode === 'handoff' && this.opts.onRefine) {
@@ -315,8 +379,8 @@ export class AuditionServer {
    * Delivery-format audition. The page data never names a preset: blind letters map to files by URL only, and the key (preset per
    * letter, sizes, totals) is served by /reveal once the owner has revealed.
    */
-  private async deliveryRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, item?: string, letter?: string) {
-    const p = this.findDelivery(id);
+  private async deliveryRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, item?: string, letter?: string, grant?: PreviewGrant) {
+    const p = grant ? openProject(grant.root) : this.findDelivery(id);
     const d = readDelivery(p, id);
     const events = readDeliveryEvents(p, id);
     const results = () => foldResults(d, events);
@@ -344,6 +408,7 @@ export class AuditionServer {
     if (action === 'results' && req.method === 'GET') return results().revealed ? json(res, 200, results()) : json(res, 404, { error: { code: 'E_NOT_FOUND', message: 'not revealed yet' } });
     if (action === 'event' && req.method === 'POST') {
       const body = await readBody(req);
+      if (grant && (!this.previews.active(grant) || !grant.feedback || !previewEvents[grant.kind].has(String((body as { type?: unknown })?.type)))) return json(res, 403, { error: { code: 'E_SERVER', message: 'action is not permitted by this preview' } });
       const ev = appendDeliveryEvent(p, id, body);
       return json(res, 200, { event: { seq: ev.seq, type: ev.type }, revealed: ev.type === 'reveal' || results().revealed });
     }
@@ -358,17 +423,18 @@ export class AuditionServer {
     throw new BeepsError('E_NOT_FOUND', `no album ${id} in registered projects`);
   }
 
-  private async albumRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, arg?: string) {
-    const p = this.findAlbum(id);
+  private async albumRoute(req: IncomingMessage, res: ServerResponse, id: string, action?: string, arg?: string, grant?: PreviewGrant) {
+    const p = grant ? openProject(grant.root) : this.findAlbum(id);
     const album = readAlbum(p, id);
     if (!action && req.method === 'GET') {
       return json(res, 200, {
         id: album.id, title: album.title, createdAt: album.createdAt, tags: ALBUM_TAGS, state: foldAlbum(album, p),
-        tracks: album.tracks.map(t => ({ ...t, wav: t.status === 'ready' ? `/api/album/${id}/wav/${t.index}` : null, look: t.status === 'ready' ? `/api/album/${id}/look/${t.index}` : null })),
+        tracks: album.tracks.map(t => ({ ...t, error: grant && t.error ? "Render failed; ask the agent to check it." : t.error, wav: t.status === 'ready' ? `/api/album/${id}/wav/${t.index}` : null, look: t.status === 'ready' ? `/api/album/${id}/look/${t.index}` : null })),
       });
     }
     if (action === 'event' && req.method === 'POST') {
       const body = await readBody(req);
+      if (grant && (!this.previews.active(grant) || !grant.feedback || !previewEvents[grant.kind].has(String((body as { type?: unknown })?.type)))) return json(res, 403, { error: { code: 'E_SERVER', message: 'action is not permitted by this preview' } });
       return json(res, 200, { event: appendAlbumEvent(p, id, body) });
     }
     const t = album.tracks.find(x => x.index === Number(arg));
@@ -412,8 +478,11 @@ export class AuditionServer {
     this.server = createServer((req, res) => {
       this.route(req, res).catch(e => {
         const err = e instanceof BeepsError ? e : new BeepsError('E_SERVER', (e as Error).message);
-        const status = (e as { status?: number }).status ?? (err.code === 'E_NOT_FOUND' ? 404 : err.code === 'E_SCHEMA' ? 400 : err.code === 'E_CONFLICT' ? 409 : 500);
-        if (!res.headersSent) json(res, status, { error: err.toJson() });
+        const status = (e as { status?: number }).status ?? (err.code === 'E_NOT_FOUND' ? 404 : (err.code === 'E_SCHEMA' || err.code === 'E_USAGE') ? 400 : err.code === 'E_CONFLICT' ? 409 : 500);
+        if (!res.headersSent) {
+          const scoped = req.headers['x-beeps-preview'] || req.headers.cookie?.includes('beeps_preview=');
+          json(res, status, { error: scoped ? { code: err.code, message: 'Preview content unavailable; ask the agent to check it.' } : err.toJson() });
+        }
       });
     });
     for (let attempt = 0; ; attempt++) {
@@ -431,6 +500,7 @@ export class AuditionServer {
   }
 
   close(): Promise<void> {
+    this.previews.clear();
     return new Promise(resolve => {
       if (!this.server) { resolve(); return; }
       this.server.close(() => resolve());

@@ -1,3 +1,4 @@
+import { token, api, access, canSend } from './access.js';
 // The listening booth. Plays candidates live through the same engine the CLI measured, at their
 // measured loudness trims, and records only explicit judgements as verdicts.
 import { buildPatch } from '../engine/patch.js';
@@ -17,10 +18,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
-const params = new URLSearchParams(location.search);
-const token = params.get('t') ?? '';
 const id = location.pathname.split('/').pop();
-const api = (path, init = {}) => fetch(`${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`, init);
 
 let data = null;          // latest session payload
 let lastPlayed = null;    // index, for H / X shortcuts
@@ -180,6 +178,7 @@ async function load() {
 
 let posting = false;
 async function send(event, quiet = false) {
+  if (!canSend(event.type)) return;
   if (!quiet) {
     if (posting) return; // one judgement at a time: a double tap must not record twice
     posting = true;
@@ -242,7 +241,7 @@ function lineupView(s) {
       h('button', { class: 'primary', onclick: () => { send({ type: 'lineup', loved, duds }); marks.clear(); } },
         loved.length ? `Duel my ${loved.length} keeper${loved.length > 1 ? 's' : ''}` : 'Duel the rest'),
       h('span', { class: 'hint' }, `${loved.length} kept · ${duds.length} dud · plays are never counted as votes`),
-      h('button', { class: 'secondary', onclick: () => { if (confirm('Close this audition without choosing? The agent will see it was closed.')) send({ type: 'abandon' }); } }, 'None of these')),
+      h('button', { class: 'secondary', hidden: access !== 'owner', onclick: () => { if (confirm('Close this audition without choosing? The agent will see it was closed.')) send({ type: 'abandon' }); } }, 'None of these')),
   ];
 }
 
@@ -331,7 +330,7 @@ async function shippedView(s) {
 
 async function render() {
   const s = data.state;
-  const exploring = data.session.flow === 'explore';
+  const exploring = access === 'read-only' || data.session.flow === 'explore';
   $('#prompt').textContent = data.session.prompt || data.session.family;
   $('#meta').replaceChildren(h('div', {}, `${data.session.archetype && data.session.archetype !== data.session.family ? `${data.session.family} · ${data.session.archetype}` : data.session.family}`), h('div', {}, exploring ? `${data.candidates.length} sounds to explore` : `${data.session.mode === 'live' ? 'agent is listening' : 'hand-off'} · round ${s.round}`));
   $('#stages').hidden = exploring;
@@ -351,6 +350,7 @@ async function render() {
   if (exploring && s.stage !== 'abandoned') view = [h('p', { class: 'hint' }, 'Tap a sound to hear its role. Explore at your own pace.'), h('div', { class: 'pads' }, data.candidates.map(c => padFor(c)))];
   else if (s.stage === 'lineup') view = lineupView(s);
   else if (s.stage === 'duel' && data.next.length) view = duelView();
+  else if (access === 'feedback' && ['duel', 'refine', 'shipped', 'waiting'].includes(s.stage)) view = [h('p', {}, 'Feedback recorded. The owner handles the next step.'), h('div', { class: 'pads' }, data.candidates.map(c => padFor(c)))];
   else if (s.stage === 'duel' || s.stage === 'refine') view = refineView(s);
   else if (s.stage === 'waiting') view = waitingView(s);
   else if (s.stage === 'shipped') view = await shippedView(s);
@@ -364,7 +364,7 @@ async function render() {
 
 function keysFor(s) {
   const k = (key, what) => [h('kbd', {}, key), ` ${what}  `];
-  if (data.session.flow === 'explore') return [...k('1–9', 'play that number'), ...k('Esc', 'stop')];
+  if (access === 'read-only' || data.session.flow === 'explore') return [...k('1–9', 'play that number'), ...k('Esc', 'stop')];
   if (s.stage === 'lineup') return [...k('1–9', 'play that number'), ...k('H', 'keep last played'), ...k('X', 'dud last played'), ...k('Esc', 'stop')];
   if (s.stage === 'duel') return [...k('Space', 'play left then right'), ...k('← →', 'pick'), ...k('↓', 'same'), ...k('↑', 'both bad')];
   return [...k('Esc', 'stop')];
@@ -385,7 +385,7 @@ document.addEventListener('keydown', async e => {
   if (!data || e.target.matches('input, textarea')) return;
   const s = data.state;
   if (e.key === 'Escape') { stopAll(); return; }
-  if (data.session.flow === 'explore') {
+  if (access === 'read-only' || data.session.flow === 'explore') {
     const n = Number(e.key);
     if (s.stage !== 'abandoned' && n >= 1 && n <= 9 && candidate(n)) play(n);
     return;

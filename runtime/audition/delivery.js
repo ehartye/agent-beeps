@@ -1,3 +1,4 @@
+import { token, api, access, canSend } from './access.js';
 // Delivery-format audition page. Every lettered version of a sound is decoded with decodeAudioData (what a game would do) and
 // played on one shared Web Audio clock, so switching letters carries on from the same moment with a few milliseconds of crossfade.
 // The page never learns which preset a letter is until the owner reveals.
@@ -15,9 +16,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
-const token = new URLSearchParams(location.search).get('t') ?? '';
 const id = location.pathname.split('/').pop();
-const api = (path, init = {}) => fetch(`${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`, init);
 const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const SCALE = [['1', 'bad'], ['2', 'poor'], ['3', 'fair'], ['4', 'good'], ['5', 'best']];
 const FAMILIES = { wav: 'audio/wav', mp3: 'audio/mpeg', opus: 'audio/ogg; codecs=opus' };
@@ -32,6 +31,7 @@ const players = [];
 // ---- saving ----
 const status = $('#status');
 async function send(event) {
+  if (!canSend(event.type)) return false;
   try {
     const r = await api(`/api/delivery/${id}/event`, { method: 'POST', body: JSON.stringify(event), headers: { 'content-type': 'application/json' } });
     if (!r.ok) throw new Error((await r.json()).error?.message ?? r.statusText);
@@ -167,7 +167,7 @@ function select(p, letter, panel = $('.rate', p.card)) {
     h('div', { class: 'scale' }, SCALE.map(([n, w]) => h('button', { 'aria-pressed': String(r.rating === Number(n)), onclick: () => rateIt(p, letter, { rating: r.rating === Number(n) ? null : Number(n) }) }, n, h('small', {}, w)))),
     h('label', { class: 'worse' }, h('input', { type: 'checkbox', checked: !!r.worse, onchange: e => rateIt(p, letter, { worse: e.currentTarget.checked }) }), 'Sounds worse (artifacts, dull, smeared)'),
     h('div', {}, h('input', { type: 'text', 'aria-label': `Note on ${letter}`, maxlength: '1000', placeholder: 'Note (optional)', value: r.note ?? '', oninput: e => rateIt(p, letter, { note: e.currentTarget.value }, true) })));
-  panel.disabled = revealed;
+  panel.disabled = access === 'read-only' || revealed;
   refresh();
 }
 function rateIt(p, letter, patch, typing = false) {
@@ -193,7 +193,7 @@ function refresh() {
     play.textContent = p.playing ? '❚❚' : '▶';
     play.setAttribute('aria-label', `${p.playing ? 'Pause' : 'Play'} ${p.item.name}`);
   }
-  $('#reveal').disabled = revealed || ![...ratings.values()].some(r => r.rating);
+  $('#reveal').disabled = access !== 'owner' || revealed || ![...ratings.values()].some(r => r.rating);
 }
 
 function tick() {
@@ -290,6 +290,8 @@ async function boot() {
   });
   tick();
   refresh();
+  if (access !== 'owner') $('#reveal').disabled = true;
+  if (access === 'read-only') document.querySelectorAll('.rate, textarea, #overall').forEach(el => { el.disabled = true; });
   if (data.revealed) showReveal();
   probeDevice();
 }

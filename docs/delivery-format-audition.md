@@ -14,7 +14,7 @@ Presets: `wav` (the hidden reference, always present), `mp3-64/96/128` (CBR), `m
 
 ## The page
 
-`/d/<id>?t=<token>` on the audition server (LAN and Tailscale addresses are printed as `ipUrls`; a phone uses one of those).
+Copy `share.url` for the read-only listening page, or use `beeps preview create --kind delivery --id <id> --feedback` for ratings. The returned `url` prefers an existing supported Tailscale address; `localUrl` is for the serving machine. Reveal stays in the local owner UI. See [preview links](preview-links.md); legacy owner URLs must not be shared in chat.
 
 - Each sound has blind letters, shuffled per sound. A letter button switches versions while playing and carries on from the same moment: every letter is decoded with `decodeAudioData` (what a game does) and played on one Web Audio clock with a 6 ms crossfade. One sound plays at a time and other sounds' buffers are released.
 - A device header lists, per format, `canPlayType` and the result of a real `decodeAudioData` probe (time, and decoded length against the expected frame count, so a gapless problem shows as a nonzero delta). A format that fails to decode on the device disables its letters.

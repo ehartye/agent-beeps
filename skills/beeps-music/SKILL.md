@@ -96,13 +96,15 @@ Harsh: lower the track `cutoff`. Repetitive melody: fewer notes, longer rests.
 ## 6. Hand to the owner
 
 `beeps album open <songs...> --title "..."` prints the listening links before rendering, then stays
-running while songs become playable individually. Share the link immediately; keep the command
+running while songs become playable individually. Share `share.url` immediately; keep the command
 running until it finishes. Stdout is one JSON result (`status: "rendering"`); stderr carries JSON
 progress and final ready/failed counts. A failed song leaves the others playable and exits nonzero.
-The owner can open the hostname or IP link from any device on the local network (never localhost).
+Use `share.tailscaleUrl` on the tailnet when available and `share.localUrl` on the serving machine.
 The page streams each ready track, skips unavailable tracks, and records love / keep / dud, tags and
 whole-track notes. **Note here** captures the current position before the owner types; saved moment
 notes include the section and exact render identity. `beeps album feedback <id>` returns all notes and `beeps album list` lists the project's albums.
+Shared links are read-only by default; use `beeps preview create --kind album --id <id> --feedback`
+when requesting notes. Never paste legacy owner-token links into chat. See [preview links](../../docs/preview-links.md).
 Revise from the notes and open a new album; earlier albums retain their audio and feedback.
 
 For a game that should react to play, add an `adaptive` block (layers and states;
