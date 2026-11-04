@@ -44,7 +44,7 @@ nine effects, four ambience beds and three songs, that you can hear on the
 
 ## What changed in 0.36.2
 
-Pull requests and main pushes now run the full Vitest suite on Ubuntu with two workers and a 25-minute job limit, alongside the existing booth and cross-platform ownership jobs. Chromium audio and FFmpeg MP3/Opus must work before tests start. CI retains the JSON report and names every legitimate skip; unexpected skips and missing golden/hygiene coverage fail the job.
+Pull requests and main pushes now run the full Vitest suite on Ubuntu with two workers and a 25-minute job limit, alongside the existing booth and cross-platform ownership jobs. Chromium audio and FFmpeg MP3/Opus must work before tests start. CI retains the JSON report and names every legitimate skip; unexpected skips and missing golden/hygiene coverage fail the job. Player memory and self-test checks now exercise both 44.1 and 48 kHz devices without assuming the host default.
 
 ## What changed in 0.36.1
 
