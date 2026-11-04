@@ -102,30 +102,38 @@ it.skipIf(!hasChromium)('the master clipper passes signals below its knee throug
   expect(maxDiff).toBeLessThan(1e-6);
 });
 
-it.skipIf(!hasChromium)('loads only the current state layers under a memory budget, and unloads, in Chromium', async () => {
+it.skipIf(!hasChromium).each([44100, 48000])('loads only current state layers and unloads at %i Hz in Chromium', async sampleRate => {
   const page = await browser!.newPage();
   const pageErrors: string[] = [];
   page.on('pageerror', e => pageErrors.push(e.message));
   await page.goto(`${site!.url}/index.html`);
-  const result = await page.evaluate(async () => {
+  const result = await page.evaluate(async sampleRate => {
     const dynImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<any>;
     const { createPlayer } = await dynImport('/beeps-player/player/player.js');
     const errors: unknown[] = [];
-    const player = createPlayer({ catalog: '/audio/index.json', memoryBudgetBytes: 8e6, layerLoading: 'state', onError: (e: unknown) => errors.push(e) });
-    await player.unlock();
-    await player.music('theme', { fadeSec: 0.1 });
-    const calm = player.memory();
-    player.setState('danger', { fadeSec: 0.1 });
-    for (let i = 0; i < 50 && player.memory().buffers < 3; i++) await new Promise(r => setTimeout(r, 50));
-    const danger = player.memory();
-    const layers = player.inspect().music.layers;
-    await player.music(null, { fadeSec: 0.05 });
-    await new Promise(r => setTimeout(r, 400));
-    return { calm, danger, layers, freed: player.unload('theme'), after: player.memory(), errors };
-  });
+    const context = new AudioContext({ sampleRate });
+    // Compare accounting with the browser's actual resampled buffer, including frame rounding.
+    const reference = await context.decodeAudioData(await (await fetch('/audio/theme.bed.wav')).arrayBuffer());
+    const expectedBytes = reference.length * reference.numberOfChannels * Float32Array.BYTES_PER_ELEMENT;
+    const player = createPlayer({ context, catalog: '/audio/index.json', memoryBudgetBytes: 8e6, layerLoading: 'state', onError: (e: unknown) => errors.push(e) });
+    try {
+      await player.unlock();
+      await player.music('theme', { fadeSec: 0.1 });
+      const calm = player.memory();
+      player.setState('danger', { fadeSec: 0.1 });
+      for (let i = 0; i < 50 && player.memory().buffers < 3; i++) await new Promise(r => setTimeout(r, 50));
+      const danger = player.memory();
+      const layers = player.inspect().music.layers;
+      await player.music(null, { fadeSec: 0.05 });
+      await new Promise(r => setTimeout(r, 400));
+      return { calm, danger, layers, expectedBytes, rate: context.sampleRate, freed: player.unload('theme'), after: player.memory(), errors };
+    } finally { player.dispose(); if (context.state !== 'closed') await context.close(); }
+  }, sampleRate);
   expect(pageErrors).toEqual([]);
   expect(result.errors).toEqual([]);
-  expect(result.calm).toMatchObject({ buffers: 1, decodedBytes: 4 * 48000 * 2 * 4 });
+  expect(result.rate).toBe(sampleRate);
+  expect(Math.abs(result.expectedBytes - 4 * sampleRate * 2 * 4)).toBeLessThanOrEqual(8);
+  expect(result.calm).toMatchObject({ buffers: 1, decodedBytes: result.expectedBytes });
   expect(result.danger.buffers).toBe(3);
   expect(result.layers).toEqual({ bed: 1, pulse: 1, threat: 1 });
   expect(result.after.buffers).toBe(0);

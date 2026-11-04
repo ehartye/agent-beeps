@@ -12,9 +12,12 @@ import { parseSelftestFormats, selftestChannel, writeSelftest } from '../../src/
 const hasFfmpeg = (() => { try { findFfmpeg(); return true; } catch { return false; } })();
 const hasChromium = await chromiumAvailable();
 const hasFirefox = existsSync(firefox.executablePath());
-let server: Server | undefined;
+const servers: Server[] = [];
 const browsers: Browser[] = [];
-afterAll(async () => { for (const b of browsers) await b.close(); server?.close(); });
+afterAll(async () => {
+  for (const b of browsers) await b.close();
+  await Promise.all(servers.map(server => new Promise<void>(resolve => server.close(() => resolve()))));
+});
 
 it('parses --formats and rejects unknown names', () => {
   expect(parseSelftestFormats('opus, mp3')).toEqual(['opus', 'mp3']);
@@ -37,23 +40,31 @@ describe.skipIf(!hasFfmpeg)('beeps player selftest', () => {
     expect(readFileSync(r.index, 'utf8')).toContain("from './beeps-player/player/loader.js'");
   });
 
-  const decodeIn = async (type: typeof chromium) => {
+  const decodeIn = async (type: typeof chromium, sampleRate?: number) => {
     const site = await serveStatic(r.root);
-    server = site.server;
+    servers.push(site.server);
     const browser = await type.launch(); browsers.push(browser);
     const page = await browser.newPage();
+    if (sampleRate) await page.addInitScript(rate => {
+      // Exercise both common device rates using real AudioContexts, regardless of the host default.
+      const NativeAudioContext = window.AudioContext;
+      window.AudioContext = class extends NativeAudioContext {
+        constructor(options?: AudioContextOptions) { super({ ...options, sampleRate: rate }); }
+      };
+    }, sampleRate);
     await page.goto(site.url + '/index.html');
     await page.click('#run');
     await page.waitForFunction(() => (window as unknown as { __selftest?: unknown }).__selftest, undefined, { timeout: 60000 });
     return await page.evaluate(() => (window as unknown as { __selftest: { passed: boolean; results: { context: string; file: string; delta?: number; lead?: number; pass?: boolean; error?: string }[] } }).__selftest);
   };
 
-  it.skipIf(!hasChromium)('decodes every format with delta 0 and lead 0 in Chromium', async () => {
-    const rep = await decodeIn(chromium);
+  it.skipIf(!hasChromium).each([44100, 48000])('decodes every format correctly with a %i Hz device in Chromium', async sampleRate => {
+    const rep = await decodeIn(chromium, sampleRate);
     expect(rep.results.filter(x => x.error)).toEqual([]);
     expect(rep.results).toHaveLength(9);
     const exact = rep.results.filter(x => x.context.endsWith('@48000'));
-    expect(exact.length).toBeGreaterThanOrEqual(6);
+    expect(rep.results.filter(x => x.context === `AudioContext @${sampleRate}`)).toHaveLength(3);
+    expect(exact).toHaveLength(sampleRate === 48000 ? 6 : 3);
     for (const x of exact) { expect(x.delta, `${x.context} ${x.file}`).toBe(0); expect(x.lead).toBe(0); }
     expect(rep.passed).toBe(true);
   }, 90000);
