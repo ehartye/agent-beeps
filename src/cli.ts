@@ -1,3 +1,4 @@
+import { registerPreviewCommands } from './commands/preview.ts';
 // beeps: JSON on stdout, one-line JSON error on stderr with a stable code, non-zero exit on failure.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -34,6 +35,7 @@ export function buildProgram(io: Io): Command {
   registerGenerateCommands(program, io);
   registerFamilyCommands(program, io);
   registerAuditionCommands(program, io);
+  registerPreviewCommands(program, io);
   registerSongCommands(program, io);
   registerPlayerCommands(program, io);
   registerBuildCommands(program, io);

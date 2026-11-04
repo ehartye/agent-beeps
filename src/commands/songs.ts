@@ -1,3 +1,4 @@
+import { createPreview } from './preview.ts';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { Command } from 'commander';
@@ -377,7 +378,7 @@ export function registerSongCommands(program: Command, io: Io) {
       });
       const info = await ensureServer();
       registerProject(p.paths.root);
-      io.emit({ album: a.id, status: 'rendering', url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, status: t.status })) });
+      io.emit({ album: a.id, status: 'rendering', share: await createPreview(info, p.paths.root, 'album', a.id), url: albumUrl(info, a.id), ipUrls: albumIpUrls(info, a.id), tracks: a.tracks.map(t => ({ index: t.index, name: t.name, status: t.status })) });
       // Stdout remains one JSON document. Progress is JSON lines on stderr; the page polls the album.
       const progress = (value: object) => process.stderr.write(JSON.stringify({ album: a.id, ...value }) + '\n');
       // Each track records its own outcome, so one failed track never stops the others; mapPool only throws when a browser itself fails.

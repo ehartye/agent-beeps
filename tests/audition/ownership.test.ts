@@ -6,12 +6,13 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
+import { pathToFileURL } from 'node:url';
 import { createServerOwner } from '../helpers/server-owner.ts';
 
 const bin = join(import.meta.dirname, '../../scripts/beeps.mjs');
-async function start(home: string, owner: string, args = ['serve'], expectedCode = 0) {
+async function start(home: string, owner: string, args = ['serve'], expectedCode = 0, extraEnv: NodeJS.ProcessEnv = {}) {
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !['agent_beeps_home', 'agent_beeps_server_owner'].includes(key.toLowerCase())));
-  Object.assign(env, { AGENT_BEEPS_HOME: home, AGENT_BEEPS_SERVER_OWNER: owner });
+  Object.assign(env, { AGENT_BEEPS_HOME: home, AGENT_BEEPS_SERVER_OWNER: owner }, extraEnv);
   const child = spawn(process.execPath, [bin, ...args], { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   let stdout = '', stderr = '';
   child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
@@ -19,11 +20,16 @@ async function start(home: string, owner: string, args = ['serve'], expectedCode
   try { const [code] = await once(child, 'exit'); expect(code, stderr).toBe(expectedCode); return stdout ? JSON.parse(stdout) : undefined; }
   finally { clearTimeout(timer); if (child.exitCode === null) child.kill(); }
 }
-async function waitClosed(port: number) {
+async function waitClosed(port: number, home: string) {
   const until = Date.now() + 7000;
   while (Date.now() < until) {
     try { await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(300) }); }
-    catch { return; }
+    catch (error) {
+      // Shutdown closes the listener before removing server.json. A timeout also does not
+      // establish that a busy listener has closed. Wait for both observable drain conditions.
+      if ((error as { cause?: { code?: string } }).cause?.code === 'ECONNREFUSED'
+        && !existsSync(join(home, 'server.json'))) return;
+    }
     await new Promise(r => setTimeout(r, 30));
   }
   throw new Error('owned audition listener did not drain');
@@ -48,7 +54,7 @@ it('drains real detached CLI servers on success and failure without touching an 
         if (fail) throw new Error('intentional test-path failure');
       } catch (error) { if (!fail || (error as Error).message !== 'intentional test-path failure') throw error; }
       finally { expect(await owner.close()).toEqual({ started: 1, drained: 1, confirmed: true }); }
-      await waitClosed(port);
+      await waitClosed(port, home);
       expect(existsSync(join(home, 'server.json'))).toBe(false);
       expect(readFileSync(join(home, 'keep.txt'), 'utf8')).toBe('sentinel data');
       expect(await (await fetch(url)).text()).toBe('unrelated sentinel');
@@ -61,10 +67,13 @@ it('drains after its owner process is abruptly cancelled, even though the starte
   try {
     const [lease] = await once(owner, 'message');
     const home = mkdtempSync(join(tmpdir(), 'beeps-cancelled-'));
-    await start(home, String(lease));
+    // Widen the real interval between listener close and registry removal. A closed port alone
+    // must not let this test report a stale registry before shutdown has finished.
+    const preload = pathToFileURL(join(import.meta.dirname, '../helpers/slow-server-cleanup.mjs'));
+    await start(home, String(lease), ['serve'], 0, { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import="${preload}"` });
     const info = JSON.parse(readFileSync(join(home, 'server.json'), 'utf8'));
     const exited = once(owner, 'exit'); owner.kill(); await exited;
-    await waitClosed(info.port);
+    await waitClosed(info.port, home);
     expect(existsSync(join(home, 'server.json'))).toBe(false);
   } finally { if (owner.exitCode === null && owner.signalCode === null) owner.kill(); }
 });

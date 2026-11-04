@@ -25,6 +25,18 @@ model is least sure), **refine** (nudge the champion: brighter, darker, punchier
 longer, less harsh, more character, more like #k, surprise) and **ship**. Only these explicit
 choices become taste data; replays never count.
 
+
+## Share preview links safely
+
+Copy `share.url` from audition/album output into chat, or create a new link with
+`beeps preview create --kind session --id <id>` (also `album` and `delivery`).
+Links expire after one hour and are read-only by default. Add `--feedback` only
+when ratings/notes are wanted; shipping and refinement stay with the owner.
+`beeps preview revoke --id <share-id>` immediately invalidates a link.
+Use `share.localUrl` on the server host and `share.tailscaleUrl` on the tailnet when
+present. Do not share legacy top-level owner URLs: those carry the server token.
+See [preview access and the reusable plugin pattern](../../docs/preview-links.md).
+
 ## 1. Predict first (sealed)
 
 Look at the set's contact sheet and features, read `beeps taste show`, then commit:
@@ -43,8 +55,8 @@ beeps audition open --set <set-id> --prompt "coin pickup for a cozy platformer" 
 ```
 
 `--context kit,bed` lets the owner play candidates around the project's shipped sounds and over a
-soft pad. Give the owner the printed `url` exactly (it carries the token), plus `ipUrl` for phones that
-cannot resolve the machine name. Never give a file path. `notes` says when the kit is still empty.
+soft pad. For text/chat sharing, give the owner `share.url` (or create a `--feedback` link).
+Legacy owner controls below remain local-only; never copy their broad token into chat. Never give a file path. `notes` says when the kit is still empty.
 
 - **live** (default): you stay and answer refine requests yourself (step 3).
 - **handoff**: the server breeds refine rounds on its own. Use it whenever you will not be waiting -
@@ -83,7 +95,8 @@ beeps audition formats-status --id <delivery>      (after the owner taps Reveal)
 beeps taste import .agent-beeps/delivery/<delivery>/results.json
 ```
 
-Needs ffmpeg like `beeps compress`. Give the owner `url` or an `ipUrls` entry (phones). They rate every
+Needs ffmpeg like `beeps compress`. Share `share.url` for listening, or create a delivery
+preview with `--feedback` for ratings. Reveal remains in the local owner UI. They rate every
 lettered version 1-5 and flag any that sound worse; one letter is the untouched WAV, one a 3.5 kHz
 low-pass anchor. `formats-status` reports per role the smallest preset within half a point of the
 original, whether the anchor screened the listening (an anchor rated above the original means the

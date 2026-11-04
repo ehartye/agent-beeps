@@ -731,3 +731,15 @@ an already-started voice. The complete cancellable handler is in [`docs/runtime.
 `build` remains synchronous with no I/O. `beeps runtime export | check | verify | parity | perf | live | look` author and measure it. When to pick which delivery, the
 API, the input format, the measured costs and the compatibility notes: [`docs/runtime.md`](docs/runtime.md). The package and its
 `runtime` branch: [`docs/runtime-package.md`](docs/runtime-package.md).
+
+
+## Share preview links safely
+
+Copy `share.url` from audition/album output into chat, or create a new link with
+`beeps preview create --kind session --id <id>` (also `album` and `delivery`).
+Links expire after one hour and are read-only by default. Add `--feedback` only
+when ratings/notes are wanted; shipping and refinement stay with the owner.
+`beeps preview revoke --id <share-id>` immediately invalidates a link.
+Use `share.localUrl` on the server host and `share.tailscaleUrl` on the tailnet when
+present. Do not share legacy top-level owner URLs: those carry the server token.
+See [preview access and the reusable plugin pattern](docs/preview-links.md).

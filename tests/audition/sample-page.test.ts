@@ -13,6 +13,7 @@ import { patch } from '../helpers/patches.ts';
 import { writeKit } from '../../src/kit.ts';
 import { openSession, readEvents } from '../../src/audition/session.ts';
 import { AuditionServer, type ServerInfo } from '../../src/audition/server.ts';
+import { createPreview } from '../../src/commands/preview.ts';
 import { readSet, setCandidatePatch, type CandidateSet } from '../../src/sets.ts';
 import { openRenderHost } from '../../src/render/host.ts';
 import { lintPatch } from '../../src/lint.ts';
@@ -116,6 +117,29 @@ async function visit(page: Page, url = info.url) {
   await page.goto(`${url}/s/${id}?t=${token}`);
   await page.locator('.face').first().waitFor();
 }
+
+it('plays sampled candidate and kit audio through a read-only preview without leaking credentials', async () => {
+  const share = await createPreview(info, p.paths.root, 'session', id);
+  const page = await offlinePage(), requests: string[] = [], errors: string[] = [];
+  const before = readEvents(p, id).length;
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => { if (request.url().includes('/assets/')) requests.push(request.url()); });
+  try {
+    await page.goto(share.url); await page.locator('.face').first().waitFor();
+    await page.locator('#withKit').click();
+    await page.locator('.pad[data-index="1"] .face').click();
+    await expect.poll(async () => ({ playing: await page.locator('.pad.playing').count(), errors })).toEqual({ playing: 1, errors: [] });
+    expect(requests).toHaveLength(2);
+    for (const request of requests) {
+      const url = new URL(request);
+      expect(url.searchParams.get('preview')).toBe(share.id);
+      expect(url.searchParams.has('t')).toBe(false);
+      expect(request).not.toContain(new URL(share.url).hash.slice(1));
+    }
+    expect(await page.evaluate(() => (window as any).nativeAudio.starts.length)).toBe(2);
+    expect(readEvents(p, id)).toHaveLength(before);
+  } finally { await page.close(); }
+});
 
 it.each([
   { index: 1, count: 1, kit: false, phone: false },
