@@ -10,7 +10,7 @@ import { loadPatch, openProject, parseOrThrow, readJsonFile, savePatch, type Ope
 import type { Patch } from '../schema/patch.ts';
 import { contactSheet, renderAndMeasure, type Rendered } from '../render/pipeline.ts';
 import { effectTailNotes, kitRuleNotes, lintKit, lintPatch, loadRules, variantSiblings } from '../lint.ts';
-import { addToKit, kitSeed, readKit, removeFromKit, writeKit } from '../kit.ts';
+import { commitRenderedKitEntry, kitSeed, readKit, removeFromKit, updateKit } from '../kit.ts';
 import { fitLayered } from '../taste/model.ts';
 import { FeedbackSchema, verdictsFromFeedback, type RatedSound } from '../taste/feedback.ts';
 import { appendVerdicts, globalTasteDir, globalVerdictsFile, readVerdicts } from '../taste/verdicts.ts';
@@ -185,8 +185,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
       const [o] = await withHost(host => renderAndMeasure(host, [{ patch, seed: previous?.seed }], renderOptions(p)));
       if (!o.ok) throw new BeepsError('E_RENDER', o.error);
       const entry = { name: patch.name, family: patch.family, priority: opts.priority ?? patch.meta?.priority ?? 3, trimDb: o.trimDb, ...(previous?.seed !== undefined ? { seed: previous.seed } : {}) };
-      const k = addToKit(before, entry);
-      writeKit(p.paths.root, k);
+      const k = commitRenderedKitEntry(p.paths.root, entry, previous);
       // The entry it replaced, when something it carried is different now: the old priority is gone unless the caller set it again.
       const lost = previous && (previous.priority !== entry.priority || previous.trimDb !== entry.trimDb);
       io.emit({ ...k, ...(previous ? { replaced: previous } : {}), ...noticeField(lost ? [notice('N_KIT_REPLACED', { message: `${patch.name} was already in the kit and has been replaced: priority ${previous.priority} -> ${entry.priority}, trim ${previous.trimDb ?? 'none'} -> ${entry.trimDb} dB${previous.seed !== undefined ? `; its audition seed ${previous.seed} was kept` : ''}`, requested: previous, applied: entry })] : []) });
@@ -195,8 +194,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
     .description('take a sound out of the project kit (the patch file stays)')
     .action((name: string) => {
       const p = openProject(io.projectDir());
-      const k = removeFromKit(readKit(p.paths.root), name);
-      writeKit(p.paths.root, k);
+      const k = updateKit(p.paths.root, current => removeFromKit(current, name));
       io.emit(k);
     });
   registerGoldenCommands(kit, io);

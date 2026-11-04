@@ -11,7 +11,7 @@ import {
   appendEvent, candidatesFromSet, foldSession, openSession, predictionStats, readAgentCursor, readEvents, readEventsChecked, readReveal, readSession,
   sessionDir, writePrediction, type StoredEvent,
 } from '../audition/session.ts';
-import { AuditionServer, DEFAULT_PORT, SERVER_API, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
+import { AuditionServer, DEFAULT_PORT, SERVER_API, clearServerInfo, deliveryIpUrls, deliveryUrl, probe, readServerInfo, registerProject, serverInfoFile, sessionIpUrl, sessionUrl, writeServerInfo, type ServerInfo } from '../audition/server.ts';
 import { readKit } from '../kit.ts';
 import { byteTotals, createDelivery, foldResults, listDeliveries, readDelivery, readDeliveryEvents, resolvePresets, sourceFromFile, sourcesFromAlbum, sourcesFromDir, sourcesFromSet, type Role, type Source } from '../audition/delivery.ts';
 import { int } from './shared.ts';
@@ -81,7 +81,7 @@ export function registerAuditionCommands(program: Command, io: Io) {
         // Only kill a process that answers as our server: a stale pid may belong to anything by now.
         const alive = await probe(info);
         if (info && alive) { try { process.kill(info.pid); } catch { /* already gone */ } }
-        if (info) rmSync(serverInfoFile(), { force: true });
+        if (info) clearServerInfo(info);
         io.emit({ stopped: alive, pid: alive ? info!.pid : null, ...(info && !alive ? { note: 'server.json was stale; removed it without killing anything' } : {}) });
         return;
       }
@@ -102,7 +102,10 @@ export function registerAuditionCommands(program: Command, io: Io) {
         // A stuck HTTP connection cannot keep an owned daemon alive indefinitely.
         const deadline = setTimeout(() => process.exit(1), 5000);
         void server.close().then(() => {
-          if (readServerInfo()?.pid === process.pid) rmSync(serverInfoFile(), { force: true });
+          const current = readServerInfo();
+          if (current?.pid === process.pid) {
+            try { clearServerInfo(current); } catch { /* A contender owns the registry; leave stale metadata rather than delete its state. */ }
+          }
           if (lease && !lease.destroyed) lease.end('drained\n', () => { clearTimeout(deadline); process.exit(exitCode); });
           else { clearTimeout(deadline); process.exit(exitCode); }
         });

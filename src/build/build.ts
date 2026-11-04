@@ -1,6 +1,7 @@
 // `beeps build`: render + export + compress + bundle only the assets whose input hash differs from the committed lock, or whose
 // outputs are missing or no longer match it. Everything else is left byte for byte alone.
 import { samplePaths } from '../samples/store.ts';
+import { acquireStateGuard } from '../state-guard.ts';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { BeepsError } from '../errors.ts';
@@ -162,6 +163,15 @@ function install(owner: string, out: string, stage: string, outputs: OutputRef[]
 }
 
 export async function runBuild(cfg: BuildConfig, o: BuildOptions = {}): Promise<BuildReport> {
+  if (o.check) return runBuildOwned(cfg, o);
+  // Preserve validation-before-writes, including creation of the persistent guard file.
+  // This preview is not trusted for publication: repeat every read under exclusion.
+  await runBuildOwned(cfg, { ...o, check: true, log: () => {} });
+  const release = acquireStateGuard(cfg.lock);
+  try { return await runBuildOwned(cfg, o); } finally { release(); }
+}
+
+async function runBuildOwned(cfg: BuildConfig, o: BuildOptions): Promise<BuildReport> {
   const t0 = Date.now(), log = o.log ?? (() => {});
   const all = loadRecipes(cfg);
   if (o.only) for (const id of o.only) if (!all.some(r => r.id === id)) throw new BeepsError('E_USAGE', `--only: no recipe "${id}"`, { hint: `recipes: ${all.slice(0, 8).map(r => r.id).join(', ')}${all.length > 8 ? ', ...' : ''}` });

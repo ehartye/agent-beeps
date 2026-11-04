@@ -6,6 +6,8 @@ when_to_use: Use when asked for a sound effect, UI sound, a cue of a few seconds
 
 # Compose sounds
 
+Parallel kit updates use [shared-state exclusion](../../docs/shared-state.md). Retry `E_LOCK` after the current writer finishes. A same-name change during rendering produces `E_CONFLICT`; rerun to measure the current audition seed. Never delete guard files or mix older unguarded writers.
+
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`; run the beeps-setup skill first if it
 is not installed. Work from the project root; `beeps init` creates `.agent-beeps/` once.
 

@@ -6,6 +6,8 @@ when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio 
 
 # Ship audio
 
+For parallel writers, follow [shared-state rules](../../docs/shared-state.md): retry `E_LOCK` after the owner finishes; use distinct lock, output and work directories for independent slices. Never delete guard files. A build check is a read-only snapshot, not a reservation.
+
 `beeps` means `node "<plugin-root>/scripts/run-managed.js"`. Mechanism, schema and failure modes:
 `docs/build-lock-and-store.md` (read it before changing the setup; this skill is the recipe).
 
