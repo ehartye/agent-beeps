@@ -96,7 +96,7 @@ export interface PlayerSnapshot {
   levels: Record<LevelBus, number>;
   /** Temporary attenuation per bus, linear (1 = none); see `duck`. */
   ducks: Record<LevelBus, number>;
-  music: { id: string; state: string | null; /** seconds into the loop; absent when the asset has no durationSec */ positionSec?: number; layers: Record<string, number> } | null;
+  music: { id: string; state: string | null; paused: boolean; /** seconds into the actual loop, frozen during pause; non-looping tracks clamp at the end */ positionSec?: number; layers: Record<string, number> } | null;
   ambience: { id: string } | null;
   ambienceSlots: Record<string, { id: string }>;
 }
@@ -134,6 +134,12 @@ export interface Player {
   unlock(): Promise<boolean>;
   play(id: string, o?: PlayOptions): PlayHandle | null;
   music(id: string | null, o?: MusicOptions): Promise<boolean>;
+  /** Stop music sources and hold their decoded buffers/offset. Invalidates pending music starts (fetches may finish/cache) and stops outgoing music tails; other owners keep running. */
+  pauseMusic(): boolean;
+  /** Restart held layers together at the captured offset. False while hidden/suspended/disposed or on failure; failed starts retain the pause for retry. */
+  resumeMusic(): boolean;
+  /** After unlock, attach a caller-owned terminal analyser in the same context to the post-master clipper. Never connect that analyser to destination. Returns an idempotent detach for only this edge, or null. Repeated attachment shares the existing detach; stale handles cannot detach a later attachment. Dispose removes the edge, never disconnects the caller's analyser. */
+  attachOutputAnalyser(analyser: AnalyserNode): (() => void) | null;
   ambience(id: string | null, o?: AmbienceOptions): Promise<boolean>;
   setState(state: string, o?: { fadeSec?: number; at?: 'now' | 'beat' | 'bar' }): boolean;
   setLevel(bus: LevelBus, value: number): void;

@@ -79,7 +79,7 @@ privacy boundary and native lifecycle. Bundle **after** saving and validating th
 prepared WAV closure, locked and fetched with the cue. Budget those fixed bytes separately from encoded
 audio. Baked files use the existing player; source bundles are authoring exchange, not a game catalog.
 
-For baked-player Play/Stop controls, read [the player API](references/game-player.md).
+For baked-player Play/Stop, music pause/resume and terminal analyser taps, read [the player API](references/game-player.md).
 Call `player.unlock()` within the play gesture and give the request a generation token; after
 awaiting unlock, check that it succeeded and the token is still current before `player.play(id)`.
 Stop/replacement increments the generation and stops the current handle, including while its

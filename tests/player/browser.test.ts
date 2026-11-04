@@ -17,6 +17,92 @@ const tone = (sec: number, hz: number) => {
   return writeWav([c, c], 48000);
 };
 
+it.skipIf(!hasChromium)('exported transport holds position beside another owner and owns only terminal analyser edges', async () => {
+  const page = await browser!.newPage();
+  try {
+    await page.goto(`${site!.url}/index.html`);
+    const result = await page.evaluate(async () => {
+      const dynImport = new Function('specifier', 'return import(specifier)') as (s: string) => Promise<any>;
+      const { createPlayer } = await dynImport('/beeps-player/player/player.js');
+      const ctx = new AudioContext(), starts: { when: number; offset: number }[] = [], active = new Set<AudioBufferSourceNode>();
+      const original = AudioNode.prototype.connect, make = ctx.createBufferSource.bind(ctx);
+      let destinationConnections = 0;
+      (AudioNode.prototype as any).connect = function(this: AudioNode, target: AudioNode, ...rest: any[]) {
+        if (target === ctx.destination) destinationConnections++;
+        return (original as any).call(this, target, ...rest);
+      };
+      ctx.createBufferSource = () => {
+        const n = make(), start = n.start.bind(n);
+        n.addEventListener('ended', () => active.delete(n));
+        n.start = (when = 0, offset = 0, duration?: number) => {
+          starts.push({ when, offset }); active.add(n);
+          if (duration === undefined) start(when, offset); else start(when, offset, duration);
+        };
+        return n;
+      };
+      // Audio-device startup can lag wall time: sample only after the audio clock has rendered the interval.
+      const wait = async (ms: number) => {
+        const target = ctx.currentTime + ms / 1000, deadline = performance.now() + 5000;
+        while (ctx.currentTime < target && performance.now() < deadline) await new Promise(r => setTimeout(r, 10));
+        if (ctx.currentTime < target) throw Error('shared audio clock stopped');
+      };
+      const rms = (a: AnalyserNode) => { const b = new Float32Array(a.fftSize); a.getFloatTimeDomainData(b); return Math.sqrt(b.reduce((sum, x) => sum + x * x, 0) / b.length); };
+      const errors: unknown[] = [], player = createPlayer({ context: ctx, catalog: '/audio/index.json', onError: (e: unknown) => errors.push(e) });
+      const other = ctx.createOscillator(), gain = ctx.createGain(), otherMeter = ctx.createAnalyser();
+      const tap = ctx.createAnalyser(), secondTap = ctx.createAnalyser();
+      other.frequency.value = 440; gain.gain.value = 0.1; other.connect(gain); gain.connect(ctx.destination); gain.connect(otherMeter); other.start();
+      try {
+        await player.unlock(); await player.music('theme', { fadeSec: 0.01 }); player.setState('danger', { fadeSec: 0.01 });
+        const detach = player.attachOutputAnalyser(tap);
+        await wait(220); const beforeTap = rms(tap);
+        const detachSecond = player.attachOutputAnalyser(secondTap);
+        await wait(100); const afterTap = rms(tap), independentTap = rms(secondTap), edges = destinationConnections;
+        // Baseline: muting is not a hold.
+        const muteStart = player.inspect().music.positionSec; player.setLevel('music', 0); await wait(160);
+        const muteAdvance = player.inspect().music.positionSec - muteStart; player.setLevel('music', 1); await wait(50);
+        const beforeStop = player.inspect().music.positionSec, restartAt = starts.length;
+        await player.music(null, { fadeSec: 0 }); await player.music('theme', { fadeSec: 0.01 });
+        const restartOffsets = starts.slice(restartAt).map(s => s.offset);
+        player.setState('danger', { fadeSec: 0.01 }); await wait(120);
+        const cycles = [];
+        for (let i = 0; i < 3; i++) {
+          const paused = player.pauseMusic(), position = player.inspect().music.positionSec, clock = ctx.currentTime;
+          await wait(180);
+          const held = player.inspect().music.positionSec, silence = rms(tap), otherRms = rms(otherMeter), remaining = active.size;
+          const at = starts.length, resumed = player.resumeMusic(), scheduled = starts.slice(at);
+          await wait(100);
+          cycles.push({ paused, position, held, silence, otherRms, remaining, clockAdvance: ctx.currentTime - clock, resumed, scheduled, active: active.size, audible: rms(tap) });
+        }
+        detach(); const again = player.attachOutputAnalyser(tap); detach(); await wait(60);
+        const staleDetachPreserved = rms(tap) > 0.01;
+        player.pauseMusic(); gain.gain.value = 0; await wait(80);
+        const bothMuted = { music: rms(tap), other: rms(otherMeter) }; gain.gain.value = 0.1;
+        player.dispose(); await wait(80);
+        again(); detachSecond();
+        return { beforeTap, afterTap, independentTap, edges, muteAdvance, beforeStop, restartOffsets, cycles, bothMuted, staleDetachPreserved, activeAfterDispose: active.size, state: ctx.state, otherAfterDispose: rms(otherMeter), errors };
+      } finally {
+        player.dispose(); other.stop(); other.disconnect(); gain.disconnect(); otherMeter.disconnect(); tap.disconnect(); secondTap.disconnect();
+        AudioNode.prototype.connect = original; await ctx.close();
+      }
+    });
+    expect(result.edges).toBe(2); // exactly player + independent owner, never an analyser-to-destination edge
+    expect(result.beforeTap, JSON.stringify(result)).toBeGreaterThan(0.01);
+    expect(result.afterTap / result.beforeTap).toBeGreaterThan(0.9); expect(result.afterTap / result.beforeTap).toBeLessThan(1.1);
+    expect(result.independentTap).toBeCloseTo(result.afterTap, 4); expect(result.muteAdvance).toBeGreaterThan(0.1);
+    expect(result.beforeStop).toBeGreaterThan(0.1); expect(result.restartOffsets).toEqual([0, 0, 0]);
+    for (const cycle of result.cycles) {
+      expect(cycle.paused && cycle.resumed).toBe(true); expect(Math.abs(cycle.held - cycle.position)).toBeLessThan(0.001);
+      expect(cycle.silence).toBeLessThan(0.00001); expect(cycle.otherRms).toBeGreaterThan(0.05); expect(cycle.clockAdvance).toBeGreaterThan(0.15);
+      expect(cycle.remaining).toBe(0); expect(cycle.active).toBe(3); expect(cycle.audible).toBeGreaterThan(0.01);
+      expect(cycle.scheduled).toHaveLength(3);
+      for (const s of cycle.scheduled) { expect(s.offset).toBeCloseTo(cycle.position, 5); expect(s.when).toBe(cycle.scheduled[0].when); }
+    }
+    expect(result.staleDetachPreserved).toBe(true); expect(result.activeAfterDispose).toBe(0);
+    expect(result.bothMuted.music).toBeLessThan(0.00001); expect(result.bothMuted.other).toBeLessThan(0.00001);
+    expect(result.state).toBe('running'); expect(result.otherAfterDispose).toBeGreaterThan(0.05); expect(result.errors).toEqual([]);
+  } finally { await page.close(); }
+}, 15000);
+
 beforeAll(async () => {
   if (!hasChromium) return;
   const dir = mkdtempSync(join(tmpdir(), 'beeps-player-site-'));

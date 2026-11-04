@@ -195,7 +195,7 @@ describe('retry()', () => {
     expect(await player.music('calm')).toBe(true);
     expect(await player.play('coin')!.ready).toBe(true);
     player.retry();
-    expect(player.inspect().music).toEqual({ id: 'calm', state: null, layers: {} });
+    expect(player.inspect().music).toEqual({ id: 'calm', state: null, paused: false, positionSec: 0, layers: {} });
     expect(sources(ctx).every(s => s.stoppedAt === undefined)).toBe(true);
     ctx.currentTime = 1;
     expect(await player.play('coin')!.ready).toBe(true);
@@ -841,7 +841,8 @@ describe('music transitions on the beat, ducking, stingers on the bar', () => {
     const alt = sources(ctx).at(-1)!;
     expect(alt.startedAt).toBeCloseTo(start + 6, 6);
     expect(alt.offset).toBeCloseTo(6, 6); // 6 s into a 16 s loop, like the old bed
-    expect(player.inspect().music!.positionSec).toBeCloseTo(0.5 * 0 + ((ctx.currentTime - start) % 16) - 0, 6);
+    // The selected bed has not started yet: report its scheduled offset, never a negative pre-start phase.
+    expect(player.inspect().music!.positionSec).toBeCloseTo(6, 6);
     ctx.currentTime = start + 7;
     await player.music('slow', { at: 'bar', sync: true });
     expect(sources(ctx).at(-1)!.offset).toBe(0);

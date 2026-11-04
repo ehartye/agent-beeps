@@ -83,6 +83,53 @@ createPlayer({
 - **`setLevel(bus, value)`** — `bus` is `'music' | 'ambience' | 'sfx' | 'master'`; `value` is clamped
   to 0..1 and ramped in.
 
+## Music transport and output measurement (player 5)
+
+`pauseMusic()` stops the current music's sources and freezes `inspect().music.positionSec`;
+`inspect().music.paused` becomes `true`. It returns `false` when no current music exists,
+but still invalidates pending music starts (their fetches may finish and cache). Outgoing
+music crossfades and retiring layer tails stop too. Ambience, SFX, and other owners of a
+shared `AudioContext` keep running. Do not use `setHidden` or `setEnabled` for music-only
+controls: those suspend the context. Muting with `setLevel('music', 0)` keeps advancing;
+`music(null)` discards the position, so playing that song again starts at zero.
+
+`resumeMusic()` returns a boolean synchronously. It starts the held layers together at
+the captured offset, with a short scheduling lead and gain ramp. Hidden/suspended contexts
+or failed source starts return `false` and retain the pause for retry; call `unlock()` from
+a gesture when needed. A non-looping song at its end is retired and returns `false`.
+Before a scheduled start, position reports the scheduled offset (zero for a fresh song),
+not a negative elapsed time wrapped around the loop. Non-loop positions clamp at the end.
+
+Asking for the same music ID while paused leaves it paused. `setState` changes its desired
+layer targets without starting sources; state-loaded missing layers load on resume.
+Replacing the song, `music(null)`, `stopAll`, disabling, or disposal releases the held
+buffers. Until then, paused buffers remain pinned and count toward memory usage.
+
+For a meter, supply your own context and attach a **terminal** analyser after `unlock()`:
+
+```js
+const context = new AudioContext();
+const player = createPlayer({ catalog: '/audio/index.json', context });
+await player.unlock(); // in a user gesture
+const meter = context.createAnalyser();
+const detach = player.attachOutputAnalyser(meter);
+// Read meter.getFloatTimeDomainData(samples). Do not connect meter to destination.
+detach?.(); // removes only the player-to-meter edge
+```
+
+The tap reads the player's post-master safety clipper, including its buses and levels;
+it excludes unrelated audio owners. Before a graph exists or after disposal it returns
+`null`; an analyser from another context reports `E_USAGE` and returns `null`.
+Duplicate attachment shares one detach handle. Detach is idempotent, and an old handle
+cannot detach a later reattachment. Disposal removes the player's tap edges without
+disconnecting caller-owned analyser edges or closing a supplied context. The caller owns
+the analyser and must keep it terminal: connecting it onward to the destination would
+duplicate audible output. The player cannot inspect or enforce its downstream wiring.
+
+These APIs do not change playback rate or provide per-layer attenuation controls.
+Automated Chromium signal tests verify timing, silence, ownership and cleanup; they do
+not establish listening quality, hardware latency, or Safari/iOS behavior.
+
 ## Memory
 
 A decoded stereo 48 kHz buffer is about 23 MB per minute whatever the file format (a 68.6 s layer is 26.3 MB, a five-layer
@@ -132,7 +179,7 @@ instance cap (`cap`) replaces its own oldest instance first, before touching the
 
 ```js
 { running, voices, levels: { music, ambience, sfx, master },
-  music: { id, state, layers: { <name>: 0 | 1, ... } } | null,
+  music: { id, state, paused, positionSec, layers: { <name>: 0 | 1, ... } } | null,
   ambience: { id } | null, ambienceSlots: { <slot>: { id } } }
 ```
 
@@ -149,7 +196,7 @@ from the CLI's `ErrorCode`s (`E_SCHEMA`, `E_USAGE`, ...), which never reach a ga
 | `E_LOAD` | one audio file failed to fetch or decode (`id` is the file path); tried twice, then silent until `retry()` |
 | `E_PLAYBACK` | a Web Audio call threw while starting or running a sound |
 | `E_CONTEXT` | the `AudioContext` could not be built, resumed or suspended |
-| `E_USAGE` | `ambience()` was given an invalid slot name, or more than 8 slots (`id` is the slot) |
+| `E_USAGE` | invalid/excess ambience slot, or an output analyser from the wrong context/type |
 | `E_NOT_ADAPTIVE` | `setState()` was called on music with no `layers` |
 | `E_UNKNOWN_STATE` | `setState()` named a state the asset does not declare (`id` is the state name) |
 | `W_MEMORY_BUDGET` | decoded audio is over `memoryBudgetBytes` and everything left is playing or about to; reported once until it fits again |

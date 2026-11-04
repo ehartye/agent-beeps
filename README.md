@@ -1,5 +1,15 @@
 # agent-beeps
 
+## What changed in 0.38.0
+
+The exported [game player](skills/beeps-ship/references/game-player.md#music-transport-and-output-measurement-player-5)
+adds music-only pause/resume with a preserved position and a caller-owned terminal
+analyser tap after the master clipper. Shared-context audio keeps running during a
+music hold. Paused buffers, outgoing crossfades, interrupted loads and tap edges have
+explicit cleanup. Player version 5 reports paused state and scheduled/non-loop positions.
+Chromium signal tests cover transport and ownership; hardware listening and Safari/iOS
+qualification remain separate. Existing exported players require an explicit re-export.
+
 ## What changed in 0.37.0
 
 An explicit [locked-toolchain check launcher](docs/locked-runtime-checks.md) selects
