@@ -6,8 +6,8 @@ when_to_use: Use when wiring an app's audio into a build or CI, when a CI audio 
 
 # Ship audio
 
-`beeps` means `node "<plugin-root>/scripts/run-managed.js"`. Mechanism, schema and failure modes:
-`docs/build-lock-and-store.md` (read it before changing the setup; this skill is the recipe). For parallel writers, follow [shared-state rules](../../docs/shared-state.md): retry `E_LOCK` after the owner finishes; use distinct lock, output and work directories for independent slices. Never delete guard files. A build check is a read-only snapshot, not a reservation.
+`beeps` means `node "<plugin-root>/scripts/run-managed.js"`. Read `docs/build-lock-and-store.md` for mechanism, schema and failures before changing setup. For parallel writers, follow [shared-state rules](../../docs/shared-state.md): retry `E_LOCK` after the owner finishes; use distinct lock, output and work directories for independent slices. Never delete guard files. A build check is a read-only snapshot, not a reservation.
+For an existing lock, use [locked runtime selection](../../docs/locked-runtime-checks.md); never choose the newest plugin or rebaseline assets just to clear a toolchain mismatch.
 
 The rule: **an input that already has an output is never rendered again.** Patches have been bit-exact
 for a seed on one Chromium build since engine 2, and songs since song pipeline 6 (before it, one song

@@ -28,6 +28,11 @@ absolute path. Commands below write `beeps` for `node "<plugin-root>/scripts/run
 
 ## Where things live
 
+For read-only checks of an existing delivery lock, use the explicit
+[locked-toolchain launcher](../../docs/locked-runtime-checks.md). It can select a
+compatible installed runtime without requiring the newest plugin's global link;
+missing or ambiguous compatibility refuses instead of rerendering/rebaselining.
+
 - `~/.agent-beeps/` (`AGENT_BEEPS_HOME` moves it): managed releases, the audition server's
   `server.json` (port and access token), and the owner's global taste log in `taste/`.
 - `<project>/.agent-beeps/`: that project's patches, kit, candidate sets, audition sessions,
