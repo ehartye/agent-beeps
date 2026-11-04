@@ -1,5 +1,14 @@
 # agent-beeps
 
+## What changed in 0.37.0
+
+An explicit [locked-toolchain check launcher](docs/locked-runtime-checks.md) selects
+a compatible installed managed runtime before checking existing audio delivery.
+It verifies receipt/content/platform identity, refuses missing or ambiguous
+compatibility, and preserves the checker's full recipe/output hashing. No automatic
+render, adoption, runtime installation or global relink occurs. Ordinary launcher
+behavior is unchanged; wrappers must opt into the check-only route.
+
 A sound composer for coding agents. Agents build procedural and recorded-source hybrid game and UI sounds as Web Audio
 patches (JSON), render them in real Chromium, measure what came out (loudness, true peak, attack,
 length, brightness, sharpness, roughness, pitch), check them against cited craft rules, and put a
