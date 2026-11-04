@@ -1,26 +1,25 @@
-// Every test that calls mkdtempSync(join(tmpdir(), ...)) (and every CLI process those tests spawn) now creates its
-// directories under one root that this setup removes when the run ends. Before this, about 175 call sites left their
-// directories behind: thousands of them, gigabytes on a developer machine.
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
+// The coordinator owns both the temporary root and daemon leases. No age-based deletion of other runs.
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createServerOwner } from './helpers/server-owner.ts';
 
-const PREFIX = 'beeps-test-run-';
-const STALE_MS = 24 * 3600 * 1000;
-
-export function setup() {
-  const base = tmpdir();
-  // A run that was killed never reaches teardown: sweep roots a day old before making a new one.
-  for (const name of readdirSync(base)) {
-    if (!name.startsWith(PREFIX)) continue;
-    try { if (Date.now() - statSync(join(base, name)).mtimeMs > STALE_MS) rmSync(join(base, name), { recursive: true, force: true }); } catch { /* in use */ }
-  }
-  const root = mkdtempSync(join(base, PREFIX));
-  mkdirSync(root, { recursive: true });
-  // os.tmpdir() reads these on every call (and child processes inherit them), so set all three platforms' names.
-  for (const key of ['TMPDIR', 'TMP', 'TEMP']) process.env[key] = root;
-  return () => {
-    try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); }
-    catch (e) { console.warn(`could not remove ${root}: ${(e as Error).message}`); }
+export async function setup() {
+  const root = mkdtempSync(join(tmpdir(), 'beeps-test-run-'));
+  const owner = await createServerOwner();
+  const keys = ['TMPDIR', 'TMP', 'TEMP', 'AGENT_BEEPS_HOME', 'AGENT_BEEPS_SERVER_OWNER'];
+  const previous = keys.map(key => process.env[key]);
+  for (const key of keys.slice(0, 3)) process.env[key] = root;
+  process.env.AGENT_BEEPS_HOME = join(root, 'home');
+  mkdirSync(process.env.AGENT_BEEPS_HOME);
+  process.env.AGENT_BEEPS_SERVER_OWNER = owner.value;
+  return async () => {
+    try {
+      const report = await owner.close();
+      console.log(`audition daemon drain: ${JSON.stringify(report)}`);
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } finally {
+      keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
+    }
   };
 }

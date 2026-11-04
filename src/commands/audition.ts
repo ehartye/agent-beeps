@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { attachServerOwner, serverOwner } from '../audition/owner.ts';
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
@@ -30,6 +31,7 @@ async function waitFor<T>(fn: () => Promise<T | undefined>, ms: number): Promise
 
 /** Reuse a healthy server, else start one detached so it outlives this command. */
 export async function ensureServer(opts: { host?: string; port?: number } = {}): Promise<ServerInfo> {
+  const owner = serverOwner();
   const existing = readServerInfo();
   if (await probe(existing)) {
     if (existing!.api === SERVER_API) return existing!;
@@ -40,11 +42,14 @@ export async function ensureServer(opts: { host?: string; port?: number } = {}):
     const stopped = await waitFor(async () => (await probe(existing)) ? undefined : true, 5000);
     if (!stopped) throw new BeepsError('E_SERVER', 'the older audition server did not stop');
   }
-  const host = opts.host ?? existing?.host, port = opts.port ?? existing?.port;
-  const args = [BIN, 'serve', '--foreground', ...(host ? ['--host', host] : []), ...(port ? ['--port', String(port)] : [])];
+  const host = owner ? '127.0.0.1' : opts.host ?? existing?.host;
+  const port = owner ? existing?.port ?? 0 : opts.port ?? existing?.port;
+  const args = [BIN, 'serve', '--foreground', ...(host ? ['--host', host] : []), ...(port !== undefined ? ['--port', String(port)] : [])];
   const child = spawn(process.execPath, args, { detached: true, stdio: 'ignore', windowsHide: true });
+  let spawnError: Error | undefined;
+  child.on('error', error => { spawnError = error; });
   child.unref();
-  const up = await waitFor(async () => { const i = readServerInfo(); return i && i.pid === child.pid && (await probe(i)) ? i : undefined; }, 15000);
+  const up = await waitFor(async () => { if (spawnError) throw spawnError; const i = readServerInfo(); return i && i.pid === child.pid && (await probe(i)) ? i : undefined; }, 15000);
   if (!up) throw new BeepsError('E_SERVER', 'audition server did not start within 15 s', { hint: `run "beeps serve --foreground" to see why; server file ${serverInfoFile()}` });
   return up;
 }
@@ -70,7 +75,7 @@ export function registerAuditionCommands(program: Command, io: Io) {
     .option('--port <n>', 'port (next free port if busy)', int, DEFAULT_PORT)
     .option('--foreground', 'run in this process')
     .option('--stop', 'stop the running server')
-    .action(async (opts: { host: string; port: number; foreground?: boolean; stop?: boolean }) => {
+    .action(async (opts: { host: string; port: number; foreground?: boolean; stop?: boolean }, command: Command) => {
       if (opts.stop) {
         const info = readServerInfo();
         // Only kill a process that answers as our server: a stale pid may belong to anything by now.
@@ -86,12 +91,29 @@ export function registerAuditionCommands(program: Command, io: Io) {
         return;
       }
       const { autoRefine } = await import('../mutate.ts').catch(() => ({ autoRefine: undefined }));
-      const server = new AuditionServer({ host: opts.host, port: opts.port, onRefine: autoRefine });
-      const info = await server.listen();
-      writeServerInfo(info);
-      io.emit({ url: info.url, queue: `${info.url}/?t=${info.token}`, pid: info.pid });
-      const stop = () => { try { if (readServerInfo()?.pid === process.pid) rmSync(serverInfoFile(), { force: true }); } finally { process.exit(0); } };
-      process.on('SIGINT', stop); process.on('SIGTERM', stop);
+      const owned = serverOwner();
+      const port = owned && command.getOptionValueSource('port') === 'default' ? 0 : opts.port;
+      const server = new AuditionServer({ host: owned ? '127.0.0.1' : opts.host, port, onRefine: autoRefine });
+      let stopping = false;
+      let lease: Awaited<ReturnType<typeof attachServerOwner>>;
+      const stop = (exitCode = 0) => {
+        if (stopping) return;
+        stopping = true;
+        // A stuck HTTP connection cannot keep an owned daemon alive indefinitely.
+        const deadline = setTimeout(() => process.exit(1), 5000);
+        void server.close().then(() => {
+          if (readServerInfo()?.pid === process.pid) rmSync(serverInfoFile(), { force: true });
+          if (lease && !lease.destroyed) lease.end('drained\n', () => { clearTimeout(deadline); process.exit(exitCode); });
+          else { clearTimeout(deadline); process.exit(exitCode); }
+        });
+      };
+      process.on('SIGINT', () => stop()); process.on('SIGTERM', () => stop());
+      try {
+        lease = await attachServerOwner(() => stop());
+        const info = await server.listen();
+        writeServerInfo(info);
+        io.emit({ url: info.url, queue: `${info.url}/?t=${info.token}`, pid: info.pid });
+      } catch (error) { stop(1); throw error; }
       await new Promise(() => {}); // serve until killed
     });
 
