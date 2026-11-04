@@ -42,6 +42,10 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 nine effects, four ambience beds and three songs, that you can hear on the
 [listening booth](https://ehartye.github.io/agent-beeps/#colony).
 
+## What changed in 0.36.2
+
+Pull requests and main pushes now run the full Vitest suite on Ubuntu with two workers and a 25-minute job limit, alongside the existing booth and cross-platform ownership jobs. Chromium audio and FFmpeg MP3/Opus must work before tests start. CI retains the JSON report and names every legitimate skip; unexpected skips and missing golden/hygiene coverage fail the job.
+
 ## What changed in 0.36.1
 
 Test-started audition daemons now retain an authenticated connection to the test coordinator. They drain on teardown or owner disconnect, including cancellation after the starter CLI exits. Tests use an isolated beeps home and loopback ephemeral ports; cleanup confirms drainage before removing only that run's temporary root. Ordinary user audition servers remain persistent.
