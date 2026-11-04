@@ -25,6 +25,7 @@ export class FakeNode {
     this.ctx = ctx; this.kind = kind;
     for (const [k, v] of Object.entries(params)) this[k] = new FakeParam(v);
   }
+  get context() { return this.ctx; }
   connect<T extends FakeNode | FakeParam>(target: T): T { this.outputs.push(target); return target; }
   start(t = 0, offset = 0) { this.startedAt = t; this.offset = offset; }
   stop(t = 0) { this.stoppedAt = t; }
@@ -56,6 +57,7 @@ export class FakeContext {
   }
   createPeriodicWave(real: Float32Array, imag: Float32Array) { return { real, imag }; }
   createWaveShaper() { return this.make('shaper'); }
+  createAnalyser() { const n = this.make('analyser'); n.fftSize = 2048; n.getFloatTimeDomainData = (data: Float32Array) => data.fill(0); return n; }
   createStereoPanner() { return this.make('panner', { pan: 0 }); }
   createConvolver() { return this.make('convolver'); }
   createDynamicsCompressor() { return this.make('compressor', { threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25 }); }

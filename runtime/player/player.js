@@ -37,7 +37,7 @@ const hash = s => {
  * @typedef {import('./loader.js').FetchResponse} FetchResponse
  * @typedef {import('./loader.js').Fetcher} Fetcher
  * @typedef {{ src: AudioBufferSourceNode, gain: GainNode, target: number, release?: () => void }} Playing one source and its gain; `release` gives its buffer back to the loader when it ends
- * @typedef {{ key: string, id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, startTime: number, origin: number, state: string | null, active: number, loading: Set<string> }} Bed
+ * @typedef {{ key: string, id: string, asset: Asset, group: GainNode, level: number, layers: Map<string, Playing>, voices: Set<Playing>, startTime: number, origin: number, state: string | null, active: number, loading: Set<string>, epoch: number, paused: number | null }} Bed
  * @typedef {{ id: string | null, fadeSec: number, token: number, slot?: string, gainDb?: number }} Pending
  */
 
@@ -74,6 +74,8 @@ export function createPlayer(opts) {
   const live = new Map();
   /** Beds by key: 'music', 'ambience' (the main ambience slot) and 'ambience:<slot>'. @type {Map<string, Bed>} */
   const beds = new Map();
+  /** Includes outgoing crossfades and retiring lazy layers until their sources end. @type {Set<Bed>} */
+  const activeBeds = new Set();
   /** @type {Map<string, Pending>} */
   const pending = new Map();
   /** @type {Map<string, number>} */
@@ -106,6 +108,10 @@ export function createPlayer(opts) {
   let lifecycle = null;
   /** @type {GainNode | null} */
   let master = null;
+  /** @type {AudioNode | null} */
+  let output = null;
+  /** @type {Map<AnalyserNode, () => void>} */
+  const outputTaps = new Map();
   /** @type {Record<'music' | 'ambience' | 'sfx', GainNode> | null} */
   let buses = null;
 
@@ -157,6 +163,7 @@ export function createPlayer(opts) {
     m.gain.value = levels.master * ducks.master;
     m.connect(shaper);
     shaper.connect(c.destination);
+    output = shaper;
     master = m;
     graphNodes = [shaper, m];
     /** @param {'music' | 'ambience' | 'sfx'} b */
@@ -205,10 +212,104 @@ export function createPlayer(opts) {
 
   /** @param {Bed} bed @param {number} [fadeSec] @param {number} [at] when the fade starts (default now) */
   function stopBed(bed, fadeSec = RAMP, at = now()) {
+    if (bed.paused !== null) { retireBed(bed); return; }
     const g = bed.group.gain;
     hold(g, at, now());
     g.linearRampToValueAtTime(0, at + span(fadeSec));
-    for (const n of bed.layers.values()) { try { n.src.stop(at + span(fadeSec)); } catch { /* already stopped */ } }
+    for (const n of bed.voices) { try { n.src.stop(at + span(fadeSec)); } catch { /* already stopped */ } }
+  }
+
+  /** @param {Bed} bed */
+  function retireBed(bed) {
+    bed.epoch++; bed.loading.clear();
+    const nodes = new Set([...bed.layers.values(), ...bed.voices]);
+    for (const n of nodes) n.src.onended = null;
+    discard(nodes); bed.layers.clear(); bed.voices.clear(); bed.active = 0;
+    try { bed.group.disconnect(); } catch { /* already disconnected */ }
+    activeBeds.delete(bed);
+    if (beds.get(bed.key) === bed) beds.delete(bed.key);
+  }
+
+  /** @param {Bed} bed @param {number} [at] */
+  function positionOf(bed, at = now()) {
+    if (bed.paused !== null) return bed.paused;
+    const buffer = bed.layers.values().next().value?.src.buffer;
+    const length = bed.asset.durationSec && bed.asset.durationSec > 0 ? bed.asset.durationSec : buffer ? (bed.asset.frames ?? buffer.length) / buffer.sampleRate : 0;
+    const elapsed = Math.max(0, Math.max(at, bed.startTime) - bed.origin);
+    return length > 0 ? bed.asset.loop === false ? Math.min(elapsed, length) : elapsed % length : elapsed;
+  }
+
+  /** Freeze only music. Retained buffers remain pinned; no shared-context suspension. */
+  function pauseMusic() {
+    if (disposed) return false;
+    bump('music'); pending.delete('music'); loadingMusic = null; pendingState = null;
+    if (!ctx) return false;
+    const cur = beds.get('music');
+    for (const old of [...activeBeds]) if (old.key === 'music' && old !== cur) retireBed(old);
+    if (!cur) return false;
+    if (cur.paused !== null) return true;
+    cur.paused = positionOf(cur); // capture before replacing the running clock below
+    cur.epoch++; cur.loading.clear();
+    cur.group.gain.cancelScheduledValues(now()); cur.group.gain.setValueAtTime(0, now());
+    const retained = new Set(cur.layers.values());
+    for (const n of cur.voices) {
+      n.src.onended = null;
+      if (!retained.has(n)) { discard([n]); continue; }
+      try { n.src.stop(); n.src.disconnect(); n.gain.disconnect(); } catch { /* already ended */ }
+    }
+    cur.voices.clear(); cur.active = 0;
+    return true;
+  }
+
+  /** Resume every retained layer at one captured offset; failures leave a retryable pause. */
+  function resumeMusic() {
+    const cur = beds.get('music');
+    if (!ctx || !running() || !cur) return false;
+    if (cur.paused === null) return true;
+    const t = now() + 0.05, offset = cur.paused;
+    /** @type {Map<string, Playing>} */
+    const next = new Map();
+    try {
+      for (const [name, previous] of cur.layers) {
+        if (stateLayers && previous.target === 0) continue;
+        const buffer = previous.src.buffer;
+        if (!buffer) throw new Error('paused music buffer is unavailable');
+        const length = cur.asset.durationSec && cur.asset.durationSec > 0 ? cur.asset.durationSec : (cur.asset.frames ?? buffer.length) / buffer.sampleRate;
+        if (cur.asset.loop === false && offset >= length) continue;
+        const n = source(buffer, cur.group, { loop: cur.asset.loop !== false, level: previous.target, frames: cur.asset.frames, id: cur.id });
+        next.set(name, n); n.src.start(t, cur.asset.loop === false ? offset : offset % length);
+      }
+      cur.group.gain.cancelScheduledValues(now()); cur.group.gain.setValueAtTime(0, now());
+      cur.group.gain.setValueAtTime(0, t); cur.group.gain.linearRampToValueAtTime(cur.level, t + RAMP);
+    } catch (error) { discard(next.values()); report('E_PLAYBACK', text(error), cur.id); return false; }
+    for (const [name, previous] of cur.layers) {
+      const n = next.get(name);
+      if (n) n.release = previous.release; else previous.release?.();
+    }
+    cur.layers = next; cur.origin = t - offset; cur.startTime = t; cur.paused = null;
+    for (const n of next.values()) wire(cur, n);
+    if (!next.size && cur.asset.loop === false) { retireBed(cur); return false; }
+    if (cur.state) ensureLayers(cur, cur.state, t, RAMP);
+    return true;
+  }
+
+  /** Caller owns a terminal analyser; this player owns only its post-clipper edge. @param {AnalyserNode} analyser */
+  function attachOutputAnalyser(analyser) {
+    if (disposed || !ctx || !output) return null;
+    if (!analyser || analyser.context !== ctx || typeof analyser.getFloatTimeDomainData !== 'function') {
+      report('E_USAGE', 'Output tap requires a terminal AnalyserNode in this player context'); return null;
+    }
+    const existing = outputTaps.get(analyser);
+    if (existing) return existing;
+    const node = output;
+    try { node.connect(analyser); } catch (error) { report('E_PLAYBACK', text(error)); return null; }
+    const detach = () => {
+      if (outputTaps.get(analyser) !== detach) return;
+      outputTaps.delete(analyser);
+      try { node.disconnect(analyser); } catch { /* already disconnected */ }
+    };
+    outputTaps.set(analyser, detach);
+    return detach;
   }
 
   /** @param {string} id @param {Asset} asset */
@@ -311,6 +412,11 @@ export function createPlayer(opts) {
     const fadeSec = fade(requested);
     const token = bump(key);
     const level = gainDb === undefined ? undefined : 10 ** (Math.min(12, Math.max(-60, Number.isFinite(gainDb) ? gainDb : 0)) / 20);
+    if (id === null && beds.get(key)?.paused !== null && beds.has(key)) {
+      retireBed(/** @type {Bed} */ (beds.get(key))); pending.delete(key);
+      if (bus === 'music') loadingMusic = null;
+      return Promise.resolve(true);
+    }
     if (!running()) {
       pending.set(key, { id, fadeSec, token, ...(slot !== undefined ? { slot } : {}), ...(gainDb !== undefined ? { gainDb } : {}) });
       if (bus === 'music') loadingMusic = null; // any load in flight is now superseded
@@ -320,7 +426,7 @@ export function createPlayer(opts) {
     const cur = beds.get(key) ?? null;
     if (bus === 'music') loadingMusic = cur && cur.id === id ? null : id;
     if (cur && cur.id === id) {
-      if (level !== undefined && level !== cur.level) { cur.level = level; ramp(cur.group.gain, level, fadeSec, now()); }
+      if (level !== undefined && level !== cur.level) { cur.level = level; if (cur.paused === null) ramp(cur.group.gain, level, fadeSec, now()); }
       return Promise.resolve(true);
     }
     if (id === null) { if (cur) stopBed(cur, fadeSec); beds.delete(key); return Promise.resolve(true); }
@@ -357,7 +463,7 @@ export function createPlayer(opts) {
    */
   function nextMusicBar(earliest, unit = 'bar') {
     const cur = beds.get('music');
-    if (!cur || !cur.asset.bpm) return earliest;
+    if (!cur || cur.paused !== null || !cur.asset.bpm) return earliest;
     return Math.max(earliest, nextBarTime(cur.origin, earliest, cur.asset.bpm, unit === 'beat' ? 1 : cur.asset.meter ?? 4, cur.asset.durationSec));
   }
 
@@ -397,10 +503,13 @@ export function createPlayer(opts) {
   /** Free a source's buffer for eviction once it has ended, and the bed when its last source has. @param {Bed} bed @param {Playing} n */
   function wire(bed, n) {
     bed.active++;
+    bed.voices.add(n);
     n.src.onended = () => {
+      bed.voices.delete(n);
       discard([n]);
       if (--bed.active > 0) return;
       if (beds.get(bed.key) === bed) beds.delete(bed.key);
+      activeBeds.delete(bed);
       try { bed.group.disconnect(); } catch { /* already disconnected */ }
     };
   }
@@ -412,15 +521,16 @@ export function createPlayer(opts) {
    */
   function ensureLayers(cur, state, when, fadeSec) {
     const on = cur.asset.states?.[state];
-    if (!stateLayers || !on) return;
+    if (!stateLayers || !on || cur.paused !== null) return;
     for (const p of partsOf(cur.asset)) {
       if (!on.includes(p.name) || cur.layers.has(p.name) || cur.loading.has(p.name)) continue;
       cur.loading.add(p.name);
+      const epoch = cur.epoch;
       const release = loader.hold(p.file);
       void loader.load(p.file, { bytes: estimate(cur.asset) }).then(b => {
-        cur.loading.delete(p.name);
+        if (epoch === cur.epoch) cur.loading.delete(p.name);
         const wanted = cur.state !== null && !!cur.asset.states?.[cur.state]?.includes(p.name);
-        if (!b || !wanted || beds.get(cur.key) !== cur || cur.layers.has(p.name) || !running()) { release(); return; }
+        if (!b || !wanted || epoch !== cur.epoch || cur.paused !== null || beds.get(cur.key) !== cur || cur.layers.has(p.name) || !running()) { release(); return; }
         /** @type {Playing | null} */
         let n = null;
         try {
@@ -467,7 +577,7 @@ export function createPlayer(opts) {
       // Phase lock: the new loop begins where the old one would be at `t`, so beats and chords line up through the crossfade.
       const dur = asset.durationSec ?? 0;
       const offset = when.sync && previous && dur > 0 && asset.bpm && asset.bpm === previous.asset.bpm
-        ? (((t - previous.origin) % dur) + dur) % dur : 0;
+        ? previous.paused !== null ? previous.paused % dur : (((t - previous.origin) % dur) + dur) % dur : 0;
       const g = c.createGain();
       group = g;
       g.gain.value = 0;
@@ -486,8 +596,9 @@ export function createPlayer(opts) {
         n.src.start(t, offset);
       });
       /** @type {Bed} */
-      const started = { key, id, asset, group: g, level, layers, startTime: t, origin: t - offset, state, active: 0, loading: new Set() };
+      const started = { key, id, asset, group: g, level, layers, voices: new Set(), startTime: t, origin: t - offset, state, active: 0, loading: new Set(), epoch: 0, paused: null };
       beds.set(key, started);
+      activeBeds.add(started);
       // Once every layer has ended (faded out by a crossfade or stop, or a non-looping bed that ran
       // out), free the whole bed's graph, and forget the bed if it is still the current one.
       for (const n of layers.values()) wire(started, n);
@@ -498,7 +609,8 @@ export function createPlayer(opts) {
     } catch (e) {
       for (const h of holds) h(); // those not yet handed to a source
       discard(layers.values());
-      if (beds.get(key)?.layers === layers) beds.delete(key); // it failed after the swap
+      const failed = beds.get(key);
+      if (failed?.layers === layers) { activeBeds.delete(failed); beds.delete(key); } // it failed after the swap
       try { group?.disconnect(); } catch { /* already disconnected */ }
       report('E_PLAYBACK', text(e), id);
       return false;
@@ -523,6 +635,11 @@ export function createPlayer(opts) {
     if (!asset.layers?.length) { warnOnce('E_NOT_ADAPTIVE', `"${cur.id}" has no adaptive layers`, cur.id); return false; }
     const on = asset.states?.[state];
     if (!on) { warnOnce('E_UNKNOWN_STATE', `"${cur.id}" has no state "${state}"`, state); return false; }
+    if (cur.paused !== null) {
+      cur.state = state;
+      for (const [name, n] of cur.layers) n.target = on.includes(name) ? stateGain(asset, state) : 0;
+      return true;
+    }
     const t = ctx.currentTime;
     const when = (at === 'bar' || at === 'beat') && asset.bpm ? nextBarTime(cur.origin, t, asset.bpm, at === 'beat' ? 1 : asset.meter ?? 4, asset.durationSec) : t;
     for (const [name, n] of cur.layers) {
@@ -576,10 +693,9 @@ export function createPlayer(opts) {
     for (const key of new Set([...BEDS, ...beds.keys(), ...pending.keys()])) {
       bump(key);
       pending.delete(key);
-      const cur = beds.get(key);
-      if (cur && ctx) stopBed(cur, fadeSec);
       beds.delete(key);
     }
+    if (ctx) for (const cur of [...activeBeds]) stopBed(cur, fadeSec);
     pendingState = null;
     loadingMusic = null;
     if (ctx) for (const n of live.values()) stopPlaying(n, fadeSec);
@@ -667,7 +783,7 @@ export function createPlayer(opts) {
     for (const [key, b] of beds) if (key.startsWith('ambience:')) ambienceSlots[key.slice('ambience:'.length)] = { id: b.id };
     return {
       running: running(), voices: vm.size, levels: { ...levels }, ducks: { ...ducks },
-      music: m ? { id: m.id, state: m.state, ...(ctx && m.asset.durationSec ? { positionSec: (((now() - m.origin) % m.asset.durationSec) + m.asset.durationSec) % m.asset.durationSec } : {}), layers: layersOf(m) } : null,
+      music: m ? { id: m.id, state: m.state, paused: m.paused !== null, ...(ctx ? { positionSec: positionOf(m) } : {}), layers: layersOf(m) } : null,
       ambience: a ? { id: a.id } : null,
       ambienceSlots,
     };
@@ -759,26 +875,23 @@ export function createPlayer(opts) {
     waitingPrefetch = [];
     /** @type {Playing[]} */
     const nodes = [...live.values()];
-    for (const b of beds.values()) {
-      nodes.push(...b.layers.values());
-      try { b.group.disconnect(); } catch { /* already disconnected */ }
-    }
+    for (const b of [...activeBeds]) retireBed(b);
     for (const n of nodes) n.src.onended = null; // discard() below ends them; their own cleanup would run twice
     discard(nodes);
     live.clear();
     beds.clear();
     vm.clear();
     loader.dispose(); // aborts every fetch in flight, drops the cache
-    // A bed fading out under a newer one is no longer tracked: with its buses cut it is silent, and it ends within its fade.
+    for (const detach of [...outputTaps.values()]) detach();
     for (const n of graphNodes) { try { n.disconnect(); } catch { /* already disconnected */ } }
     graphNodes = [];
     const c = ctx;
-    ctx = null; master = null; buses = null; lifecycle = null;
+    ctx = null; master = null; output = null; buses = null; lifecycle = null;
     if (c && ownsContext) { try { void Promise.resolve(c.close?.()).catch(() => {}); } catch { /* a context that cannot close */ } }
   }
 
   return {
-    unlock, play, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect, prefetch, unload, memory, dispose,
+    unlock, play, pauseMusic, resumeMusic, attachOutputAnalyser, setState, setLevel, duck, setEnabled, setHidden, stopAll, retry, inspect, prefetch, unload, memory, dispose,
     /** @param {string | null} id @param {{ fadeSec?: number, gainDb?: number, at?: 'now' | 'beat' | 'bar', sync?: boolean }} [o] */
     music: (id, o) => bed('music', id, o),
     /**
