@@ -42,6 +42,10 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 nine effects, four ambience beds and three songs, that you can hear on the
 [listening booth](https://ehartye.github.io/agent-beeps/#colony).
 
+## What changed in 0.36.1
+
+Test-started audition daemons now retain an authenticated connection to the test coordinator. They drain on teardown or owner disconnect, including cancellation after the starter CLI exits. Tests use an isolated beeps home and loopback ephemeral ports; cleanup confirms drainage before removing only that run's temporary root. Ordinary user audition servers remain persistent.
+
 ## What changed in 0.36.0
 
 Build PCM sound sprites from ordered canonical PCM16 WAV files with `kind: "sprite"` recipes and the `wav-master` target. Packing preserves integer samples, inserts fixed 100 ms gaps, and delivers an authenticated `beeps/audio-sprite@1` frame map through build, lock, catalog, store and portable fetch. See [the build contract](docs/build-lock-and-store.md).
@@ -673,6 +677,8 @@ node scripts/beeps.mjs capabilities
 node scripts/gen-cli-docs.mjs --write        # docs/cli.md, after adding or renaming a command
 claude plugin eval . --runs 2 --no-publish   # paired with/without-skill evals in evals/
 ```
+
+The test coordinator supplies `AGENT_BEEPS_SERVER_OWNER` (a private loopback endpoint and random token) and an isolated `AGENT_BEEPS_HOME`. Do not copy this lease into ordinary sessions. Owned daemons acknowledge closure; teardown reports started/drained counts and retains the temporary root if drainage is unconfirmed. Owner disconnect also closes the daemon, with a five-second exit bound. No process-name or port-wide cleanup runs, and old temporary roots are not deleted based on age. A forcibly terminated run may retain its files for inspection.
 
 Specs and plans are in `docs/superpowers/`; the build lock and store are in `docs/build-lock-and-store.md`. Cutting a release: `docs/RELEASING.md` (and `node scripts/release-check.mjs`).
 

@@ -416,7 +416,11 @@ export class AuditionServer {
   }
 
   close(): Promise<void> {
-    return new Promise(r => this.server.close(() => r()));
+    return new Promise(resolve => {
+      if (!this.server) { resolve(); return; }
+      this.server.close(() => resolve());
+      this.server.closeAllConnections();
+    });
   }
 }
 
