@@ -2,7 +2,9 @@
 // through the same engine the CLI measured; the JSON API is token-guarded and never serves a
 // prediction before the owner ships.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { atomicWrite } from '../atomic-write.ts';
+import { withStateGuard } from '../state-guard.ts';
+import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { hostname, networkInterfaces } from 'node:os';
 import { basename, extname, join, normalize, resolve, sep } from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -34,8 +36,19 @@ export function readServerInfo(): ServerInfo | null {
 }
 
 export function writeServerInfo(info: ServerInfo) {
-  mkdirSync(beepsHome(), { recursive: true });
-  writeFileSync(serverInfoFile(), JSON.stringify(info, null, 2) + '\n');
+  withStateGuard(serverInfoFile(), () => {
+    const current = readServerInfo();
+    atomicWrite(serverInfoFile(), JSON.stringify({ ...info, projects: [...new Set([...(current?.projects ?? []), ...info.projects])] }, null, 2) + '\n');
+  });
+}
+
+/** Remove only the observed server identity, never a replacement published while stopping. */
+export function clearServerInfo(expected: ServerInfo): void {
+  withStateGuard(serverInfoFile(), () => {
+    const current = readServerInfo();
+    if (current?.pid === expected.pid && current.startedAt === expected.startedAt && current.token === expected.token)
+      rmSync(serverInfoFile(), { force: true });
+  });
 }
 
 /** Persistent token: reused across restarts so links the owner bookmarked keep working. */
@@ -44,10 +57,12 @@ export function serverToken(): string {
 }
 
 export function registerProject(root: string) {
-  const info = readServerInfo();
-  if (!info) return;
-  const abs = resolve(root);
-  if (!info.projects.includes(abs)) writeServerInfo({ ...info, projects: [...info.projects, abs] });
+  withStateGuard(serverInfoFile(), () => {
+    const info = readServerInfo();
+    if (!info) return;
+    const abs = resolve(root);
+    if (!info.projects.includes(abs)) atomicWrite(serverInfoFile(), JSON.stringify({ ...info, projects: [...info.projects, abs] }, null, 2) + '\n');
+  });
 }
 
 export const publicHost = () => hostname().toLowerCase();

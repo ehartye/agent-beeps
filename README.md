@@ -42,6 +42,10 @@ Arcade and Oddities, with purpose labels, playback seeds and measured kit levels
 nine effects, four ambience beds and three songs, that you can hear on the
 [listening booth](https://ehartye.github.io/agent-beeps/#colony).
 
+## What changed in 0.36.3
+
+Shared kit, build-lock and server-registry mutations now use real cross-process exclusion and atomic JSON publication. Contention fails with retryable `E_LOCK`; process death releases ownership without age-based lock theft. Kit renders refuse to overwrite changed same-name evidence. Independent registry additions survive startup publication. Read [shared-state rules](docs/shared-state.md) for local-filesystem, cooperating-version and per-slice directory boundaries; daemon startup remains separate.
+
 ## What changed in 0.36.2
 
 Pull requests and main pushes now run the full Vitest suite on Ubuntu with two workers and a 25-minute job limit, alongside the existing booth and cross-platform ownership jobs. Chromium audio and FFmpeg MP3/Opus must work before tests start. CI retains the JSON report and names every legitimate skip; unexpected skips and missing golden/hygiene coverage fail the job. Player memory and self-test checks now exercise both 44.1 and 48 kHz devices without assuming the host default.

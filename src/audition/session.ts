@@ -7,7 +7,7 @@ import { BeepsError } from '../errors.ts';
 import { featureVector, FEATURE_NAMES, type Features } from '../measure/index.ts';
 import { newId, readSet, setCandidatePatch, type CandidateSet } from '../sets.ts';
 import { savePatch, type OpenProject } from '../project.ts';
-import { addToKit, readKit, writeKit } from '../kit.ts';
+import { addToKit, updateKit } from '../kit.ts';
 import { appendVerdicts, beepsHome, globalVerdictsFile, readVerdicts, type Verdict } from '../taste/verdicts.ts';
 import { fitLayered, type Model } from '../taste/model.ts';
 import { rank } from '../taste/select.ts';
@@ -430,9 +430,11 @@ function shipChampion(p: OpenProject, state: SessionState, index: number, name?:
   if (!c) throw new BeepsError('E_NOT_FOUND', `candidate ${index} is not in this session`);
   const patch = { ...setCandidatePatch(p, c.setId, c.name), ...(name ? { name } : {}) };
   const file = join(p.paths.patches, `${patch.name}.json`);
-  if (existsSync(file) && readFileSync(file, 'utf8') !== JSON.stringify(patch, null, 2) + '\n') {
-    throw conflict(`a different patch named "${patch.name}" already exists; ship under another name`);
-  }
-  savePatch(p, patch, { force: true });
-  writeKit(p.paths.root, addToKit(readKit(p.paths.root), { name: patch.name, family: patch.family, priority: patch.meta?.priority ?? 3, trimDb: c.trimDb, seed: c.seed }));
+  updateKit(p.paths.root, current => {
+    if (existsSync(file) && readFileSync(file, 'utf8') !== JSON.stringify(patch, null, 2) + '\n') {
+      throw conflict(`a different patch named "${patch.name}" already exists; ship under another name`);
+    }
+    savePatch(p, patch, { force: true });
+    return addToKit(current, { name: patch.name, family: patch.family, priority: patch.meta?.priority ?? 3, trimDb: c.trimDb, seed: c.seed });
+  });
 }

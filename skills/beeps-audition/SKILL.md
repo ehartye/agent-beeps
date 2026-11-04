@@ -6,6 +6,8 @@ when_to_use: Use when a set of candidate sounds is ready for the owner to choose
 
 # Audition with the owner
 
+Reuse the running server; never stop it while another agent or the owner is using it. [Shared-state exclusion](../../docs/shared-state.md) protects kit publication and registry updates, not concurrent daemon startup. Retry `E_LOCK` after the writer finishes; never delete guard files.
+
 For a sampler of **different roles** (a scanner, a shield, an alien), open with `--flow explore`.
 This shows labeled playback pads without voting, duels, a winner, or a prediction requirement.
 Give every patch a meaningful name and a short `meta.description` explaining its intended use.

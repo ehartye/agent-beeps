@@ -21,4 +21,17 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run typecheck
-      - run: npm test -- --maxWorkers=2 tests/audition/ownership.test.ts tests/audition/album-upgrade.test.ts tests/cli.test.ts
+      - run: npm test -- --maxWorkers=2 tests/audition/ownership.test.ts tests/audition/album-upgrade.test.ts tests/cli.test.ts tests/state-guard.test.ts
+
+  state-guard-macos:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install chromium
+      - run: npm test -- --maxWorkers=2 tests/state-guard.test.ts

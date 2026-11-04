@@ -1,6 +1,8 @@
 // The project kit: which shipped sounds belong together, their family and voice priority.
 // Pure file and list helpers only; rendering and checking members is the CLI's job (see lint.ts lintKit).
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { atomicWrite } from './atomic-write.ts';
+import { withStateGuard } from './state-guard.ts';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { BeepsError } from './errors.ts';
@@ -50,9 +52,26 @@ export function readKit(dir: string): Kit {
 export function writeKit(dir: string, kit: Kit): string {
   const valid = parseKit(kit);
   const path = kitPath(dir);
-  mkdirSync(join(dir, '.agent-beeps'), { recursive: true });
-  writeFileSync(path, JSON.stringify(valid, null, 2) + '\n');
+  withStateGuard(path, () => atomicWrite(path, JSON.stringify(valid, null, 2) + '\n'));
   return path;
+}
+
+/** Read and publish under one exclusion interval. The callback must be synchronous. */
+export function updateKit(dir: string, update: (current: Kit) => Kit): Kit {
+  return withStateGuard(kitPath(dir), () => {
+    const next = parseKit(update(readKit(dir)));
+    atomicWrite(kitPath(dir), JSON.stringify(next, null, 2) + '\n');
+    return next;
+  });
+}
+
+/** Publish render evidence only if its same-name source entry still matches. Other entries may change. */
+export function commitRenderedKitEntry(dir: string, entry: KitEntry, previous?: KitEntry): Kit {
+  return updateKit(dir, current => {
+    const now = current.sounds.find(s => s.name === entry.name);
+    if (JSON.stringify(now) !== JSON.stringify(previous)) throw new BeepsError('E_CONFLICT', `${entry.name} changed in the kit during rendering; rerun kit add to measure its current seed`);
+    return addToKit(current, entry);
+  });
 }
 
 /** The render seed the owner auditioned for a kit sound, when one was recorded. */

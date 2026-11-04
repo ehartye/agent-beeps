@@ -4,5 +4,7 @@ node_modules/
 .local/
 coverage/
 *.log
+*.guard.sqlite
+*.guard.sqlite-journal
 evals/results/
 _site/

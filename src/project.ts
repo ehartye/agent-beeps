@@ -5,6 +5,8 @@ import { BeepsError } from './errors.ts';
 import { escapePointer, tryGetPointer } from './pointer.ts';
 import { parsePatch, type Patch } from './schema/patch.ts';
 import { defaultProject, parseProject, ProjectSchema, type Project } from './schema/project.ts';
+import { withStateGuard } from './state-guard.ts';
+import { atomicWrite } from './atomic-write.ts';
 
 export const DIR = '.agent-beeps';
 
@@ -61,9 +63,11 @@ export function initProject(root: string, overrides: Partial<Pick<Project, 'targ
   const project = parseProject({ ...base, ...overrides, scale: { ...base.scale, ...overrides.scale } });
   for (const d of [paths.dir, paths.patches, paths.sets, paths.sessions, paths.taste, paths.renders, paths.songs]) mkdirSync(d, { recursive: true });
   if (!existsSync(paths.projectFile)) writeFileSync(paths.projectFile, JSON.stringify(project, null, 2) + '\n');
-  if (!existsSync(paths.kit)) writeFileSync(paths.kit, JSON.stringify({ schema: 'beeps/kit@1', sounds: [] }, null, 2) + '\n');
+  withStateGuard(paths.kit, () => {
+    if (!existsSync(paths.kit)) atomicWrite(paths.kit, JSON.stringify({ schema: 'beeps/kit@1', sounds: [] }, null, 2) + '\n');
+  });
   const ignore = join(paths.dir, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, 'renders/\ncache/\ndelivery/\n');
+  if (!existsSync(ignore)) writeFileSync(ignore, 'renders/\ncache/\ndelivery/\n*.guard.sqlite\n*.guard.sqlite-journal\n');
   return openProject(paths.root);
 }
 

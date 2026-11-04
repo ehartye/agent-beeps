@@ -1,0 +1,15 @@
+# Shared-state writers
+
+From 0.36.3, cooperating local processes exclude each other while mutating a project kit, a build lock, or the audition server registry. A persistent adjacent `.NAME.guard.sqlite` file holds a SQLite `BEGIN IMMEDIATE` transaction; JSON remains the canonical data. Acquisition fails promptly with retryable `E_LOCK` when another writer owns it. Retry the command after that writer finishes. The guard is released on completion, exception or process death. It is never stolen based on age or a PID guess. **Do not delete or replace guard files**, including while cleaning a running project's work directory. Ignore `*.guard.sqlite` and `*.guard.sqlite-journal` in version control; new projects include those patterns.
+
+Kit rendering happens outside exclusion. Publication rereads the current kit under the guard, retaining other names. If the same entry changed during rendering, `kit add` fails with `E_CONFLICT`; rerun to measure the current audition seed. Kit removal, initialization and the owner's ship action use the same guard. JSON publication uses a temporary file and rename, so readers see a complete old or new document.
+
+A mutating build first validates without writes, then holds exclusion from its fresh lock read through publication and catalog generation. Disjoint `--only` builds using the same lock must finish or report `E_LOCK`; a retry reads the first build's committed entries. This initial validation repeats planning/output checks, adding read cost. `build --check` remains read-only and creates no guard; its report is a snapshot that may change during an active build.
+
+Use separate `lock`, `out` and `workDir` paths for independent build slices. Different lock paths do **not** protect overlapping output/staging directories. Do not edit configuration or source assets during a build. Older beeps versions, direct file edits, different-user homes and network/cloud-synchronized filesystems do not participate in this protocol. Use one owner for those cases. Low-level `writeKit` explicitly replaces a complete kit; read-modify-write callers must use `updateKit` instead.
+
+Server registration and startup publication merge project roots under the same guard. Shutdown only removes the observed server identity under exclusion. This does not solve concurrent daemon startup or authorize stopping another agent's daemon; reuse the running server. The separate startup-singleton backlog remains open.
+
+SQLite exclusion is not a transaction over output files. A crash can leave already-published build outputs or an abandoned uniquely named temporary file; normal build verification/retry reconciles outputs with the last published lock. No cleanup here deletes user assets or orphan temporary files. Filesystem or power-loss durability is not promised. Guard acquisition errors fail closed rather than bypassing exclusion.
+
+Implementation references: [Node SQLite API](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html), [SQLite locking](https://sqlite.org/lockingv3.html).
