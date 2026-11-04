@@ -1,4 +1,4 @@
-import { token, api, access, canSend } from './access.js';
+import { api, access, canSend, mediaUrl } from './access.js';
 // Album page: streams each rendered song, loops loop songs on request, and records the owner's
 // marks, tags and notes. Every track's strip is its measured loudness arc over its sections.
 
@@ -104,7 +104,7 @@ function play(index, at = 0) {
   if (!t || t.status !== 'ready') return;
   if (current !== index || !audio.src) {
     current = index;
-    audio.src = `${t.wav}?t=${encodeURIComponent(token)}`;
+    audio.src = mediaUrl(t.wav);
     nowPlaying(t);
     if (!played.has(index)) { played.add(index); send({ type: 'play', index }).catch(() => {}); }
   }
@@ -174,7 +174,7 @@ function trackCard(t, state) {
       chips,
       note, status,
       h('ul', { class: 'moments', 'aria-label': `Moments in ${t.title}` }, (s.moments ?? []).map(m => momentItem(t, m))),
-      h('details', { class: 'look' }, h('summary', {}, 'What the agent saw'), h('img', { loading: 'lazy', alt: `Waveform, loudness arc and spectrogram of ${t.title}`, src: `${t.look}?t=${encodeURIComponent(token)}` }))));
+      h('details', { class: 'look' }, h('summary', {}, 'What the agent saw'), h('img', { loading: 'lazy', alt: `Waveform, loudness arc and spectrogram of ${t.title}`, src: mediaUrl(t.look) }))));
 }
 
 function momentItem(t, m) {

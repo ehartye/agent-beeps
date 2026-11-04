@@ -1,5 +1,16 @@
 // Shared by the real audition pages; preview secrets never enter request URLs.
 export const token = new URLSearchParams(location.search).get('t') ?? '';
+const preview = new URLSearchParams(location.search).get('preview');
+const scopedUrl = path => {
+  const url = new URL(path, location.href);
+  if (preview && !token) url.searchParams.set('preview', preview);
+  return url.href;
+};
+export const mediaUrl = path => {
+  const url = new URL(scopedUrl(path));
+  if (token) url.searchParams.set('t', token);
+  return url.href;
+};
 const fragment = new URLSearchParams(location.hash.slice(1));
 const secret = fragment.get('preview');
 const kind = { s: 'session', a: 'album', d: 'delivery' }[location.pathname.split('/')[1]];
@@ -10,7 +21,7 @@ if (secret) {
   history.replaceState(null, '', location.pathname + location.search);
   const response = await fetch('/api/preview/exchange', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token: secret, kind, target }),
+    body: JSON.stringify({ token: secret, kind, target, preview }),
   });
   if (response.ok) access = (await response.json()).feedback ? 'feedback' : 'read-only';
   else {
@@ -19,7 +30,7 @@ if (secret) {
   }
 }
 if (!secret && !token) {
-  const response = await fetch(`/api/${kind}/${target}/access`);
+  const response = await fetch(scopedUrl(`/api/${kind}/${target}/access`));
   if (response.ok) access = (await response.json()).feedback ? 'feedback' : 'read-only';
 }
 if (!token) {
@@ -31,6 +42,6 @@ if (!token) {
 export const canSend = type => access === 'owner' || (access === 'feedback' && {
   session: ['play', 'lineup', 'duel'], album: ['play', 'mark', 'tags', 'note', 'moment'], delivery: ['device', 'rate', 'note'],
 }[kind]?.includes(type));
-export const api = (path, init = {}) => fetch(path, {
+export const api = (path, init = {}) => fetch(scopedUrl(path), {
   ...init, headers: { ...init.headers, ...(token ? { 'x-beeps-token': token } : {}) },
 });

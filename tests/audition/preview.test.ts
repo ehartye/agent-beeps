@@ -11,7 +11,7 @@ import { AuditionServer, previewLinks, type ServerInfo } from '../../src/auditio
 import { PreviewGrants } from '../../src/audition/preview.ts';
 import { createPreview } from '../../src/commands/preview.ts';
 import { writeAlbum, readAlbum, foldAlbum } from '../../src/album.ts';
-import { createDelivery, sourceFromFile, resolvePresets } from '../../src/audition/delivery.ts';
+import { appendDeliveryEvent, createDelivery, sourceFromFile, resolvePresets } from '../../src/audition/delivery.ts';
 import { writeWav } from '../../src/audio/wav.ts';
 import { coin } from '../helpers/patches.ts';
 
@@ -38,7 +38,11 @@ beforeAll(async () => {
   writeFileSync(join(dir, 'look.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64'));
   const tracks = [{ name: 'demo', title: 'Demo song', loop: false, durationSec: 1, wav, look: join(dir, 'look.png'), features: {}, sections: [] }];
   album = writeAlbum(p, { id: 'same-id', title: 'Shared album', tracks }).id;
-  writeAlbum(other, { id: 'same-id', title: 'Private other project', tracks });
+  const otherDir = join(other.paths.renders, 'preview'); mkdirSync(otherDir);
+  const otherWav = join(otherDir, 'delivered.wav'), otherLook = join(otherDir, 'look.png');
+  writeFileSync(otherWav, writeWav([new Float32Array(48000).fill(0.25)], 48000));
+  copyFileSync(join(dir, 'look.png'), otherLook);
+  writeAlbum(other, { id: 'same-id', title: 'Private other project', tracks: tracks.map(t => ({ ...t, wav: otherWav, look: otherLook })) });
   delivery = createDelivery(p, [sourceFromFile(wav)], resolvePresets(['wav', 'mp3-96'], { anchor: false }), { encoder: (_f, source, out) => copyFileSync(source, out) }).id;
   server = new AuditionServer({ host: '127.0.0.1', port: 0, token: 'owner-secret', projects: [other.paths.root, p.paths.root] });
   info = await server.listen();
@@ -89,12 +93,89 @@ it('allows only deliberate feedback and keeps owner behavior available', async (
   expect((await post(`/api/album/${album}/event`, a, { type: 'note', text: 'Warm' })).status).toBe(200);
 });
 
+it('keeps full delivery results private before and after the owner reveals', async () => {
+  const share = await createPreview(info, p.paths.root, 'delivery', delivery, true);
+  const path = `/api/delivery/${delivery}/results`;
+  expect((await get(path, share)).status).not.toBe(200);
+  appendDeliveryEvent(p, delivery, { type: 'device', report: { userAgent: 'private-device-report' } });
+  appendDeliveryEvent(p, delivery, { type: 'reveal' });
+  const owner = await (await fetch(base() + path, { headers: { 'x-beeps-token': info.token } })).json();
+  expect(owner.project).toBe(p.paths.root);
+  expect(owner.device.userAgent).toBe('private-device-report');
+  expect((await get(path, share)).status).toBe(403);
+  const payload = await (await get(`/api/delivery/${delivery}`, share)).text();
+  expect(payload).not.toContain('private-device-report');
+  expect(payload).not.toContain(JSON.stringify(p.paths.root).slice(1, -1));
+});
+
+it('keeps duplicate-id browser tabs and different permissions independent through reload', async () => {
+  const readOnly = await createPreview(info, p.paths.root, 'album', album);
+  const feedback = await createPreview(info, other.paths.root, 'album', album, true);
+  const sameProjectFeedback = await createPreview(info, p.paths.root, 'album', album, true);
+  const context = await browser.newContext();
+  try {
+    const first = await context.newPage(), second = await context.newPage(), third = await context.newPage();
+    await first.goto(readOnly.url); await first.getByText('Shared album', { exact: true }).waitFor();
+    await second.goto(feedback.url); await second.getByText('Private other project', { exact: true }).waitFor();
+    await third.goto(sameProjectFeedback.url); await third.getByText('Shared album', { exact: true }).waitFor();
+    const payload = (page: typeof first) => page.evaluate(async id =>
+      (await fetch(`/api/album/${id}${location.search}`)).json(), album);
+    expect((await payload(first)).title).toBe('Shared album');
+    expect((await payload(second)).title).toBe('Private other project');
+    for (const page of [first, second, third]) { await page.reload(); await page.getByRole('button', { name: 'Demo song', exact: true }).waitFor(); }
+    expect((await payload(first)).title).toBe('Shared album');
+    expect((await payload(second)).title).toBe('Private other project');
+    expect(await first.locator('#album-note').isDisabled()).toBe(true);
+    expect(await second.locator('#album-note').isEnabled()).toBe(true);
+    expect(await third.locator('#album-note').isEnabled()).toBe(true);
+    expect(await second.evaluate(async id => (await fetch(`/api/album/${id}/event${location.search}`, {
+      method: 'POST', body: JSON.stringify({ type: 'note', text: 'other project only' }),
+    })).status, album)).toBe(200);
+    expect(foldAlbum(readAlbum(other, album), other).note).toBe('other project only');
+    expect(foldAlbum(readAlbum(p, album), p).note).not.toBe('other project only');
+    expect(await first.evaluate(async id => {
+      return (await fetch(`/api/album/${id}/event${location.search}`, { method: 'POST', body: JSON.stringify({ type: 'note', text: 'should not save' }) })).status;
+    }, album)).toBe(403);
+    await first.getByRole('button', { name: 'Demo song', exact: true }).click();
+    const audio = await first.locator('#audio').getAttribute('src');
+    expect((await context.request.get(new URL(audio!, base()).href, { headers: { Range: 'bytes=0-15' } })).status()).toBe(206);
+    const firstWav = await context.request.get(new URL(audio!, base()).href);
+    await second.getByRole('button', { name: 'Demo song', exact: true }).click();
+    const secondAudio = await second.locator('#audio').getAttribute('src');
+    const secondWav = await context.request.get(new URL(secondAudio!, base()).href);
+    expect(firstWav.status()).toBe(200); expect(secondWav.status()).toBe(200);
+    expect(await firstWav.body()).not.toEqual(await secondWav.body());
+    await fetch(`${base()}/api/previews/${feedback.id}`, { method: 'DELETE', headers: { 'x-beeps-token': info.token } });
+    expect((await payload(first)).title).toBe('Shared album');
+    expect((await payload(third)).title).toBe('Shared album');
+    expect(await second.evaluate(async id => (await fetch(`/api/album/${id}${location.search}`)).status, album)).toBe(403);
+  } finally { await context.close(); }
+});
+
+it('requires the selected grant cookie and rejects id/token mismatches', async () => {
+  const share = await createPreview(info, p.paths.root, 'album', album);
+  const otherShare = await createPreview(info, p.paths.root, 'album', album, true);
+  const exchange = (preview: string) => fetch(base() + '/api/preview/exchange', {
+    method: 'POST', body: JSON.stringify({ token: secret(share), kind: 'album', target: album, preview }),
+  });
+  expect((await exchange(otherShare.id)).status).toBe(403);
+  const exchanged = await exchange(share.id); expect(exchanged.status).toBe(200);
+  const cookie = exchanged.headers.get('set-cookie')!.split(';')[0];
+  const path = `/api/album/${album}`;
+  expect((await fetch(base() + path + `?preview=${share.id}`, { headers: { cookie } })).status).toBe(200);
+  expect((await fetch(base() + path + `?preview=${share.id}`)).status).toBe(403);
+  expect((await fetch(base() + path, { headers: { cookie } })).status).toBe(401);
+  const forgedName = `beeps_preview_${otherShare.id}=${secret(share)}`;
+  expect((await fetch(base() + path + `?preview=${otherShare.id}`, { headers: { cookie: forgedName } })).status).toBe(403);
+  expect((await get(path + `?preview=${otherShare.id}`, share)).status).toBe(403);
+});
+
 it('rejects expired links at HTTP access and cookie exchange', async () => {
   const share = await createPreview(info, p.paths.root, 'album', album, false, 60);
   const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 61000);
   try {
     expect((await get(`/api/album/${album}`, share)).status).toBe(403);
-    expect((await fetch(base() + '/api/preview/exchange', { method: 'POST', body: JSON.stringify({ token: secret(share), kind: 'album', target: album }) })).status).toBe(403);
+    expect((await fetch(base() + '/api/preview/exchange', { method: 'POST', body: JSON.stringify({ token: secret(share), kind: 'album', target: album, preview: share.id }) })).status).toBe(403);
   } finally { clock.mockRestore(); }
 });
 
@@ -111,11 +192,11 @@ it('opens real mobile album UI, scrubs the URL, seeks with cookie auth and revok
   expect(await page.locator('#album-note').isDisabled()).toBe(true);
   await page.getByRole('button', { name: 'Demo song', exact: true }).click();
   expect(await page.locator('#note-here').isDisabled()).toBe(true);
-  expect(await page.evaluate(async path => (await fetch(path, { headers: { Range: 'bytes=0-15' } })).status, `/api/album/${album}/wav/1`)).toBe(206);
+  expect(await page.evaluate(async path => (await fetch(path + location.search, { headers: { Range: 'bytes=0-15' } })).status, `/api/album/${album}/wav/1`)).toBe(206);
   expect(foldAlbum(readAlbum(p, album), p).tracks[0].plays).toBe(0);
   await page.reload(); await page.getByRole('button', { name: 'Demo song', exact: true }).waitFor();
   await fetch(`${base()}/api/previews/${share.id}`, { method: 'DELETE', headers: { 'x-beeps-token': info.token } });
-  expect(await page.evaluate(async path => (await fetch(path)).status, `/api/album/${album}`)).toBe(403);
+  expect(await page.evaluate(async path => (await fetch(path + location.search)).status, `/api/album/${album}`)).toBe(403);
   await context.close();
 });
 
@@ -147,7 +228,7 @@ it('advertises Tailscale only when the existing bind and adapter permit it', () 
 
 it('preserves owner authority when a browser also has a scoped cookie', async () => {
   const share = await createPreview(info, p.paths.root, 'session', session);
-  const response = await fetch(base() + `/api/session/${session}/event`, { method: 'POST', headers: { 'x-beeps-token': info.token, cookie: `beeps_preview=${secret(share)}` }, body: JSON.stringify({ type: 'play', index: 1, mode: '1' }) });
+  const response = await fetch(base() + `/api/session/${session}/event?preview=${share.id}`, { method: 'POST', headers: { 'x-beeps-token': info.token, cookie: `beeps_preview_${share.id}=${secret(share)}` }, body: JSON.stringify({ type: 'play', index: 1, mode: '1' }) });
   expect(response.status).toBe(200);
   const scoped = await get(`/api/session/${session}/event`, share, { method: 'POST', headers: { 'x-beeps-token': info.token }, body: JSON.stringify({ type: 'play', index: 1, mode: '1' }) });
   expect(scoped.status).toBe(403);

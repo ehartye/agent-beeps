@@ -24,7 +24,7 @@ import { appendEvent, CLIENT_EVENTS, foldSession, loadModel, readEvents, readRev
 
 export const DEFAULT_PORT = 47301;
 /** Bump when routes change: a running server of another API level is replaced, not reused. */
-export const SERVER_API = 7;
+export const SERVER_API = 8;
 const MAX_BODY = 64 * 1024;
 const MIME: Record<string, string> = { '.wav': 'audio/wav', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
@@ -242,11 +242,11 @@ export class AuditionServer {
     // then carry no credential, including native audio range requests.
     if (path === '/api/preview/exchange' && req.method === 'POST') {
       if (!sameOrigin) return denied();
-      const body = await readBody(req) as { token?: string; kind?: string; target?: string };
+      const body = await readBody(req) as { token?: string; kind?: string; target?: string; preview?: string };
       const secret = typeof body?.token === 'string' ? body.token : '';
       const grant = this.previews.get(secret);
-      if (!grant || grant.kind !== body.kind || grant.target !== body.target) return denied();
-      res.setHeader('Set-Cookie', `beeps_preview=${secret}; Path=/api/${grant.kind}/${grant.target}; HttpOnly; SameSite=Strict; Max-Age=${Math.max(0, Math.floor((grant.expiresAt - Date.now()) / 1000))}`);
+      if (!grant || grant.kind !== body.kind || grant.target !== body.target || grant.id !== body.preview) return denied();
+      res.setHeader('Set-Cookie', `beeps_preview_${grant.id}=${secret}; Path=/api/${grant.kind}/${grant.target}; HttpOnly; SameSite=Strict; Max-Age=${Math.max(0, Math.floor((grant.expiresAt - Date.now()) / 1000))}`);
       return json(res, 200, { feedback: grant.feedback, expiresAt: grant.expiresAt });
     }
     if (path === '/api/previews' && req.method === 'POST') {
@@ -261,7 +261,7 @@ export class AuditionServer {
       else readDelivery(p, body.target);
       const { token: secret, grant } = this.previews.issue({ kind: body.kind, target: body.target, root, feedback: body.feedback ?? false }, body.seconds);
       const page = { session: 's', album: 'a', delivery: 'd' }[grant.kind];
-      const suffix = `/${page}/${grant.target}#preview=${secret}`;
+      const suffix = `/${page}/${grant.target}?preview=${grant.id}#preview=${secret}`;
       return json(res, 201, { id: grant.id, expiresAt: new Date(grant.expiresAt).toISOString(), access: grant.feedback ? 'feedback' : 'read-only', ...previewLinks(this.info, suffix) });
     }
     const revoke = /^\/api\/previews\/([a-f0-9]{32})$/.exec(path);
@@ -269,17 +269,23 @@ export class AuditionServer {
       if (!authed || !sameOrigin) return denied();
       return json(res, 200, { revoked: this.previews.revoke(revoke[1]) });
     }
-    const cookie = /(?:^|;\s*)beeps_preview=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie ?? '')?.[1];
-    const scopedToken = req.headers['x-beeps-preview'] ?? (authed ? undefined : cookie);
+    // The public grant id selects a cookie; it is not a credential. Each link has its own
+    // cookie even when project/resource ids or feedback permissions overlap in one browser.
+    const preview = url.searchParams.get('preview');
+    const cookie = preview && /^[a-f0-9]{32}$/.test(preview)
+      ? new RegExp(`(?:^|;\\s*)beeps_preview_${preview}=([a-f0-9]{64})(?:;|$)`).exec(req.headers.cookie ?? '')?.[1] : undefined;
+    const scopedToken = req.headers['x-beeps-preview'] ?? (authed || preview === null ? undefined : cookie ?? '');
     const grant = typeof scopedToken === 'string' ? this.previews.get(scopedToken) : undefined;
     // An explicit scoped credential must never fall back to owner authority.
     const scoped = scopedToken !== undefined;
     if (scoped && path.startsWith('/api/')) {
-      if (!grant || !sameOrigin) return denied();
+      if (!grant || !sameOrigin || (preview !== null && grant.id !== preview)) return denied();
       const prefix = `/api/${grant.kind}/${grant.target}`;
       if (path !== prefix && !path.startsWith(prefix + '/')) return denied();
       if (req.method !== 'GET' && !(req.method === 'POST' && path === prefix + '/event' && grant.feedback)) return denied();
       if (grant.kind === 'session' && path === prefix + '/reveal') return denied();
+      // Full delivery results are an owner export containing project and device diagnostics.
+      if (grant.kind === 'delivery' && path === prefix + '/results') return denied();
       if (path === prefix + '/access' && req.method === 'GET') return json(res, 200, { feedback: grant.feedback });
     }
     const allowedEvent = (body: unknown) => !scoped || (grant && this.previews.active(grant) && grant.feedback && previewEvents[grant.kind].has(String((body as { type?: unknown })?.type)));
@@ -480,7 +486,7 @@ export class AuditionServer {
         const err = e instanceof BeepsError ? e : new BeepsError('E_SERVER', (e as Error).message);
         const status = (e as { status?: number }).status ?? (err.code === 'E_NOT_FOUND' ? 404 : (err.code === 'E_SCHEMA' || err.code === 'E_USAGE') ? 400 : err.code === 'E_CONFLICT' ? 409 : 500);
         if (!res.headersSent) {
-          const scoped = req.headers['x-beeps-preview'] || req.headers.cookie?.includes('beeps_preview=');
+          const scoped = req.headers['x-beeps-preview'] || req.headers.cookie?.includes('beeps_preview_');
           json(res, status, { error: scoped ? { code: err.code, message: 'Preview content unavailable; ask the agent to check it.' } : err.toJson() });
         }
       });

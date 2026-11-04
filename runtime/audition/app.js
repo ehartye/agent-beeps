@@ -1,4 +1,4 @@
-import { token, api, access, canSend } from './access.js';
+import { api, access, canSend, mediaUrl } from './access.js';
 // The listening booth. Plays candidates live through the same engine the CLI measured, at their
 // measured loudness trims, and records only explicit judgements as verdicts.
 import { buildPatch } from '../engine/patch.js';
@@ -96,7 +96,7 @@ async function play(index, { count = repeat, pad = null } = {}) {
     if (ctx.state !== 'running') { await ctx.resume(); if (!current()) return null; }
     const prepared = new Map();
     const baseURL = new URL(`/api/session/${id}/assets/`, location.href);
-    const fetcher = (url, init) => fetch(url, { ...init, headers: { 'x-beeps-token': token } });
+    const fetcher = (url, init) => api(url, init);
     for (const source of [c, ...kit]) {
       const samples = await loadCueAssets(ctx, source, { baseURL, fetcher, signal: controller.signal });
       if (!current()) return null;
@@ -212,7 +212,7 @@ function padFor(c, { marksOn = false, label = String(c.index) } = {}) {
   const description = c.patch.meta?.description?.trim();
   const pad = h('article', { class: 'pad', 'data-index': c.index });
   const face = h('button', { class: 'face', 'aria-label': `Play ${label}: ${title}`, onclick: () => play(c.index, { pad }) },
-    h('img', { src: `${c.look}?t=${encodeURIComponent(token)}`, alt: '' }), h('canvas'), h('span', { class: 'key' }, label));
+    h('img', { src: mediaUrl(c.look), alt: '' }), h('canvas'), h('span', { class: 'key' }, label));
   pad.append(h('h2', { class: 'sound-name' }, title), face);
   if (description) pad.append(h('p', { class: 'sound-purpose' }, description));
   pad.append(h('div', { class: 'words' }, c.words.map(w => h('span', { class: 'word' }, w))));

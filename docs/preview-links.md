@@ -31,6 +31,9 @@ a running older server, arrange its restart with its owner after active work end
 Feedback links permit only session plays/lineup/duels, album plays/marks/tags/notes/
 moments, or delivery device reports/ratings/notes. They never permit shipping,
 refinement, abandonment, format reveal, project enumeration or link management.
+The full delivery `/results` export stays owner-only because it contains project
+and device diagnostics; previews can still show the comparison key after the owner
+reveals it.
 The owner handles those steps through their existing local controls. Session
 preview content includes its configured kit/bed context; links follow updates to
 that one resource until they expire. Do not interpret a shared preview as a frozen
@@ -42,6 +45,11 @@ Each link contains a random 256-bit capability in its URL fragment. The page
 removes it from the current history entry, exchanges it in a POST body for an
 HttpOnly, SameSite=Strict cookie scoped to that resource's API path, and sends no
 preview credential in media URLs. Responses use no-store and no-referrer.
+Each link has a distinct cookie name. A public `?preview=<share-id>` selector
+stays in the page and media URLs to select that exact grant across reloads and
+tabs, including duplicate resource IDs in different projects or links with different
+feedback permissions. The selector alone grants no access; the matching cookie
+is required. Keep it when copying a link.
 Cookie access is rechecked for each request; expiration and revocation therefore
 apply to already opened pages as well as unopened links. Permission is checked
 again after reading mutation bodies. Feedback permission survives page reloads.
