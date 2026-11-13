@@ -122,6 +122,9 @@ settings and the checks: `skills/beeps-ship/references/web-delivery.md`; build, 
 Guitar, metal or rock (distorted guitars, a kit, riffs, a score with one song per level)? `references/guitar-and-metal.md` has the
 instrument recipes, riff notation and the pitfalls; the reasoning is in `craft/GUIDE.md` section 11.
 
+Ambience or music built from recordings (a place made of events, a kit made of doors and engines)? `references/recorded-material.md` has what
+worked, what a listener rejected and how it was checked.
+
 ## Never
 
 - Put a loudness literal anywhere: `gainDb` is balance between tracks only.
