@@ -1,0 +1,181 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "magic-cast",
+  "family": "spell",
+  "description": "A spell leaving the hand: a falling rush of air, a glass ring, a soft low body and sparks",
+  "recipe": "Band-swept noise that falls, a struck glass-like modal ring, a soft low noise body and thinning bright grains, through a hall.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "magic-cast",
+    "family": "spell",
+    "archetype": "magic-cast",
+    "tags": [],
+    "duration": 0.8,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.075,
+          "decay": 0.425,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 3200,
+          "q": 1.2,
+          "env": {
+            "to": 500,
+            "time": 0.5
+          }
+        },
+        "drive": 0.2,
+        "gainDb": -4
+      },
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 880,
+          "modes": [
+            [
+              1,
+              30,
+              0
+            ],
+            [
+              2.32,
+              26,
+              -3
+            ],
+            [
+              4.25,
+              20,
+              -8
+            ]
+          ],
+          "exciter": "impulse"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.5,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -10
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.2,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 500,
+          "q": 0.8,
+          "env": {
+            "to": 160,
+            "time": 0.15
+          }
+        },
+        "drive": 0.4,
+        "gainDb": -8
+      },
+      {
+        "source": {
+          "type": "grains",
+          "rate": 90,
+          "grainDecay": 0.006,
+          "center": 5200,
+          "q": 5,
+          "rateEnd": 0.2
+        },
+        "start": 0.012,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.5,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -16
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink",
+          "stereo": 0.6
+        },
+        "start": 0.02,
+        "amp": {
+          "attack": 0.006,
+          "decay": 0.7,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "lowpass",
+          "cutoff": 2400,
+          "resonanceDb": 0,
+          "env": {
+            "to": 400,
+            "time": 0.56
+          }
+        },
+        "highpass": 60,
+        "gainDb": -15
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "hall",
+        "sendDb": -11
+      }
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/filter/cutoff": {
+      "min": 2000,
+      "max": 5000,
+      "scale": "log"
+    },
+    "/layers/0/filter/env/to": {
+      "min": 300,
+      "max": 900,
+      "scale": "log"
+    },
+    "/layers/1/source/pitch": {
+      "min": 520,
+      "max": 1400,
+      "scale": "log"
+    },
+    "/layers/1/amp/decay": {
+      "min": 0.3,
+      "max": 0.8,
+      "scale": "log"
+    },
+    "/layers/3/source/center": {
+      "min": 3500,
+      "max": 7000,
+      "scale": "log"
+    },
+    "/fx/reverb/preset": {
+      "choices": [
+        "room",
+        "hall",
+        "space"
+      ]
+    }
+  }
+}

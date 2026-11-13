@@ -26,6 +26,8 @@ describe('prompt steering', () => {
   it('reads everyday words as directions', async () => {
     const { promptDirections } = await import('../src/directions.ts');
     expect(promptDirections('coin pickup for a cozy platformer: warm, soft, not harsh').sort()).toEqual(['darker', 'less-harsh', 'softer']);
+    expect(promptDirections('a heavy rifle shot, gritty, less beepy').sort()).toEqual(['grittier', 'heavier', 'more-character', 'noisier']);
+    expect(promptDirections('a thick blow, not gritty')).toEqual(['heavier']);
     expect(promptDirections('bright sparkly short blip').sort()).toEqual(['brighter', 'shorter']);
     expect(promptDirections('a coin')).toEqual([]);
     expect(promptDirections('bright but dark')).toEqual([]); // contradictions cancel

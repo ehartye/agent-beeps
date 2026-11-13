@@ -11,6 +11,7 @@ Everything here is read from the shipped files, so it is current. `beeps archety
 | Archetype | Family | Recipe | Ranges |
 | --- | --- | --- | --- |
 | `alarm` | alarm | One square oscillator that alternates between two fixed pitches at a fixed rate; only the pitch pair, rate and filter vary, never the pattern. | 9 |
+| `blade` | blade | White noise swept upward through a band, with a quiet inharmonic ring as the cut ends, through a small room. | 5 |
 | `blip` | blip | A single square or triangle oscillator of about 30 ms at speaking-voice pitch with a near-instant envelope; pitch, wave and filter vary. | 5 |
 | `coin` | coin | One square oscillator that holds a note, then steps to a second in-scale pitch (pitchEnv step) with a short decay and a lowpass. | 6 |
 | `coin-arp` | coin | A triangle arpeggio of three in-scale notes stepped by pitchEnv, over an additive shimmer layer an octave and more above. | 7 |
@@ -23,13 +24,19 @@ Everything here is read from the shipped files, so it is current. `beeps archety
 | `creature-hiss` | creature | A voice source with breath noise only, through narrow high formants. | 7 |
 | `creature-huff` | creature | A voice source that is mostly breath noise through loose formants, with a faint voiced core. | 8 |
 | `creature-low` | creature | A voice source with a soft glottal slope and slow vibrato through deep rounded formants, about a second long. | 10 |
+| `creature-roar` | creature | A voice source pitched low with wide formants, heavy jitter, breath and a fast tremolo, falling in pitch and driven, under a second voice that is mostly breath, through a room. | 8 |
 | `creature-yip` | creature | A voice source whose f0 snaps up and settles, through bright formants with a little jitter. | 9 |
 | `explosion` | explosion | White noise blast closing into a brown-noise rumble, thinning debris grains and a low sine thump, through a room reverb. | 8 |
+| `explosion-heavy` | explosion | A broadband crack, driven pink noise in a band that falls from about 900 Hz to under 100, a sine thump from about 80 Hz, debris grains that thin out and a long low-passed noise tail, through a hall. | 8 |
 | `fanfare` | fanfare | Four staggered sawtooth notes (root, third, fifth, octave) through a lowpass that opens on each note, the last one held longest, over a small room reverb. | 9 |
+| `gunshot` | gunshot | A few milliseconds of high-passed white noise, driven pink noise in a band that falls from about 1 kHz, a short sine thump under it, a faint struck-metal ring and a dark noise tail, through a room. | 8 |
 | `hit` | hit | A short white-noise burst over a low modal body with a faint metal layer for the edge. | 7 |
+| `impact-flesh` | hit | Driven brown noise in a low band that falls, a sine thump under it and a brief mid-band noise slap a few milliseconds later, through a small room. | 5 |
+| `impact-metal` | hit | A driven noise knock and a low sine thump, a modal resonator with inharmonic ratios struck with them, and sparse bright grains, through a room. | 6 |
 | `jump` | jump | One square oscillator with a rising pitchEnv glide and a short decay. | 6 |
 | `land` | land | A sine with a falling pitch drop (the thud) plus a brown-noise tick, lowpassed. | 6 |
 | `laser` | laser | A square or saw oscillator with a fast exponential pitch drop through a closing lowpass. | 8 |
+| `magic-cast` | spell | Band-swept noise that falls, a struck glass-like modal ring, a soft low noise body and thinning bright grains, through a hall. | 6 |
 | `no` | no | Two triangle oscillators a falling minor third apart, soft attack, no buzz. | 6 |
 | `notification` | notification | Two FM bell notes a fourth or fifth apart with a low modulation index, the second ringing longer, through a small room reverb and held a few dB under a confirm. | 7 |
 | `pickup` | pickup | Two additive bell-like chimes, the second a fourth, fifth or octave above the first. | 6 |
@@ -196,7 +203,9 @@ Every rule cites its sources in `craft/rules.json` and `craft/music-rules.json`.
 | `attack-floor` | error | auto | patch | Every layer's declared attack is at least 4 ms, and the measured attack (10 to 90 % of the envelope peak) is at least 2 ms, unless meta.intent is 'click'. Quiet transient layers at gainDb -9 or below may be faster. |
 | `nyquist` | error | auto | patch | No declared frequency (source pitch and pitchEnv targets times partial, mode, operator or metal ratios) is at or above 0.45 x sample rate (21.6 kHz at 48 kHz). Filter cutoffs are exempt. |
 | `tick-length` | error | auto | patch | Ticks (families ui-click and blip) have an energy length (to -40 dB below peak) of 60 ms or less. |
-| `tail-ceiling` | warn | auto | patch | The tail (to -60 dB below peak) stays within the family ceiling: ui-* 0.25 s, blip 0.15 s, coin/pickup/confirm/no 0.8 s, jump/land/hit/laser 0.8 s, powerup/powerdown 1.2 s, whoosh 1.5 s, alarm 1.5 s, explosion 3.5 s, anything else 2.0 s. |
+| `tail-ceiling` | warn | auto | patch | The tail (to -60 dB below peak) stays within the family ceiling: ui-* 0.25 s, blip 0.15 s, coin/pickup/confirm/no 0.8 s, jump/land/hit/laser 0.8 s, powerup/powerdown 1.2 s, whoosh 1.5 s, alarm 1.5 s, gunshot 1.2 s, blade 0.8 s, explosion 3.5 s, anything else 2.0 s. |
+| `tonal-impact` | warn | auto | patch | A hit, gunshot or explosion whose spectral flatness is under 0.002 with a pitch strength of 0.7 or more is reported unless the patch is tagged 'tonal'. |
+| `thin-blast` | warn | auto | patch | A gunshot or explosion with less than -15 dB of its energy between 60 and 250 Hz is reported unless the patch is tagged 'thin'. |
 | `sharpness-warn` | warn | auto | patch | Sharpness above 2.2 acum is reported unless the patch is tagged 'bright'. |
 | `roughness-warn` | warn | auto | patch | Roughness above 0.6 asper is reported unless the patch is tagged 'gritty'. |
 | `variation-on-repeating` | error | auto | patch | A patch tagged 'repeating' declares variation: at least 3 variants, or a pitch spread of at least 20 cents. |

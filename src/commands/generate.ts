@@ -119,7 +119,7 @@ export function registerGenerateCommands(program: Command, io: Io) {
     });
 
   program.command('mutate <ref>')
-    .description('breed variations of a patch toward directions (brighter, darker, punchier, softer, shorter, longer, less-harsh, more-character)')
+    .description('breed variations of a patch toward directions (brighter, darker, punchier, softer, shorter, longer, less-harsh, more-character, heavier, noisier, grittier)')
     .option('--toward <list>', 'comma-separated directions; omit for novelty', '')
     .option('--like <ref>', 'cross toward another patch')
     .option('--count <n>', 'candidates to keep', int, 4)

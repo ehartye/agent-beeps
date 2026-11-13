@@ -10,7 +10,7 @@ import { chromiumAvailable, openRenderHost, type RenderHost } from '../src/rende
 import { renderAndMeasure, type Rendered } from '../src/render/pipeline.ts';
 import { noteToHz } from '../runtime/engine/notes.js';
 
-const NAMES = ['alarm', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-yip', 'explosion', 'fanfare', 'hit', 'jump', 'land', 'laser', 'no', 'notification', 'pickup',
+const NAMES = ['alarm', 'blade', 'blip', 'coin', 'coin-arp', 'coin-bell', 'confirm', 'creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-roar', 'creature-yip', 'explosion', 'explosion-heavy', 'fanfare', 'gunshot', 'hit', 'impact-flesh', 'impact-metal', 'jump', 'land', 'laser', 'magic-cast', 'no', 'notification', 'pickup',
   'powerdown', 'powerup', 'riser', 'stinger', 'transition', 'ui-click', 'ui-hover', 'whoosh'];
 
 const all = loadArchetypes();
@@ -236,6 +236,18 @@ describe.skipIf(!(await chromiumAvailable()))('archetypes rendered', () => {
     for (const d of dir('jump')) expect(d).toBeGreaterThan(0);
     for (const d of dir('powerup')) expect(d).toBeGreaterThan(0);
     expect(dir('no').length + dir('jump').length + dir('powerup').length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('the layered archetypes are noise events, not tones, and the heavy ones have a bottom', () => {
+    for (const name of ['gunshot', 'impact-flesh', 'impact-metal', 'explosion-heavy', 'creature-roar']) for (const r of byName.get(name)!) {
+      const steadyTone = r.features.flatness < 0.002 && r.features.pitchStrength >= 0.7;
+      expect(steadyTone, `${r.patch.name} flatness ${r.features.flatness} pitch strength ${r.features.pitchStrength}`).toBe(false);
+    }
+    for (const name of ['gunshot', 'explosion-heavy']) for (const r of byName.get(name)!) {
+      const low = 10 * Math.log10(r.features.bands.slice(0, 2).reduce((sum, db) => sum + 10 ** (db / 10), 0));
+      expect(low, r.patch.name).toBeGreaterThan(-15);
+    }
+    for (const name of ['blade', 'magic-cast']) for (const r of byName.get(name)!) expect(r.features.flatness, r.patch.name).toBeGreaterThan(0.05);
   });
 
   it('noise archetypes are noisy', () => {

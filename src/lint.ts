@@ -261,6 +261,16 @@ export function lintPatch(patch: Patch, features: Features, project: Project, ru
     if (features.tailSec > max) c.add('tail-ceiling', `tail ${features.tailSec} s exceeds the ${max} s ceiling for family "${patch.family}" (${features.energyLengthSec} s within 40 dB of peak is what is heard); shorten the release or the reverb/delay, or export with --trim-tail -60 to drop the near-silent end`);
   }
 
+  // A blow, a shot or a blast is a noise event. One that measures as a steady pitched tone is heard as a beep.
+  if (c.param<string[]>('tonal-impact', 'families').includes(patch.family) && !patch.tags.includes(c.param<string>('tonal-impact', 'exemptTag'))
+    && features.flatness < c.num('tonal-impact') && features.pitchStrength >= c.param<number>('tonal-impact', 'minPitchStrength')) {
+    c.add('tonal-impact', `${patch.family} measures as a pitched tone (flatness ${features.flatness}, pitch strength ${features.pitchStrength}); carry it with filtered noise and keep any tone short and under it, or tag the patch "tonal" if that is the point`, '/layers');
+  }
+  if (c.param<string[]>('thin-blast', 'families').includes(patch.family) && !patch.tags.includes(c.param<string>('thin-blast', 'exemptTag'))) {
+    const low = 10 * Math.log10(features.bands.slice(0, 2).reduce((sum, db) => sum + 10 ** (db / 10), 0) || 1e-12), least = c.num('thin-blast');
+    if (low < least) c.add('thin-blast', `${patch.family} has ${fmt(low, 1)} dB of its energy from 60 to 250 Hz, under ${least} dB; add a low body or thump, or tag the patch "thin" if that is the point`, '/layers');
+  }
+
   const sharp = c.num('sharpness-warn');
   if (features.sharpness > sharp && !patch.tags.includes(c.param<string>('sharpness-warn', 'exemptTag'))) {
     c.add('sharpness-warn', `sharpness ${features.sharpness} acum is above ${sharp}; darken it, or tag the patch "bright" if that is the point`);

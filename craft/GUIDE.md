@@ -22,6 +22,14 @@ body or tail. Use a prepared `sample` layer for that finite, unpitched SFX mater
 [hybrid sources](../skills/beeps-compose/references/hybrid-sources.md) for the import/preparation,
 final-edit bundling order and privacy boundary. Samples are not song instruments or looping beds.
 
+A blow, a shot, a blast or a roar is a noise event, not a note. Build it in layers: a few milliseconds of
+high-passed noise for the crack, driven noise in a band that falls for the body, a short low tone under the
+body and never alone, a `modal` ring or `grains` for what the thing is made of, and a quiet dark noise tail
+into a room. The `gunshot`, `impact-flesh`, `impact-metal`, `blade`, `explosion-heavy`, `magic-cast` and
+`creature-roar` archetypes are built this way. `tonal-impact` warns when a hit, gunshot or explosion measures
+as a steady pitched tone (a beep), and `thin-blast` when a gunshot or explosion has little energy from 60 to
+250 Hz. The words heavy, noisy and gritty in a prompt steer toward `heavier`, `noisier` and `grittier`.
+
 Layer when one method cannot do both jobs. A `hit` is often a `noise` transient over a `modal` or
 `osc` body. Keep the transient short and quiet (see `attack-floor`).
 

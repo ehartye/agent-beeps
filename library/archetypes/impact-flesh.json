@@ -1,0 +1,145 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "impact-flesh",
+  "family": "hit",
+  "description": "A dull blow on a body: brown noise knock, a low thump and a short wet slap, with no ring",
+  "recipe": "Driven brown noise in a low band that falls, a sine thump under it and a brief mid-band noise slap a few milliseconds later, through a small room.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "impact-flesh",
+    "family": "hit",
+    "archetype": "impact-flesh",
+    "tags": [
+      "impact"
+    ],
+    "duration": 0.3,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "brown"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.09,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 420,
+          "q": 1,
+          "env": {
+            "to": 110,
+            "time": 0.068
+          }
+        },
+        "drive": 0.6,
+        "gainDb": 0
+      },
+      {
+        "source": {
+          "type": "osc",
+          "wave": "sine",
+          "pitch": 110
+        },
+        "pitchEnv": [
+          {
+            "at": 0.056,
+            "to": 50,
+            "curve": "exp"
+          }
+        ],
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.08,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "highpass": 32,
+        "drive": 0.25,
+        "gainDb": -9
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink"
+        },
+        "start": 0.008,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.04,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 1400,
+          "q": 1.2,
+          "env": {
+            "to": 600,
+            "time": 0.03
+          }
+        },
+        "drive": 0.4,
+        "gainDb": -8
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.006,
+          "sustain": 0,
+          "release": 0.01
+        },
+        "filter": {
+          "type": "highpass",
+          "cutoff": 2200,
+          "resonanceDb": 0
+        },
+        "gainDb": -14
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "small",
+        "sendDb": -20
+      }
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/filter/cutoff": {
+      "min": 280,
+      "max": 600,
+      "scale": "log"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.06,
+      "max": 0.14,
+      "scale": "log"
+    },
+    "/layers/1/source/pitch": {
+      "min": 80,
+      "max": 140,
+      "scale": "log"
+    },
+    "/layers/1/pitchEnv/0/to": {
+      "ratioOf": "/layers/1/source/pitch",
+      "min": 0.35,
+      "max": 0.6,
+      "scale": "lin"
+    },
+    "/layers/2/filter/cutoff": {
+      "min": 1000,
+      "max": 2000,
+      "scale": "log"
+    }
+  }
+}

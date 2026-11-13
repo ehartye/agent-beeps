@@ -1,0 +1,181 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "explosion-heavy",
+  "family": "explosion",
+  "description": "A heavy blast: a crack, a driven low body, a sub thump, falling debris and a long dark tail",
+  "recipe": "A broadband crack, driven pink noise in a band that falls from about 900 Hz to under 100, a sine thump from about 80 Hz, debris grains that thin out and a long low-passed noise tail, through a hall.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "explosion-heavy",
+    "family": "explosion",
+    "archetype": "explosion-heavy",
+    "tags": [
+      "impact"
+    ],
+    "duration": 1.4,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.014,
+          "sustain": 0,
+          "release": 0.01
+        },
+        "filter": {
+          "type": "highpass",
+          "cutoff": 1800,
+          "resonanceDb": 0
+        },
+        "gainDb": -9
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.5,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 900,
+          "q": 0.7,
+          "env": {
+            "to": 90,
+            "time": 0.375
+          }
+        },
+        "drive": 0.8,
+        "gainDb": 0
+      },
+      {
+        "source": {
+          "type": "osc",
+          "wave": "sine",
+          "pitch": 80
+        },
+        "pitchEnv": [
+          {
+            "at": 0.21,
+            "to": 32,
+            "curve": "exp"
+          }
+        ],
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.3,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "highpass": 32,
+        "drive": 0.25,
+        "gainDb": -5
+      },
+      {
+        "source": {
+          "type": "grains",
+          "rate": 180,
+          "grainDecay": 0.012,
+          "center": 1800,
+          "q": 1,
+          "rateEnd": 0.05
+        },
+        "start": 0.012,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.8,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -10
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink",
+          "stereo": 0.6
+        },
+        "start": 0.02,
+        "amp": {
+          "attack": 0.006,
+          "decay": 1.4,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "lowpass",
+          "cutoff": 1200,
+          "resonanceDb": 0,
+          "env": {
+            "to": 160,
+            "time": 1.12
+          }
+        },
+        "highpass": 60,
+        "gainDb": -9
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "hall",
+        "sendDb": -11
+      }
+    },
+    "meta": {
+      "priority": 2,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/1/filter/cutoff": {
+      "min": 600,
+      "max": 1400,
+      "scale": "log"
+    },
+    "/layers/1/filter/env/to": {
+      "min": 60,
+      "max": 140,
+      "scale": "log"
+    },
+    "/layers/1/amp/decay": {
+      "min": 0.35,
+      "max": 0.8,
+      "scale": "log"
+    },
+    "/layers/2/source/pitch": {
+      "min": 60,
+      "max": 100,
+      "scale": "log"
+    },
+    "/layers/2/pitchEnv/0/to": {
+      "ratioOf": "/layers/2/source/pitch",
+      "min": 0.35,
+      "max": 0.55,
+      "scale": "lin"
+    },
+    "/layers/3/source/rate": {
+      "min": 90,
+      "max": 320,
+      "scale": "log"
+    },
+    "/layers/4/amp/decay": {
+      "min": 0.9,
+      "max": 2.2,
+      "scale": "log"
+    },
+    "/fx/reverb/preset": {
+      "choices": [
+        "room",
+        "hall",
+        "cave"
+      ]
+    }
+  }
+}

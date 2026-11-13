@@ -69,14 +69,35 @@
     },
     {
       "id": "tail-ceiling",
-      "statement": "The tail (to -60 dB below peak) stays within the family ceiling: ui-* 0.25 s, blip 0.15 s, coin/pickup/confirm/no 0.8 s, jump/land/hit/laser 0.8 s, powerup/powerdown 1.2 s, whoosh 1.5 s, alarm 1.5 s, explosion 3.5 s, anything else 2.0 s.",
-      "value": { "ui-*": 0.25, "blip": 0.15, "coin": 0.8, "pickup": 0.8, "confirm": 0.8, "no": 0.8, "jump": 0.8, "land": 0.8, "hit": 0.8, "laser": 0.8, "powerup": 1.2, "powerdown": 1.2, "whoosh": 1.5, "alarm": 1.5, "explosion": 3.5, "default": 2.0 },
+      "statement": "The tail (to -60 dB below peak) stays within the family ceiling: ui-* 0.25 s, blip 0.15 s, coin/pickup/confirm/no 0.8 s, jump/land/hit/laser 0.8 s, powerup/powerdown 1.2 s, whoosh 1.5 s, alarm 1.5 s, gunshot 1.2 s, blade 0.8 s, explosion 3.5 s, anything else 2.0 s.",
+      "value": { "ui-*": 0.25, "blip": 0.15, "coin": 0.8, "pickup": 0.8, "confirm": 0.8, "no": 0.8, "jump": 0.8, "land": 0.8, "hit": 0.8, "laser": 0.8, "powerup": 1.2, "powerdown": 1.2, "whoosh": 1.5, "alarm": 1.5, "gunshot": 1.2, "blade": 0.8, "explosion": 3.5, "default": 2.0 },
       "unit": "s",
       "check": "auto", "severity": "warn", "appliesTo": "patch",
       "rationale": "Long tails from frequent sounds pile up into mud and use voices after the event is over. The table is this plugin's own, from how often each family fires. A tail measured against a fixed floor also depends on loudness, so this is a warning.",
       "sources": [
         { "title": "FMOD Core API: Managing resources (virtual voice system)", "url": "https://fmod.com/docs/2.03/api/managing-resources-in-the-core-api.html#virtual-voice-system" },
         { "title": "Karen Collins (2008), Game Sound: An Introduction to the History, Theory, and Practice of Video Game Music and Sound Design (MIT Press)", "url": "https://direct.mit.edu/books/monograph/2460/Game-SoundAn-Introduction-to-the-History-Theory" }
+      ]
+    },
+    {
+      "id": "tonal-impact",
+      "statement": "A hit, gunshot or explosion whose spectral flatness is under 0.002 with a pitch strength of 0.7 or more is reported unless the patch is tagged 'tonal'.",
+      "value": 0.002, "unit": "flatness", "params": { "families": ["hit", "gunshot", "explosion"], "minPitchStrength": 0.7, "exemptTag": "tonal" },
+      "check": "auto", "severity": "warn", "appliesTo": "patch",
+      "rationale": "Blows, shots and blasts are noise events shaped by an envelope and filters; Farnell builds each from noise bands with any tone kept short and beneath them. A single decaying oscillator measures as a pure tone and is heard as a beep or a drum. Both thresholds are this plugin's own, an indicator and not a verdict.",
+      "sources": [
+        { "title": "Andy Farnell, Designing Sound (MIT Press): practicals on guns and explosions", "url": "https://mitpress.mit.edu/9780262014410/designing-sound/" },
+        { "title": "Spectral flatness (Wiener entropy) as a tonality measure", "url": "https://en.wikipedia.org/wiki/Spectral_flatness" }
+      ]
+    },
+    {
+      "id": "thin-blast",
+      "statement": "A gunshot or explosion with less than -15 dB of its energy between 60 and 250 Hz is reported unless the patch is tagged 'thin'.",
+      "value": -15, "unit": "dB", "params": { "families": ["gunshot", "explosion"], "exemptTag": "thin" },
+      "check": "auto", "severity": "warn", "appliesTo": "patch",
+      "rationale": "The weight of a shot or a blast is its low body: Farnell's explosion puts its fireball through 70 Hz filters under the bright blast. Without energy there the sound reads as small or distant. The threshold is this plugin's own.",
+      "sources": [
+        { "title": "Andy Farnell, Designing Sound (MIT Press): practicals on guns and explosions", "url": "https://mitpress.mit.edu/9780262014410/designing-sound/" }
       ]
     },
     {
