@@ -1,5 +1,16 @@
 # agent-beeps
 
+## What changed in 0.39.0
+
+A song track may now play a fixed sample instrument: a patch whose layers include a verified
+recorded sample, sequenced at its recorded speed and pitch. Such a track must set `fixed: true`
+and may not use a root, a nonzero transpose, pitch expression or velocity transpose mappings;
+[the song format](skills/beeps-music/references/song-format.md) has the rules. Sample
+dependencies are checked before a cached render is reused, and `song render`, `stems`, `export`,
+`album open` and `build` read the project's sample store. Song pipeline 8: every song's build
+hash changes. A song with no sample instrument renders the same bits, so `beeps build --adopt`
+re-keys a lock without rendering.
+
 ## What changed in 0.38.0
 
 The exported [game player](skills/beeps-ship/references/game-player.md#music-transport-and-output-measurement-player-5)
@@ -445,8 +456,9 @@ import receipts or private local paths. [Hybrid workflow and limits](skills/beep
 
 The limit is eight layers per patch; a prepared source is 1–480000 frames at 48 kHz, mono/stereo
 (up to ten seconds). Imports are at most 64 MiB and normalized snapshots at most 120 seconds.
-Samples are finite, unpitched one-shots: sample pitch envelopes/pitch LFOs, loops, stretching and
-song sample instruments are unsupported. Gain/cutoff LFOs remain available. Attenuation and an output
+Samples are finite, unpitched one-shots: sample pitch envelopes/pitch LFOs, loops and stretching
+are unsupported. Sample-containing song tracks require `fixed: true` without root, nonzero transpose, pitch expression
+or velocity transpose mappings. Gain/cutoff LFOs remain available. Attenuation and an output
 true-peak ceiling cannot restore an already clipped recording's transient.
 
 Engine 4 adds verified dependency loading to live cues: resume the context in a user gesture, await

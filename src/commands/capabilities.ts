@@ -60,7 +60,7 @@ export function registerCapabilities(program: Command, io: Io) {
           maxNormalizedSeconds: 120,
           maxOriginalBytes: 64 * 1024 * 1024,
           notes: [
-            'Finite, unpitched SFX one-shots: sample pitch envelopes, pitch LFOs, loops, stretching and song sample instruments are unsupported; gain and cutoff LFOs are supported.',
+            'Finite, unpitched one-shots: sample pitch envelopes, pitch LFOs, loops and stretching are unsupported; gain and cutoff LFOs are supported. Song sample instruments require fixed:true without root, nonzero transpose, pitch expression or velocity transpose mappings.',
             'Import retains exact originals and local provenance; prepare crops, linearly fades and applies gain to the retained canonical 48 kHz snapshot, with an integer-frame replay recipe.',
             'A recording longer than ten seconds: sample overview <normalizedId|file> [--start --end] images it and lists natural segments of at most ten seconds (peak, loudness, events, flags, a ready prepare line); it proposes, the owner chooses. --no-image skips the browser.',
             'Prepare a named sample patch, edit/add procedural layers, save, render/lint/look, then sample bundle the final edited patch.',
@@ -89,7 +89,7 @@ export function registerCapabilities(program: Command, io: Io) {
           chordQualities: Object.keys(QUALITIES).filter(Boolean),
           patternKinds: ['notes', 'chords', 'arp', 'bass', 'steps'],
           arpShapes: ['up', 'down', 'updown', 'random', 'converge'],
-          notes: ['Songs play procedural patches as instruments; sample instruments are unsupported (beeps instruments lists the bundled ones, their roots and layer offsets).', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
+          notes: ['Songs play procedural patches and fixed, unpitched finite sample patches as instruments (beeps instruments lists the bundled ones, their roots and layer offsets). Sample-containing tracks require fixed:true; root, nonzero transpose, pitch expression and velocity transpose mappings are rejected.', 'Times in songs are beats (quarter notes); pattern lengths are bars.', 'The project scale does not apply to songs: the notes are the composition.', 'Songs are trimmed to project.musicLoudness (integrated LUFS); gainDb balances tracks.', 'Full guide: the beeps-music skill and its references/song-format.md.'],
         },
         ...(opts.schema ? { patchSchema: patchJsonSchema(), songSchema: songJsonSchema() } : {}),
       });

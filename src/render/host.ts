@@ -61,7 +61,7 @@ export interface RenderHost {
   looks(items: LookItem[], sheet?: boolean): Promise<Buffer[]>;
   /** Render a song in the page; its PCM stays there until pulled and freed. */
   /** `only`: play just these tracks' notes out of the full song, so every random draw matches the mix. */
-  renderSong(song: Song, instruments: Record<string, Patch>, opts?: { only?: string[] }): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
+  renderSong(song: Song, instruments: Record<string, Patch>, opts?: { only?: string[]; sampleWavs?: EncodedSampleWavs }): Promise<{ id: number; sampleRate: number; frames: number; sections: { name: string; start: number; end: number; bars: number }[] }>;
   pullSong(id: number, frames: number): Promise<Float32Array[]>;
   /** How two rendered songs (still in the page) differ in bits: samples that differ, the first (frame), the largest difference. */
   songDiff(a: number, b: number): Promise<{ differing: number; first: number; maxAbs: number; frames: number }>;

@@ -10,7 +10,7 @@ export function renderOptions<X extends object = {}>(p: OpenProject, extra?: X):
   return { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects, ...extra } as ReturnType<typeof renderOptions<X>>;
 }
 
-/** The options for renderSong and renderLayers: the project and its render cache (songs read no sample objects), plus any `extra`. */
-export function songRenderOptions<X extends object = {}>(p: OpenProject, extra?: X): { project: Project; rendersDir: string } & X {
-  return { project: p.project, rendersDir: p.paths.renders, ...extra } as ReturnType<typeof songRenderOptions<X>>;
+/** The options for renderSong and renderLayers: the project, its render cache and its sample object store (a song may sequence fixed sample instruments), plus any `extra`. */
+export function songRenderOptions<X extends object = {}>(p: OpenProject, extra?: X): { project: Project; rendersDir: string; sampleObjectsDir: string } & X {
+  return { project: p.project, rendersDir: p.paths.renders, sampleObjectsDir: samplePaths(p).objects, ...extra } as ReturnType<typeof songRenderOptions<X>>;
 }

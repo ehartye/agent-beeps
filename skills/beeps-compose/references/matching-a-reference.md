@@ -57,7 +57,7 @@ pushed 60-125 Hz up 8 dB).
 ## Scheduling repeated procedural events
 
 A patch has at most 8 layers and no repeat scheduler. A prepared sample can contain an already
-recorded burst of up to ten seconds, but sample loops/stretching and song sample instruments are
+recorded burst of up to ten seconds, but sample loops/stretching are
 unsupported. To schedule repeated **procedural** events, make the single event a patch (`meta.intent: "click"` for a transient, tags `bright` and
 `gritty` for a gunshot, `fx.dcBlock: true` for a heavy low end), then play it from a `beeps/song@1`:
 

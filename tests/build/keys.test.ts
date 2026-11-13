@@ -42,12 +42,12 @@ describe('input hash', () => {
       expect(plan.parts.export).toBe(sha256(canonicalJson(original)).slice(0, 12));
     }
     // Full versioned identities, independent of installed browser metadata. They move with
-    // engine 4's hybrid cue capability; the historical export components above do not.
-    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '4', pipeline: 2, songPipeline: 7, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
+    // engine 4's hybrid cue capability and song pipeline 8; historical export components do not.
+    expect(hashes(fx, { target: 'wav-master', toolchain: { engine: '4', pipeline: 2, songPipeline: 8, exportPipeline: 1, chromium: 'historical@fixture', playwright: 'fixture', sampleRate: 48000 } })).toEqual({
       blip: 'sha256:ca357863619a84fd618e66adaa66c98e34e41f5c892188650655a85c2d3d6c7a',
       coin: 'sha256:7bea394de13eb6f50f30cc1764bad5e4e7fd2d1c4878c14dbc47eaf3d65b9c3e',
-      plain: 'sha256:5df79621303d893671e5ddcb952234372c18a3b6d23a0baf7e023de74a09b561',
-      theme: 'sha256:9e8846ab5f27f103f3fda33703acafff520d3f1d1f1cc781e2f4ecff8c69df65',
+      plain: 'sha256:3af806f8cd712893d00fb1104b77f66f31fadb39be18d2ed0c3e46d6f1bec69d',
+      theme: 'sha256:3447529163cb22c9020c8704655665b92d62f154a62278140ba8155fe05f45b9',
     });
   });
 

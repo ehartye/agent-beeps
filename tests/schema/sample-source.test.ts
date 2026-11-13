@@ -33,12 +33,12 @@ describe('unpitched sample source', () => {
     if (!r.ok) return;
     const s = song();
     const ctx = new FakeContext();
-    expect(() => buildSong(asCtx(ctx), s, { pad: r.patch, hat: r.patch })).toThrow(/sample.*instrument.*not supported/i);
+    expect(() => buildSong(asCtx(ctx), s, { pad: r.patch, hat: r.patch })).toThrow(/sample.*fixed/i);
     expect(ctx.created).toEqual([]);
   });
-  it('refuses sample instruments during Node instrument resolution', () => {
+  it('accepts fixed unpitched sample instruments during Node instrument resolution', () => {
     const p = initProject(scratch);
-    const s = song({ instruments: { recording: input() }, tracks: { pad: { instrument: 'recording' }, hat: { instrument: 'hat' } } });
-    expect(() => resolveInstruments(p, s)).toThrow(/sample.*instrument.*not supported/i);
+    const s = song({ instruments: { recording: input() }, tracks: { pad: { instrument: 'recording', fixed: true }, hat: { instrument: 'hat' } } });
+    expect(resolveInstruments(p, s).pad.layers[0].source).toEqual({ type: 'sample', asset });
   });
 });

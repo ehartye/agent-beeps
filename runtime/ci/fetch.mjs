@@ -111,7 +111,7 @@ function readSampleWav(bytes, { maxFrames = MAX_SAMPLE_FRAMES } = {}) {
 const ID = /^sha256:[0-9a-f]{64}$/;
 const FILE = /^[A-Za-z0-9][A-Za-z0-9_.-]*\.wav$/;
 const object$1 = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
-/** Distinct dependency IDs in deterministic order. @param {Patch} patch */
+/** Distinct dependency IDs in deterministic order. @param {Pick<Patch, 'layers'>} patch */
 function sampleIds(patch) {
 	if (!Array.isArray(patch?.layers)) throw new TypeError("sample assets require a patch with layers");
 	const ids = /* @__PURE__ */ new Set();
@@ -130,7 +130,7 @@ function exactClosure(required, supplied) {
 	if (missing.length || extra.length) throw new TypeError(`sample dependency closure mismatch: missing [${missing.join(", ")}], extra [${extra.join(", ")}]`);
 }
 /** Validate the manifest and exact patch dependency closure, without graph or network effects.
-* @param {Patch} patch @param {SampleAssetManifest} [assets]
+* @param {Pick<Patch, 'layers'>} patch @param {SampleAssetManifest} [assets]
 * @returns {SampleAssetManifest}
 */
 function validateSampleManifest(patch, assets) {
