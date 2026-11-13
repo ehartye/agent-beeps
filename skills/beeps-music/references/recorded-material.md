@@ -18,7 +18,7 @@ a [fixed sample instrument](song-format.md).
 - **Start with an event, and leave deliberate gaps.** An early first cue tells the listener where they are; pauses between
   place-specific events do more for a sense of space than a filled background.
 - **Check the fiction against the material.** A treatment can be technically clean and still say the wrong thing: a liquid
-  treatment on a place that is dry, a tropical chorus in a dead forest. Write down what each place is and is not before choosing
+  treatment on a place that is dry, a tropical chorus where nothing is meant to be alive. Write down what each place is and is not before choosing
   recordings.
 - **Say what is invented.** A sound designed for a creature or machine that does not exist is contact design from its described
   behaviour, not a recording of anything; record that beside the cue.
