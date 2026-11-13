@@ -1,0 +1,127 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "blade",
+  "family": "blade",
+  "description": "A blade cutting air: band-swept noise that rises, then a faint thin ring of steel",
+  "recipe": "White noise swept upward through a band, with a quiet inharmonic ring as the cut ends, through a small room.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "blade",
+    "family": "blade",
+    "archetype": "blade",
+    "tags": [],
+    "duration": 0.3,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.056,
+          "decay": 0.104,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 900,
+          "q": 1.6,
+          "env": {
+            "to": 4200,
+            "time": 0.16
+          }
+        },
+        "drive": 0.2,
+        "gainDb": -3
+      },
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 2400,
+          "modes": [
+            [
+              1,
+              18,
+              0
+            ],
+            [
+              2.76,
+              16,
+              -4
+            ],
+            [
+              5.4,
+              12,
+              -8
+            ]
+          ],
+          "exciter": "impulse"
+        },
+        "start": 0.1,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.22,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -20
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.005,
+          "sustain": 0,
+          "release": 0.01
+        },
+        "filter": {
+          "type": "highpass",
+          "cutoff": 4000,
+          "resonanceDb": 0
+        },
+        "gainDb": -14
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "small",
+        "sendDb": -20
+      }
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/filter/cutoff": {
+      "min": 600,
+      "max": 1400,
+      "scale": "log"
+    },
+    "/layers/0/filter/env/to": {
+      "min": 3000,
+      "max": 6000,
+      "scale": "log"
+    },
+    "/layers/0/filter/q": {
+      "min": 1.1,
+      "max": 2.2,
+      "scale": "lin"
+    },
+    "/layers/1/source/pitch": {
+      "min": 1800,
+      "max": 3200,
+      "scale": "log"
+    },
+    "/layers/1/amp/decay": {
+      "min": 0.12,
+      "max": 0.35,
+      "scale": "log"
+    }
+  }
+}

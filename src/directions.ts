@@ -11,6 +11,10 @@ export const DIRECTIONS: Record<string, Partial<Record<FeatureName, number>>> = 
   longer: { energyLength: 1 },
   'less-harsh': { sharpness: -1, roughness: -1 },
   'more-character': { roughness: 0.5, fluctuation: 0.5, pitchDirection: 0.3 },
+  // Weight is low, long and unpitched; noise is a flat spectrum with no pitch; grit is roughness with noise in it.
+  heavier: { brightness: -0.7, register: -0.5, energyLength: 0.3, pitchStrength: -0.3 },
+  noisier: { noisiness: 1, pitchStrength: -1 },
+  grittier: { roughness: 1, noisiness: 0.5 },
 };
 
 /** How far `child` moved from `parent` along the requested directions, in taste-feature scale units. */
@@ -32,6 +36,9 @@ const WORDS: [RegExp, string[]][] = [
   [/\b(long|lingering|ringing|sustained|big|epic)\b/i, ['longer']],
   [/\b(punchy|punch|hard|impact\w*|sharp attack|snappy)\b/i, ['punchier']],
   [/\b(harsh|gritty|crunchy|dirty|weird|quirky|character)\b/i, ['more-character']],
+  [/\b(heavy|heavier|weighty|meaty|massive|thick|beefy|hefty)\b/i, ['heavier']],
+  [/\b(noisy|noisier|breathy|hissy|less tonal|not beepy|less beepy)\b/i, ['noisier']],
+  [/\b(gritty|grittier|crunchy|dirty|distorted|rough)\b/i, ['grittier']],
   [/\b(not harsh|smooth|clean|pleasant)\b/i, ['less-harsh']],
 ];
 
@@ -41,7 +48,7 @@ export function readPrompt(prompt: string | undefined | null): { directions: str
   const out = new Set<string>();
   for (const [re, dirs] of WORDS) if (re.test(prompt)) dirs.forEach(d => out.add(d));
   // "not harsh" must not also read as a request for character
-  if (/\bnot (harsh|gritty|crunchy)\b/i.test(prompt)) out.delete('more-character');
+  if (/\bnot (harsh|gritty|crunchy)\b/i.test(prompt)) { out.delete('more-character'); out.delete('grittier'); }
   const cancelled: [string, string][] = [];
   for (const pair of [['brighter', 'darker'], ['shorter', 'longer']] as const) {
     if (out.has(pair[0]) && out.has(pair[1])) { out.delete(pair[0]); out.delete(pair[1]); cancelled.push([pair[0], pair[1]]); }

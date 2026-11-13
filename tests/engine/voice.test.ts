@@ -65,7 +65,7 @@ describe('voice source: graph', () => {
 
 describe('creature archetypes', () => {
   it('are voice-based, in family creature, and sample schema-valid patches', () => {
-    expect(CREATURES.map(a => a.name)).toEqual(['creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-yip']);
+    expect(CREATURES.map(a => a.name)).toEqual(['creature', 'creature-bleat', 'creature-cluck', 'creature-growl', 'creature-hiss', 'creature-huff', 'creature-low', 'creature-roar', 'creature-yip']);
     for (const a of CREATURES) {
       expect(a.template.layers.every(l => l.source.type === 'voice'), a.name).toBe(true);
       for (const p of sampleArchetype(a, 5, 30)) expect(parsePatch(p).ok, p.name).toBe(true);

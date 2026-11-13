@@ -1,0 +1,177 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "impact-metal",
+  "family": "hit",
+  "description": "A blow on metal: a noise knock and thump with an inharmonic struck ring and a few sparks",
+  "recipe": "A driven noise knock and a low sine thump, a modal resonator with inharmonic ratios struck with them, and sparse bright grains, through a room.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "impact-metal",
+    "family": "hit",
+    "archetype": "impact-metal",
+    "tags": [
+      "impact"
+    ],
+    "duration": 0.5,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.07,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 900,
+          "q": 0.8,
+          "env": {
+            "to": 260,
+            "time": 0.053
+          }
+        },
+        "drive": 0.6,
+        "gainDb": 0
+      },
+      {
+        "source": {
+          "type": "osc",
+          "wave": "sine",
+          "pitch": 130
+        },
+        "pitchEnv": [
+          {
+            "at": 0.049,
+            "to": 60,
+            "curve": "exp"
+          }
+        ],
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.07,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "highpass": 32,
+        "drive": 0.25,
+        "gainDb": -10
+      },
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 620,
+          "modes": [
+            [
+              1,
+              18,
+              0
+            ],
+            [
+              2.76,
+              16,
+              -4
+            ],
+            [
+              5.4,
+              12,
+              -8
+            ]
+          ],
+          "exciter": "impulse"
+        },
+        "start": 0.012,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.4,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -9
+      },
+      {
+        "source": {
+          "type": "grains",
+          "rate": 60,
+          "grainDecay": 0.004,
+          "center": 4200,
+          "q": 4,
+          "rateEnd": 0.2
+        },
+        "start": 0.012,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.2,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -16
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.006,
+          "sustain": 0,
+          "release": 0.01
+        },
+        "filter": {
+          "type": "highpass",
+          "cutoff": 3000,
+          "resonanceDb": 0
+        },
+        "gainDb": -12
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "room",
+        "sendDb": -16
+      }
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/2/source/pitch": {
+      "min": 380,
+      "max": 1100,
+      "scale": "log"
+    },
+    "/layers/2/amp/decay": {
+      "min": 0.2,
+      "max": 0.6,
+      "scale": "log"
+    },
+    "/layers/0/filter/cutoff": {
+      "min": 600,
+      "max": 1400,
+      "scale": "log"
+    },
+    "/layers/1/source/pitch": {
+      "min": 100,
+      "max": 170,
+      "scale": "log"
+    },
+    "/layers/3/source/rate": {
+      "min": 30,
+      "max": 120,
+      "scale": "log"
+    },
+    "/fx/reverb/preset": {
+      "choices": [
+        "small",
+        "room",
+        "hall"
+      ]
+    }
+  }
+}

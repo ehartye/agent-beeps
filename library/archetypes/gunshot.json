@@ -1,0 +1,195 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "gunshot",
+  "family": "gunshot",
+  "description": "A noise crack over a driven noise body that falls in pitch, a short low thump and a room tail",
+  "recipe": "A few milliseconds of high-passed white noise, driven pink noise in a band that falls from about 1 kHz, a short sine thump under it, a faint struck-metal ring and a dark noise tail, through a room.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "gunshot",
+    "family": "gunshot",
+    "archetype": "gunshot",
+    "tags": [
+      "impact"
+    ],
+    "duration": 0.5,
+    "layers": [
+      {
+        "source": {
+          "type": "noise",
+          "color": "white"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.01,
+          "sustain": 0,
+          "release": 0.01
+        },
+        "filter": {
+          "type": "highpass",
+          "cutoff": 2600,
+          "resonanceDb": 0
+        },
+        "gainDb": -9
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink"
+        },
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.13,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "bandpass",
+          "cutoff": 1100,
+          "q": 0.8,
+          "env": {
+            "to": 240,
+            "time": 0.098
+          }
+        },
+        "drive": 0.7,
+        "gainDb": 0
+      },
+      {
+        "source": {
+          "type": "osc",
+          "wave": "sine",
+          "pitch": 120
+        },
+        "pitchEnv": [
+          {
+            "at": 0.063,
+            "to": 46,
+            "curve": "exp"
+          }
+        ],
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.09,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "highpass": 32,
+        "drive": 0.25,
+        "gainDb": -9
+      },
+      {
+        "source": {
+          "type": "modal",
+          "pitch": 1700,
+          "modes": [
+            [
+              1,
+              18,
+              0
+            ],
+            [
+              2.76,
+              16,
+              -4
+            ],
+            [
+              5.4,
+              12,
+              -8
+            ]
+          ],
+          "exciter": "impulse"
+        },
+        "start": 0.014,
+        "amp": {
+          "attack": 0.004,
+          "decay": 0.05,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "gainDb": -18
+      },
+      {
+        "source": {
+          "type": "noise",
+          "color": "pink",
+          "stereo": 0.6
+        },
+        "start": 0.02,
+        "amp": {
+          "attack": 0.006,
+          "decay": 0.4,
+          "sustain": 0,
+          "release": 0.05
+        },
+        "filter": {
+          "type": "lowpass",
+          "cutoff": 1400,
+          "resonanceDb": 0,
+          "env": {
+            "to": 300,
+            "time": 0.32
+          }
+        },
+        "highpass": 60,
+        "gainDb": -12
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "room",
+        "sendDb": -16
+      }
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/1/filter/cutoff": {
+      "min": 700,
+      "max": 1800,
+      "scale": "log"
+    },
+    "/layers/1/filter/env/to": {
+      "min": 160,
+      "max": 400,
+      "scale": "log"
+    },
+    "/layers/1/amp/decay": {
+      "min": 0.08,
+      "max": 0.22,
+      "scale": "log"
+    },
+    "/layers/1/drive": {
+      "min": 0.5,
+      "max": 0.9,
+      "scale": "lin"
+    },
+    "/layers/2/source/pitch": {
+      "min": 90,
+      "max": 160,
+      "scale": "log"
+    },
+    "/layers/2/pitchEnv/0/to": {
+      "ratioOf": "/layers/2/source/pitch",
+      "min": 0.3,
+      "max": 0.5,
+      "scale": "lin"
+    },
+    "/layers/4/amp/decay": {
+      "min": 0.25,
+      "max": 0.7,
+      "scale": "log"
+    },
+    "/fx/reverb/preset": {
+      "choices": [
+        "small",
+        "room",
+        "hall"
+      ]
+    }
+  }
+}

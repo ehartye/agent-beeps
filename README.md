@@ -1,5 +1,18 @@
 # agent-beeps
 
+## What changed in 0.40.0
+
+Sounds with weight. Seven layered archetypes build a sound from a noise crack, a driven noise body,
+a short low tone, a struck resonator or grains, and a tail in a room: `gunshot`, `impact-flesh`,
+`impact-metal`, `blade`, `explosion-heavy`, `magic-cast` and `creature-roar`. `generate hit`,
+`generate explosion` and `generate creature` now sample them with the rest of their family, so
+a seed returns a different set than before. Prompts and `mutate --toward` take three more
+directions: `heavier`, `noisier` and `grittier` (heavy, thick, noisy, less beepy, gritty, distorted).
+Two warnings name the beep: `tonal-impact` for a hit, gunshot or explosion that measures as a
+steady pitched tone, and `thin-blast` for a gunshot or explosion with little energy from 60 to
+250 Hz. `gunshot` and `blade` have tail ceilings of their own. No engine or pipeline change:
+built sounds keep their hashes.
+
 ## What changed in 0.39.0
 
 A song track may now play a fixed sample instrument: a patch whose layers include a verified

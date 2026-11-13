@@ -125,6 +125,23 @@ describe('lintPatch', () => {
     expect(rulesOf(r.errors)).toEqual(expect.arrayContaining(['true-peak-ceiling', 'no-clipping', 'no-dc']));
   });
 
+  it('warns when a hit measures as a tone or a blast has no low end, unless tagged', () => {
+    const p = coin();
+    p.family = 'explosion';
+    const bands = [-30, -25, -12, -6, -3, -6, -12, -30];
+    const beep = features(p, { flatness: 0.0005, pitchStrength: 0.9, bands });
+    expect(rulesOf(lintPatch(p, beep, project).warnings)).toEqual(expect.arrayContaining(['tonal-impact', 'thin-blast']));
+    const noise = features(p, { flatness: 0.05, pitchStrength: 0.9, bands: [-6, -4, -8, -12, -14, -18, -24, -30] });
+    const clean = rulesOf(lintPatch(p, noise, project).warnings);
+    expect(clean).not.toContain('tonal-impact'); expect(clean).not.toContain('thin-blast');
+    p.tags = ['tonal', 'thin'];
+    const tagged = rulesOf(lintPatch(p, beep, project).warnings);
+    expect(tagged).not.toContain('tonal-impact'); expect(tagged).not.toContain('thin-blast');
+    p.tags = []; p.family = 'coin';
+    const other = rulesOf(lintPatch(p, beep, project).warnings);
+    expect(other).not.toContain('tonal-impact'); expect(other).not.toContain('thin-blast');
+  });
+
   it('warns on sharpness and roughness unless tagged', () => {
     const p = coin();
     const f = features(p, { sharpness: 3, roughness: 0.9 });
@@ -266,7 +283,7 @@ describe('craft/rules.json', () => {
     const ids = rules.map(r => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ['true-peak-ceiling', 'attack-floor', 'no-dc', 'no-clipping', 'nyquist', 'tick-length', 'tail-ceiling',
-      'sharpness-warn', 'roughness-warn', 'variation-on-repeating', 'loudness-target', 'one-no', 'priority-levels',
+      'sharpness-warn', 'roughness-warn', 'tonal-impact', 'thin-blast', 'variation-on-repeating', 'loudness-target', 'one-no', 'priority-levels',
       'family-consistency', 'key-consistency', 'masking-risk', 'silent-not-quiet', 'one-meaning-per-sound',
       'reverb-preset-only', 'synthesis-choice']) expect(ids).toContain(id);
   });

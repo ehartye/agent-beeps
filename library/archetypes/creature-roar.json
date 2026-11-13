@@ -1,0 +1,160 @@
+{
+  "schema": "beeps/archetype@1",
+  "name": "creature-roar",
+  "family": "creature",
+  "description": "A big animal roar: a low, rough, driven throat that falls, with a second breathy voice over it",
+  "recipe": "A voice source pitched low with wide formants, heavy jitter, breath and a fast tremolo, falling in pitch and driven, under a second voice that is mostly breath, through a room.",
+  "template": {
+    "schema": "beeps/patch@1",
+    "name": "creature-roar",
+    "family": "creature",
+    "archetype": "creature-roar",
+    "tags": [],
+    "duration": 0.9,
+    "layers": [
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 85,
+          "formants": [
+            [
+              420,
+              5,
+              0
+            ],
+            [
+              780,
+              6,
+              -4
+            ],
+            [
+              2100,
+              7,
+              -12
+            ]
+          ],
+          "tilt": 0.9,
+          "jitterCents": 80,
+          "tremolo": {
+            "rate": 34,
+            "depth": 0.6
+          },
+          "breath": 0.4
+        },
+        "amp": {
+          "attack": 0.05,
+          "decay": 0.7,
+          "sustain": 0.3,
+          "release": 0.2
+        },
+        "pitchEnv": [
+          {
+            "at": 0.7,
+            "to": 60,
+            "curve": "exp"
+          }
+        ],
+        "drive": 0.6
+      },
+      {
+        "source": {
+          "type": "voice",
+          "pitch": 128,
+          "formants": [
+            [
+              600,
+              4,
+              0
+            ],
+            [
+              1400,
+              5,
+              -5
+            ],
+            [
+              2900,
+              6,
+              -10
+            ]
+          ],
+          "tilt": 0.7,
+          "jitterCents": 100,
+          "tremolo": {
+            "rate": 27,
+            "depth": 0.5
+          },
+          "breath": 0.9
+        },
+        "amp": {
+          "attack": 0.07,
+          "decay": 0.6,
+          "sustain": 0.2,
+          "release": 0.2
+        },
+        "pitchEnv": [
+          {
+            "at": 0.7,
+            "to": 90,
+            "curve": "exp"
+          }
+        ],
+        "drive": 0.7,
+        "gainDb": -8
+      }
+    ],
+    "fx": {
+      "reverb": {
+        "preset": "room",
+        "sendDb": -14
+      },
+      "dcBlock": true
+    },
+    "meta": {
+      "priority": 3,
+      "intent": "oneshot"
+    }
+  },
+  "ranges": {
+    "/layers/0/source/pitch": {
+      "min": 60,
+      "max": 120,
+      "scale": "log"
+    },
+    "/layers/0/pitchEnv/0/to": {
+      "ratioOf": "/layers/0/source/pitch",
+      "min": 0.6,
+      "max": 0.9,
+      "scale": "lin"
+    },
+    "/layers/0/source/formants/0/0": {
+      "min": 320,
+      "max": 560,
+      "scale": "log"
+    },
+    "/layers/0/source/formants/1/0": {
+      "min": 650,
+      "max": 1100,
+      "scale": "log"
+    },
+    "/layers/0/source/jitterCents": {
+      "min": 50,
+      "max": 100,
+      "scale": "lin"
+    },
+    "/layers/0/source/tremolo/rate": {
+      "min": 22,
+      "max": 46,
+      "scale": "lin"
+    },
+    "/layers/0/source/breath": {
+      "min": 0.25,
+      "max": 0.55,
+      "scale": "lin"
+    },
+    "/layers/0/amp/decay": {
+      "min": 0.5,
+      "max": 1.1,
+      "scale": "log"
+    }
+  }
+}
