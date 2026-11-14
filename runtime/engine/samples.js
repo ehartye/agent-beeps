@@ -14,7 +14,7 @@ const ID = /^sha256:[0-9a-f]{64}$/;
 const FILE = /^[A-Za-z0-9][A-Za-z0-9_.-]*\.wav$/;
 const object = (/** @type {unknown} */ x) => x !== null && typeof x === 'object' && !Array.isArray(x);
 
-/** Distinct dependency IDs in deterministic order. @param {Patch} patch */
+/** Distinct dependency IDs in deterministic order. @param {Pick<Patch, 'layers'>} patch */
 export function sampleIds(patch) {
   if (!Array.isArray(patch?.layers)) throw new TypeError('sample assets require a patch with layers');
   const ids = new Set();
@@ -35,7 +35,7 @@ function exactClosure(required, supplied) {
 }
 
 /** Validate the manifest and exact patch dependency closure, without graph or network effects.
- * @param {Patch} patch @param {SampleAssetManifest} [assets]
+ * @param {Pick<Patch, 'layers'>} patch @param {SampleAssetManifest} [assets]
  * @returns {SampleAssetManifest}
  */
 export function validateSampleManifest(patch, assets) {
@@ -70,7 +70,7 @@ function audioBuffer(ctx, wav) {
 
 /** Prepare exact hash-keyed canonical WAV bytes (native fixtures / internal transports).
  * The caller decodes any transport encoding before calling. Returned buffers must remain immutable.
- * @param {BaseAudioContext} ctx @param {Patch} patch
+ * @param {BaseAudioContext} ctx @param {Pick<Patch, 'layers'>} patch
  * @param {Readonly<Record<string, Uint8Array>>} wavs
  * @returns {Record<string, AudioBuffer>}
  */
