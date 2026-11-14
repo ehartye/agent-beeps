@@ -10,6 +10,7 @@ import { song } from '../helpers/songs.ts';
 import { registerSongCommands } from '../../src/commands/songs.ts';
 import { renderSong } from '../../src/render/song-pipeline.ts';
 
+vi.mock('../../src/commands/preview.ts', () => ({ createPreview: async () => ({ url: 'http://test:1234/a/demo#preview=scoped', access: 'read-only' }) }));
 vi.mock('../../src/render/song-pipeline.ts', () => ({ renderSong: vi.fn() }));
 vi.mock('../../src/commands/shared.ts', async importOriginal => ({ ...await importOriginal<object>(), withHost: async (fn: (host: object) => unknown) => fn({}) }));
 vi.mock('../../src/commands/audition.ts', () => ({ ensureServer: async () => ({ url: 'http://test:1234', port: 1234, token: 'tok', host: '127.0.0.1' }) }));

@@ -1,3 +1,4 @@
+import { api, access, canSend, mediaUrl } from './access.js';
 // Album page: streams each rendered song, loops loop songs on request, and records the owner's
 // marks, tags and notes. Every track's strip is its measured loudness arc over its sections.
 
@@ -14,9 +15,7 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
-const token = new URLSearchParams(location.search).get('t') ?? '';
 const id = location.pathname.split('/').pop();
-const api = (path, init = {}) => fetch(`${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`, init);
 const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -25,6 +24,7 @@ const audio = $('#audio');
 const strips = new Map(); // track index -> [strip elements]
 
 async function send(event) {
+  if (!canSend(event.type)) return false;
   const r = await api(`/api/album/${id}/event`, { method: 'POST', body: JSON.stringify(event), headers: { 'content-type': 'application/json' } });
   if (!r.ok) throw new Error((await r.json()).error?.message ?? r.statusText);
   return r.json();
@@ -87,7 +87,7 @@ let npEl = null;
 function nowPlaying(t) {
   $('#np-title').textContent = t.title;
   $('#np-desc').textContent = t.description ?? '';
-  $('#note-here').disabled = !!captured;
+  $('#note-here').disabled = access === 'read-only' || !!captured;
   // The big strip mirrors whatever is playing: rebuild it and register it under this track.
   if (npEl) for (const [k, els] of strips) strips.set(k, els.filter(e => e !== npEl));
   const el = strip(t, true);
@@ -104,7 +104,7 @@ function play(index, at = 0) {
   if (!t || t.status !== 'ready') return;
   if (current !== index || !audio.src) {
     current = index;
-    audio.src = `${t.wav}?t=${encodeURIComponent(token)}`;
+    audio.src = mediaUrl(t.wav);
     nowPlaying(t);
     if (!played.has(index)) { played.add(index); send({ type: 'play', index }).catch(() => {}); }
   }
@@ -174,7 +174,7 @@ function trackCard(t, state) {
       chips,
       note, status,
       h('ul', { class: 'moments', 'aria-label': `Moments in ${t.title}` }, (s.moments ?? []).map(m => momentItem(t, m))),
-      h('details', { class: 'look' }, h('summary', {}, 'What the agent saw'), h('img', { loading: 'lazy', alt: `Waveform, loudness arc and spectrogram of ${t.title}`, src: `${t.look}?t=${encodeURIComponent(token)}` }))));
+      h('details', { class: 'look' }, h('summary', {}, 'What the agent saw'), h('img', { loading: 'lazy', alt: `Waveform, loudness arc and spectrogram of ${t.title}`, src: mediaUrl(t.look) }))));
 }
 
 function momentItem(t, m) {
@@ -196,7 +196,7 @@ function closeMoment() {
   $('#moment-editor').hidden = true;
   $('#moment-text').value = '';
   $('#moment-saved').textContent = '';
-  $('#note-here').disabled = !current;
+  $('#note-here').disabled = access === 'read-only' || !current;
 }
 $('#cancel-moment').addEventListener('click', closeMoment);
 $('#save-moment').addEventListener('click', async () => {
@@ -246,6 +246,7 @@ async function load() {
     if (!current && ready.length) { current = ready[0].index; nowPlaying(ready[0]); }
     for (const sel of ['#play', '#prev', '#next', '#seam']) $(sel).disabled = !ready.length;
     if (!ready.length) $('#np-title').textContent = pending ? 'Preparing your songs' : 'No audio available';
+    if (access === 'read-only') document.querySelectorAll('.verdict button, .chips button, textarea, #note-here, #save-moment').forEach(el => { el.disabled = true; });
     retry = pending > 0;
   } catch (e) {
     $('#meta').textContent = `${e.message} Retrying…`;
